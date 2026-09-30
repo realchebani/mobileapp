@@ -1,7 +1,7 @@
 # EPIC-03 · Authentification par lien magique
 
 **Objectif** : permettre à un utilisateur de se connecter avec son e-mail via un lien magique Supabase, puis de choisir son rôle (vendeur / acheteur).
-**Statut** : 🚧 En cours
+**Statut** : ✅ Terminé
 
 ## US-03.1 · Écrans de connexion par e-mail (design) ✅
 - [x] Artboards « 01b · Connexion par e-mail » et « 01c · Vérifiez vos e-mails » ajoutés au canvas ; « Continuer avec un e-mail » y mène.
@@ -13,13 +13,13 @@
 - [x] Erreurs typées : e-mail invalide, adresse non autorisée, limite d'envoi, réseau.
 - [x] Écrans Flutter 01 (Connexion), 01b (Connexion par e-mail), 01c (Vérifiez vos e-mails), avec messages d'erreur en français.
 
-## US-03.3 · Ouvrir le lien et être connecté 🚧
+## US-03.3 · Ouvrir le lien et être connecté ✅
 *En tant qu'utilisateur, je veux toucher le lien reçu et arriver connecté dans l'app.*
 - [x] Schéma d'URL par flavor sur iOS, URL autorisées dans Supabase.
 - [x] `AppBloc` : statut inconnu / non connecté / connecté, déconnexion.
 - [x] Lien expiré ou déjà utilisé : erreur remontée (« renvoyez un lien »).
 - [x] Navigation automatique selon le statut (go_router, fonction `appRedirect` testée) : Splash → Découvrir (1er lancement) → Connexion → Rôle → espace vendeur/acheteur.
-- [ ] Test de bout en bout sur iPhone.
+- [x] Test de bout en bout sur iPhone validé par le porteur de projet (2026-09-30).
 
 ## US-03.4 · Renvoyer le lien / changer d'adresse ✅
 - [x] Renvoi possible après 60 s (compte à rebours), relancé en cas de limite d'envoi.

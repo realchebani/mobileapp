@@ -61,5 +61,5 @@ Barrel `lib/ui/ui.dart`, conventions du dépôt (`material_ui`, constructeurs `c
 - Phase 1 : `lib/ui/` livré (87 tests, 100 %) ; vérification → corrections du logo (tailles du wordmark, trait, version verticale) et détails.
 - Phase 2 : packages `auth_repository` / `profile_repository`, `AppBloc`, `LoginCubit` ; vérification → erreurs de lien expiré remontées, course « changer d'adresse » corrigée, erreur « adresse non autorisée ». Migration `profiles` appliquée par `supabase db push` (sans mot de passe DB).
 - Phase 3 : écrans, go_router, câblage, l10n fr/en/es, icône iOS (203 tests, 100 %). Vérification → icône VGV encore embarquée (fichiers `.icon`), liens expirés au démarrage à froid, délai de chargement du profil, onboarding sur petits écrans : corrigés (213 tests, 100 %), réinstallé sur l'iPhone.
-- Reste : test de bout en bout du lien magique sur l'iPhone par le porteur de projet.
+- Test de bout en bout du lien magique validé sur l'iPhone. Plan terminé.
 - Écart au plan : les CGU sont acceptées sur 01b (et non 01) ; Apple/Google, « Reprendre un dossier » et « Espace Agences » masqués ; « J’ai ouvert le lien » retiré.
