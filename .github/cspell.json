@@ -29,7 +29,7 @@
     "Saludo"
   ],
   "ignorePaths": [
-    "docs/**",
-    "CLAUDE.md"
+    "**/docs/**",
+    "**/CLAUDE.md"
   ]
 }
