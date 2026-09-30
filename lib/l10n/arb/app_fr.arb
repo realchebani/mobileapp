@@ -364,5 +364,141 @@
     "homeDesignSystem": "Design system",
     "@homeDesignSystem": {
         "description": "Lien vers la galerie du design system (flavor development uniquement)"
+    },
+    "sellerHomeTitle": "Mon dossier vendeur",
+    "@sellerHomeTitle": {
+        "description": "Title of the seller entry screen"
+    },
+    "sellerHomeSubtitle": "Répondez aux questions de l’agent Realesty, étape par étape : il constitue le dossier de votre bien pour l’expert.",
+    "@sellerHomeSubtitle": {
+        "description": "Subtitle of the seller entry screen"
+    },
+    "sellerHomeStart": "Commencer l’audit",
+    "@sellerHomeStart": {
+        "description": "Button starting the seller tunnel"
+    },
+    "sellerHomeResume": "Reprendre l’audit (étape {step}/{total})",
+    "@sellerHomeResume": {
+        "description": "Button resuming the seller tunnel at a step",
+        "placeholders": {
+            "step": {
+                "type": "int"
+            },
+            "total": {
+                "type": "int"
+            }
+        }
+    },
+    "sellerHomeSubmitted": "Voir mon dossier envoyé",
+    "@sellerHomeSubmitted": {
+        "description": "Button opening the submitted dossier screen"
+    },
+    "sellerTunnelLoadError": "Impossible de charger votre dossier.",
+    "@sellerTunnelLoadError": {
+        "description": "Error when the seller dossier cannot be loaded"
+    },
+    "sellerTunnelSaveError": "L’enregistrement a échoué. Vérifiez votre connexion et réessayez.",
+    "@sellerTunnelSaveError": {
+        "description": "Error when a tunnel step cannot be saved"
+    },
+    "tunnelTitle": "Audit de votre bien",
+    "@tunnelTitle": {
+        "description": "Title in the seller tunnel header"
+    },
+    "tunnelStepCaption": "Étape {number} · {name}",
+    "@tunnelStepCaption": {
+        "description": "Caption above the tunnel title",
+        "placeholders": {
+            "number": {
+                "type": "int"
+            },
+            "name": {
+                "type": "String"
+            }
+        }
+    },
+    "tunnelProgressLabel": "Étape {number} sur {total}",
+    "@tunnelProgressLabel": {
+        "description": "Screen reader label of the tunnel progress",
+        "placeholders": {
+            "number": {
+                "type": "int"
+            },
+            "total": {
+                "type": "int"
+            }
+        }
+    },
+    "tunnelStepOwners": "Propriétaires",
+    "@tunnelStepOwners": {
+        "description": "Step 1 name"
+    },
+    "tunnelStepLocation": "Cadastre",
+    "@tunnelStepLocation": {
+        "description": "Step 2 name"
+    },
+    "tunnelStepContext": "Contexte",
+    "@tunnelStepContext": {
+        "description": "Step 3 name"
+    },
+    "tunnelStepTechnical": "Technique",
+    "@tunnelStepTechnical": {
+        "description": "Step 4 name"
+    },
+    "tunnelStepRooms": "Pièces",
+    "@tunnelStepRooms": {
+        "description": "Step 5 name"
+    },
+    "tunnelStepLifestyle": "Cadre de vie",
+    "@tunnelStepLifestyle": {
+        "description": "Step 6 name"
+    },
+    "tunnelStepDocuments": "Documents",
+    "@tunnelStepDocuments": {
+        "description": "Step 7 name"
+    },
+    "tunnelModeScreen": "Écran",
+    "@tunnelModeScreen": {
+        "description": "Pill: the step is answered on screen"
+    },
+    "tunnelModeVoice": "Vocal",
+    "@tunnelModeVoice": {
+        "description": "Pill: the step can be answered by voice"
+    },
+    "tunnelClose": "Fermer",
+    "@tunnelClose": {
+        "description": "Close button label"
+    },
+    "tunnelSaveAndQuit": "Enregistrer et quitter",
+    "@tunnelSaveAndQuit": {
+        "description": "Button leaving the tunnel (answers are saved)"
+    },
+    "tunnelContinue": "Continuer",
+    "@tunnelContinue": {
+        "description": "Main button of a tunnel step"
+    },
+    "tunnelHintVoiceOrScreen": "Répondez à la voix ou à l’écran",
+    "@tunnelHintVoiceOrScreen": {
+        "description": "Hint above the action bar"
+    },
+    "tunnelMicLabel": "Parler à l’agent",
+    "@tunnelMicLabel": {
+        "description": "Microphone button label"
+    },
+    "tunnelLoading": "chargement en cours",
+    "@tunnelLoading": {
+        "description": "Announced while a button is loading"
+    },
+    "tunnelProvisionalMessage": "Cette étape arrive bientôt. Continuez pour découvrir la suite du parcours.",
+    "@tunnelProvisionalMessage": {
+        "description": "Agent message of a step not built yet"
+    },
+    "tunnelSubmittedTitle": "Dossier envoyé",
+    "@tunnelSubmittedTitle": {
+        "description": "Title of the provisional V8 screen"
+    },
+    "tunnelBackToHome": "Retour à mon dossier",
+    "@tunnelBackToHome": {
+        "description": "Button back to the seller entry screen"
     }
 }

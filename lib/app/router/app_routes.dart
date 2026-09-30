@@ -18,8 +18,39 @@ abstract final class AppRoutes {
   /// 02 · Sélecteur de rôle.
   static const role = '/role';
 
-  /// Seller space (placeholder until V1).
+  /// Seller space: entry screen of the seller dossier ("Mon dossier
+  /// vendeur").
   static const seller = '/vendeur';
+
+  /// Seller tunnel steps live under this path (see `SellerTunnelStep`).
+  static const sellerAudit = '/vendeur/audit';
+
+  /// V1 · Propriétaires.
+  static const sellerOwners = '/vendeur/audit/proprietaires';
+
+  /// V2 · Adresse & cadastre.
+  static const sellerLocation = '/vendeur/audit/localisation';
+
+  /// V3 · Contexte & type de bien.
+  static const sellerContext = '/vendeur/audit/contexte';
+
+  /// V4b · Audit technique (mode écran).
+  static const sellerTechnical = '/vendeur/audit/technique';
+
+  /// V5 · Méthode de relevé.
+  static const sellerMethod = '/vendeur/audit/methode';
+
+  /// V5c · Récapitulatif des surfaces.
+  static const sellerSurfaces = '/vendeur/audit/surfaces';
+
+  /// V6 · Cadre de vie.
+  static const sellerLifestyle = '/vendeur/audit/cadre-de-vie';
+
+  /// V7 · Coffre de documents.
+  static const sellerDocuments = '/vendeur/audit/documents';
+
+  /// V8 · Dossier envoyé, attente de l’expert.
+  static const sellerSubmitted = '/vendeur/audit/envoye';
 
   /// Buyer space (placeholder).
   static const buyer = '/acheteur';

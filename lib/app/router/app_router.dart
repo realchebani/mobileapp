@@ -9,6 +9,7 @@ import 'package:mobileapp/login/login.dart';
 import 'package:mobileapp/onboarding/onboarding.dart';
 import 'package:mobileapp/profile/profile.dart';
 import 'package:mobileapp/role/role.dart';
+import 'package:mobileapp/seller_tunnel/seller_tunnel.dart';
 import 'package:mobileapp/splash/splash.dart';
 import 'package:mobileapp/ui/ui.dart';
 import 'package:profile_repository/profile_repository.dart';
@@ -61,12 +62,24 @@ GoRouter createAppRouter({
         path: AppRoutes.role,
         builder: (context, state) => const RolePage(),
       ),
-      GoRoute(
-        path: AppRoutes.seller,
-        builder: (context, state) => HomePlaceholderPage(
-          role: UserRole.seller,
-          showDesignSystemLink: enableDesignSystem,
-        ),
+      // Seller space: the dossier is loaded once for the entry screen and
+      // every tunnel step (SellerTunnelShell provides SellerTunnelCubit).
+      ShellRoute(
+        builder: (context, state, child) => SellerTunnelShell(child: child),
+        routes: [
+          GoRoute(
+            path: AppRoutes.seller,
+            builder: (context, state) =>
+                SellerHomePage(showDesignSystemLink: enableDesignSystem),
+            routes: [
+              for (final (path, page) in _sellerTunnelPages)
+                GoRoute(
+                  path: path.substring(AppRoutes.seller.length + 1),
+                  builder: (context, state) => page,
+                ),
+            ],
+          ),
+        ],
       ),
       GoRoute(
         path: AppRoutes.buyer,
@@ -83,3 +96,17 @@ GoRouter createAppRouter({
     ],
   );
 }
+
+/// One screen per seller tunnel step; each page lives in its own file under
+/// `lib/seller_tunnel/steps/`.
+final List<(String, Widget)> _sellerTunnelPages = [
+  (SellerTunnelStep.owners.path, const OwnersPage()),
+  (SellerTunnelStep.location.path, const LocationPage()),
+  (SellerTunnelStep.context.path, const PropertyContextPage()),
+  (SellerTunnelStep.technical.path, const TechnicalPage()),
+  (SellerTunnelStep.method.path, const MethodPage()),
+  (SellerTunnelStep.surfaces.path, const SurfacesPage()),
+  (SellerTunnelStep.lifestyle.path, const LifestylePage()),
+  (SellerTunnelStep.documents.path, const DocumentsPage()),
+  (SellerTunnelStep.submitted.path, const SubmittedPage()),
+];

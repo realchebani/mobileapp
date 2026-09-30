@@ -4,14 +4,15 @@ import 'package:auth_repository/auth_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:mobileapp/app/app.dart';
-import 'package:mobileapp/home/home.dart';
 import 'package:mobileapp/login/login.dart';
 import 'package:mobileapp/onboarding/onboarding.dart';
 import 'package:mobileapp/role/role.dart';
+import 'package:mobileapp/seller_tunnel/seller_tunnel.dart';
 import 'package:mobileapp/splash/splash.dart';
 import 'package:mobileapp/ui/ui.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:profile_repository/profile_repository.dart';
+import 'package:property_repository/property_repository.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../helpers/helpers.dart';
@@ -21,10 +22,12 @@ void main() {
 
   late AuthRepository authRepository;
   late ProfileRepository profileRepository;
+  late PropertyRepository propertyRepository;
   late StreamController<AuthUser?> userController;
 
   setUpAll(() async {
     registerFallbackValue(UserRole.seller);
+    registerFallbackValue(<String, Object?>{});
     await loadRealestyFonts();
   });
 
@@ -35,6 +38,20 @@ void main() {
     addTearDown(dispatcher.clearLocalesTestValue);
     authRepository = MockAuthRepository();
     profileRepository = MockProfileRepository();
+    propertyRepository = MockPropertyRepository();
+    when(() => propertyRepository.getOrCreateDraft(any())).thenAnswer(
+      (_) async => const Property(id: 'property-id', ownerId: 'user-id'),
+    );
+    when(() => propertyRepository.getOwners(any())).thenAnswer((_) async => []);
+    when(() => propertyRepository.getParcels(any()))
+        .thenAnswer((_) async => []);
+    when(() => propertyRepository.getPreviousEstimates(any()))
+        .thenAnswer((_) async => []);
+    when(() => propertyRepository.getRooms(any())).thenAnswer((_) async => []);
+    when(() => propertyRepository.getLifestyleItems(any()))
+        .thenAnswer((_) async => []);
+    when(() => propertyRepository.getDocuments(any()))
+        .thenAnswer((_) async => []);
     userController = StreamController<AuthUser?>.broadcast();
     when(() => authRepository.user).thenAnswer((_) => userController.stream);
     when(() => authRepository.linkFailures)
@@ -65,6 +82,7 @@ void main() {
       App(
         authRepository: authRepository,
         profileRepository: profileRepository,
+        propertyRepository: propertyRepository,
         onboardingRepository: OnboardingRepository(preferences: preferences),
         enableDesignSystem: enableDesignSystem,
       ),
@@ -153,12 +171,61 @@ void main() {
       await tester.pumpAndSettle();
       verify(() => profileRepository.updateRole('user-id', UserRole.seller))
           .called(1);
-      expect(find.text('Bienvenue dans votre espace vendeur'), findsOneWidget);
+      expect(find.text('Mon dossier vendeur'), findsOneWidget);
       expect(find.text('Design system'), findsNothing);
 
       await tester.tap(find.text('Se déconnecter'));
       await tester.pumpAndSettle();
       expect(find.byType(LoginView), findsOneWidget);
+    });
+
+    testWidgets('walks a returning seller through the tunnel', (tester) async {
+      when(() => profileRepository.getProfile(any())).thenAnswer(
+        (_) async => const Profile(id: 'user-id', role: UserRole.seller),
+      );
+      when(() => propertyRepository.updateProperty(any(), any())).thenAnswer(
+        (invocation) async => Property(
+          id: 'property-id',
+          ownerId: 'user-id',
+          currentStep:
+              (invocation.positionalArguments[1] as Map)['current_step'] as int,
+        ),
+      );
+      await pumpApp(tester);
+      await emitUser(tester, user);
+      expect(find.byType(SellerHomePage), findsOneWidget);
+
+      await tester.tap(find.text('Commencer l’audit'));
+      await tester.pumpAndSettle();
+      expect(find.byType(OwnersPage), findsOneWidget);
+
+      for (final page in [
+        LocationPage,
+        PropertyContextPage,
+        TechnicalPage,
+        MethodPage,
+        SurfacesPage,
+        LifestylePage,
+        DocumentsPage,
+        SubmittedPage,
+      ]) {
+        await tester.tap(find.text('Continuer'));
+        await tester.pumpAndSettle();
+        expect(find.byType(page), findsOneWidget);
+      }
+      verify(
+        () => propertyRepository.updateProperty('property-id', {
+          'current_step': 8,
+        }),
+      ).called(1);
+
+      await tester.tap(find.text('Retour à mon dossier'));
+      await tester.pumpAndSettle();
+      expect(find.text('Voir mon dossier envoyé'), findsOneWidget);
+
+      await tester.tap(find.text('Voir mon dossier envoyé'));
+      await tester.pumpAndSettle();
+      expect(find.byType(SubmittedPage), findsOneWidget);
     });
 
     testWidgets('opens the space of a returning buyer', (tester) async {
@@ -179,7 +246,7 @@ void main() {
       );
       await pumpApp(tester, enableDesignSystem: true);
       await emitUser(tester, user);
-      expect(find.byType(HomePlaceholderPage), findsOneWidget);
+      expect(find.byType(SellerHomePage), findsOneWidget);
 
       await tester.tap(find.text('Design system'));
       await tester.pumpAndSettle();

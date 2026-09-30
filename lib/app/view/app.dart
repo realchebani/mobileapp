@@ -12,6 +12,7 @@ import 'package:mobileapp/login/login.dart';
 import 'package:mobileapp/profile/profile.dart';
 import 'package:mobileapp/ui/ui.dart';
 import 'package:profile_repository/profile_repository.dart';
+import 'package:property_repository/property_repository.dart';
 
 /// Root of the app: provides the repositories and the app-wide blocs.
 ///
@@ -21,6 +22,7 @@ class App extends StatelessWidget {
   const new({
     required this.authRepository,
     required this.profileRepository,
+    required this.propertyRepository,
     required this.onboardingRepository,
     this.enableDesignSystem,
     super.key,
@@ -28,6 +30,7 @@ class App extends StatelessWidget {
 
   final AuthRepository authRepository;
   final ProfileRepository profileRepository;
+  final PropertyRepository propertyRepository;
   final OnboardingRepository onboardingRepository;
 
   /// Whether the design system gallery is reachable; defaults to the
@@ -40,6 +43,7 @@ class App extends StatelessWidget {
       providers: [
         RepositoryProvider.value(value: authRepository),
         RepositoryProvider.value(value: profileRepository),
+        RepositoryProvider.value(value: propertyRepository),
         RepositoryProvider.value(value: onboardingRepository),
       ],
       child: MultiBlocProvider(

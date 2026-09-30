@@ -1,0 +1,7 @@
+/// Seller dossiers of the Realesty app (seller tunnel), stored in Supabase.
+library;
+
+export 'src/models/children.dart';
+export 'src/models/enums.dart';
+export 'src/models/property.dart';
+export 'src/property_repository.dart';
