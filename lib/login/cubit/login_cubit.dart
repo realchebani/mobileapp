@@ -71,6 +71,14 @@ class LoginCubit extends Cubit<LoginState> {
     );
   }
 
+  /// Forgets everything (e-mail, terms, sent link), e.g. on sign-out.
+  void reset() {
+    _attempt++;
+    unawaited(_tickerSubscription?.cancel());
+    _tickerSubscription = null;
+    emit(const LoginState());
+  }
+
   Future<void> _send(String email) async {
     final attempt = _attempt;
     emit(
@@ -107,10 +115,10 @@ class LoginCubit extends Cubit<LoginState> {
     _startCountdown();
   }
 
-  /// A magic link failed to sign in. Only reported on the "check your
-  /// inbox" step: the auth client replays past failures to new listeners.
+  /// A magic link failed to sign in. Reported whatever the step, including
+  /// on a cold start from an expired link (the cubit lives at the app
+  /// level and subscribes at startup).
   void _onLinkFailure(AuthLinkFailure failure) {
-    if (state.sentTo == null) return;
     emit(
       state.copyWith(
         status: LoginStatus.failure,

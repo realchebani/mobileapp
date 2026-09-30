@@ -7,7 +7,7 @@ Statuts : ✅ Terminé · 🚧 En cours · 📋 À faire
 | Epic | Titre | Statut |
 |---|---|---|
 | [EPIC-01](epics/EPIC-01-socle-projet.md) | Socle du projet & installation sur iPhone | ✅ |
-| [EPIC-02](epics/EPIC-02-design-system.md) | Design system | 🚧 |
+| [EPIC-02](epics/EPIC-02-design-system.md) | Design system | ✅ |
 | [EPIC-03](epics/EPIC-03-authentification.md) | Authentification par lien magique | 🚧 |
 
 ## Plans d'implémentation

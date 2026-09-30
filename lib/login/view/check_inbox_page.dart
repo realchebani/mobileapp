@@ -30,24 +30,18 @@ class CheckInboxPage extends StatelessWidget {
       child: BlocListener<LoginCubit, LoginState>(
         listenWhen: (previous, current) =>
             current.sentTo != null &&
-            previous.status != current.status &&
-            (current.status == LoginStatus.failure ||
+            (current.hasNewFailureSince(previous) ||
                 (previous.status == LoginStatus.submitting &&
                     current.status == LoginStatus.sent)),
         listener: (context, state) {
-          final l10n = context.l10n;
           if (state.status == LoginStatus.sent) {
             showRealestySnackBar(
               context,
-              l10n.checkInboxResent,
+              context.l10n.checkInboxResent,
               icon: RealestyIcons.check,
             );
           } else {
-            showRealestySnackBar(
-              context,
-              (state.failureReason ?? LoginFailureReason.unknown).message(l10n),
-              isError: true,
-            );
+            showLoginFailure(context, state);
           }
         },
         child: CheckInboxView(openUrl: openUrl),

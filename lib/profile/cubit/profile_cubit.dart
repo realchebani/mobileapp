@@ -13,11 +13,16 @@ class ProfileCubit extends Cubit<ProfileState> {
   new({
     required AuthRepository authRepository,
     required this._profileRepository,
+    this._loadTimeout = defaultLoadTimeout,
   }) : super(const ProfileState()) {
     _userSubscription = authRepository.user.listen(_onUserChanged);
   }
 
+  /// Delay after which loading the profile is considered failed.
+  static const defaultLoadTimeout = Duration(seconds: 15);
+
   final ProfileRepository _profileRepository;
+  final Duration _loadTimeout;
   late final StreamSubscription<AuthUser?> _userSubscription;
 
   String? _userId;
@@ -42,7 +47,9 @@ class ProfileCubit extends Cubit<ProfileState> {
   Future<void> _load(String userId) async {
     emit(const ProfileState(status: ProfileStatus.loading));
     try {
-      final profile = await _profileRepository.getProfile(userId);
+      final profile = await _profileRepository
+          .getProfile(userId)
+          .timeout(_loadTimeout);
       if (isClosed || userId != _userId) return;
       emit(ProfileState(status: ProfileStatus.success, profile: profile));
     } on Object catch (error, stackTrace) {

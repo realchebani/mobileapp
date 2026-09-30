@@ -166,7 +166,10 @@ void main() {
       await pump(tester);
       await tester.pump();
 
-      expect(find.text('Nouveau lien envoyé.'), findsOneWidget);
+      expect(
+        find.text('Nouveau lien envoyé. Utilisez le dernier lien reçu.'),
+        findsOneWidget,
+      );
     });
 
     testWidgets('shows link failures', (tester) async {
@@ -185,6 +188,30 @@ void main() {
 
       expect(
         find.text('Ce lien a expiré ou a déjà été utilisé. Renvoyez-en un.'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('shows a new failure while already failed', (tester) async {
+      final rateLimited = sentState.copyWith(
+        status: LoginStatus.failure,
+        failureReason: () => LoginFailureReason.rateLimited,
+      );
+      whenListen(
+        loginCubit,
+        Stream.fromIterable([
+          sentState.copyWith(
+            status: LoginStatus.failure,
+            failureReason: () => LoginFailureReason.linkInvalid,
+          ),
+        ]),
+        initialState: rateLimited,
+      );
+      await pump(tester);
+      await tester.pump();
+
+      expect(
+        find.textContaining('Utilisez le dernier lien reçu.'),
         findsOneWidget,
       );
     });

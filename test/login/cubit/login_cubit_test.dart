@@ -318,6 +318,23 @@ void main() {
       ],
     );
 
+    blocTest<LoginCubit, LoginState>(
+      'reset forgets everything and stops the countdown',
+      build: buildCubit,
+      seed: () => ready,
+      act: (cubit) async {
+        cubit.submit();
+        await Future<void>.delayed(Duration.zero);
+        cubit.reset();
+        ticks.add(59);
+      },
+      expect: () => [
+        ready.copyWith(status: LoginStatus.submitting),
+        sent,
+        const LoginState(),
+      ],
+    );
+
     group('maps send failures', () {
       const reasons = {
         SendMagicLinkFailureReason.invalidEmail:
@@ -451,13 +468,17 @@ void main() {
 
     group('link failures', () {
       blocTest<LoginCubit, LoginState>(
-        'are ignored before a link was sent',
+        'are reported before a link was sent (cold start)',
         build: buildCubit,
-        seed: () => ready,
         act: (_) => linkFailures.add(
           const AuthLinkFailure(AuthLinkFailureReason.expired),
         ),
-        expect: () => const <LoginState>[],
+        expect: () => const [
+          LoginState(
+            status: LoginStatus.failure,
+            failureReason: LoginFailureReason.linkExpired,
+          ),
+        ],
       );
 
       blocTest<LoginCubit, LoginState>(

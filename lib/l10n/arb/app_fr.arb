@@ -256,7 +256,7 @@
             }
         }
     },
-    "checkInboxResent": "Nouveau lien envoyé.",
+    "checkInboxResent": "Nouveau lien envoyé. Utilisez le dernier lien reçu.",
     "@checkInboxResent": {
         "description": "Vérifiez vos e-mails (01c) : confirmation après un renvoi"
     },
@@ -284,7 +284,7 @@
     "@loginFailureLinkExpired": {
         "description": "Erreur de connexion : lien expiré ou déjà utilisé"
     },
-    "loginFailureLinkInvalid": "Ce lien n’est pas valide. Demandez un nouveau lien depuis cet iPhone et ouvrez-le ici.",
+    "loginFailureLinkInvalid": "Ce lien n’est pas valide. Demandez un nouveau lien depuis cet iPhone et ouvrez-le ici. Utilisez le dernier lien reçu.",
     "@loginFailureLinkInvalid": {
         "description": "Erreur de connexion : lien invalide ou ouvert sur un autre appareil"
     },

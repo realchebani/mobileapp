@@ -19,16 +19,9 @@ class LoginEmailPage extends StatelessWidget {
     return BlocListener<LoginCubit, LoginState>(
       listenWhen: (previous, current) =>
           current.sentTo == null &&
-          previous.status == LoginStatus.submitting &&
-          current.status == LoginStatus.failure &&
+          current.hasNewFailureSince(previous) &&
           current.failureReason != LoginFailureReason.invalidEmail,
-      listener: (context, state) => showRealestySnackBar(
-        context,
-        (state.failureReason ?? LoginFailureReason.unknown).message(
-          context.l10n,
-        ),
-        isError: true,
-      ),
+      listener: showLoginFailure,
       child: BlocListener<LoginCubit, LoginState>(
         listenWhen: (previous, current) =>
             previous.sentTo == null && current.sentTo != null,

@@ -130,6 +130,16 @@ void main() {
       await emitUser(tester, user);
       expect(find.byType(RoleView), findsOneWidget);
       expect(find.byType(CheckInboxView), findsNothing);
+
+      // Signing out forgets the e-mail and the accepted terms.
+      await emitUser(tester, null);
+      await tester.tap(find.text('Continuer avec un e-mail'));
+      await tester.pumpAndSettle();
+      expect(find.text('jane@example.com'), findsNothing);
+      expect(
+        tester.widget<RealestyCheckbox>(find.byType(RealestyCheckbox)).value,
+        isFalse,
+      );
     });
 
     testWidgets('lets a new user choose a role, then signs out', (

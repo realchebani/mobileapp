@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
@@ -14,7 +16,16 @@ class OnboardingPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return OnboardingView(
       onFinished: () async {
-        await context.read<OnboardingRepository>().markSeen();
+        try {
+          await context.read<OnboardingRepository>().markSeen();
+        } on Object catch (error, stackTrace) {
+          // Not fatal: the onboarding will just show again next time.
+          log(
+            'Could not save the onboarding flag',
+            error: error,
+            stackTrace: stackTrace,
+          );
+        }
         if (context.mounted) context.go(AppRoutes.login);
       },
     );
@@ -181,45 +192,66 @@ class _OnboardingSlide extends StatelessWidget {
   final String body;
   final Color? background;
 
+  /// Illustration height in the design.
+  static const maxIllustrationHeight = 250.0;
+
+  /// Smallest illustration height, on short screens.
+  static const minIllustrationHeight = 140.0;
+
+  /// Height kept for the title and text below the illustration.
+  static const textReserve = 270.0;
+
+  /// Illustration height for a slide [viewportHeight] high: 250 as
+  /// designed, shrunk on short screens (e.g. 375×667) so the text fits.
+  static double illustrationHeight(double viewportHeight) =>
+      (viewportHeight - textReserve).clamp(
+        minIllustrationHeight,
+        maxIllustrationHeight,
+      );
+
   @override
   Widget build(BuildContext context) {
     final c = context.realestyColors;
-    return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: RealestySpacing.gutter),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        spacing: RealestySpacing.lg,
-        children: [
-          Container(
-            height: 250,
-            alignment: Alignment.center,
-            clipBehavior: Clip.antiAlias,
-            decoration: BoxDecoration(
-              color: background ?? c.vertTeinte,
-              borderRadius: BorderRadius.circular(RealestyRadius.sheet),
+    return LayoutBuilder(
+      builder: (context, constraints) => SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: RealestySpacing.gutter),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          spacing: RealestySpacing.lg,
+          children: [
+            Container(
+              height: illustrationHeight(constraints.maxHeight),
+              alignment: Alignment.center,
+              clipBehavior: Clip.antiAlias,
+              decoration: BoxDecoration(
+                color: background ?? c.vertTeinte,
+                borderRadius: BorderRadius.circular(RealestyRadius.sheet),
+              ),
+              // Scales the illustration down with large text sizes.
+              child: FittedBox(fit: BoxFit.scaleDown, child: illustration),
             ),
-            // Scales the illustration down with large text sizes.
-            child: FittedBox(fit: BoxFit.scaleDown, child: illustration),
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            spacing: 10,
-            children: [
-              Text(
-                title,
-                style: RealestyTextStyles.title1.copyWith(
-                  height: 1.2,
-                  letterSpacing: -0.26,
-                  color: c.encre,
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              spacing: 10,
+              children: [
+                Text(
+                  title,
+                  style: RealestyTextStyles.title1.copyWith(
+                    height: 1.2,
+                    letterSpacing: -0.26,
+                    color: c.encre,
+                  ),
                 ),
-              ),
-              Text(
-                body,
-                style: RealestyTextStyles.body.copyWith(color: c.texteDiscret),
-              ),
-            ],
-          ),
-        ],
+                Text(
+                  body,
+                  style: RealestyTextStyles.body.copyWith(
+                    color: c.texteDiscret,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

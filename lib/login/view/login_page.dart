@@ -6,20 +6,64 @@ import 'package:material_ui/material_ui.dart';
 import 'package:mobileapp/app/app.dart';
 import 'package:mobileapp/l10n/l10n.dart';
 import 'package:mobileapp/login/cubit/login_cubit.dart';
+import 'package:mobileapp/login/view/login_failure_message.dart';
 import 'package:mobileapp/ui/ui.dart';
 import 'package:mobileapp/widgets/widgets.dart';
 
 /// 01 · Connexion. In v1, only the e-mail (magic link) sign-in is offered;
 /// the terms are accepted on the next screen, before the link is sent.
-class LoginPage extends StatelessWidget {
+///
+/// Also reports magic link failures that happen here, e.g. when the app is
+/// cold-started from an expired link.
+class LoginPage extends StatefulWidget {
   const new({super.key});
 
   @override
-  Widget build(BuildContext context) => const LoginView();
+  State<LoginPage> createState() => _LoginPageState();
 }
 
-class LoginView extends StatelessWidget {
+class _LoginPageState extends State<LoginPage> {
+  @override
+  void initState() {
+    super.initState();
+    // The failure may have been reported before this screen was shown
+    // (splash, redirect).
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final state = context.read<LoginCubit>().state;
+      if (state.isLinkFailure) showLoginFailure(context, state);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocListener<LoginCubit, LoginState>(
+      listenWhen: (previous, current) =>
+          current.isLinkFailure && current.hasNewFailureSince(previous),
+      listener: showLoginFailure,
+      child: const LoginView(),
+    );
+  }
+}
+
+class LoginView extends StatefulWidget {
   const new({super.key});
+
+  @override
+  State<LoginView> createState() => _LoginViewState();
+}
+
+class _LoginViewState extends State<LoginView> {
+  /// Set while the e-mail screen is open, so a double tap opens it once.
+  bool _openingEmail = false;
+
+  Future<void> _openEmailLogin() async {
+    if (_openingEmail) return;
+    _openingEmail = true;
+    context.read<LoginCubit>().editEmail();
+    await context.push(AppRoutes.loginEmail);
+    _openingEmail = false;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -60,10 +104,7 @@ class LoginView extends StatelessWidget {
                 RealestyButton(
                   label: l10n.loginEmailButton,
                   leadingIcon: RealestyIcons.mail,
-                  onPressed: () {
-                    context.read<LoginCubit>().editEmail();
-                    unawaited(context.push(AppRoutes.loginEmail));
-                  },
+                  onPressed: () => unawaited(_openEmailLogin()),
                 ),
               ],
             ),

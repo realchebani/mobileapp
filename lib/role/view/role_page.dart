@@ -132,7 +132,7 @@ class RoleCard extends StatelessWidget {
         padding: const EdgeInsets.all(RealestySpacing.lg),
         decoration: BoxDecoration(
           color: dark ? c.encre : c.surface,
-          borderRadius: BorderRadius.circular(RealestySpacing.lg),
+          borderRadius: BorderRadius.circular(RealestyRadius.bubble),
           border: Border.all(color: dark ? c.encre : c.bordureCarte),
         ),
         child: Column(

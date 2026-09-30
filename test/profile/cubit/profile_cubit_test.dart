@@ -92,6 +92,29 @@ void main() {
     );
 
     blocTest<ProfileCubit, ProfileState>(
+      'emits failure when loading times out',
+      setUp: () =>
+          when(() => profileRepository.getProfile(any()))
+              .thenAnswer((_) => Completer<Profile>().future),
+      build: () => ProfileCubit(
+        authRepository: authRepository,
+        profileRepository: profileRepository,
+        loadTimeout: const Duration(milliseconds: 10),
+      ),
+      act: (_) => userController.add(user),
+      wait: const Duration(milliseconds: 50),
+      expect: () => const [
+        ProfileState(status: ProfileStatus.loading),
+        ProfileState(status: ProfileStatus.failure),
+      ],
+      errors: () => [isA<TimeoutException>()],
+    );
+
+    test('times out after 15 seconds by default', () {
+      expect(ProfileCubit.defaultLoadTimeout, const Duration(seconds: 15));
+    });
+
+    blocTest<ProfileCubit, ProfileState>(
       'drops a stale profile when the user changed meanwhile',
       setUp: () {
         final pending = Completer<Profile>();

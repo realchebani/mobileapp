@@ -112,12 +112,19 @@ class _AppViewState extends State<AppView> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp.router(
-      title: 'Realesty',
-      theme: realestyTheme(),
-      localizationsDelegates: appLocalizationsDelegates,
-      supportedLocales: AppLocalizations.supportedLocales,
-      routerConfig: _router,
+    // Forgets the e-mail and the accepted terms on sign-out.
+    return BlocListener<AppBloc, AppState>(
+      listenWhen: (previous, current) =>
+          previous.status == AppStatus.authenticated &&
+          current.status == AppStatus.unauthenticated,
+      listener: (context, _) => context.read<LoginCubit>().reset(),
+      child: MaterialApp.router(
+        title: 'Realesty',
+        theme: realestyTheme(),
+        localizationsDelegates: appLocalizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        routerConfig: _router,
+      ),
     );
   }
 }

@@ -37,6 +37,22 @@ void main() {
       verify(() => goRouter.go(AppRoutes.login)).called(1);
     });
 
+    testWidgets('still goes to the login when saving the flag fails', (
+      tester,
+    ) async {
+      when(onboardingRepository.markSeen).thenThrow(Exception('disk full'));
+      await tester.pumpApp(
+        const OnboardingPage(),
+        onboardingRepository: onboardingRepository,
+        goRouter: goRouter,
+      );
+
+      await tester.tap(find.text('Passer'));
+      await tester.pump();
+
+      verify(() => goRouter.go(AppRoutes.login)).called(1);
+    });
+
     testWidgets('does not navigate once unmounted', (tester) async {
       final seen = Completer<void>();
       when(onboardingRepository.markSeen).thenAnswer((_) => seen.future);
@@ -85,6 +101,30 @@ void main() {
 
       await tester.tap(find.text('Commencer'));
       expect(finished, 1);
+    });
+
+    testWidgets('fits the slide text on a 375×667 screen', (tester) async {
+      final view = tester.view
+        ..physicalSize = const Size(375, 647)
+        ..devicePixelRatio = 1;
+      addTearDown(view.reset);
+      await tester.pumpApp(OnboardingView(onFinished: () {}));
+
+      for (var page = 0; page < OnboardingView.pageCount; page++) {
+        final scrollable = tester.state<ScrollableState>(
+          find
+              .descendant(
+                of: find.byType(PageView),
+                matching: find.byType(Scrollable),
+              )
+              .at(1),
+        );
+        expect(scrollable.position.maxScrollExtent, 0, reason: 'page $page');
+        if (page < OnboardingView.pageCount - 1) {
+          await tester.tap(find.text('Suivant'));
+          await tester.pumpAndSettle();
+        }
+      }
     });
 
     testWidgets('jumps to a page from its dot', (tester) async {
