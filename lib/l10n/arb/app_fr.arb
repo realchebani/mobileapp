@@ -1,0 +1,368 @@
+{
+    "@@locale": "fr",
+    "backButtonLabel": "Retour",
+    "@backButtonLabel": {
+        "description": "Libellé d’accessibilité du bouton retour"
+    },
+    "comingSoon": "Bientôt disponible",
+    "@comingSoon": {
+        "description": "Message affiché pour une fonctionnalité pas encore disponible"
+    },
+    "logoutButton": "Se déconnecter",
+    "@logoutButton": {
+        "description": "Bouton de déconnexion"
+    },
+    "retryButton": "Réessayer",
+    "@retryButton": {
+        "description": "Bouton pour réessayer une action qui a échoué"
+    },
+    "splashTaglineLine1": "Vendez votre maison,",
+    "@splashTaglineLine1": {
+        "description": "Splash (00) : 1re ligne du slogan"
+    },
+    "splashTaglineLine2": "pas vos économies.",
+    "@splashTaglineLine2": {
+        "description": "Splash (00) : 2e ligne du slogan, en vert"
+    },
+    "splashFooter": "L’immobilier sécurisé à 1 %",
+    "@splashFooter": {
+        "description": "Splash (00) : texte sous la barre de progression"
+    },
+    "splashProfileError": "Impossible de charger votre profil.",
+    "@splashProfileError": {
+        "description": "Splash : le profil de l’utilisateur n’a pas pu être chargé"
+    },
+    "onboardingSkip": "Passer",
+    "@onboardingSkip": {
+        "description": "Découvrir (00b) : lien pour passer l’introduction"
+    },
+    "onboardingNext": "Suivant",
+    "@onboardingNext": {
+        "description": "Découvrir (00b) : bouton page suivante"
+    },
+    "onboardingStart": "Commencer",
+    "@onboardingStart": {
+        "description": "Découvrir (00b) : bouton de la dernière page"
+    },
+    "onboardingHaveAccount": "J’ai déjà un compte",
+    "@onboardingHaveAccount": {
+        "description": "Découvrir (00b) : lien vers la connexion"
+    },
+    "onboardingDotLabel": "Écran {index}",
+    "@onboardingDotLabel": {
+        "description": "Découvrir (00b) : libellé d’accessibilité d’un point de pagination",
+        "placeholders": {
+            "index": {
+                "type": "int"
+            }
+        }
+    },
+    "onboarding1Title": "Vendez sans payer 5 % d’honoraires",
+    "@onboarding1Title": {
+        "description": "Découvrir (00b) page 1 : titre"
+    },
+    "onboarding1Body": "Realesty vous accompagne pour 1 % du prix, et vous ne payez que si votre bien est vendu.",
+    "@onboarding1Body": {
+        "description": "Découvrir (00b) page 1 : texte"
+    },
+    "onboarding1CardCaption": "Pour une maison vendue 525 000 €",
+    "@onboarding1CardCaption": {
+        "description": "Découvrir (00b) page 1 : légende de la carte de comparaison"
+    },
+    "onboarding1AgencyLabel": "Agence classique · 5 %",
+    "@onboarding1AgencyLabel": {
+        "description": "Découvrir (00b) page 1 : barre agence classique"
+    },
+    "onboarding1AgencyAmount": "26 250 €",
+    "@onboarding1AgencyAmount": {
+        "description": "Découvrir (00b) page 1 : montant agence classique"
+    },
+    "onboarding1RealestyLabel": "Realesty · 1 %",
+    "@onboarding1RealestyLabel": {
+        "description": "Découvrir (00b) page 1 : barre Realesty"
+    },
+    "onboarding1RealestyAmount": "5 250 €",
+    "@onboarding1RealestyAmount": {
+        "description": "Découvrir (00b) page 1 : montant Realesty"
+    },
+    "onboarding1Savings": "≈ 21 000 € économisés",
+    "@onboarding1Savings": {
+        "description": "Découvrir (00b) page 1 : badge d’économies"
+    },
+    "onboarding2Title": "Votre dossier monté par l’IA, validé par un expert",
+    "@onboarding2Title": {
+        "description": "Découvrir (00b) page 2 : titre"
+    },
+    "onboarding2Body": "Répondez à la voix, scannez vos pièces, déposez vos documents : l’agent Realesty prépare tout et un expert certifie la valeur de votre bien.",
+    "@onboarding2Body": {
+        "description": "Découvrir (00b) page 2 : texte"
+    },
+    "onboarding2Speak": "Parlez",
+    "@onboarding2Speak": {
+        "description": "Découvrir (00b) page 2 : puce voix"
+    },
+    "onboarding2Scan": "Scannez",
+    "@onboarding2Scan": {
+        "description": "Découvrir (00b) page 2 : puce scan"
+    },
+    "onboarding2Upload": "Déposez",
+    "@onboarding2Upload": {
+        "description": "Découvrir (00b) page 2 : puce dépôt de documents"
+    },
+    "onboarding2Certified": "Avis de valeur certifié sous 24 h",
+    "@onboarding2Certified": {
+        "description": "Découvrir (00b) page 2 : badge avis de valeur"
+    },
+    "onboarding3Title": "Seulement des visiteurs sérieux",
+    "@onboarding3Title": {
+        "description": "Découvrir (00b) page 3 : titre"
+    },
+    "onboarding3Body": "Chaque acheteur obtient un Pass Visite : identité, financement et projet vérifiés avant de pouvoir visiter.",
+    "@onboarding3Body": {
+        "description": "Découvrir (00b) page 3 : texte"
+    },
+    "onboarding3PassTitle": "Pass Visite",
+    "@onboarding3PassTitle": {
+        "description": "Découvrir (00b) page 3 : titre de la carte Pass Visite"
+    },
+    "onboarding3Identity": "Identité vérifiée",
+    "@onboarding3Identity": {
+        "description": "Découvrir (00b) page 3 : ligne de la carte"
+    },
+    "onboarding3Financing": "Financement validé",
+    "@onboarding3Financing": {
+        "description": "Découvrir (00b) page 3 : ligne de la carte"
+    },
+    "onboarding3Project": "Projet qualifié",
+    "@onboarding3Project": {
+        "description": "Découvrir (00b) page 3 : ligne de la carte"
+    },
+    "onboarding4Title": "Acheteurs : trouvez la maison qui colle à votre vie",
+    "@onboarding4Title": {
+        "description": "Découvrir (00b) page 4 : titre"
+    },
+    "onboarding4Body": "Décrivez votre quotidien, l’IA calcule un score de compatibilité et vous donne accès aux dossiers vérifiés.",
+    "@onboarding4Body": {
+        "description": "Découvrir (00b) page 4 : texte"
+    },
+    "onboarding4ImageLabel": "Maison",
+    "@onboarding4ImageLabel": {
+        "description": "Découvrir (00b) page 4 : libellé d’accessibilité de l’image de maison"
+    },
+    "onboarding4Compatibility": "94 % compatible",
+    "@onboarding4Compatibility": {
+        "description": "Découvrir (00b) page 4 : badge de compatibilité"
+    },
+    "onboarding4Garage": "Garage atelier",
+    "@onboarding4Garage": {
+        "description": "Découvrir (00b) page 4 : puce critère"
+    },
+    "onboarding4School": "École à 4 min",
+    "@onboarding4School": {
+        "description": "Découvrir (00b) page 4 : puce critère"
+    },
+    "loginTitle": "Bienvenue",
+    "@loginTitle": {
+        "description": "Connexion (01) : titre"
+    },
+    "loginSubtitle": "Vendez ou achetez avec un dossier audité par l’IA et validé par un expert immobilier.",
+    "@loginSubtitle": {
+        "description": "Connexion (01) : sous-titre"
+    },
+    "loginEmailButton": "Continuer avec un e-mail",
+    "@loginEmailButton": {
+        "description": "Connexion (01) : bouton vers la connexion par e-mail"
+    },
+    "loginEmailTitle": "Connexion par e-mail",
+    "@loginEmailTitle": {
+        "description": "Connexion par e-mail (01b) : titre"
+    },
+    "loginEmailSubtitle": "Saisissez votre adresse : nous vous envoyons un lien de connexion sécurisé. Aucun mot de passe à retenir.",
+    "@loginEmailSubtitle": {
+        "description": "Connexion par e-mail (01b) : texte"
+    },
+    "loginEmailLabel": "Adresse e-mail",
+    "@loginEmailLabel": {
+        "description": "Connexion par e-mail (01b) : libellé du champ"
+    },
+    "loginEmailHint": "vous@exemple.fr",
+    "@loginEmailHint": {
+        "description": "Connexion par e-mail (01b) : exemple dans le champ"
+    },
+    "loginEmailInvalid": "Saisissez une adresse e-mail valide.",
+    "@loginEmailInvalid": {
+        "description": "Connexion par e-mail (01b) : erreur de format de l’e-mail"
+    },
+    "loginTermsPrefix": "J’accepte les ",
+    "@loginTermsPrefix": {
+        "description": "Case CGU (01b) : texte avant le lien des conditions"
+    },
+    "loginTermsLink": "conditions d’utilisation",
+    "@loginTermsLink": {
+        "description": "Case CGU (01b) : lien vers les conditions d’utilisation"
+    },
+    "loginTermsMiddle": " et la ",
+    "@loginTermsMiddle": {
+        "description": "Case CGU (01b) : texte entre les deux liens"
+    },
+    "loginPrivacyLink": "politique de confidentialité",
+    "@loginPrivacyLink": {
+        "description": "Case CGU (01b) : lien vers la politique de confidentialité"
+    },
+    "loginTermsSuffix": ".",
+    "@loginTermsSuffix": {
+        "description": "Case CGU (01b) : texte après le dernier lien"
+    },
+    "loginEmailSubmit": "Recevoir mon lien de connexion",
+    "@loginEmailSubmit": {
+        "description": "Connexion par e-mail (01b) : bouton d’envoi du lien"
+    },
+    "checkInboxTitle": "Vérifiez vos e-mails",
+    "@checkInboxTitle": {
+        "description": "Vérifiez vos e-mails (01c) : titre"
+    },
+    "checkInboxBody": "Nous avons envoyé un lien de connexion à {email}. Ouvrez-le sur cet iPhone pour vous connecter.",
+    "@checkInboxBody": {
+        "description": "Vérifiez vos e-mails (01c) : texte ; l’adresse est affichée en gras",
+        "placeholders": {
+            "email": {
+                "type": "String"
+            }
+        }
+    },
+    "checkInboxInfo": "Le lien expire dans 1 heure. Pensez à vérifier vos courriers indésirables.",
+    "@checkInboxInfo": {
+        "description": "Vérifiez vos e-mails (01c) : bandeau d’information"
+    },
+    "checkInboxOpenMail": "Ouvrir Mail",
+    "@checkInboxOpenMail": {
+        "description": "Vérifiez vos e-mails (01c) : bouton pour ouvrir l’app Mail"
+    },
+    "checkInboxOpenMailError": "Impossible d’ouvrir l’app Mail.",
+    "@checkInboxOpenMailError": {
+        "description": "Vérifiez vos e-mails (01c) : l’app Mail n’a pas pu être ouverte"
+    },
+    "checkInboxResend": "Renvoyer le lien",
+    "@checkInboxResend": {
+        "description": "Vérifiez vos e-mails (01c) : bouton de renvoi du lien"
+    },
+    "checkInboxResendCountdown": "Renvoi possible dans {time}",
+    "@checkInboxResendCountdown": {
+        "description": "Vérifiez vos e-mails (01c) : délai avant de pouvoir renvoyer le lien, ex. 0:42",
+        "placeholders": {
+            "time": {
+                "type": "String",
+                "example": "0:42"
+            }
+        }
+    },
+    "checkInboxResent": "Nouveau lien envoyé.",
+    "@checkInboxResent": {
+        "description": "Vérifiez vos e-mails (01c) : confirmation après un renvoi"
+    },
+    "checkInboxChangeEmail": "Changer d’adresse e-mail",
+    "@checkInboxChangeEmail": {
+        "description": "Vérifiez vos e-mails (01c) : bouton pour changer d’adresse"
+    },
+    "loginFailureInvalidEmail": "Cette adresse e-mail n’est pas valide.",
+    "@loginFailureInvalidEmail": {
+        "description": "Erreur de connexion : adresse refusée par le serveur"
+    },
+    "loginFailureNotAuthorized": "Cette adresse n’est pas autorisée pour le moment (version de test).",
+    "@loginFailureNotAuthorized": {
+        "description": "Erreur de connexion : adresse non autorisée (fournisseur d’e-mails de test)"
+    },
+    "loginFailureRateLimited": "Trop d’envois récents. Patientez quelques minutes avant de réessayer.",
+    "@loginFailureRateLimited": {
+        "description": "Erreur de connexion : trop d’envois"
+    },
+    "loginFailureNetwork": "Connexion impossible. Vérifiez votre accès à Internet et réessayez.",
+    "@loginFailureNetwork": {
+        "description": "Erreur de connexion : réseau"
+    },
+    "loginFailureLinkExpired": "Ce lien a expiré ou a déjà été utilisé. Renvoyez-en un.",
+    "@loginFailureLinkExpired": {
+        "description": "Erreur de connexion : lien expiré ou déjà utilisé"
+    },
+    "loginFailureLinkInvalid": "Ce lien n’est pas valide. Demandez un nouveau lien depuis cet iPhone et ouvrez-le ici.",
+    "@loginFailureLinkInvalid": {
+        "description": "Erreur de connexion : lien invalide ou ouvert sur un autre appareil"
+    },
+    "loginFailureUnknown": "Une erreur est survenue. Réessayez.",
+    "@loginFailureUnknown": {
+        "description": "Erreur de connexion : autre erreur"
+    },
+    "agentName": "Agent Realesty",
+    "@agentName": {
+        "description": "Nom de l’agent conversationnel"
+    },
+    "roleGreeting": "Bonjour ! Que souhaitez-vous faire aujourd’hui : vendre un bien ou rechercher un bien à acheter ?",
+    "@roleGreeting": {
+        "description": "Rôle (02) : message de l’agent, sans prénom"
+    },
+    "roleGreetingNamed": "Bonjour {firstName} ! Que souhaitez-vous faire aujourd’hui : vendre un bien ou rechercher un bien à acheter ?",
+    "@roleGreetingNamed": {
+        "description": "Rôle (02) : message de l’agent, avec le prénom",
+        "placeholders": {
+            "firstName": {
+                "type": "String"
+            }
+        }
+    },
+    "roleSellerTitle": "Je souhaite vendre",
+    "@roleSellerTitle": {
+        "description": "Rôle (02) : titre de la carte vendeur"
+    },
+    "roleSellerSubtitle": "Audit IA de votre bien et avis de valeur validé sous 24 h.",
+    "@roleSellerSubtitle": {
+        "description": "Rôle (02) : texte de la carte vendeur"
+    },
+    "roleSellerFeature1": "Estimation guidée à la voix",
+    "@roleSellerFeature1": {
+        "description": "Rôle (02) : atout de la carte vendeur"
+    },
+    "roleSellerFeature2": "Vente dès 1 % au succès",
+    "@roleSellerFeature2": {
+        "description": "Rôle (02) : atout de la carte vendeur"
+    },
+    "roleBuyerTitle": "Je souhaite acheter",
+    "@roleBuyerTitle": {
+        "description": "Rôle (02) : titre de la carte acheteur"
+    },
+    "roleBuyerSubtitle": "Des biens compatibles avec votre façon de vivre.",
+    "@roleBuyerSubtitle": {
+        "description": "Rôle (02) : texte de la carte acheteur"
+    },
+    "roleBuyerFeature1": "Portrait lifestyle et Matching Score",
+    "@roleBuyerFeature1": {
+        "description": "Rôle (02) : atout de la carte acheteur"
+    },
+    "roleBuyerFeature2": "Pass Visite : visites prioritaires",
+    "@roleBuyerFeature2": {
+        "description": "Rôle (02) : atout de la carte acheteur"
+    },
+    "roleSwitchHint": "Vous pourrez basculer entre vos espaces vendeur et acheteur à tout moment.",
+    "@roleSwitchHint": {
+        "description": "Rôle (02) : aide sous les cartes"
+    },
+    "roleSaveError": "Impossible d’enregistrer votre choix. Réessayez.",
+    "@roleSaveError": {
+        "description": "Rôle (02) : le rôle n’a pas pu être enregistré"
+    },
+    "homeSellerTitle": "Bienvenue dans votre espace vendeur",
+    "@homeSellerTitle": {
+        "description": "Espace vendeur (écran d’attente) : titre"
+    },
+    "homeBuyerTitle": "Bienvenue dans votre espace acheteur",
+    "@homeBuyerTitle": {
+        "description": "Espace acheteur (écran d’attente) : titre"
+    },
+    "homeComingSoon": "Le parcours arrive bientôt.",
+    "@homeComingSoon": {
+        "description": "Espaces vendeur / acheteur (écran d’attente) : texte"
+    },
+    "homeDesignSystem": "Design system",
+    "@homeDesignSystem": {
+        "description": "Lien vers la galerie du design system (flavor development uniquement)"
+    }
+}
