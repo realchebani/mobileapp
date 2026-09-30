@@ -26,7 +26,10 @@
     "Texto",
     "Hola",
     "Mundo",
-    "Saludo"
+    "Saludo",
+    "Mobileapp",
+    "mobileapp",
+    "Realesty"
   ],
   "ignorePaths": [
     "**/docs/**",
