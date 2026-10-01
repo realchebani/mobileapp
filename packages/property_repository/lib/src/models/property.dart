@@ -62,6 +62,7 @@ abstract final class PropertyColumns {
   static const aiEstimateMedianEur = 'ai_estimate_median_eur';
   static const aiEstimateHighEur = 'ai_estimate_high_eur';
   static const aiEstimateComputedAt = 'ai_estimate_computed_at';
+  static const aiEstimateConfidence = 'ai_estimate_confidence';
   static const createdAt = 'created_at';
   static const updatedAt = 'updated_at';
 }
@@ -130,6 +131,7 @@ class Property extends Equatable {
     this.aiEstimateMedianEur,
     this.aiEstimateHighEur,
     this.aiEstimateComputedAt,
+    this.aiEstimateConfidence,
     this.createdAt,
     this.updatedAt,
   });
@@ -234,6 +236,7 @@ class Property extends Equatable {
       aiEstimateComputedAt: readDateTime(
         json[PropertyColumns.aiEstimateComputedAt],
       ),
+      aiEstimateConfidence: readInt(json[PropertyColumns.aiEstimateConfidence]),
       createdAt: readDateTime(json[PropertyColumns.createdAt]),
       updatedAt: readDateTime(json[PropertyColumns.updatedAt]),
     );
@@ -318,6 +321,9 @@ class Property extends Equatable {
   final int? aiEstimateMedianEur;
   final int? aiEstimateHighEur;
   final DateTime? aiEstimateComputedAt;
+
+  /// Confidence index (0–100) of the non-certified estimate.
+  final int? aiEstimateConfidence;
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
@@ -398,6 +404,7 @@ class Property extends Equatable {
       PropertyColumns.aiEstimateMedianEur: aiEstimateMedianEur,
       PropertyColumns.aiEstimateHighEur: aiEstimateHighEur,
       PropertyColumns.aiEstimateComputedAt: encodeDbValue(aiEstimateComputedAt),
+      PropertyColumns.aiEstimateConfidence: aiEstimateConfidence,
       PropertyColumns.createdAt: encodeDbValue(createdAt),
       PropertyColumns.updatedAt: encodeDbValue(updatedAt),
     };
@@ -462,6 +469,7 @@ class Property extends Equatable {
     aiEstimateMedianEur,
     aiEstimateHighEur,
     aiEstimateComputedAt,
+    aiEstimateConfidence,
     createdAt,
     updatedAt,
   ];

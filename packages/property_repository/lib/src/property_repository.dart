@@ -67,6 +67,14 @@ final class DocumentUploadFailure extends PropertyFailure {
   String get _name => 'DocumentUploadFailure';
 }
 
+/// Thrown when asking the backend for the non-certified estimate fails.
+final class EstimateRequestFailure extends PropertyFailure {
+  const new([super.error]);
+
+  @override
+  String get _name => 'EstimateRequestFailure';
+}
+
 /// {@template property_repository}
 /// Reads and writes seller dossiers: the `properties` table, its child
 /// tables and the private `property-documents` Storage bucket.
@@ -424,6 +432,54 @@ class PropertyRepository {
           .createSignedUrl(storagePath, expiresIn.inSeconds);
     } on Object catch (error, stackTrace) {
       Error.throwWithStackTrace(PropertyLoadFailure(error), stackTrace);
+    }
+  }
+
+  // ---------------------------------------------------------------------
+  // Non-certified estimate (EPIC-05).
+  // ---------------------------------------------------------------------
+
+  static const _marketSnapshots = 'market_snapshots';
+
+  /// Name of the Edge Function computing the estimate.
+  static const estimateFunction = 'estimate-property';
+
+  /// The estimate of property [propertyId]: its definitive result when
+  /// there is one, else the latest attempt (running or failed), else null.
+  ///
+  /// Throws [PropertyLoadFailure] on error.
+  Future<MarketSnapshot?> getMarketSnapshot(String propertyId) async {
+    try {
+      final rows = await _client
+          .from(_marketSnapshots)
+          .select()
+          .eq('property_id', propertyId)
+          .order('created_at')
+          .limit(10);
+      final snapshots = rows.map(MarketSnapshot.fromJson).toList();
+      for (final snapshot in snapshots) {
+        if (snapshot.isFinal) return snapshot;
+      }
+      return snapshots.firstOrNull;
+    } on Object catch (error, stackTrace) {
+      Error.throwWithStackTrace(PropertyLoadFailure(error), stackTrace);
+    }
+  }
+
+  /// Asks the backend to compute the estimate of the sent dossier
+  /// [propertyId]. Idempotent: an existing result is never recomputed, and
+  /// the computation goes on in the background (read it with
+  /// [getMarketSnapshot]).
+  ///
+  /// Throws [EstimateRequestFailure] on error.
+  Future<void> requestEstimate(String propertyId) async {
+    try {
+      await _client.functions.invoke(
+        estimateFunction,
+        body: {'property_id': propertyId},
+      );
+    } on Object catch (error, stackTrace) {
+      Error.throwWithStackTrace(EstimateRequestFailure(error), stackTrace);
     }
   }
 

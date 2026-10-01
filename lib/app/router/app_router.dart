@@ -72,6 +72,13 @@ GoRouter createAppRouter({
             builder: (context, state) =>
                 SellerHomePage(showDesignSystemLink: enableDesignSystem),
             routes: [
+              // V8b · Synthèse du marché (EPIC-05), opened from V8.
+              GoRoute(
+                path: AppRoutes.sellerMarket.substring(
+                  AppRoutes.seller.length + 1,
+                ),
+                builder: (context, state) => const MarketSynthesisPage(),
+              ),
               for (final (path, page) in _sellerTunnelPages)
                 GoRoute(
                   path: path.substring(AppRoutes.seller.length + 1),

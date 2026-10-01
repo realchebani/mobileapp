@@ -52,6 +52,9 @@ abstract final class AppRoutes {
   /// V8 · Dossier envoyé, attente de l’expert.
   static const sellerSubmitted = '/vendeur/audit/envoye';
 
+  /// V8b · Synthèse du marché (non-certified estimate, EPIC-05).
+  static const sellerMarket = '/vendeur/marche';
+
   /// Buyer space (placeholder).
   static const buyer = '/acheteur';
 

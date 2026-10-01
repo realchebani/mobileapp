@@ -1975,9 +1975,9 @@
   "@submittedAiLabel": {
     "description": "V8 · légende de la carte d’estimation IA"
   },
-  "submittedAiBadge": "Indicative",
+  "submittedAiBadge": "Non certifiée",
   "@submittedAiBadge": {
-    "description": "V8 · badge de l’estimation IA"
+    "description": "Badge de la carte Tendance IA (V8) : l’estimation n’est pas certifiée"
   },
   "submittedAiRange": "{low} – {high} €",
   "@submittedAiRange": {
@@ -2009,18 +2009,18 @@
       }
     }
   },
-  "submittedAiComputed": "Calculée le {date} à partir de vos réponses, documents et références de marché. Non validée par un professionnel.",
+  "submittedAiComputed": "Calculée le {date} à partir des ventes notariées (DVF) de votre secteur. Non certifiée : votre expert établira la valeur.",
   "@submittedAiComputed": {
-    "description": "V8 · note sous l’estimation IA (date jj/mm/aaaa)",
+    "description": "Date de calcul de la tendance IA (V8)",
     "placeholders": {
       "date": {
         "type": "String"
       }
     }
   },
-  "submittedAiComputedNoDate": "Calculée à partir de vos réponses, documents et références de marché. Non validée par un professionnel.",
+  "submittedAiComputedNoDate": "Calculée à partir des ventes notariées (DVF) de votre secteur. Non certifiée : votre expert établira la valeur.",
   "@submittedAiComputedNoDate": {
-    "description": "V8 · note sous l’estimation IA sans date de calcul"
+    "description": "Mention de la tendance IA sans date (V8)"
   },
   "submittedStepComplete": "Dossier complet",
   "@submittedStepComplete": {
@@ -2870,5 +2870,313 @@
         "type": "int"
       }
     }
+  },
+  "submittedAiConfidenceHigh": "Fiabilité : élevée",
+  "@submittedAiConfidenceHigh": {
+    "description": "Indice de confiance élevé de la tendance IA"
+  },
+  "submittedAiConfidenceMedium": "Fiabilité : moyenne",
+  "@submittedAiConfidenceMedium": {
+    "description": "Indice de confiance moyen de la tendance IA"
+  },
+  "submittedAiConfidenceLow": "Fiabilité : faible",
+  "@submittedAiConfidenceLow": {
+    "description": "Indice de confiance faible de la tendance IA"
+  },
+  "submittedAiSynthesis": "Voir la synthèse du marché",
+  "@submittedAiSynthesis": {
+    "description": "Bouton de la carte Tendance IA vers V8b"
+  },
+  "submittedAiComputing": "Calcul de votre tendance de prix…",
+  "@submittedAiComputing": {
+    "description": "Carte Tendance IA pendant le calcul"
+  },
+  "submittedAiTooFewSales": "Trop peu de ventes comparables près de chez vous pour une tendance fiable : l’expert s’en charge dans votre avis de valeur.",
+  "@submittedAiTooFewSales": {
+    "description": "Carte Tendance IA quand il y a moins de 5 ventes comparables"
+  },
+  "submittedAiUnavailable": "Pas de tendance automatique pour ce bien : l’expert s’en charge dans votre avis de valeur.",
+  "@submittedAiUnavailable": {
+    "description": "Carte Tendance IA quand le bien ne permet pas d’estimation (terrain, surface manquante…)"
+  },
+  "submittedAiFailed": "Votre tendance de prix n’a pas pu être calculée.",
+  "@submittedAiFailed": {
+    "description": "Carte Tendance IA quand le calcul a échoué"
+  },
+  "marketTitle": "Synthèse du marché",
+  "@marketTitle": {
+    "description": "Titre de l’écran V8b"
+  },
+  "marketBadge": "Non certifiée",
+  "@marketBadge": {
+    "description": "Badge de V8b : chiffres non certifiés"
+  },
+  "marketComputedOn": "Calculée le {date}",
+  "@marketComputedOn": {
+    "description": "Badge de date de calcul (V8b)",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "marketHeading": "Votre bien face au marché",
+  "@marketHeading": {
+    "description": "Titre de V8b"
+  },
+  "marketTypeHouse": "Maison",
+  "@marketTypeHouse": {
+    "description": "Type de bien maison (V8b)"
+  },
+  "marketTypeApartment": "Appartement",
+  "@marketTypeApartment": {
+    "description": "Type de bien appartement (V8b)"
+  },
+  "marketSummary": "{type} {area} m² · {city} · tendance IA {median} €, soit environ {perM2} €/m².",
+  "@marketSummary": {
+    "description": "Phrase de synthèse de V8b",
+    "placeholders": {
+      "type": {
+        "type": "String"
+      },
+      "area": {
+        "type": "String"
+      },
+      "city": {
+        "type": "String"
+      },
+      "median": {
+        "type": "String"
+      },
+      "perM2": {
+        "type": "String"
+      }
+    }
+  },
+  "marketSectorTitle": "Prix au m² dans votre secteur",
+  "@marketSectorTitle": {
+    "description": "Titre de la carte des prix au m² (V8b)"
+  },
+  "marketPriceM2": "{value} €/m²",
+  "@marketPriceM2": {
+    "description": "Prix au m²",
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "marketSectorMedian": "Médiane secteur {value} €/m²",
+  "@marketSectorMedian": {
+    "description": "Médiane du secteur (V8b)",
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "marketBandSemantics": "Prix au m² du secteur de {low} à {high} €, médiane {median} €. Votre bien : {own} €/m².",
+  "@marketBandSemantics": {
+    "description": "Lecture vocale de la bande de prix (V8b)",
+    "placeholders": {
+      "low": {
+        "type": "String"
+      },
+      "high": {
+        "type": "String"
+      },
+      "median": {
+        "type": "String"
+      },
+      "own": {
+        "type": "String"
+      }
+    }
+  },
+  "marketBasisRadius": "{count} ventes comparables · rayon de {distance} · {years} ans",
+  "@marketBasisRadius": {
+    "description": "Base de calcul : nombre de ventes, rayon, période (V8b)",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "distance": {
+        "type": "String"
+      },
+      "years": {
+        "type": "int"
+      }
+    }
+  },
+  "marketBasisCommune": "{count} ventes comparables · {city} · {years} ans",
+  "@marketBasisCommune": {
+    "description": "Base de calcul : nombre de ventes, commune, période (V8b)",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "city": {
+        "type": "String"
+      },
+      "years": {
+        "type": "int"
+      }
+    }
+  },
+  "marketSales12m": "Ventes sur 12 mois",
+  "@marketSales12m": {
+    "description": "Tuile du nombre de ventes (V8b)"
+  },
+  "marketYoy": "Évolution des prix sur 1 an",
+  "@marketYoy": {
+    "description": "Tuile de l’évolution des prix (V8b)"
+  },
+  "marketPercent": "{value} %",
+  "@marketPercent": {
+    "description": "Pourcentage",
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "marketComparablesTitle": "Ventes comparables récentes",
+  "@marketComparablesTitle": {
+    "description": "Titre de la liste des ventes (V8b)"
+  },
+  "marketComparableTitle": "{type} {area} m² · {rooms} p.",
+  "@marketComparableTitle": {
+    "description": "Vente comparable : type, surface, pièces",
+    "placeholders": {
+      "type": {
+        "type": "String"
+      },
+      "area": {
+        "type": "String"
+      },
+      "rooms": {
+        "type": "int"
+      }
+    }
+  },
+  "marketComparableTitleNoRooms": "{type} {area} m²",
+  "@marketComparableTitleNoRooms": {
+    "description": "Vente comparable : type et surface",
+    "placeholders": {
+      "type": {
+        "type": "String"
+      },
+      "area": {
+        "type": "String"
+      }
+    }
+  },
+  "marketComparableNearby": "Secteur proche",
+  "@marketComparableNearby": {
+    "description": "Lieu d’une vente quand sa rue n’est pas affichée (moins de 3 ventes)"
+  },
+  "marketComparableSold": "{place} · vendue en {month}",
+  "@marketComparableSold": {
+    "description": "Lieu et mois d’une vente comparable",
+    "placeholders": {
+      "place": {
+        "type": "String"
+      },
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "marketComparableSoldAt": "{place} · vendue en {month} · à {distance}",
+  "@marketComparableSoldAt": {
+    "description": "Lieu, mois et distance d’une vente comparable",
+    "placeholders": {
+      "place": {
+        "type": "String"
+      },
+      "month": {
+        "type": "String"
+      },
+      "distance": {
+        "type": "String"
+      }
+    }
+  },
+  "marketDistanceM": "{value} m",
+  "@marketDistanceM": {
+    "description": "Distance en mètres",
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "marketDistanceKm": "{value} km",
+  "@marketDistanceKm": {
+    "description": "Distance en kilomètres",
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "marketPrice": "{value} €",
+  "@marketPrice": {
+    "description": "Prix en euros",
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "marketSeeAll": "Voir les {count} ventes",
+  "@marketSeeAll": {
+    "description": "Bouton vers la liste complète des ventes",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "marketFactorsTitle": "Ce qui influence votre estimation",
+  "@marketFactorsTitle": {
+    "description": "Titre des facteurs (V8b)"
+  },
+  "marketExplanationTitle": "En résumé",
+  "@marketExplanationTitle": {
+    "description": "Titre de l’explication de l’agent (V8b)"
+  },
+  "marketExplanationNote": "Rédigé par l’agent Realesty à partir des chiffres ci-dessus.",
+  "@marketExplanationNote": {
+    "description": "Mention sous l’explication de l’agent (V8b)"
+  },
+  "marketSources": "Sources : ventes notariées (DVF, DGFiP – traitement Etalab, Licence Ouverte 2.0), connues jusqu’en {month}. Chiffres indicatifs et non certifiés, analysés et ajustés par notre expert dans votre avis de valeur.",
+  "@marketSources": {
+    "description": "Mention des sources DVF (V8b)",
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "marketSourcesNoDate": "Sources : ventes notariées (DVF, DGFiP – traitement Etalab, Licence Ouverte 2.0). Chiffres indicatifs et non certifiés, analysés et ajustés par notre expert dans votre avis de valeur.",
+  "@marketSourcesNoDate": {
+    "description": "Mention des sources DVF sans date (V8b)"
+  },
+  "marketBackToDossier": "Retour au suivi de mon dossier",
+  "@marketBackToDossier": {
+    "description": "Bouton de retour vers V8"
+  },
+  "marketUnavailable": "Pas de synthèse du marché pour ce bien : l’expert s’en charge dans votre avis de valeur.",
+  "@marketUnavailable": {
+    "description": "V8b quand il n’y a pas d’estimation"
+  },
+  "marketLoadError": "La synthèse du marché n’a pas pu être chargée.",
+  "@marketLoadError": {
+    "description": "V8b quand la lecture a échoué"
+  },
+  "marketAllSalesTitle": "Ventes comparables",
+  "@marketAllSalesTitle": {
+    "description": "Titre de la feuille listant toutes les ventes (V8b)"
   }
 }

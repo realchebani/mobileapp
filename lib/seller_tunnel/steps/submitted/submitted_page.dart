@@ -1,13 +1,16 @@
 import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:mobileapp/app/app.dart';
 import 'package:mobileapp/l10n/l10n.dart';
 import 'package:mobileapp/seller_tunnel/cubit/seller_tunnel_cubit.dart';
+import 'package:mobileapp/seller_tunnel/steps/submitted/cubit/ai_estimate_cubit.dart';
 import 'package:mobileapp/seller_tunnel/steps/submitted/cubit/notification_preference_cubit.dart';
 import 'package:mobileapp/seller_tunnel/steps/submitted/data/notification_preference_store.dart';
 import 'package:mobileapp/seller_tunnel/steps/submitted/widgets/ai_estimate_card.dart';
+import 'package:mobileapp/seller_tunnel/steps/submitted/widgets/ai_estimate_status_card.dart';
 import 'package:mobileapp/seller_tunnel/steps/submitted/widgets/dossier_summary_sheet.dart';
 import 'package:mobileapp/seller_tunnel/steps/submitted/widgets/submitted_format.dart';
 import 'package:mobileapp/seller_tunnel/steps/submitted/widgets/submitted_timeline.dart';
@@ -17,9 +20,10 @@ import 'package:mobileapp/ui/ui.dart';
 import 'package:property_repository/property_repository.dart';
 
 /// V8 · Attente de validation expert: confirmation once the dossier is
-/// sent, AI trend (when computed), expert review timeline (from `status`
-/// and `submitted_at`) and notification preference. Read-only: works for
-/// submitted, in_review and certified dossiers.
+/// sent, AI trend (non-certified estimate, EPIC-05), expert review
+/// timeline (from `status` and `submitted_at`) and notification
+/// preference. Read-only: works for submitted, in_review and certified
+/// dossiers.
 class SubmittedPage extends StatelessWidget {
   const new({this.notificationStore, super.key});
 
@@ -35,25 +39,43 @@ class SubmittedPage extends StatelessWidget {
     final isOpen =
         property.status == PropertyStatus.draft ||
         property.status == PropertyStatus.submitted;
-    return BlocProvider(
-      create: (_) {
-        final cubit = NotificationPreferenceCubit(
-          store: notificationStore ?? NotificationPreferenceStore(),
-          propertyId: property.id,
-          initialValue: property.notifyPush,
-          saveRemote: isOpen
-              ? ({required enabled}) async {
-                  // A failure shows the tunnel save-error snackbar
-                  // (SellerTunnelGate).
-                  await tunnel.save({PropertyColumns.notifyPush: enabled});
-                  return tunnel.state.saveStatus ==
-                      SellerTunnelSaveStatus.success;
-                }
-              : null,
-        );
-        unawaited(cubit.load());
-        return cubit;
-      },
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(
+          create: (context) {
+            final cubit = AiEstimateCubit(
+              propertyRepository: context.read<PropertyRepository>(),
+              propertyId: property.id,
+              // No trend once certified (the expert's value replaces it).
+              enabled:
+                  property.status == PropertyStatus.submitted ||
+                  property.status == PropertyStatus.inReview,
+            );
+            unawaited(cubit.load());
+            return cubit;
+          },
+        ),
+        BlocProvider(
+          create: (_) {
+            final cubit = NotificationPreferenceCubit(
+              store: notificationStore ?? NotificationPreferenceStore(),
+              propertyId: property.id,
+              initialValue: property.notifyPush,
+              saveRemote: isOpen
+                  ? ({required enabled}) async {
+                      // A failure shows the tunnel save-error snackbar
+                      // (SellerTunnelGate).
+                      await tunnel.save({PropertyColumns.notifyPush: enabled});
+                      return tunnel.state.saveStatus ==
+                          SellerTunnelSaveStatus.success;
+                    }
+                  : null,
+            );
+            unawaited(cubit.load());
+            return cubit;
+          },
+        ),
+      ],
       child: const SubmittedView(),
     );
   }
@@ -68,9 +90,6 @@ class SubmittedView extends StatelessWidget {
     final state = context.watch<SellerTunnelCubit>().state;
     final property = state.property!;
     final status = property.status;
-    final low = property.aiEstimateLowEur;
-    final median = property.aiEstimateMedianEur;
-    final high = property.aiEstimateHighEur;
     return TunnelScaffold(
       spacing: 14,
       actionBar: _ActionBar(
@@ -78,16 +97,7 @@ class SubmittedView extends StatelessWidget {
       ),
       children: [
         _Hero(state: state),
-        if (status != PropertyStatus.certified &&
-            low != null &&
-            median != null &&
-            high != null)
-          AiEstimateCard(
-            low: low,
-            median: median,
-            high: high,
-            computedAt: property.aiEstimateComputedAt,
-          ),
+        const _AiEstimate(),
         _Card(child: SubmittedTimeline(entries: _timeline(l10n, property))),
         if (status == PropertyStatus.submitted ||
             status == PropertyStatus.inReview)
@@ -240,6 +250,49 @@ class _Hero extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+/// "Tendance IA": the non-certified estimate, its computation or why
+/// there is none.
+class _AiEstimate extends StatelessWidget {
+  const new();
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final state = context.watch<AiEstimateCubit>().state;
+    final snapshot = state.snapshot;
+    final low = snapshot?.lowEur;
+    final median = snapshot?.medianEur;
+    final high = snapshot?.highEur;
+    return switch (state.status) {
+      AiEstimateStatus.hidden => const SizedBox.shrink(),
+      AiEstimateStatus.ready
+          when low != null && median != null && high != null =>
+        AiEstimateCard(
+          low: low,
+          median: median,
+          high: high,
+          computedAt: snapshot!.computedAt,
+          confidence: snapshot.confidenceLevel,
+          onSynthesis: () => context.go(AppRoutes.sellerMarket),
+        ),
+      AiEstimateStatus.computing => AiEstimateStatusCard(
+        message: l10n.submittedAiComputing,
+        isLoading: true,
+      ),
+      AiEstimateStatus.failed => AiEstimateStatusCard(
+        message: l10n.submittedAiFailed,
+        onRetry: () => context.read<AiEstimateCubit>().retry(),
+      ),
+      AiEstimateStatus.ready ||
+      AiEstimateStatus.unavailable => AiEstimateStatusCard(
+        message: snapshot?.reason == 'too_few_sales'
+            ? l10n.submittedAiTooFewSales
+            : l10n.submittedAiUnavailable,
+      ),
+    };
   }
 }
 

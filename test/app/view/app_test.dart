@@ -98,6 +98,27 @@ void main() {
         .thenAnswer((_) async => []);
     when(() => propertyRepository.getDocuments(any()))
         .thenAnswer((_) async => []);
+    when(() => propertyRepository.getMarketSnapshot(any())).thenAnswer(
+      (_) async => MarketSnapshot(
+        id: 'snapshot-id',
+        propertyId: 'property-id',
+        status: MarketSnapshotStatus.ok,
+        createdAt: DateTime(2026, 10),
+        computedAt: DateTime(2026, 10),
+        propertyType: PropertyType.house,
+        livingAreaM2: 115,
+        city: 'Chaponost',
+        lowEur: 420000,
+        medianEur: 479000,
+        highEur: 546000,
+        priceM2Low: 3572,
+        priceM2Median: 4162,
+        priceM2High: 4648,
+        confidence: 79,
+      ),
+    );
+    when(() => propertyRepository.requestEstimate(any()))
+        .thenAnswer((_) async {});
     userController = StreamController<AuthUser?>.broadcast();
     when(() => authRepository.user).thenAnswer((_) => userController.stream);
     when(() => authRepository.linkFailures)
@@ -237,6 +258,10 @@ void main() {
           ownerId: 'user-id',
           currentStep:
               (invocation.positionalArguments[1] as Map)['current_step'] as int,
+          status:
+              (invocation.positionalArguments[1] as Map)['status']
+                  as PropertyStatus? ??
+              PropertyStatus.draft,
         ),
       );
       when(() => propertyRepository.getOrCreateDossier(any())).thenAnswer(
@@ -283,6 +308,17 @@ void main() {
               as Map<String, Object?>;
       expect(patch['current_step'], 8);
       expect(patch['status'], PropertyStatus.submitted);
+      // The non-certified estimate is requested once the dossier is sent.
+      verify(() => propertyRepository.requestEstimate('property-id')).called(1);
+
+      // V8 → V8b « Synthèse du marché » → back to V8.
+      await tester.ensureVisible(find.text('Voir la synthèse du marché'));
+      await tester.tap(find.text('Voir la synthèse du marché'));
+      await tester.pumpAndSettle();
+      expect(find.byType(MarketSynthesisPage), findsOneWidget);
+      await tester.tap(find.text('Retour au suivi de mon dossier'));
+      await tester.pumpAndSettle();
+      expect(find.byType(SubmittedPage), findsOneWidget);
 
       await tester.tap(find.text('Retour à mon dossier'));
       await tester.pumpAndSettle();
