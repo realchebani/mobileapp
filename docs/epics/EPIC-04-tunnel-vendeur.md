@@ -68,3 +68,14 @@
 - [x] Aperçu en lecture seule de toutes les réponses ; retour au dossier.
 - [x] Préférence de notification (enregistrée dans le dossier tant qu’il n’est pas en examen).
 - Masqués en v1 : « Voir la synthèse du marché » (V8b) et « Une question ? ».
+
+## Retours du porteur de projet (test sur iPhone, 2026-10-01)
+
+## US-04.10 · Plusieurs moyens de chauffage (V4b) 🚧
+*En tant que vendeur, je veux indiquer tous les moyens de chauffage de mon bien (ex. : électrique + poêle).*
+
+## US-04.11 · Scan ou import pour chaque document, scan multipage (V7) 🚧
+*En tant que vendeur, je veux pouvoir scanner ou importer chaque document individuellement, et scanner un document de plusieurs pages.*
+
+## US-04.12 · Refonte graphique de l’aperçu des données (V8) 📋
+*En tant que vendeur, je veux un aperçu de mes données plus lisible et agréable.* — à retravailler graphiquement (backlog).
