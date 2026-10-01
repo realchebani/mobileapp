@@ -10,16 +10,30 @@ on:
       - main
     paths:
       - "pubspec.yaml"
+      - "packages/*/pubspec.yaml"
       - ".github/workflows/license_check.yaml"
   push:
     branches:
       - main
     paths:
       - "pubspec.yaml"
+      - "packages/*/pubspec.yaml"
       - ".github/workflows/license_check.yaml"
 
 jobs:
   license_check:
-    uses: VeryGoodOpenSource/very_good_workflows/.github/workflows/license_check.yml@v1
-    with:
-      allowed: "MIT,BSD-3-Clause,BSD-2-Clause,Apache-2.0"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.47.x"
+          channel: stable
+      - name: Install Very Good CLI
+        run: dart pub global activate very_good_cli
+      # Skipped: gtk (MPL-2.0) is only used by app_links on Linux, which we do not ship;
+      # pubspec_lock_parse (no declared license) only comes from the dev tool flutter_launcher_icons.
+      - name: Check licenses
+        run: |
+          flutter pub get
+          very_good packages check licenses --dependency-type="direct-main,transitive" --allowed="MIT,BSD-3-Clause,BSD-2-Clause,Apache-2.0" --skip-packages="gtk,pubspec_lock_parse"
