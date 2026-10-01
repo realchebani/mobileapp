@@ -29,7 +29,10 @@
     "Saludo",
     "Mobileapp",
     "mobileapp",
-    "Realesty"
+    "Realesty",
+    "OPENROUTER",
+    "OpenRouter",
+    "openrouter"
   ],
   "ignorePaths": [
     "**/docs/**",
