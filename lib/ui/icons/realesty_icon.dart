@@ -35,6 +35,7 @@ enum RealestyIcons {
   mic('mic'),
   minus('minus'),
   pen('pen'),
+  phone('phone'),
   pin('pin'),
   plan('plan'),
   plus('plus'),

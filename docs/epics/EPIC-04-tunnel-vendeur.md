@@ -10,8 +10,12 @@
 - [x] Enregistrement à chaque étape et reprise à la dernière étape atteinte.
 - [x] Dossier verrouillé pour le vendeur dès que l’expert le prend en charge ; un seul brouillon par vendeur.
 
-## US-04.2 · Propriétaires (V1) 📋
+## US-04.2 · Propriétaires (V1) ✅
 *En tant que vendeur, je veux déclarer la situation de propriété et les copropriétaires.*
+- [x] Unique propriétaire / Plusieurs propriétaires.
+- [x] Propriétaire principal prérempli (prénom du profil, e-mail du compte) ; téléphone français normalisé.
+- [x] Copropriétaires : ajout, modification et suppression dans une fiche dédiée.
+- [x] Validation à l’appui sur « Continuer », enregistrement robuste (pas de doublon ni de perte de saisie pendant l’enregistrement).
 
 ## US-04.3 · Localisation & cadastre (V2) 📋
 *En tant que vendeur, je veux retrouver mon adresse et ma parcelle cadastrale sans les saisir entièrement.*

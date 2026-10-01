@@ -38,3 +38,4 @@ Pour chaque étape : `flutter analyze`, bloc lint, `very_good test --coverage` (
 - 2026-10-01 nuit : S3 (V1), S4 (V3), S5+S6 (V2 + package `geo_repository`) lancés en parallèle puis interrompus vers 1 h par la limite d'utilisation ; le travail partiel est conservé non commité dans l'arbre de travail. Reprise à faire.
 - CI de la PR : tout passe sauf `license_check` (le workflow VGV tourne sans SDK Flutter : « mobileapp requires the Flutter SDK »), à traiter.
 - 2026-10-01 matin : corrections des fondations commitées (9b3db1b) ; CI license_check refaite avec le SDK Flutter (c57b8a8) ; V3 Contexte livré, vérifié, corrigé (retry sans doublon, saisie dates/montants) ; V1 en correction.
+- 2026-10-01 matin : V1 Propriétaires livré, vérifié, corrigé (saisie bloquée pendant l’enregistrement, reprise après réponse perdue, icône téléphone ajoutée au design system).
