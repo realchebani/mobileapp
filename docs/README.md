@@ -21,6 +21,8 @@ Chaque chantier commence par un plan, versionné dans [`plans/`](plans/) (`AAAA-
 |---|---|---|
 | 2026-09-30 | [Design system & authentification](plans/2026-09-30-design-system-et-authentification.md) | EPIC-02, EPIC-03 |
 | 2026-09-30 | [Tunnel vendeur](plans/2026-09-30-tunnel-vendeur.md) · [cahier des charges](plans/2026-09-30-tunnel-vendeur-spec.md) | EPIC-04 |
+| 2026-10-01 | [Estimation non certifiée](plans/2026-10-01-estimation-non-certifiee.md) (en attente de validation) | EPIC-05 |
+| 2026-10-01 | [Voix et agent IA](plans/2026-10-01-voix-et-agent-ia.md) (en attente de validation) | EPIC-06 |
 
 ## Décisions et backlog
 
