@@ -609,3 +609,10 @@ Waves: {O1, O3} → {O2} → {O4, O8} → {O5, O7, O9} → {O6}.
 - V19 security block assumes passwords, Apple / Google, Face ID, 2FA.
 - V12b mixes Premium badge with portal stats that need multi-diffusion; V15 is 3 % only, while V16 links back to V15 even for 1 % sellers. Back targets depend on the formula.
 - No notifications screen; no confirmation sheets for refusing a visit or accepting an offer; no empty states for V13 / V12b / V15.
+
+## 9. Arbitrages du porteur de projet (2026-10-01)
+- Q1 Certification : **mini back-office web** (options b, c, d combinées) — un expert embauché avec un rôle dédié et un accès restreint, et des experts partenaires (connexion directe au back-office ou rapports saisis par l'équipe). Nouvel epic à planifier (EPIC-12 Back-office expert).
+- Q2 Rapport V9b : **structuré dans l'app + PDF facultatif**.
+- Q3 Barre d'onglets : **dès le début** ; « Mon bien » = Commencer / Reprendre l'audit tant que le dossier est en brouillon ; déconnexion dans « Compte ».
+- Q11 Notifications : **dans l'app uniquement** ; reformuler la promesse d'e-mail de V8.
+- Questions 4–10 et 12–18 : à trancher avant EPIC-08 à EPIC-11.
