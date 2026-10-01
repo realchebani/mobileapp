@@ -1,0 +1,78 @@
+part of 'surfaces_cubit.dart';
+
+/// Progress of "Tout est correct, continuer": the rooms are saved first,
+/// then the view hands the total to the tunnel cubit.
+enum SurfacesSubmission { idle, inProgress, success, failure }
+
+/// The rooms of V5c · Récapitulatif des surfaces, as edited.
+final class SurfacesState extends Equatable {
+  const new({
+    this.rooms = const [],
+    this.savedRooms = const [],
+    this.showErrors = false,
+    this.submitAttempts = 0,
+    this.submission = SurfacesSubmission.idle,
+  });
+
+  /// The rooms of the table, in order (each has its id, even before it is
+  /// saved).
+  final List<Room> rooms;
+
+  /// The rooms stored after the last submission (all of them on success,
+  /// those written so far on failure).
+  final List<Room> savedRooms;
+
+  /// Whether errors are shown (after a first "Continuer").
+  final bool showErrors;
+
+  /// Incremented on each rejected "Continuer" (to reveal the error).
+  final int submitAttempts;
+
+  final SurfacesSubmission submission;
+
+  bool get isSubmitting => submission == SurfacesSubmission.inProgress;
+
+  /// At least one room is needed to continue.
+  bool get isValid => rooms.isNotEmpty;
+
+  /// Living area: the sum of the rooms (m², 2 decimals).
+  double get totalArea =>
+      RoomArea.round(rooms.fold(0, (sum, room) => sum + room.areaM2));
+
+  /// Number of "pièces principales".
+  int get mainRoomsCount => rooms.where((room) => room.isMain).length;
+
+  /// The rooms grouped by level (levels in their order, rooms without a
+  /// level last), each group in table order.
+  List<(RoomLevel?, List<Room>)> get roomsByLevel => [
+    for (final level in [...RoomLevel.values, null])
+      if (rooms.where((room) => room.level == level).toList() case final group
+          when group.isNotEmpty)
+        (level, group),
+  ];
+
+  SurfacesState copyWith({
+    List<Room>? rooms,
+    List<Room>? savedRooms,
+    bool? showErrors,
+    int? submitAttempts,
+    SurfacesSubmission? submission,
+  }) {
+    return SurfacesState(
+      rooms: rooms ?? this.rooms,
+      savedRooms: savedRooms ?? this.savedRooms,
+      showErrors: showErrors ?? this.showErrors,
+      submitAttempts: submitAttempts ?? this.submitAttempts,
+      submission: submission ?? this.submission,
+    );
+  }
+
+  @override
+  List<Object?> get props => [
+    rooms,
+    savedRooms,
+    showErrors,
+    submitAttempts,
+    submission,
+  ];
+}

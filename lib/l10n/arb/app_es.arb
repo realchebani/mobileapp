@@ -272,7 +272,7 @@
     "surfacesAgentMessage": "{count, plural, =0{¡Listo! Obtenemos {total} m² habitables. ¿Todo le parece correcto?} =1{¡Listo! Obtenemos {total} m² habitables repartidos en 1 habitación principal. ¿Todo le parece correcto?} other{¡Listo! Obtenemos {total} m² habitables repartidos en {count} habitaciones principales. ¿Todo le parece correcto?}}",
     "surfacesAgentEmptyMessage": "Añadamos sus habitaciones una a una: para cada una, su planta y su superficie. Calculo la superficie habitable sobre la marcha.",
     "surfacesRoomsCountBadge": "{count, plural, =1{1 habitación introducida} other{{count} habitaciones introducidas}}",
-    "surfacesTotalLabel": "Superficie habitable total",
+    "surfacesTotalLabel": "Superficie total declarada",
     "surfacesAreaValue": "{area} m²",
     "surfacesAddRoom": "Añadir una habitación",
     "surfacesContinue": "Todo correcto, continuar",
@@ -492,5 +492,6 @@
     "documentsNoticeDeleted": "Documento eliminado",
     "documentsNoticeOpenFailed": "No se ha podido abrir este documento. Inténtelo de nuevo.",
     "lifestyleAssetsCount": "{count, plural, =1{1 punto fuerte} other{{count} puntos fuertes}}",
-    "lifestyleWatchPointsCount": "{count, plural, =1{1 punto de atención} other{{count} puntos de atención}}"
+    "lifestyleWatchPointsCount": "{count, plural, =1{1 punto de atención} other{{count} puntos de atención}}",
+    "technicalNotSpecified": "Sin especificar"
 }

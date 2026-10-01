@@ -195,25 +195,19 @@ void main() {
         (_) async => const Property(
           id: 'property-id',
           ownerId: 'user-id',
-          currentStep: 4,
+          currentStep: 7,
         ),
       );
       await pumpApp(tester);
       await emitUser(tester, user);
       expect(find.byType(SellerHomePage), findsOneWidget);
 
-      // Resumes at V4b (V1–V3 are covered by their own page tests).
-      await tester.tap(find.text('Reprendre l’audit (étape 4/7)'));
+      // Resumes at the last step (V1–V6 are covered by their own page tests).
+      await tester.tap(find.text('Reprendre l’audit (étape 7/7)'));
       await tester.pumpAndSettle();
-      expect(find.byType(TechnicalPage), findsOneWidget);
+      expect(find.byType(DocumentsPage), findsOneWidget);
 
-      for (final page in [
-        MethodPage,
-        SurfacesPage,
-        LifestylePage,
-        DocumentsPage,
-        SubmittedPage,
-      ]) {
+      for (final page in [SubmittedPage]) {
         await tester.tap(find.text('Continuer'));
         await tester.pumpAndSettle();
         expect(find.byType(page), findsOneWidget);

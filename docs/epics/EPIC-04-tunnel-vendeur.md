@@ -32,11 +32,18 @@
 - [x] Validation avec messages et défilement jusqu’à la première erreur.
 - Décisions à valider : « Construit par vous ? » masqué pour un terrain ; champ « Précisez » pour « Autre » ; montants entre 1 000 € et 100 M€.
 
-## US-04.5 · Audit technique à l'écran (V4b) 📋
+## US-04.5 · Audit technique à l'écran (V4b) ✅
 *En tant que vendeur, je veux décrire les caractéristiques techniques de mon bien sans utiliser la voix.*
+- [x] Carte d’identité, gros œuvre, chauffage & assainissement, extérieur & équipements ; champs PAC / piscine conditionnels.
+- [x] Adapté au type : appartement sans niveaux/mitoyenneté/toiture ; terrain limité à l’assainissement et l’extérieur.
+- [x] Étiquettes de provenance (Déclaré, Extrait d’un document, Source externe).
+- Décisions à valider : listes proposées (exposition, toiture, type de PAC, type de piscine) ; adaptation appartement / terrain.
 
-## US-04.6 · Surfaces pièce par pièce (V5, V5c) 📋
+## US-04.6 · Surfaces pièce par pièce (V5, V5c) ✅
 *En tant que vendeur, je veux saisir mes pièces et leurs surfaces pour obtenir la surface habitable.*
+- [x] V5 : saisie manuelle (scan caméra et import de plan « Bientôt »).
+- [x] V5c : pièces par niveau, fiche d’ajout / modification (nom, surface, niveau, revêtement, vitrage, pièce principale), total « Surface totale déclarée » en direct.
+- Question produit : le total additionne toutes les pièces (y compris garage, cellier) — à distinguer de la surface habitable légale ?
 
 ## US-04.7 · Cadre de vie (V6) ✅
 *En tant que vendeur, je veux décrire les atouts et points de vigilance du quartier.*

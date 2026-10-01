@@ -1272,9 +1272,9 @@
             }
         }
     },
-    "surfacesTotalLabel": "Surface habitable totale",
+    "surfacesTotalLabel": "Surface totale déclarée",
     "@surfacesTotalLabel": {
-        "description": "V5c · libellé du total"
+        "description": "V5c · libellé du total des surfaces déclarées"
     },
     "surfacesAreaValue": "{area} m²",
     "@surfacesAreaValue": {
@@ -2253,5 +2253,9 @@
                 "type": "int"
             }
         }
+    },
+    "technicalNotSpecified": "Non précisé",
+    "@technicalNotSpecified": {
+        "description": "Technique (V4b) : option d’une liste facultative qui efface la réponse"
     }
 }
