@@ -1882,6 +1882,357 @@
     "@technicalErrorDimensions": {
         "description": "Technique (V4b) : erreur dimensions de la piscine invalides"
     },
+    "lifestyleAssetsCount": "{count, plural, =1{1 atout} other{{count} atouts}}",
+    "@lifestyleAssetsCount": {
+        "description": "Cadre de vie (V6) : libellé d’accessibilité du nombre d’atouts",
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
+    "lifestyleWatchPointsCount": "{count, plural, =1{1 point de vigilance} other{{count} points de vigilance}}",
+    "@lifestyleWatchPointsCount": {
+        "description": "Cadre de vie (V6) : libellé d’accessibilité du nombre de points de vigilance",
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
+    "technicalNotSpecified": "Non précisé",
+    "@technicalNotSpecified": {
+        "description": "Technique (V4b) : option d’une liste facultative qui efface la réponse"
+    },
+    "submittedTitle": "Merci {firstName}, votre dossier est complet",
+    "@submittedTitle": {
+        "description": "V8 · titre avec le prénom du propriétaire",
+        "placeholders": {
+            "firstName": {
+                "type": "String"
+            }
+        }
+    },
+    "submittedTitleNoName": "Merci, votre dossier est complet",
+    "@submittedTitleNoName": {
+        "description": "V8 · titre sans prénom connu"
+    },
+    "submittedTitleDraft": "Votre dossier n’est pas encore envoyé",
+    "@submittedTitleDraft": {
+        "description": "V8 · titre si le dossier est encore en brouillon"
+    },
+    "submittedIntroSubmitted": "Il part en analyse chez un expert immobilier. Vous serez alerté(e) dès que votre avis de valeur certifié sera disponible.",
+    "@submittedIntroSubmitted": {
+        "description": "V8 · texte sous le titre, dossier envoyé"
+    },
+    "submittedIntroInReview": "Un expert immobilier analyse votre dossier. Vous serez alerté(e) dès que votre avis de valeur certifié sera disponible.",
+    "@submittedIntroInReview": {
+        "description": "V8 · texte sous le titre, dossier en cours d’analyse"
+    },
+    "submittedIntroCertified": "Notre expert a terminé l’analyse de votre dossier : votre avis de valeur certifié est disponible.",
+    "@submittedIntroCertified": {
+        "description": "V8 · texte sous le titre, dossier certifié"
+    },
+    "submittedIntroDraft": "Terminez l’audit de votre bien pour transmettre votre dossier à un expert immobilier.",
+    "@submittedIntroDraft": {
+        "description": "V8 · texte sous le titre, dossier en brouillon"
+    },
+    "submittedAiLabel": "Tendance IA",
+    "@submittedAiLabel": {
+        "description": "V8 · légende de la carte d’estimation IA"
+    },
+    "submittedAiBadge": "Indicative",
+    "@submittedAiBadge": {
+        "description": "V8 · badge de l’estimation IA"
+    },
+    "submittedAiRange": "{low} – {high} €",
+    "@submittedAiRange": {
+        "description": "V8 · fourchette de l’estimation IA (montants formatés)",
+        "placeholders": {
+            "low": {
+                "type": "String"
+            },
+            "high": {
+                "type": "String"
+            }
+        }
+    },
+    "submittedAiThousands": "{value} k€",
+    "@submittedAiThousands": {
+        "description": "V8 · montant en milliers d’euros (borne de la fourchette)",
+        "placeholders": {
+            "value": {
+                "type": "String"
+            }
+        }
+    },
+    "submittedAiMedian": "Médiane {value} k€",
+    "@submittedAiMedian": {
+        "description": "V8 · médiane de l’estimation IA en milliers d’euros",
+        "placeholders": {
+            "value": {
+                "type": "String"
+            }
+        }
+    },
+    "submittedAiComputed": "Calculée le {date} à partir de vos réponses, documents et références de marché. Non validée par un professionnel.",
+    "@submittedAiComputed": {
+        "description": "V8 · note sous l’estimation IA (date jj/mm/aaaa)",
+        "placeholders": {
+            "date": {
+                "type": "String"
+            }
+        }
+    },
+    "submittedAiComputedNoDate": "Calculée à partir de vos réponses, documents et références de marché. Non validée par un professionnel.",
+    "@submittedAiComputedNoDate": {
+        "description": "V8 · note sous l’estimation IA sans date de calcul"
+    },
+    "submittedStepComplete": "Dossier complet",
+    "@submittedStepComplete": {
+        "description": "V8 · frise : étape 1"
+    },
+    "submittedStepCompleteSent": "Transmis le {date} à {time}",
+    "@submittedStepCompleteSent": {
+        "description": "V8 · frise : date d’envoi (jj/mm, heure)",
+        "placeholders": {
+            "date": {
+                "type": "String"
+            },
+            "time": {
+                "type": "String"
+            }
+        }
+    },
+    "submittedStepCompleteSentNoDate": "Transmis à notre expert",
+    "@submittedStepCompleteSentNoDate": {
+        "description": "V8 · frise : envoi sans date connue"
+    },
+    "submittedStepCompleteDraft": "En cours de constitution",
+    "@submittedStepCompleteDraft": {
+        "description": "V8 · frise : dossier en brouillon"
+    },
+    "submittedTime": "{hours} h {minutes}",
+    "@submittedTime": {
+        "description": "V8 · heure d’envoi (ex. 18 h 42)",
+        "placeholders": {
+            "hours": {
+                "type": "String"
+            },
+            "minutes": {
+                "type": "String"
+            }
+        }
+    },
+    "submittedStepReview": "Analyse professionnelle",
+    "@submittedStepReview": {
+        "description": "V8 · frise : étape 2"
+    },
+    "submittedStepReviewEstimate": "Réponse estimée sous 24 h",
+    "@submittedStepReviewEstimate": {
+        "description": "V8 · frise : délai de l’analyse"
+    },
+    "submittedStepReviewInProgress": "Un expert analyse votre dossier",
+    "@submittedStepReviewInProgress": {
+        "description": "V8 · frise : analyse en cours"
+    },
+    "submittedStepReviewDone": "Analyse terminée",
+    "@submittedStepReviewDone": {
+        "description": "V8 · frise : analyse terminée"
+    },
+    "submittedStepCertified": "Avis de valeur certifié",
+    "@submittedStepCertified": {
+        "description": "V8 · frise : étape 3"
+    },
+    "submittedStepCertifiedTodo": "Consultable ici et envoyé par e-mail",
+    "@submittedStepCertifiedTodo": {
+        "description": "V8 · frise : avis à venir"
+    },
+    "submittedStepCertifiedDone": "Disponible",
+    "@submittedStepCertifiedDone": {
+        "description": "V8 · frise : avis disponible"
+    },
+    "submittedStepStateDone": "Terminé",
+    "@submittedStepStateDone": {
+        "description": "V8 · frise : état d’une étape (lecteur d’écran)"
+    },
+    "submittedStepStateCurrent": "En cours",
+    "@submittedStepStateCurrent": {
+        "description": "V8 · frise : état d’une étape (lecteur d’écran)"
+    },
+    "submittedStepStateTodo": "À venir",
+    "@submittedStepStateTodo": {
+        "description": "V8 · frise : état d’une étape (lecteur d’écran)"
+    },
+    "submittedNotifyTitle": "Me prévenir par notification",
+    "@submittedNotifyTitle": {
+        "description": "V8 · interrupteur des notifications"
+    },
+    "submittedNotifyEmail": "Et par e-mail à {email}",
+    "@submittedNotifyEmail": {
+        "description": "V8 · adresse e-mail de notification",
+        "placeholders": {
+            "email": {
+                "type": "String"
+            }
+        }
+    },
+    "submittedBackToDossier": "Retour à mon dossier",
+    "@submittedBackToDossier": {
+        "description": "V8 · bouton principal vers l’espace vendeur"
+    },
+    "submittedSummaryButton": "Consulter l’aperçu de mes données",
+    "@submittedSummaryButton": {
+        "description": "V8 · bouton ouvrant l’aperçu des réponses"
+    },
+    "submittedSummaryTitle": "Aperçu de mes données",
+    "@submittedSummaryTitle": {
+        "description": "V8 · titre de l’aperçu des réponses"
+    },
+    "submittedSummaryReadOnly": "Aperçu en lecture seule des réponses transmises à l’expert.",
+    "@submittedSummaryReadOnly": {
+        "description": "V8 · note de l’aperçu des réponses"
+    },
+    "submittedSummaryClose": "Fermer",
+    "@submittedSummaryClose": {
+        "description": "V8 · fermer l’aperçu des réponses"
+    },
+    "submittedSummaryMissing": "Non renseigné",
+    "@submittedSummaryMissing": {
+        "description": "V8 · aperçu : réponse absente"
+    },
+    "submittedSummaryOwner": "Propriétaire {position}",
+    "@submittedSummaryOwner": {
+        "description": "V8 · aperçu : libellé d’un propriétaire",
+        "placeholders": {
+            "position": {
+                "type": "int"
+            }
+        }
+    },
+    "submittedSummaryAddress": "Adresse",
+    "@submittedSummaryAddress": {
+        "description": "V8 · aperçu : adresse"
+    },
+    "submittedSummaryParcels": "Parcelles cadastrales",
+    "@submittedSummaryParcels": {
+        "description": "V8 · aperçu : parcelles"
+    },
+    "submittedSummaryParcel": "Section {section} n° {number}",
+    "@submittedSummaryParcel": {
+        "description": "V8 · aperçu : référence d’une parcelle",
+        "placeholders": {
+            "section": {
+                "type": "String"
+            },
+            "number": {
+                "type": "String"
+            }
+        }
+    },
+    "submittedSummaryLandArea": "Surface du terrain",
+    "@submittedSummaryLandArea": {
+        "description": "V8 · aperçu : surface cadastrale"
+    },
+    "submittedSummaryArea": "{area} m²",
+    "@submittedSummaryArea": {
+        "description": "V8 · aperçu : surface formatée",
+        "placeholders": {
+            "area": {
+                "type": "String"
+            }
+        }
+    },
+    "submittedSummaryPropertyType": "Type de bien",
+    "@submittedSummaryPropertyType": {
+        "description": "V8 · aperçu : type de bien"
+    },
+    "submittedSummaryPurchaseYear": "Propriétaire depuis",
+    "@submittedSummaryPurchaseYear": {
+        "description": "V8 · aperçu : année d’acquisition"
+    },
+    "submittedSummaryConstructionYear": "Année de construction",
+    "@submittedSummaryConstructionYear": {
+        "description": "V8 · aperçu : année de construction"
+    },
+    "submittedSummaryLivingArea": "Surface habitable",
+    "@submittedSummaryLivingArea": {
+        "description": "V8 · aperçu : surface habitable"
+    },
+    "submittedSummaryRoomsCount": "Pièces et chambres",
+    "@submittedSummaryRoomsCount": {
+        "description": "V8 · aperçu : nombre de pièces"
+    },
+    "submittedSummaryRoomsValue": "{rooms, plural, =1{1 pièce} other{{rooms} pièces}}, {bedrooms, plural, =0{aucune chambre} =1{1 chambre} other{{bedrooms} chambres}}",
+    "@submittedSummaryRoomsValue": {
+        "description": "V8 · aperçu : pièces et chambres",
+        "placeholders": {
+            "rooms": {
+                "type": "int"
+            },
+            "bedrooms": {
+                "type": "int"
+            }
+        }
+    },
+    "submittedSummaryLevels": "Niveaux",
+    "@submittedSummaryLevels": {
+        "description": "V8 · aperçu : niveaux"
+    },
+    "submittedSummaryHeating": "Énergie de chauffage",
+    "@submittedSummaryHeating": {
+        "description": "V8 · aperçu : chauffage"
+    },
+    "submittedSummarySanitation": "Assainissement",
+    "@submittedSummarySanitation": {
+        "description": "V8 · aperçu : assainissement"
+    },
+    "submittedSummaryRooms": "Pièces relevées",
+    "@submittedSummaryRooms": {
+        "description": "V8 · aperçu : pièces du relevé"
+    },
+    "submittedSummaryRoomsTotal": "{count, plural, =0{Aucune pièce} =1{1 pièce} other{{count} pièces}} · {area} m²",
+    "@submittedSummaryRoomsTotal": {
+        "description": "V8 · aperçu : total des pièces et surface",
+        "placeholders": {
+            "count": {
+                "type": "int"
+            },
+            "area": {
+                "type": "String"
+            }
+        }
+    },
+    "submittedSummaryAssets": "Atouts",
+    "@submittedSummaryAssets": {
+        "description": "V8 · aperçu : atouts"
+    },
+    "submittedSummaryWatchPoints": "Points de vigilance",
+    "@submittedSummaryWatchPoints": {
+        "description": "V8 · aperçu : points de vigilance"
+    },
+    "submittedSummaryCount": "{count, plural, =0{Aucun} =1{1 élément} other{{count} éléments}}",
+    "@submittedSummaryCount": {
+        "description": "V8 · aperçu : nombre d’éléments",
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
+    "submittedSummaryDocuments": "Documents transmis",
+    "@submittedSummaryDocuments": {
+        "description": "V8 · aperçu : documents"
+    },
+    "submittedSummaryDocumentsCount": "{count, plural, =0{Aucun document} =1{1 document} other{{count} documents}}",
+    "@submittedSummaryDocumentsCount": {
+        "description": "V8 · aperçu : nombre de documents",
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
     "documentsAgentMessage": "Dernière étape : vos documents. Photographiez-les ou importez-les : l’expert s’en sert pour vérifier votre dossier.",
     "@documentsAgentMessage": {
         "description": "V7 · message de l’agent"
@@ -2175,13 +2526,31 @@
             }
         }
     },
-    "documentsOpen": "Ouvrir",
-    "@documentsOpen": {
-        "description": "V7 · libellé d’accessibilité : ouvrir un fichier"
-    },
     "documentsDelete": "Supprimer",
     "@documentsDelete": {
         "description": "V7 · libellé d’accessibilité : supprimer un fichier"
+    },
+    "documentsOpenFile": "Ouvrir {fileName}",
+    "@documentsOpenFile": {
+        "description": "V7 · libellé d’accessibilité : ouvrir un fichier précis",
+        "placeholders": {
+            "fileName": {
+                "type": "String"
+            }
+        }
+    },
+    "documentsDeleteFile": "Supprimer {fileName}",
+    "@documentsDeleteFile": {
+        "description": "V7 · libellé d’accessibilité : supprimer un fichier précis",
+        "placeholders": {
+            "fileName": {
+                "type": "String"
+            }
+        }
+    },
+    "documentsLocked": "Votre dossier est en cours d’examen par l’expert",
+    "@documentsLocked": {
+        "description": "V7 · bannière quand le dossier est verrouillé (pris en charge par l’expert)"
     },
     "documentsDeleteTitle": "Supprimer ce document ?",
     "@documentsDeleteTitle": {
@@ -2235,27 +2604,5 @@
     "documentsNoticeOpenFailed": "Impossible d’ouvrir ce document. Réessayez.",
     "@documentsNoticeOpenFailed": {
         "description": "V7 · erreur : ouverture échouée"
-    },
-    "lifestyleAssetsCount": "{count, plural, =1{1 atout} other{{count} atouts}}",
-    "@lifestyleAssetsCount": {
-        "description": "Cadre de vie (V6) : libellé d’accessibilité du nombre d’atouts",
-        "placeholders": {
-            "count": {
-                "type": "int"
-            }
-        }
-    },
-    "lifestyleWatchPointsCount": "{count, plural, =1{1 point de vigilance} other{{count} points de vigilance}}",
-    "@lifestyleWatchPointsCount": {
-        "description": "Cadre de vie (V6) : libellé d’accessibilité du nombre de points de vigilance",
-        "placeholders": {
-            "count": {
-                "type": "int"
-            }
-        }
-    },
-    "technicalNotSpecified": "Non précisé",
-    "@technicalNotSpecified": {
-        "description": "Technique (V4b) : option d’une liste facultative qui efface la réponse"
     }
 }

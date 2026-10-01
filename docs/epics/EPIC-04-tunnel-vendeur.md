@@ -52,8 +52,13 @@
 - [x] Carte « Données du quartier » en attente de sources externes.
 - Décisions à valider : libellés du bruit (Très calme → Très bruyant) ; destinataire de la note (« futurs visiteurs » selon la maquette, « expert » selon le cahier des charges).
 
-## US-04.8 · Coffre de documents et envoi (V7) 📋
+## US-04.8 · Coffre de documents et envoi (V7) ✅
 *En tant que vendeur, je veux déposer mes documents et envoyer mon dossier à l'expert.*
+- [x] Liste des pièces avec statut (manquant, facultatif, non concerné, reçu…), SPANC selon l’assainissement.
+- [x] Ajout par photo (caméra) ou import (fichiers / photothèque), 20 Mo max, stockage privé ; ouverture par lien temporaire ; suppression.
+- [x] Score de transparence (v1 calculé dans l’app : 70 % documents, 30 % réponses).
+- [x] « Envoyer mon dossier à l’expert » (statut envoyé) ; dossier et fichiers verrouillés dès que l’expert le prend en charge.
+- Décisions à valider : pièces obligatoires (titre, taxe foncière, identité, diagnostics, + SPANC si assainissement individuel) ; envoi possible avec des pièces manquantes ; pondération du score.
 
 ## US-04.9 · Attente de validation (V8) 📋
 *En tant que vendeur, je veux savoir où en est la validation de mon dossier.*

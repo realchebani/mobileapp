@@ -207,16 +207,19 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.byType(DocumentsPage), findsOneWidget);
 
-      for (final page in [SubmittedPage]) {
-        await tester.tap(find.text('Continuer'));
-        await tester.pumpAndSettle();
-        expect(find.byType(page), findsOneWidget);
-      }
-      verify(
-        () => propertyRepository.updateProperty('property-id', {
-          'current_step': 8,
-        }),
-      ).called(1);
+      await tester.tap(find.text('Envoyer mon dossier à l’expert'));
+      await tester.pumpAndSettle();
+      expect(find.byType(SubmittedPage), findsOneWidget);
+      final patch =
+          verify(
+                () => propertyRepository.updateProperty(
+                  'property-id',
+                  captureAny(),
+                ),
+              ).captured.single
+              as Map<String, Object?>;
+      expect(patch['current_step'], 8);
+      expect(patch['status'], PropertyStatus.submitted);
 
       await tester.tap(find.text('Retour à mon dossier'));
       await tester.pumpAndSettle();

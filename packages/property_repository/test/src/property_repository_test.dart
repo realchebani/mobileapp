@@ -461,15 +461,24 @@ void main() {
     test('deleteDocument deletes the row then the file', () async {
       respond = (request) => isStorage(request)
           ? json(<Object>[])
-          : http.Response('', 204, request: current);
+          : json([
+              {'id': documentRow['id']},
+            ]);
       await repository.deleteDocument(PropertyDocument.fromJson(documentRow));
       final [row, file] = requests;
       expect(row.method, 'DELETE');
       expect(row.url.path, '/rest/v1/property_documents');
+      expect(row.url.queryParameters['select'], 'id');
       expect(file.method, 'DELETE');
       expect(jsonDecode(file.body), {
         'prefixes': [path],
       });
+    });
+
+    test('deleteDocument keeps the file when no row was deleted', () async {
+      respond = (_) => json(<Object>[]);
+      await repository.deleteDocument(PropertyDocument.fromJson(documentRow));
+      expect(requests.single.url.path, '/rest/v1/property_documents');
     });
 
     test('deleteDocument throws PropertyDeleteFailure', () async {

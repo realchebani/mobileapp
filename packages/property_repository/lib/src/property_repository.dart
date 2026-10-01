@@ -390,12 +390,19 @@ class PropertyRepository {
     }
   }
 
-  /// Deletes [document]: its row, then its file.
+  /// Deletes [document]: its row, then its file — only when the row was
+  /// actually deleted (row level security keeps the documents of a locked
+  /// dossier, whose files must then stay too).
   ///
   /// Throws [PropertyDeleteFailure] on error.
   Future<void> deleteDocument(PropertyDocument document) async {
     try {
-      await _client.from(_documents.name).delete().eq('id', document.id);
+      final deleted = await _client
+          .from(_documents.name)
+          .delete()
+          .eq('id', document.id)
+          .select('id');
+      if (deleted.isEmpty) return;
       await _client.storage.from(documentsBucket).remove([
         document.storagePath,
       ]);
