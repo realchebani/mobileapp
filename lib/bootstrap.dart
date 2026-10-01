@@ -4,9 +4,11 @@ import 'dart:developer';
 import 'package:auth_repository/auth_repository.dart';
 import 'package:bloc/bloc.dart';
 import 'package:flutter/widgets.dart';
+import 'package:geo_repository/geo_repository.dart';
 import 'package:mobileapp/app/app.dart';
 import 'package:mobileapp/ui/ui.dart';
 import 'package:profile_repository/profile_repository.dart';
+import 'package:property_repository/property_repository.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -14,6 +16,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 typedef AppBuilder = FutureOr<Widget> Function({
   required AuthRepository authRepository,
   required ProfileRepository profileRepository,
+  required PropertyRepository propertyRepository,
+  required GeoRepository geoRepository,
   required OnboardingRepository onboardingRepository,
 });
 
@@ -53,6 +57,8 @@ Future<void> bootstrap(AppBuilder builder) async {
         redirectUrl: authRedirectUrl,
       ),
       profileRepository: ProfileRepository(client: client),
+      propertyRepository: PropertyRepository(client: client),
+      geoRepository: GeoRepository(),
       onboardingRepository: OnboardingRepository(preferences: preferences),
     ),
   );

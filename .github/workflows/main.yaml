@@ -28,3 +28,23 @@ jobs:
       includes: |
         **/*.md
       modified_files_only: false
+
+  auth_repository:
+    uses: VeryGoodOpenSource/very_good_workflows/.github/workflows/dart_package.yml@v1
+    with:
+      working_directory: packages/auth_repository
+
+  profile_repository:
+    uses: VeryGoodOpenSource/very_good_workflows/.github/workflows/dart_package.yml@v1
+    with:
+      working_directory: packages/profile_repository
+
+  geo_repository:
+    uses: VeryGoodOpenSource/very_good_workflows/.github/workflows/dart_package.yml@v1
+    with:
+      working_directory: packages/geo_repository
+
+  property_repository:
+    uses: VeryGoodOpenSource/very_good_workflows/.github/workflows/dart_package.yml@v1
+    with:
+      working_directory: packages/property_repository

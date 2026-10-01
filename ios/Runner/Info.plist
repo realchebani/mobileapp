@@ -47,6 +47,12 @@
 	<false/>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>L’appareil photo permet de photographier les documents de votre bien (titre de propriété, factures, diagnostics…).</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Votre position permet de retrouver l’adresse et la parcelle cadastrale de votre bien.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Vos photos permettent d’importer les documents de votre bien dans votre dossier.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

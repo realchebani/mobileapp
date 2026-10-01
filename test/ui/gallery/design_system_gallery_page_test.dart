@@ -59,6 +59,11 @@ void main() {
       await tapAndExpectToast(tester, find.text('Parler à l’agent'), 'Accent');
       await tapAndExpectToast(
         tester,
+        find.text('Envoyer mon dossier'),
+        'Icône à droite',
+      );
+      await tapAndExpectToast(
+        tester,
         find.text('Importer un document'),
         'Secondaire',
       );

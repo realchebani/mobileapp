@@ -27,6 +27,7 @@ class RealestyButton extends StatelessWidget {
     required this.onPressed,
     this.variant = RealestyButtonVariant.primary,
     this.leadingIcon,
+    this.trailingIcon,
     this.isLoading = false,
     this.loadingSemanticLabel = 'chargement en cours',
     this.height = 52,
@@ -43,6 +44,10 @@ class RealestyButton extends StatelessWidget {
 
   /// Optional 20px icon before the label.
   final RealestyIcons? leadingIcon;
+
+  /// Optional 20px icon after the label (e.g. a chevron on a CTA that
+  /// sends or moves on).
+  final RealestyIcons? trailingIcon;
 
   /// Replaces the label with a spinner and blocks taps. Screen readers
   /// announce "[label], [loadingSemanticLabel]".
@@ -107,6 +112,8 @@ class RealestyButton extends StatelessWidget {
                   style: RealestyTextStyles.button.copyWith(color: foreground),
                 ),
               ),
+              if (trailingIcon != null)
+                RealestyIcon(trailingIcon!, color: foreground),
             ],
           );
 

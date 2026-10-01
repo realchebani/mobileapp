@@ -143,6 +143,12 @@ class _DesignSystemGalleryPageState extends State<DesignSystemGalleryPage> {
               onPressed: () => _toast('Accent'),
             ),
             RealestyButton(
+              label: 'Envoyer mon dossier',
+              variant: RealestyButtonVariant.accent,
+              trailingIcon: RealestyIcons.chevronRight,
+              onPressed: () => _toast('Icône à droite'),
+            ),
+            RealestyButton(
               label: 'Importer un document',
               variant: RealestyButtonVariant.secondary,
               leadingIcon: RealestyIcons.upload,

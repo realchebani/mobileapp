@@ -9,7 +9,8 @@ import 'package:profile_repository/profile_repository.dart';
 /// - Session being restored → splash.
 /// - Signed out → onboarding until it was seen, then the login screens.
 /// - Signed in → splash while the profile loads (or failed to), then the
-///   role selector until a role is chosen, then the space of that role.
+///   role selector until a role is chosen, then the space of that role
+///   (any screen under it, e.g. `/vendeur/audit/...`).
 ///   The design system gallery stays reachable once the profile is loaded.
 String? appRedirect({
   required String location,
@@ -40,10 +41,16 @@ String? appRedirect({
           UserRole.seller => AppRoutes.seller,
           UserRole.buyer => AppRoutes.buyer,
         };
+        // The screens of a space (e.g. the seller tunnel) live under it.
+        if (target != AppRoutes.role && _isWithin(location, target)) {
+          return null;
+        }
       }
   }
   return location == target ? null : target;
 }
 
-bool _isLoginRoute(String location) =>
-    location == AppRoutes.login || location.startsWith('${AppRoutes.login}/');
+bool _isWithin(String location, String root) =>
+    location == root || location.startsWith('$root/');
+
+bool _isLoginRoute(String location) => _isWithin(location, AppRoutes.login);

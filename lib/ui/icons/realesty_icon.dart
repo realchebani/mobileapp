@@ -24,6 +24,7 @@ enum RealestyIcons {
   euro('euro'),
   eye('eye'),
   file('file'),
+  grid('grid'),
   heart('heart'),
   home('home'),
   infoCircle('info-circle'),
@@ -35,6 +36,7 @@ enum RealestyIcons {
   mic('mic'),
   minus('minus'),
   pen('pen'),
+  phone('phone'),
   pin('pin'),
   plan('plan'),
   plus('plus'),
@@ -47,13 +49,15 @@ enum RealestyIcons {
   star('star'),
   swap('swap'),
   target('target'),
+  trash('trash'),
   tree('tree'),
   trending('trending'),
   truck('truck'),
   upload('upload'),
   user('user'),
   users('users'),
-  vault('vault');
+  vault('vault'),
+  warning('warning');
 
   new(this.fileName);
 

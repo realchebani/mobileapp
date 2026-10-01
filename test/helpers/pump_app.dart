@@ -1,6 +1,7 @@
 import 'package:auth_repository/auth_repository.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:geo_repository/geo_repository.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:mobileapp/app/app.dart';
@@ -10,6 +11,7 @@ import 'package:mobileapp/profile/profile.dart';
 import 'package:mobileapp/ui/ui.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:profile_repository/profile_repository.dart';
+import 'package:property_repository/property_repository.dart';
 
 import 'mocks.dart';
 
@@ -24,6 +26,8 @@ extension PumpApp on WidgetTester {
     Widget widget, {
     AuthRepository? authRepository,
     ProfileRepository? profileRepository,
+    PropertyRepository? propertyRepository,
+    GeoRepository? geoRepository,
     OnboardingRepository? onboardingRepository,
     AppBloc? appBloc,
     LoginCubit? loginCubit,
@@ -35,6 +39,8 @@ extension PumpApp on WidgetTester {
       _AppProviders(
         authRepository: authRepository,
         profileRepository: profileRepository,
+        propertyRepository: propertyRepository,
+        geoRepository: geoRepository,
         onboardingRepository: onboardingRepository,
         appBloc: appBloc,
         loginCubit: loginCubit,
@@ -57,6 +63,8 @@ extension PumpApp on WidgetTester {
     GoRouter router, {
     AuthRepository? authRepository,
     ProfileRepository? profileRepository,
+    PropertyRepository? propertyRepository,
+    GeoRepository? geoRepository,
     OnboardingRepository? onboardingRepository,
     AppBloc? appBloc,
     LoginCubit? loginCubit,
@@ -67,6 +75,8 @@ extension PumpApp on WidgetTester {
       _AppProviders(
         authRepository: authRepository,
         profileRepository: profileRepository,
+        propertyRepository: propertyRepository,
+        geoRepository: geoRepository,
         onboardingRepository: onboardingRepository,
         appBloc: appBloc,
         loginCubit: loginCubit,
@@ -88,6 +98,8 @@ class _AppProviders extends StatelessWidget {
     required this.child,
     this.authRepository,
     this.profileRepository,
+    this.propertyRepository,
+    this.geoRepository,
     this.onboardingRepository,
     this.appBloc,
     this.loginCubit,
@@ -97,6 +109,8 @@ class _AppProviders extends StatelessWidget {
   final Widget child;
   final AuthRepository? authRepository;
   final ProfileRepository? profileRepository;
+  final PropertyRepository? propertyRepository;
+  final GeoRepository? geoRepository;
   final OnboardingRepository? onboardingRepository;
   final AppBloc? appBloc;
   final LoginCubit? loginCubit;
@@ -111,6 +125,12 @@ class _AppProviders extends StatelessWidget {
         ),
         RepositoryProvider<ProfileRepository>.value(
           value: profileRepository ?? MockProfileRepository(),
+        ),
+        RepositoryProvider<PropertyRepository>.value(
+          value: propertyRepository ?? MockPropertyRepository(),
+        ),
+        RepositoryProvider<GeoRepository>.value(
+          value: geoRepository ?? MockGeoRepository(),
         ),
         RepositoryProvider<OnboardingRepository>.value(
           value: onboardingRepository ?? MockOnboardingRepository(),

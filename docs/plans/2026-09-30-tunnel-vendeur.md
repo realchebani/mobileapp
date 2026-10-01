@@ -1,0 +1,46 @@
+# Plan — Tunnel vendeur (V1 → V8)
+
+## Contexte
+L'authentification et le design system sont en place (EPIC-02, EPIC-03). Prochaine étape de la v1 : le tunnel vendeur « L’audit conversationnel » du canvas (V1 à V8b), qui constitue le dossier du bien. Travail de nuit autonome demandé par le porteur de projet, sur la branche `feat/tunnel-vendeur`, avec une Pull Request.
+
+Cahier des charges détaillé (écrans, textes, champs, modèle de données) : [2026-09-30-tunnel-vendeur-spec.md](2026-09-30-tunnel-vendeur-spec.md).
+
+## Décisions prises (à valider par le porteur de projet)
+- **Écran d'abord** : toutes les réponses se font au clavier/à l'écran. Reportés : audit vocal (V4, micro), scan caméra/AR (V5b), extraction OCR des documents, agent « Une question ? ».
+- **Données publiques gratuites** : adresse via le service de géocodage de la Géoplateforme (`data.geopf.fr/geocodage`, successeur de api-adresse.data.gouv.fr arrêté le 31/01/2026), parcelle via apicarto.ign.fr (cadastre), photo aérienne IGN (WMTS Géoplateforme).
+- **Carte maison** : `flutter_map` et `geolocator` ont été écartés car ils tirent des dépendances sous licences refusées par la CI (ISC, MPL-2.0). La carte est un widget Web-Mercator maison (glisser, boutons + / −), la position vient des implémentations iOS/Android de geolocator (MIT).
+- **Base** : nouvelles tables uniquement ajoutées (aucune modification destructive), RLS « le propriétaire du dossier seulement », appliquées par `supabase db push`.
+- **Listes non spécifiées dans le design** (exposition, toiture, vitrage…) : propositions du cahier des charges, section « Open questions ».
+- Coquilles du design corrigées dans l'app (« Vous serez alerté(e) », « analysés et seront ajustés »).
+
+## Découpage (une étape = un agent codeur + un agent vérificateur, puis commit/push)
+| Étape | Contenu | Dépend de |
+|---|---|---|
+| S1+S2 | Schéma Supabase (tables, RLS, bucket Storage privé) + package `property_repository` + `SellerTunnelCubit` + routes `/vendeur/audit/*` avec écrans provisoires + widgets partagés (en-tête du tunnel, barre d'action, cartes sélectionnables) | — |
+| S3 | V1 Propriétaires | S2 |
+| S4 | V3 Contexte & type de bien | S2 |
+| S5+S6 | V2 Adresse (BAN) + cadastre & carte | S2 |
+| S7+S8 | V4b Audit technique (mode écran) | S2 |
+| S9 | V5 Méthode de relevé + V5c Surfaces (saisie manuelle) | S2 |
+| S10 | V6 Cadre de vie | S2 |
+| S11 | V7 Coffre de documents (upload Storage) + envoi du dossier | S1, S2 |
+| S12 | V8 Attente de validation expert | S11 |
+| S13–S14 | Données de marché (DVF) + V8b — optionnel | S6 |
+
+Règles de concurrence : les agents d'une même vague ont des dossiers disjoints ; routes et écrans provisoires sont créés en S2 pour que chaque écran remplace seulement son fichier ; les chaînes l10n sont ajoutées par lecture-modification-écriture du JSON immédiatement suivie de `flutter gen-l10n`.
+
+## Vérification
+Pour chaque étape : `flutter analyze`, bloc lint, `very_good test --coverage` (100 %), tests des packages, rendu 390×844 comparé aux maquettes, build iOS release. CI GitHub verte sur la PR. Installation sur l'iPhone si connecté.
+
+## Journal d'exécution
+- 2026-09-30 soir : branche `feat/tunnel-vendeur` ; CI corrigée (docs françaises exclues du correcteur, tests des packages ajoutés) ; cahier des charges V1–V8b extrait du canvas.
+- 2026-10-01 nuit — S1+S2 : migration `create_seller_tunnel` appliquée (`supabase db push`) : 7 tables, RLS « propriétaire du dossier seulement », colonnes serveur (estimation IA, statut/extraction des documents) non modifiables depuis l'app, bucket privé `property-documents` (20 Mo, PDF/JPG/PNG/HEIC) rangé par `<id utilisateur>/<id bien>/…` (et non `<id bien>/…` comme dans le cahier des charges, pour des règles Storage simples). Package `property_repository` (modèles, CRUD, Storage). `SellerTunnelCubit` porté par une `ShellRoute` sur `/vendeur/**` (pas au niveau de l'app) ; écran d'entrée « Mon dossier vendeur » ; routes `/vendeur/audit/<étape>` avec écrans provisoires, un fichier par étape. Micro masqué (`AgentActionBar.voiceEnabled = false`). `current_step` : 1–7 = V1–V7, 8 = dossier envoyé.
+- 2026-10-01 nuit : S1+S2 livrés et vérifiés (commit 1263fb5 : schéma + RLS + bucket, `property_repository`, `SellerTunnelCubit`, routes et écrans provisoires, widgets du tunnel). Vérification → corrections en cours : verrouillage des dossiers envoyés (nouvelle migration `lock_submitted_dossiers`), dossier envoyé retrouvé au relancement, couverture 100 % pour la CI, navigation après enregistrement.
+- 2026-10-01 nuit : S3 (V1), S4 (V3), S5+S6 (V2 + package `geo_repository`) lancés en parallèle puis interrompus vers 1 h par la limite d'utilisation ; le travail partiel est conservé non commité dans l'arbre de travail. Reprise à faire.
+- CI de la PR : tout passe sauf `license_check` (le workflow VGV tourne sans SDK Flutter : « mobileapp requires the Flutter SDK »), à traiter.
+- 2026-10-01 matin : corrections des fondations commitées (9b3db1b) ; CI license_check refaite avec le SDK Flutter (c57b8a8) ; V3 Contexte livré, vérifié, corrigé (retry sans doublon, saisie dates/montants) ; V1 en correction.
+- 2026-10-01 matin : V1 Propriétaires livré, vérifié, corrigé (saisie bloquée pendant l’enregistrement, reprise après réponse perdue, icône téléphone ajoutée au design system).
+- 2026-10-01 : arbitrages du porteur de projet — choix V1–V3 validés (terrain sans « Construit ? », « Autre » + précision, montants 1 000 € – 100 M€, suppression dans la fiche) ; **carte : passer à Mapbox** (`mapbox_maps_flutter`, licence propriétaire Mapbox, exclue du contrôle de licences de la CI ; photo aérienne IGN et parcelles en couches), en attente du jeton public Mapbox ; **voix + agent IA** : chantier dédié après le tunnel à l'écran, **toute l'IA passera par OpenRouter** ; priorité suivante : Dashboard vendeur (V9+).
+- 2026-10-01 : V1 à V8 livrés, vérifiés et commités (dernier : cd6b32e). Arbitrages du porteur de projet : note du cadre de vie destinée aux **futurs visiteurs** (libellé de la maquette conservé) ; envoi du dossier **bloqué sans titre de propriété ni pièce d’identité** (autres pièces facultatives à l’envoi) ; V5c distingue **surface habitable et annexes** (nouvelle migration `rooms_annex_area`) ; validés : adaptation appartement/terrain de V4b, score de transparence 70/30, libellés du bruit, exclusions de licences de la CI. En cours : intégration finale (verrou de navigation, test de bout en bout, icônes) et annexes V5c.
+- 2026-10-01 : intégration après V1–V8 — **dossier verrouillé dès l’envoi** (décision à valider) : dès que le dossier n’est plus un brouillon (`submitted`, `in_review`, `certified`), l’accueil propose « Voir mon dossier envoyé » et toute URL d’étape modifiable redirige vers V8 (`SellerTunnelGate`) ; la base accepte encore les modifications d’un dossier `submitted` (RLS), mais l’app n’a pas de parcours « modifier après envoi ». V7 : envoi bloqué sans titre de propriété ni pièce d’identité non rejetés (erreurs sur les lignes, message, défilement jusqu’à la première) ; l’indication compte les autres pièces manquantes comme demandables plus tard. Test de bout en bout V1 → V8 sur les vrais écrans (dépôts et caméra simulés) + test du dossier verrouillé. Écran provisoire supprimé. Design system : icônes `trash`, `warning`, `grid` et `trailingIcon` sur `RealestyButton`/`AgentActionBar`.
+- 2026-10-01 : test iPhone OK par le porteur de projet. Retours : chauffage multiple (US-04.10), scan ou import par document + scan multipage (US-04.11) — lancés ; refonte graphique de l’aperçu V8 (US-04.12) — au backlog.
