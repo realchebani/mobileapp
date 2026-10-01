@@ -60,5 +60,10 @@
 - [x] « Envoyer mon dossier à l’expert » (statut envoyé) ; dossier et fichiers verrouillés dès que l’expert le prend en charge.
 - Décisions à valider : pièces obligatoires (titre, taxe foncière, identité, diagnostics, + SPANC si assainissement individuel) ; envoi possible avec des pièces manquantes ; pondération du score.
 
-## US-04.9 · Attente de validation (V8) 📋
+## US-04.9 · Attente de validation (V8) ✅
 *En tant que vendeur, je veux savoir où en est la validation de mon dossier.*
+- [x] Suivi en 3 étapes selon le statut (envoyé, en examen, certifié), date d’envoi en heure locale.
+- [x] Carte « Tendance IA » si une estimation existe (masquée une fois certifié).
+- [x] Aperçu en lecture seule de toutes les réponses ; retour au dossier.
+- [x] Préférence de notification (enregistrée dans le dossier tant qu’il n’est pas en examen).
+- Masqués en v1 : « Voir la synthèse du marché » (V8b) et « Une question ? ».
