@@ -27,7 +27,7 @@ const _filled = Property(
   adjacency: Adjacency.detached,
   roofType: 'tuiles',
   roofYear: 2016,
-  heatingEnergy: HeatingEnergy.heatPump,
+  heatingSystems: [HeatingSystem.heatPump, HeatingSystem.pellets],
   heatPumpType: 'air_eau',
   heatPumpYear: 2021,
   sanitation: Sanitation.mainsSewer,
@@ -40,6 +40,7 @@ const _filled = Property(
     'living_area_m2': 'external',
     'wall_material': {'source': 'expert'},
     'orientation': 'ai',
+    'heating_systems': 'external',
   },
 );
 
@@ -110,14 +111,16 @@ void main() {
       expect(_chipSelected(tester, 'Parpaing'), isTrue);
       expect(_chipSelected(tester, 'Indépendant'), isTrue);
       expect(_chipSelected(tester, 'Pompe à chaleur'), isTrue);
+      expect(_chipSelected(tester, 'Poêle à granulés'), isTrue);
+      expect(_chipSelected(tester, 'Gaz'), isFalse);
       expect(_chipSelected(tester, 'Tout-à-l’égout'), isTrue);
       expect(_chipSelected(tester, 'Piscine'), isTrue);
       expect(_chipSelected(tester, 'Terrasse'), isFalse);
 
-      expect(find.byType(TechnicalProvenanceTag), findsNWidgets(6));
+      expect(find.byType(TechnicalProvenanceTag), findsNWidgets(7));
       expect(find.text('Déclaré'), findsNWidgets(2));
       expect(find.text('Extrait d’un document'), findsOneWidget);
-      expect(find.text('Source externe'), findsOneWidget);
+      expect(find.text('Source externe'), findsNWidgets(2));
       expect(find.text('Vérifié expert'), findsOneWidget);
       expect(find.text('Estimé IA'), findsOneWidget);
       expect(
@@ -258,6 +261,7 @@ void main() {
       await tester.tap(find.text('2 côtés'));
       await pick(tester, 'Choisir', 'Ardoises');
       await tester.enterText(_field('Année toiture'), '2010');
+      await tester.tap(find.text('Électrique'));
       await tester.tap(find.text('Pompe à chaleur'));
       await tester.pump();
       await pick(tester, 'Choisir', 'Géothermique');
@@ -304,7 +308,10 @@ void main() {
       expect(patch, containsPair(PropertyColumns.roofYear, 2010));
       expect(
         patch,
-        containsPair(PropertyColumns.heatingEnergy, HeatingEnergy.heatPump),
+        containsPair(PropertyColumns.heatingSystems, [
+          HeatingSystem.electricity,
+          HeatingSystem.heatPump,
+        ]),
       );
       expect(
         patch,
@@ -354,14 +361,14 @@ void main() {
       expect(find.text('Indiquez le nombre de niveaux'), findsOneWidget);
       verifyNever(() => cubit.saveAndContinue(any(), any()));
 
-      // Reveals the energy once the identity card is answered.
+      // Reveals the heating once the identity card is answered.
       await tester.enterText(_field('Année de construction'), '1998');
       await tester.enterText(_field('Surface habitable'), '100');
       await show(tester, find.text('R+1'));
       await tester.tap(find.text('Enregistrer et continuer'));
       await tester.pumpAndSettle();
       expect(
-        find.text('Choisissez l’énergie principale').hitTestable(),
+        find.text('Choisissez au moins un système de chauffage').hitTestable(),
         findsOneWidget,
       );
       expect(find.text('Carte d’identité').hitTestable(), findsNothing);
@@ -409,7 +416,7 @@ void main() {
             propertyType: PropertyType.house,
             constructionYear: 1998,
             livingAreaM2: 100,
-            heatingEnergy: HeatingEnergy.heatPump,
+            heatingSystems: [HeatingSystem.heatPump],
             heatPumpYear: 1850,
           ),
         ),
@@ -467,6 +474,12 @@ void main() {
       await pump(tester);
 
       await tester.tap(find.text('Gaz'));
+      await tester.pump();
+      // Several systems: the heat pump stays selected with its details.
+      expect(_chipSelected(tester, 'Gaz'), isTrue);
+      expect(_chipSelected(tester, 'Pompe à chaleur'), isTrue);
+      expect(find.text('Type de PAC'), findsOneWidget);
+      await tester.tap(find.text('Pompe à chaleur'));
       await tester.tap(find.text('Piscine'));
       await tester.pump();
       expect(find.text('Type de PAC'), findsNothing);
@@ -490,7 +503,43 @@ void main() {
       expect(find.text('Niveaux'), findsNothing);
       expect(find.text('Mitoyenneté'), findsNothing);
       expect(find.text('Toiture'), findsNothing);
-      expect(find.text('Énergie principale'), findsOneWidget);
+      expect(
+        find.text('Systèmes de chauffage (plusieurs choix possibles)'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('makes the heating optional for another property', (
+      tester,
+    ) async {
+      final cubit = await pump(
+        tester,
+        state: _loaded(
+          const Property(
+            id: 'property-id',
+            ownerId: 'user-id',
+            propertyType: PropertyType.other,
+            constructionYear: 1998,
+            livingAreaM2: 100,
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('Enregistrer et continuer'));
+      await tester.pump();
+      expect(
+        find.text('Choisissez au moins un système de chauffage'),
+        findsNothing,
+      );
+      final patch =
+          verify(
+                () => cubit.saveAndContinue(
+                  SellerTunnelStep.technical,
+                  captureAny(),
+                ),
+              ).captured.single
+              as Map<String, Object?>;
+      expect(patch[PropertyColumns.heatingSystems], isEmpty);
     });
 
     testWidgets('asks only the questions of a plot of land', (tester) async {
@@ -507,7 +556,10 @@ void main() {
 
       expect(find.text('Carte d’identité'), findsNothing);
       expect(find.text('Gros œuvre'), findsNothing);
-      expect(find.text('Énergie principale'), findsNothing);
+      expect(
+        find.text('Systèmes de chauffage (plusieurs choix possibles)'),
+        findsNothing,
+      );
       expect(find.text('Assainissement'), findsOneWidget);
       expect(find.text('Équipements extérieurs'), findsOneWidget);
 

@@ -42,6 +42,7 @@ abstract final class PropertyColumns {
   static const roofType = 'roof_type';
   static const roofYear = 'roof_year';
   static const heatingEnergy = 'heating_energy';
+  static const heatingSystems = 'heating_systems';
   static const heatPumpType = 'heat_pump_type';
   static const heatPumpYear = 'heat_pump_year';
   static const sanitation = 'sanitation';
@@ -109,6 +110,7 @@ class Property extends Equatable {
     this.roofType,
     this.roofYear,
     this.heatingEnergy,
+    this.heatingSystems = const [],
     this.heatPumpType,
     this.heatPumpYear,
     this.sanitation,
@@ -192,6 +194,10 @@ class Property extends Equatable {
       heatingEnergy: parseDbEnum(
         HeatingEnergy.values,
         json[PropertyColumns.heatingEnergy],
+      ),
+      heatingSystems: parseDbEnumList(
+        HeatingSystem.values,
+        json[PropertyColumns.heatingSystems],
       ),
       heatPumpType: json[PropertyColumns.heatPumpType] as String?,
       heatPumpYear: readInt(json[PropertyColumns.heatPumpYear]),
@@ -282,7 +288,11 @@ class Property extends Equatable {
   final Adjacency? adjacency;
   final String? roofType;
   final int? roofYear;
+
+  /// Legacy single main energy, superseded by [heatingSystems] (no longer
+  /// written by the tunnel).
   final HeatingEnergy? heatingEnergy;
+  final List<HeatingSystem> heatingSystems;
   final String? heatPumpType;
   final int? heatPumpYear;
   final Sanitation? sanitation;
@@ -368,6 +378,7 @@ class Property extends Equatable {
       PropertyColumns.roofType: roofType,
       PropertyColumns.roofYear: roofYear,
       PropertyColumns.heatingEnergy: heatingEnergy?.value,
+      PropertyColumns.heatingSystems: encodeDbValue(heatingSystems),
       PropertyColumns.heatPumpType: heatPumpType,
       PropertyColumns.heatPumpYear: heatPumpYear,
       PropertyColumns.sanitation: sanitation?.value,
@@ -431,6 +442,7 @@ class Property extends Equatable {
     roofType,
     roofYear,
     heatingEnergy,
+    heatingSystems,
     heatPumpType,
     heatPumpYear,
     sanitation,

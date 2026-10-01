@@ -156,15 +156,16 @@ final class DocumentChecklist extends Equatable {
     DocumentKind.identityDocument,
     DocumentKind.diagnostics,
     DocumentKind.sanitationReport,
+    DocumentKind.other,
   ];
 
   /// Kinds required for every property (the sanitation report is required
-  /// when the sanitation is individual).
+  /// when the sanitation is individual). The diagnostics are optional: they
+  /// only count in the score, like the energy bills.
   static const Set<DocumentKind> requiredKinds = {
     DocumentKind.titleDeed,
     DocumentKind.propertyTax,
     DocumentKind.identityDocument,
-    DocumentKind.diagnostics,
   };
 
   /// Kinds without which the dossier cannot be sent (a file not rejected
@@ -260,7 +261,7 @@ final class DocumentChecklist extends Equatable {
     property.constructionYear != null,
     property.livingAreaM2 != null,
     property.roomsCount != null,
-    property.heatingEnergy != null,
+    property.heatingSystems.isNotEmpty,
     property.sanitation != null,
     property.measurementMethod != null,
     property.noiseLevel != null,

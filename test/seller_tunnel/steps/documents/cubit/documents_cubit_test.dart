@@ -42,6 +42,12 @@ final _photo = PickedDocument(
   bytes: _bytes,
 );
 
+final _scan = PickedDocument(
+  fileName: 'Titre de propriété - scan du 2026-10-01 18h42.pdf',
+  mimeType: 'application/pdf',
+  bytes: _bytes,
+);
+
 void main() {
   late MockPropertyRepository repository;
   late _MockDocumentPicker picker;
@@ -49,7 +55,7 @@ void main() {
   late bool openResult;
 
   setUpAll(() {
-    registerFallbackValue(DocumentSource.camera);
+    registerFallbackValue(DocumentSource.files);
     registerFallbackValue(DocumentKind.other);
     registerFallbackValue(_titleDeed);
     registerFallbackValue(Uint8List(0));
@@ -149,42 +155,30 @@ void main() {
           return null;
         }),
         build: build,
-        act: (cubit) => cubit.pick(DocumentSource.files),
+        act: (cubit) =>
+            cubit.pick(DocumentSource.files, kind: DocumentKind.other),
         expect: () => const [picking, initial],
-      );
-
-      blocTest<DocumentsCubit, DocumentsState>(
-        'keeps a valid file until its kind is known',
-        build: build,
-        act: (cubit) => cubit.pick(DocumentSource.camera),
-        expect: () => [
-          picking,
-          initial,
-          DocumentsState(
-            property: testProperty,
-            documents: const [],
-            pending: _photo,
-          ),
-        ],
-        verify: (cubit) => expect(cubit.state.isBusy, isTrue),
       );
 
       blocTest<DocumentsCubit, DocumentsState>(
         'ignores a second tap while the picker is open',
         build: build,
         act: (cubit) async {
-          final first = cubit.pick(DocumentSource.camera);
-          await cubit.pick(DocumentSource.files);
+          final first = cubit.pick(
+            DocumentSource.photos,
+            kind: DocumentKind.other,
+          );
+          await cubit.pick(DocumentSource.files, kind: DocumentKind.other);
           await first;
         },
         verify: (_) => verify(() => picker.pick(any())).called(1),
       );
 
       blocTest<DocumentsCubit, DocumentsState>(
-        'uploads a valid file at once when its kind is given',
+        'uploads a valid file as a document of the given kind',
         build: build,
         act: (cubit) => cubit.pick(
-          DocumentSource.camera,
+          DocumentSource.photos,
           kind: DocumentKind.identityDocument,
         ),
         expect: () => [
@@ -220,7 +214,8 @@ void main() {
           () => picker.pick(any()),
         ).thenAnswer((_) async => XFile.fromData(_bytes, path: 'notes.docx')),
         build: build,
-        act: (cubit) => cubit.pick(DocumentSource.files),
+        act: (cubit) =>
+            cubit.pick(DocumentSource.files, kind: DocumentKind.other),
         skip: 2,
         expect: () => [
           initial.copyWith(notice: DocumentsNotice.unsupportedType),
@@ -237,7 +232,8 @@ void main() {
           ),
         ),
         build: build,
-        act: (cubit) => cubit.pick(DocumentSource.files),
+        act: (cubit) =>
+            cubit.pick(DocumentSource.files, kind: DocumentKind.other),
         skip: 2,
         expect: () => [initial.copyWith(notice: DocumentsNotice.fileTooLarge)],
       );
@@ -247,7 +243,8 @@ void main() {
         setUp: () => when(() => picker.pick(any()))
             .thenThrow(DocumentAccessDenied(PlatformException(code: 'denied'))),
         build: build,
-        act: (cubit) => cubit.pick(DocumentSource.camera),
+        act: (cubit) =>
+            cubit.pick(DocumentSource.photos, kind: DocumentKind.other),
         skip: 2,
         expect: () => [initial.copyWith(notice: DocumentsNotice.accessDenied)],
         errors: () => [isA<DocumentAccessDenied>()],
@@ -258,7 +255,8 @@ void main() {
         setUp: () =>
             when(() => picker.pick(any())).thenThrow(Exception('oops')),
         build: build,
-        act: (cubit) => cubit.pick(DocumentSource.files),
+        act: (cubit) =>
+            cubit.pick(DocumentSource.files, kind: DocumentKind.other),
         skip: 2,
         expect: () => [initial.copyWith(notice: DocumentsNotice.pickFailed)],
         errors: () => [isA<Exception>()],
@@ -272,7 +270,8 @@ void main() {
           documents: const [],
           uploading: _photo,
         ),
-        act: (cubit) => cubit.pick(DocumentSource.camera),
+        act: (cubit) =>
+            cubit.pick(DocumentSource.photos, kind: DocumentKind.other),
         expect: () => const <DocumentsState>[],
         verify: (_) => verifyNever(() => picker.pick(any())),
       );
@@ -281,27 +280,24 @@ void main() {
         'does nothing on a locked dossier',
         build: build,
         seed: () => const DocumentsState(property: _locked, documents: []),
-        act: (cubit) => cubit.pick(DocumentSource.camera),
+        act: (cubit) =>
+            cubit.pick(DocumentSource.photos, kind: DocumentKind.other),
         expect: () => const <DocumentsState>[],
         verify: (_) => verifyNever(() => picker.pick(any())),
       );
     });
 
-    group('kindChosen', () {
+    group('addScan', () {
       blocTest<DocumentsCubit, DocumentsState>(
-        'uploads the pending file',
-        build: build,
-        seed: () => DocumentsState(
-          property: testProperty,
-          documents: const [_titleDeed],
-          pending: _photo,
-        ),
-        act: (cubit) => cubit.kindChosen(DocumentKind.identityDocument),
+        'uploads the PDF of a scan',
+        build: () => build(documents: const [_titleDeed]),
+        act: (cubit) =>
+            cubit.addScan(_scan, kind: DocumentKind.identityDocument),
         expect: () => [
           DocumentsState(
             property: testProperty,
             documents: const [_titleDeed],
-            uploading: _photo,
+            uploading: _scan,
           ),
           const DocumentsState(
             property: testProperty,
@@ -310,12 +306,66 @@ void main() {
             noticeCount: 1,
           ),
         ],
+        verify: (_) => verify(
+          () => repository.uploadDocument(
+            ownerId: 'user-id',
+            propertyId: 'property-id',
+            kind: DocumentKind.identityDocument,
+            fileName: 'Titre de propriété - scan du 2026-10-01 18h42.pdf',
+            bytes: _bytes,
+            mimeType: 'application/pdf',
+          ),
+        ).called(1),
       );
 
+      test('waits until the current change is over', () async {
+        final cubit = build()
+          ..emit(
+            const DocumentsState(
+              property: testProperty,
+              documents: [],
+              busyDocumentIds: {'d1'},
+            ),
+          );
+        final adding = cubit.addScan(_scan, kind: DocumentKind.plan);
+        await Future<void>.delayed(Duration.zero);
+        verifyNever(
+          () => repository.uploadDocument(
+            ownerId: any(named: 'ownerId'),
+            propertyId: any(named: 'propertyId'),
+            kind: any(named: 'kind'),
+            fileName: any(named: 'fileName'),
+            bytes: any(named: 'bytes'),
+            mimeType: any(named: 'mimeType'),
+          ),
+        );
+
+        cubit.emit(cubit.state.copyWith(busyDocumentIds: const {}));
+        await adding;
+        expect(cubit.state.documents, [_identity]);
+      });
+
+      test('drops nothing when closed while waiting', () async {
+        final cubit = build()
+          ..emit(
+            const DocumentsState(
+              property: testProperty,
+              documents: [],
+              busyDocumentIds: {'d1'},
+            ),
+          );
+        final adding = cubit.addScan(_scan, kind: DocumentKind.plan);
+        cubit.emit(cubit.state.copyWith(busyDocumentIds: const {}));
+        await cubit.close();
+        await adding;
+        expect(cubit.state.isUploading, isFalse);
+      });
+
       blocTest<DocumentsCubit, DocumentsState>(
-        'does nothing without a pending file',
+        'does nothing on a locked dossier',
         build: build,
-        act: (cubit) => cubit.kindChosen(DocumentKind.plan),
+        seed: () => const DocumentsState(property: _locked, documents: []),
+        act: (cubit) => cubit.addScan(_scan, kind: DocumentKind.plan),
         expect: () => const <DocumentsState>[],
       );
 
@@ -332,21 +382,19 @@ void main() {
           ),
         ).thenThrow(const DocumentUploadFailure()),
         build: build,
-        seed: () => DocumentsState(
-          property: testProperty,
-          documents: const [],
-          pending: _photo,
-        ),
-        act: (cubit) => cubit.kindChosen(DocumentKind.titleDeed),
+        act: (cubit) => cubit.addScan(_scan, kind: DocumentKind.titleDeed),
         expect: () => [
           DocumentsState(
             property: testProperty,
             documents: const [],
-            uploading: _photo,
+            uploading: _scan,
           ),
-          const DocumentsState(
+          DocumentsState(
             property: testProperty,
-            documents: [_titleDeed],
+            documents: const [_titleDeed],
+            failedUploads: [
+              FailedUpload(file: _scan, kind: DocumentKind.titleDeed),
+            ],
             notice: DocumentsNotice.uploadFailed,
             noticeCount: 1,
           ),
@@ -370,18 +418,16 @@ void main() {
           when(() => repository.getDocuments(any()))
               .thenThrow(const PropertyLoadFailure());
         },
-        build: build,
-        seed: () => DocumentsState(
-          property: testProperty,
-          documents: const [_identity],
-          pending: _photo,
-        ),
-        act: (cubit) => cubit.kindChosen(DocumentKind.titleDeed),
+        build: () => build(documents: const [_identity]),
+        act: (cubit) => cubit.addScan(_scan, kind: DocumentKind.titleDeed),
         skip: 1,
-        expect: () => const [
+        expect: () => [
           DocumentsState(
             property: testProperty,
-            documents: [_identity],
+            documents: const [_identity],
+            failedUploads: [
+              FailedUpload(file: _scan, kind: DocumentKind.titleDeed),
+            ],
             notice: DocumentsNotice.uploadFailed,
             noticeCount: 1,
           ),
@@ -422,11 +468,11 @@ void main() {
         'keeps the file stored by the lost upload',
         build: build,
         act: (cubit) async {
-          await cubit.pick(DocumentSource.camera, kind: DocumentKind.other);
+          await cubit.pick(DocumentSource.photos, kind: DocumentKind.other);
           // The lost upload went through after all.
           when(() => repository.getDocuments(any()))
               .thenAnswer((_) async => [stored]);
-          await cubit.pick(DocumentSource.camera, kind: DocumentKind.other);
+          await cubit.pick(DocumentSource.photos, kind: DocumentKind.other);
         },
         verify: (cubit) {
           expect(uploads, 1);
@@ -441,28 +487,96 @@ void main() {
         'uploads again when the file was not stored',
         build: build,
         act: (cubit) async {
-          await cubit.pick(DocumentSource.camera, kind: DocumentKind.other);
-          await cubit.pick(DocumentSource.camera, kind: DocumentKind.other);
+          await cubit.pick(DocumentSource.photos, kind: DocumentKind.other);
+          await cubit.pick(DocumentSource.photos, kind: DocumentKind.other);
         },
         verify: (cubit) {
           expect(uploads, 2);
           expect(cubit.state.documents, [_titleDeed, _identity]);
+          expect(cubit.state.failedUploads, isEmpty);
+        },
+        errors: () => [isA<TimeoutException>()],
+      );
+
+      blocTest<DocumentsCubit, DocumentsState>(
+        'keeps a failed scan to retry it',
+        build: build,
+        act: (cubit) async {
+          await cubit.addScan(_scan, kind: DocumentKind.titleDeed);
+          expect(cubit.state.failedUploads, [
+            FailedUpload(file: _scan, kind: DocumentKind.titleDeed),
+          ]);
+          await cubit.retryUpload(cubit.state.failedUploads.single);
+        },
+        verify: (cubit) {
+          expect(uploads, 2);
+          verify(
+            () => repository.uploadDocument(
+              ownerId: 'user-id',
+              propertyId: 'property-id',
+              kind: DocumentKind.titleDeed,
+              fileName: _scan.fileName,
+              bytes: _bytes,
+              mimeType: 'application/pdf',
+            ),
+          ).called(2);
+          expect(cubit.state.failedUploads, isEmpty);
+          expect(cubit.state.notice, DocumentsNotice.uploaded);
         },
         errors: () => [isA<TimeoutException>()],
       );
     });
 
-    blocTest<DocumentsCubit, DocumentsState>(
-      'kindChosen does nothing on a locked dossier',
-      build: build,
-      seed: () => DocumentsState(
-        property: _locked,
-        documents: const [],
-        pending: _photo,
-      ),
-      act: (cubit) => cubit.kindChosen(DocumentKind.plan),
-      expect: () => const <DocumentsState>[],
-    );
+    group('failed uploads', () {
+      final failed = FailedUpload(file: _scan, kind: DocumentKind.titleDeed);
+      final other = FailedUpload(file: _photo, kind: DocumentKind.other);
+
+      blocTest<DocumentsCubit, DocumentsState>(
+        'discardFailedUpload gives up a file',
+        build: build,
+        seed: () => DocumentsState(
+          property: testProperty,
+          documents: const [],
+          failedUploads: [failed, other],
+        ),
+        act: (cubit) => cubit.discardFailedUpload(failed),
+        expect: () => [
+          DocumentsState(
+            property: testProperty,
+            documents: const [],
+            failedUploads: [other],
+          ),
+        ],
+      );
+
+      blocTest<DocumentsCubit, DocumentsState>(
+        'cannot change while busy',
+        build: build,
+        seed: () => DocumentsState(
+          property: testProperty,
+          documents: const [],
+          uploading: _photo,
+          failedUploads: [failed],
+        ),
+        act: (cubit) async {
+          cubit.discardFailedUpload(failed);
+          await cubit.retryUpload(failed);
+        },
+        expect: () => const <DocumentsState>[],
+      );
+
+      blocTest<DocumentsCubit, DocumentsState>(
+        'retryUpload does nothing on a locked dossier',
+        build: build,
+        seed: () => DocumentsState(
+          property: _locked,
+          documents: const [],
+          failedUploads: [failed],
+        ),
+        act: (cubit) => cubit.retryUpload(failed),
+        expect: () => const <DocumentsState>[],
+      );
+    });
 
     blocTest<DocumentsCubit, DocumentsState>(
       'delete does nothing on a locked dossier',
@@ -471,25 +585,6 @@ void main() {
           const DocumentsState(property: _locked, documents: [_identity]),
       act: (cubit) => cubit.delete(_identity),
       expect: () => const <DocumentsState>[],
-    );
-
-    test('a closed cubit ignores late answers', () async {
-      final cubit = build();
-      await cubit.close();
-      cubit.pendingDiscarded();
-      expect(cubit.state, initial);
-    });
-
-    blocTest<DocumentsCubit, DocumentsState>(
-      'pendingDiscarded drops the pending file',
-      build: build,
-      seed: () => DocumentsState(
-        property: testProperty,
-        documents: const [],
-        pending: _photo,
-      ),
-      act: (cubit) => cubit.pendingDiscarded(),
-      expect: () => const [initial],
     );
 
     blocTest<DocumentsCubit, DocumentsState>(

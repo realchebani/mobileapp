@@ -35,7 +35,7 @@ final class TechnicalState extends Equatable {
     this.adjacency,
     this.roofType,
     this.roofYear = '',
-    this.heatingEnergy,
+    this.heatingSystems = const [],
     this.heatPumpType,
     this.heatPumpYear = '',
     this.sanitation,
@@ -68,7 +68,7 @@ final class TechnicalState extends Equatable {
       adjacency: property.adjacency,
       roofType: parseDbEnum(RoofType.values, property.roofType),
       roofYear: property.roofYear?.toString() ?? '',
-      heatingEnergy: property.heatingEnergy,
+      heatingSystems: property.heatingSystems,
       heatPumpType: parseDbEnum(HeatPumpType.values, property.heatPumpType),
       heatPumpYear: property.heatPumpYear?.toString() ?? '',
       sanitation: property.sanitation,
@@ -119,7 +119,9 @@ final class TechnicalState extends Equatable {
   final Adjacency? adjacency;
   final RoofType? roofType;
   final String roofYear;
-  final HeatingEnergy? heatingEnergy;
+
+  /// Heating systems (multiple choice, kept in the design order).
+  final List<HeatingSystem> heatingSystems;
   final HeatPumpType? heatPumpType;
   final String heatPumpYear;
   final Sanitation? sanitation;
@@ -152,8 +154,15 @@ final class TechnicalState extends Equatable {
   /// "Niveaux" is required for a house only (spec).
   bool get requiresLevels => propertyType == PropertyType.house;
 
+  /// At least one heating system is required for a house or an apartment
+  /// (optional for "Autre", not asked for land).
+  bool get requiresHeating =>
+      propertyType == PropertyType.house ||
+      propertyType == PropertyType.apartment;
+
+  /// The heat pump details are asked when a heat pump is among the systems.
   bool get asksHeatPump =>
-      asksBuilding && heatingEnergy == HeatingEnergy.heatPump;
+      asksBuilding && heatingSystems.contains(HeatingSystem.heatPump);
 
   bool get asksPool => outdoorEquipment.contains(OutdoorEquipment.pool);
 
@@ -191,8 +200,10 @@ final class TechnicalState extends Equatable {
   TechnicalError? get roofYearError =>
       asksWholeBuilding ? _yearError(roofYear, roofMinYear) : null;
 
-  TechnicalError? get heatingEnergyError =>
-      asksBuilding && heatingEnergy == null ? TechnicalError.required : null;
+  TechnicalError? get heatingSystemsError =>
+      requiresHeating && heatingSystems.isEmpty
+      ? TechnicalError.required
+      : null;
 
   TechnicalError? get heatPumpYearError =>
       asksHeatPump ? _yearError(heatPumpYear, minHeatPumpYear) : null;
@@ -232,7 +243,7 @@ final class TechnicalState extends Equatable {
       livingRoomAreaError == null &&
       levelsError == null &&
       roofYearError == null &&
-      heatingEnergyError == null &&
+      heatingSystemsError == null &&
       heatPumpYearError == null &&
       poolDimensionsError == null;
 
@@ -260,7 +271,9 @@ final class TechnicalState extends Equatable {
       PropertyColumns.adjacency: whole ? adjacency : null,
       PropertyColumns.roofType: whole ? roofType : null,
       PropertyColumns.roofYear: whole ? parseYear(roofYear) : null,
-      PropertyColumns.heatingEnergy: building ? heatingEnergy : null,
+      PropertyColumns.heatingSystems: building
+          ? heatingSystems
+          : const <HeatingSystem>[],
       PropertyColumns.heatPumpType: heatPump ? heatPumpType : null,
       PropertyColumns.heatPumpYear: heatPump ? parseYear(heatPumpYear) : null,
       PropertyColumns.sanitation: sanitation,
@@ -364,7 +377,7 @@ final class TechnicalState extends Equatable {
     Adjacency? Function()? adjacency,
     RoofType? Function()? roofType,
     String? roofYear,
-    HeatingEnergy? heatingEnergy,
+    List<HeatingSystem>? heatingSystems,
     HeatPumpType? Function()? heatPumpType,
     String? heatPumpYear,
     Sanitation? Function()? sanitation,
@@ -389,7 +402,7 @@ final class TechnicalState extends Equatable {
       adjacency: adjacency == null ? this.adjacency : adjacency(),
       roofType: roofType == null ? this.roofType : roofType(),
       roofYear: roofYear ?? this.roofYear,
-      heatingEnergy: heatingEnergy ?? this.heatingEnergy,
+      heatingSystems: heatingSystems ?? this.heatingSystems,
       heatPumpType: heatPumpType == null ? this.heatPumpType : heatPumpType(),
       heatPumpYear: heatPumpYear ?? this.heatPumpYear,
       sanitation: sanitation == null ? this.sanitation : sanitation(),
@@ -417,7 +430,7 @@ final class TechnicalState extends Equatable {
     adjacency,
     roofType,
     roofYear,
-    heatingEnergy,
+    heatingSystems,
     heatPumpType,
     heatPumpYear,
     sanitation,

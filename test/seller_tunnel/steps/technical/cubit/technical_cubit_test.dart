@@ -27,7 +27,7 @@ const _filled = Property(
   adjacency: Adjacency.detached,
   roofType: 'tuiles',
   roofYear: 2016,
-  heatingEnergy: HeatingEnergy.heatPump,
+  heatingSystems: [HeatingSystem.heatPump, HeatingSystem.wood],
   heatPumpType: 'air_eau',
   heatPumpYear: 2021,
   sanitation: Sanitation.mainsSewer,
@@ -55,6 +55,11 @@ void main() {
       expect(state.rooms, 5);
       expect(state.bedrooms, 3);
       expect(state.roofType, RoofType.tiles);
+      expect(state.heatingSystems, [
+        HeatingSystem.heatPump,
+        HeatingSystem.wood,
+      ]);
+      expect(state.asksHeatPump, isTrue);
       expect(state.heatPumpType, HeatPumpType.airToWater);
       expect(state.poolType, PoolType.inGroundLiner);
       expect(state.poolDimensions, '8 × 4,25');
@@ -100,10 +105,14 @@ void main() {
       expect(apartment.asksBuilding, isTrue);
       expect(apartment.asksWholeBuilding, isFalse);
       expect(apartment.levelsError, isNull);
+      expect(apartment.heatingSystemsError, TechnicalError.required);
 
       final other = _state(const Property(id: 'p', ownerId: 'u'));
       expect(other.asksWholeBuilding, isTrue);
       expect(other.levelsError, isNull);
+      // Heating is optional for "Autre".
+      expect(other.requiresHeating, isFalse);
+      expect(other.heatingSystemsError, isNull);
 
       final land = _state(
         const Property(id: 'p', ownerId: 'u', propertyType: PropertyType.land),
@@ -112,15 +121,26 @@ void main() {
       expect(land.isValid, isTrue);
       expect(land.values[PropertyColumns.constructionYear], isNull);
       expect(land.values[PropertyColumns.roomsCount], isNull);
+      expect(land.requiresHeating, isFalse);
+      final landWithHeating = _state(
+        const Property(
+          id: 'p',
+          ownerId: 'u',
+          propertyType: PropertyType.land,
+          heatingSystems: [HeatingSystem.heatPump],
+        ),
+      );
+      expect(landWithHeating.asksHeatPump, isFalse);
+      expect(landWithHeating.values[PropertyColumns.heatingSystems], isEmpty);
     });
 
-    test('requires the year, the area, the levels and the energy', () {
+    test('requires the year, the area, the levels and the heating', () {
       final state = _state(_house);
       expect(state.constructionYearError, TechnicalError.required);
       expect(state.livingAreaError, TechnicalError.required);
       expect(state.livingRoomAreaError, isNull);
       expect(state.levelsError, TechnicalError.required);
-      expect(state.heatingEnergyError, TechnicalError.required);
+      expect(state.heatingSystemsError, TechnicalError.required);
       expect(state.roofYearError, isNull);
       expect(state.heatPumpYearError, isNull);
       expect(state.poolDimensionsError, isNull);
@@ -161,12 +181,14 @@ void main() {
     });
 
     test('records no provenance for cleared answers', () {
-      final state = _state(_filled).copyWith(heatingEnergy: HeatingEnergy.gas);
+      final state = _state(_filled)
+          .copyWith(heatingSystems: [HeatingSystem.gas]);
+      expect(state.asksHeatPump, isFalse);
       expect(state.isChanged(PropertyColumns.heatPumpYear), isTrue);
       expect(state.patch[PropertyColumns.provenance], {
         'heat_pump_year': 'document',
         'roof_year': 'declared',
-        'heating_energy': 'declared',
+        'heating_systems': 'declared',
       });
     });
 
@@ -241,7 +263,7 @@ void main() {
 
     test('clears the answers of hidden questions', () {
       final state = _state(_filled).copyWith(
-        heatingEnergy: HeatingEnergy.gas,
+        heatingSystems: [HeatingSystem.gas],
         outdoorEquipment: [OutdoorEquipment.garage],
       );
       expect(state.values[PropertyColumns.heatPumpType], isNull);
@@ -261,7 +283,10 @@ void main() {
         PropertyColumns.adjacency: Adjacency.detached,
         PropertyColumns.roofType: RoofType.tiles,
         PropertyColumns.roofYear: 2016,
-        PropertyColumns.heatingEnergy: HeatingEnergy.heatPump,
+        PropertyColumns.heatingSystems: [
+          HeatingSystem.heatPump,
+          HeatingSystem.wood,
+        ],
         PropertyColumns.heatPumpType: HeatPumpType.airToWater,
         PropertyColumns.heatPumpYear: 2021,
         PropertyColumns.sanitation: Sanitation.mainsSewer,
@@ -295,7 +320,7 @@ void main() {
         ..levelsChanged(PropertyLevels.singleStorey)
         ..roofTypeChanged(RoofType.slate)
         ..roofYearChanged('2016')
-        ..heatingEnergyChanged(HeatingEnergy.heatPump)
+        ..heatingSystemToggled(HeatingSystem.heatPump)
         ..heatPumpTypeChanged(HeatPumpType.geothermal)
         ..heatPumpYearChanged('2021')
         ..poolTypeChanged(PoolType.aboveGround)
@@ -310,7 +335,7 @@ void main() {
         expect(state.levels, PropertyLevels.singleStorey);
         expect(state.roofType, RoofType.slate);
         expect(state.roofYear, '2016');
-        expect(state.heatingEnergy, HeatingEnergy.heatPump);
+        expect(state.heatingSystems, [HeatingSystem.heatPump]);
         expect(state.heatPumpType, HeatPumpType.geothermal);
         expect(state.heatPumpYear, '2021');
         expect(state.poolType, PoolType.aboveGround);
@@ -361,6 +386,24 @@ void main() {
         OutdoorEquipment.pool,
         OutdoorEquipment.garage,
       ]),
+    );
+
+    blocTest<TechnicalCubit, TechnicalState>(
+      'toggles the heating systems in the design order',
+      build: _cubit,
+      act: (cubit) => cubit
+        ..heatingSystemToggled(HeatingSystem.wood)
+        ..heatingSystemToggled(HeatingSystem.electricity)
+        ..heatingSystemToggled(HeatingSystem.heatPump)
+        ..heatingSystemToggled(HeatingSystem.heatPump),
+      verify: (cubit) {
+        expect(cubit.state.heatingSystems, [
+          HeatingSystem.electricity,
+          HeatingSystem.wood,
+        ]);
+        expect(cubit.state.heatingSystemsError, isNull);
+        expect(cubit.state.asksHeatPump, isFalse);
+      },
     );
 
     blocTest<TechnicalCubit, TechnicalState>(

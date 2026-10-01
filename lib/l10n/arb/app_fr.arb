@@ -1700,29 +1700,49 @@
   "@technicalSectionHeating": {
     "description": "Technique (V4b) : titre de la section chauffage et assainissement"
   },
-  "technicalHeatingEnergy": "Énergie principale",
-  "@technicalHeatingEnergy": {
-    "description": "Technique (V4b) : question énergie de chauffage principale"
+  "technicalHeatingSystems": "Systèmes de chauffage (plusieurs choix possibles)",
+  "@technicalHeatingSystems": {
+    "description": "Technique (V4b) : question systèmes de chauffage (choix multiple)"
   },
-  "technicalEnergyElectricity": "Électricité",
-  "@technicalEnergyElectricity": {
-    "description": "Technique (V4b) : énergie de chauffage"
+  "technicalHeatingElectricity": "Électrique",
+  "@technicalHeatingElectricity": {
+    "description": "Technique (V4b) : système de chauffage électrique (radiateurs, convecteurs, plancher chauffant électrique)"
   },
-  "technicalEnergyGas": "Gaz",
-  "@technicalEnergyGas": {
-    "description": "Technique (V4b) : énergie de chauffage"
+  "technicalHeatingHeatPump": "Pompe à chaleur",
+  "@technicalHeatingHeatPump": {
+    "description": "Technique (V4b) : système de chauffage pompe à chaleur"
   },
-  "technicalEnergyFuelOil": "Fioul",
-  "@technicalEnergyFuelOil": {
-    "description": "Technique (V4b) : énergie de chauffage"
+  "technicalHeatingGas": "Gaz",
+  "@technicalHeatingGas": {
+    "description": "Technique (V4b) : système de chauffage gaz"
   },
-  "technicalEnergyHeatPump": "Pompe à chaleur",
-  "@technicalEnergyHeatPump": {
-    "description": "Technique (V4b) : énergie de chauffage"
+  "technicalHeatingFuelOil": "Fioul",
+  "@technicalHeatingFuelOil": {
+    "description": "Technique (V4b) : système de chauffage fioul"
   },
-  "technicalEnergyWood": "Bois",
-  "@technicalEnergyWood": {
-    "description": "Technique (V4b) : énergie de chauffage"
+  "technicalHeatingWood": "Poêle à bois",
+  "@technicalHeatingWood": {
+    "description": "Technique (V4b) : système de chauffage au bois (poêle ou chaudière à bois)"
+  },
+  "technicalHeatingPellets": "Poêle à granulés",
+  "@technicalHeatingPellets": {
+    "description": "Technique (V4b) : système de chauffage poêle à granulés"
+  },
+  "technicalHeatingFireplace": "Cheminée / insert",
+  "@technicalHeatingFireplace": {
+    "description": "Technique (V4b) : système de chauffage cheminée ou insert"
+  },
+  "technicalHeatingDistrict": "Réseau de chaleur",
+  "@technicalHeatingDistrict": {
+    "description": "Technique (V4b) : système de chauffage réseau de chaleur urbain"
+  },
+  "technicalHeatingSolar": "Solaire",
+  "@technicalHeatingSolar": {
+    "description": "Technique (V4b) : système de chauffage solaire"
+  },
+  "technicalHeatingOther": "Autre",
+  "@technicalHeatingOther": {
+    "description": "Technique (V4b) : autre système de chauffage"
   },
   "technicalHeatPumpType": "Type de PAC",
   "@technicalHeatPumpType": {
@@ -1888,9 +1908,9 @@
   "@technicalErrorLevels": {
     "description": "Technique (V4b) : erreur niveaux manquants"
   },
-  "technicalErrorHeatingEnergy": "Choisissez l’énergie principale",
-  "@technicalErrorHeatingEnergy": {
-    "description": "Technique (V4b) : erreur énergie principale manquante"
+  "technicalErrorHeatingSystems": "Choisissez au moins un système de chauffage",
+  "@technicalErrorHeatingSystems": {
+    "description": "Technique (V4b) : erreur quand aucun système de chauffage n’est choisi"
   },
   "technicalErrorDimensions": "Format attendu : longueur × largeur, ex. 8 × 4",
   "@technicalErrorDimensions": {
@@ -2181,7 +2201,7 @@
   "@submittedSummaryLevels": {
     "description": "V8 · aperçu : niveaux"
   },
-  "submittedSummaryHeating": "Énergie de chauffage",
+  "submittedSummaryHeating": "Chauffage",
   "@submittedSummaryHeating": {
     "description": "V8 · aperçu : chauffage"
   },
@@ -2251,7 +2271,7 @@
       }
     }
   },
-  "documentsAgentMessage": "Dernière étape : vos documents. Photographiez-les ou importez-les : l’expert s’en sert pour vérifier votre dossier.",
+  "documentsAgentMessage": "Dernière étape : vos documents. Scannez-les ou importez-les : l’expert s’en sert pour vérifier votre dossier.",
   "@documentsAgentMessage": {
     "description": "V7 · message de l’agent"
   },
@@ -2444,7 +2464,7 @@
   },
   "documentsScan": "Scanner",
   "@documentsScan": {
-    "description": "V7 · bouton et lien photographiant un document"
+    "description": "V7 · lien scannant un document (plusieurs pages, un PDF)"
   },
   "documentsImport": "Importer",
   "@documentsImport": {
@@ -2492,10 +2512,6 @@
   "documentsUploading": "Envoi en cours…",
   "@documentsUploading": {
     "description": "V7 · sous-titre de la ligne du fichier en cours d’envoi"
-  },
-  "documentsKindSheetTitle": "Quel est ce document ?",
-  "@documentsKindSheetTitle": {
-    "description": "V7 · titre de la feuille de choix du type de document"
   },
   "documentsSourceSheetTitle": "Importer un document",
   "@documentsSourceSheetTitle": {
@@ -2603,7 +2619,7 @@
   "@documentsNoticePickFailed": {
     "description": "V7 · erreur : fichier illisible"
   },
-  "documentsNoticeUploadFailed": "L’envoi du document a échoué. Vérifiez votre connexion et réessayez.",
+  "documentsNoticeUploadFailed": "L’envoi du document a échoué. Vérifiez votre connexion, puis touchez « Réessayer ».",
   "@documentsNoticeUploadFailed": {
     "description": "V7 · erreur : envoi échoué"
   },
@@ -2684,5 +2700,175 @@
   "documentsRequiredForSubmission": "Indispensable pour envoyer votre dossier",
   "@documentsRequiredForSubmission": {
     "description": "V7 · erreur sous la ligne d’un document indispensable à l’envoi"
+  },
+  "documentsScanCaption": "Scan multipage",
+  "@documentsScanCaption": {
+    "description": "V7 · surtitre de l’écran de scan d’un document"
+  },
+  "documentsScanPageCount": "{count, plural, =0{Aucune page} =1{1 page} other{{count} pages}}",
+  "@documentsScanPageCount": {
+    "description": "V7 · nombre de pages scannées",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "documentsScanPage": "Page {number}",
+  "@documentsScanPage": {
+    "description": "V7 · titre d’une page scannée",
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "documentsScanDeletePage": "Supprimer la page {number}",
+  "@documentsScanDeletePage": {
+    "description": "V7 · libellé d’accessibilité du bouton supprimant une page scannée",
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "documentsScanAddPage": "Ajouter une page",
+  "@documentsScanAddPage": {
+    "description": "V7 · bouton scannant d’autres pages"
+  },
+  "documentsScanFinish": "Terminer",
+  "@documentsScanFinish": {
+    "description": "V7 · bouton réunissant les pages scannées en un PDF"
+  },
+  "documentsScanBuilding": "Préparation du PDF",
+  "@documentsScanBuilding": {
+    "description": "V7 · libellé d’accessibilité pendant la préparation du PDF"
+  },
+  "documentsScanReorderHint": "Maintenez une page appuyée pour la déplacer. Les pages forment un seul PDF.",
+  "@documentsScanReorderHint": {
+    "description": "V7 · aide de l’écran de scan (plusieurs pages)"
+  },
+  "documentsScanSinglePageHint": "Ajoutez les autres pages du document, puis touchez « Terminer ».",
+  "@documentsScanSinglePageHint": {
+    "description": "V7 · aide de l’écran de scan (une page)"
+  },
+  "documentsScanEmpty": "Aucune page pour l’instant. Scannez votre document page par page.",
+  "@documentsScanEmpty": {
+    "description": "V7 · écran de scan sans page"
+  },
+  "documentsScanMaxPages": "{max} pages maximum par document",
+  "@documentsScanMaxPages": {
+    "description": "V7 · limite du nombre de pages scannées",
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "documentsScanDiscardTitle": "Abandonner ce scan ?",
+  "@documentsScanDiscardTitle": {
+    "description": "V7 · titre de la confirmation d’abandon d’un scan"
+  },
+  "documentsScanDiscardMessage": "{count, plural, =1{La page scannée sera perdue.} other{Les {count} pages scannées seront perdues.}}",
+  "@documentsScanDiscardMessage": {
+    "description": "V7 · message de la confirmation d’abandon d’un scan",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "documentsScanDiscard": "Abandonner",
+  "@documentsScanDiscard": {
+    "description": "V7 · bouton abandonnant un scan"
+  },
+  "documentsScanContinue": "Continuer le scan",
+  "@documentsScanContinue": {
+    "description": "V7 · bouton reprenant un scan"
+  },
+  "documentsScanNoticeFailed": "Le scan a échoué. Réessayez.",
+  "@documentsScanNoticeFailed": {
+    "description": "V7 · échec du scanner"
+  },
+  "documentsScanNoticeTooLarge": "Ce document dépasse 20 Mo, même compressé. Retirez des pages ou envoyez-le en plusieurs fois.",
+  "@documentsScanNoticeTooLarge": {
+    "description": "V7 · PDF du scan trop lourd"
+  },
+  "documentsScanNoticeBuildFailed": "Impossible de préparer le PDF. Réessayez.",
+  "@documentsScanNoticeBuildFailed": {
+    "description": "V7 · échec de la création du PDF du scan"
+  },
+  "documentsScanFileName": "{document} - scan du {date}.pdf",
+  "@documentsScanFileName": {
+    "description": "V7 · nom du PDF d’un scan (date au format 2026-10-01 18h42)",
+    "placeholders": {
+      "document": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "documentsSubmitShort": "Envoyer à l’expert",
+  "@documentsSubmitShort": {
+    "description": "V7 · bouton d’envoi raccourci (grands textes)"
+  },
+  "documentsPrivacyNoteLocked": "Documents chiffrés, consultés uniquement par l’expert en charge de votre dossier.",
+  "@documentsPrivacyNoteLocked": {
+    "description": "V7 · note de confidentialité d’un dossier verrouillé"
+  },
+  "documentsUploadFailedRow": "{document} · échec de l’envoi",
+  "@documentsUploadFailedRow": {
+    "description": "V7 · sous-titre d’un fichier dont l’envoi a échoué",
+    "placeholders": {
+      "document": {
+        "type": "String"
+      }
+    }
+  },
+  "documentsRetry": "Réessayer",
+  "@documentsRetry": {
+    "description": "V7 · lien renvoyant un fichier dont l’envoi a échoué"
+  },
+  "documentsRetryFile": "Réessayer l’envoi de {fileName}",
+  "@documentsRetryFile": {
+    "description": "V7 · libellé d’accessibilité de « Réessayer »",
+    "placeholders": {
+      "fileName": {
+        "type": "String"
+      }
+    }
+  },
+  "documentsDiscardFile": "Retirer {fileName}",
+  "@documentsDiscardFile": {
+    "description": "V7 · libellé d’accessibilité du bouton abandonnant un fichier non envoyé",
+    "placeholders": {
+      "fileName": {
+        "type": "String"
+      }
+    }
+  },
+  "documentsSubmitFailedUploads": "Un document n’a pas pu être envoyé : réessayez ou retirez-le avant d’envoyer votre dossier.",
+  "@documentsSubmitFailedUploads": {
+    "description": "V7 · envoi du dossier bloqué par un fichier non envoyé"
+  },
+  "documentsScanNoticeTruncated": "{max, plural, other{Limite de {max} pages atteinte : les pages en trop n’ont pas été ajoutées.}}",
+  "@documentsScanNoticeTruncated": {
+    "description": "V7 · pages scannées au-delà de la limite",
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "documentsScanBuildingPages": "{count, plural, =1{Préparation du PDF (1 page)…} other{Préparation du PDF ({count} pages)…}}",
+  "@documentsScanBuildingPages": {
+    "description": "V7 · progression de la préparation du PDF",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   }
 }

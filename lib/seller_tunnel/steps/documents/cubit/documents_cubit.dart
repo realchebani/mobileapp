@@ -12,8 +12,8 @@ part 'documents_state.dart';
 /// Opens a (signed) document URL.
 typedef DocumentUrlOpener = Future<bool> Function(Uri uri);
 
-/// V7 · Le Vault documents: picks, uploads, opens and deletes the
-/// documents of the dossier.
+/// V7 · Le Vault documents: picks, uploads (also the PDFs of the scans),
+/// opens and deletes the documents of the dossier.
 ///
 /// The view reports [DocumentsState.documents] to the tunnel cubit when they
 /// change, and submits the dossier through it.
@@ -51,18 +51,12 @@ class DocumentsCubit extends Cubit<DocumentsState> {
   final DocumentUrlOpener _openUrl;
   final Duration _timeout;
 
-  /// The last file whose upload failed (its answer may have been lost).
-  PickedDocument? _failedUpload;
-
   /// Lifetime of the URLs opening the documents.
   static const documentUrlLifetime = Duration(seconds: 120);
 
-  /// Lets the user pick a file from [source] and checks it (size, type).
-  ///
-  /// A valid file is uploaded at once as a document of [kind] when given;
-  /// otherwise it becomes [DocumentsState.pending] until the user tells its
-  /// kind ([kindChosen]) or gives up ([pendingDiscarded]).
-  Future<void> pick(DocumentSource source, {DocumentKind? kind}) async {
+  /// Lets the user pick a file from [source], checks it (size, type) and
+  /// uploads it as a document of [kind].
+  Future<void> pick(DocumentSource source, {required DocumentKind kind}) async {
     if (state.isBusy || state.isLocked) return;
     emit(state.copyWith(picking: true));
     final PickedDocument? picked;
@@ -72,9 +66,44 @@ class DocumentsCubit extends Cubit<DocumentsState> {
       if (!isClosed) emit(state.copyWith(picking: false));
     }
     if (picked == null || isClosed) return;
-    if (kind != null) return await _upload(picked, kind);
-    emit(state.copyWith(pending: () => picked));
+    await _upload(picked, kind);
   }
+
+  /// Uploads [scan] (the PDF of a scan) as a document of [kind], once the
+  /// current change is over: a scan is never dropped.
+  Future<void> addScan(
+    PickedDocument scan, {
+    required DocumentKind kind,
+  }) async {
+    if (state.isBusy) await stream.firstWhere((state) => !state.isBusy);
+    // A scan can only start on a dossier that is not locked.
+    if (isClosed || state.isLocked) return;
+    await _upload(scan, kind);
+  }
+
+  /// Uploads again the file of [failed] ("Réessayer").
+  Future<void> retryUpload(FailedUpload failed) async {
+    if (state.isBusy || state.isLocked) return;
+    await _upload(failed.file, failed.kind);
+  }
+
+  /// Gives up the file of [failed].
+  void discardFailedUpload(FailedUpload failed) {
+    if (state.isBusy) return;
+    emit(
+      state.copyWith(
+        failedUploads: [
+          for (final f in state.failedUploads)
+            if (f != failed) f,
+        ],
+      ),
+    );
+  }
+
+  List<FailedUpload> _withoutFailed(PickedDocument file) => [
+    for (final f in state.failedUploads)
+      if (f.file != file) f,
+  ];
 
   /// The checked file picked from [source], or null (with a notice when
   /// it is not a cancellation).
@@ -106,24 +135,12 @@ class DocumentsCubit extends Cubit<DocumentsState> {
     return null;
   }
 
-  /// Uploads the pending file as a document of [kind].
-  Future<void> kindChosen(DocumentKind kind) async {
-    final pending = state.pending;
-    if (pending == null || state.isUploading || state.isLocked) return;
-    await _upload(pending, kind);
-  }
-
   /// "Envoyer" was tapped while documents needed to send are missing:
   /// shows them (until they are provided).
   void submissionBlocked() {
     if (!state.showsSubmissionErrors) {
       emit(state.copyWith(showsSubmissionErrors: true));
     }
-  }
-
-  /// Drops the pending file (its kind was not given).
-  void pendingDiscarded() {
-    if (!isClosed) emit(state.copyWith(pending: () => null));
   }
 
   /// The accepted MIME type of [file] (from its extension, else from the
@@ -145,8 +162,8 @@ class DocumentsCubit extends Cubit<DocumentsState> {
 
   Future<void> _upload(PickedDocument file, DocumentKind kind) async {
     if (isClosed) return;
-    emit(state.copyWith(pending: () => null, uploading: () => file));
-    if (file == _failedUpload) {
+    emit(state.copyWith(uploading: () => file));
+    if (state.failedUploads.any((failed) => failed.file == file)) {
       // The previous upload of this file may have succeeded after its
       // timeout: look for it before sending it again.
       final documents = await _reload();
@@ -155,10 +172,10 @@ class DocumentsCubit extends Cubit<DocumentsState> {
         (d) => d.fileName == file.fileName && d.sizeBytes == file.bytes.length,
       );
       if (stored != null && stored.isNotEmpty) {
-        _failedUpload = null;
         emit(
           state.copyWith(
             documents: documents,
+            failedUploads: _withoutFailed(file),
             uploading: () => null,
             notice: DocumentsNotice.uploaded,
           ),
@@ -179,7 +196,6 @@ class DocumentsCubit extends Cubit<DocumentsState> {
             mimeType: file.mimeType,
           )
           .timeout(_timeout + uploadTimeoutPerMegabyte * megabytes);
-      _failedUpload = null;
       if (isClosed) return;
       emit(
         state.copyWith(
@@ -188,22 +204,27 @@ class DocumentsCubit extends Cubit<DocumentsState> {
               if (d.id != document.id) d,
             document,
           ],
+          failedUploads: _withoutFailed(file),
           uploading: () => null,
           notice: DocumentsNotice.uploaded,
         ),
       );
     } on Object catch (error, stackTrace) {
-      _failedUpload = file;
       if (isClosed) return;
       addError(error, stackTrace);
       // The answer of an upload that succeeded may have been lost: reload
       // the list so that a retry does not add the document twice.
       final documents = await _reload();
       if (isClosed) return;
+      // Kept to retry ("Réessayer"), never silently dropped.
       emit(
         state.copyWith(
           documents: documents,
           uploading: () => null,
+          failedUploads: [
+            ..._withoutFailed(file),
+            FailedUpload(file: file, kind: kind),
+          ],
           notice: DocumentsNotice.uploadFailed,
         ),
       );

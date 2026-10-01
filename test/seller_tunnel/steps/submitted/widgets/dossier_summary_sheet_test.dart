@@ -80,7 +80,7 @@ void main() {
           roomsCount: 5,
           bedroomsCount: 3,
           levels: PropertyLevels.oneUpperFloor,
-          heatingEnergy: HeatingEnergy.heatPump,
+          heatingSystems: [HeatingSystem.heatPump, HeatingSystem.wood],
           sanitation: Sanitation.mainsSewer,
         ),
       ),
@@ -100,7 +100,7 @@ void main() {
       '5',
       '3',
       'R+1',
-      'Pompe à chaleur',
+      'Pompe à chaleur, Poêle à bois',
       'Tout-à-l’égout',
       '2 pièces · 50,5${nb}m² habitables',
       'Annexes',
@@ -154,21 +154,35 @@ void main() {
   }
 
   testWidgets('other technical values', (tester) async {
-    for (final (levels, energy, sanitation, texts) in [
+    for (final (levels, systems, sanitation, texts) in [
       (
         PropertyLevels.singleStorey,
-        HeatingEnergy.electricity,
+        [HeatingSystem.electricity],
         Sanitation.septicTank,
-        ['Plain-pied', 'Électricité', 'Fosse septique'],
+        ['Plain-pied', 'Électrique', 'Fosse septique'],
       ),
       (
         PropertyLevels.twoOrMoreUpperFloors,
-        HeatingEnergy.gas,
+        [HeatingSystem.gas, HeatingSystem.pellets, HeatingSystem.fireplace],
         Sanitation.soakaway,
-        ['R+2 et plus', 'Gaz', 'Puits perdu'],
+        [
+          'R+2 et plus',
+          'Gaz, Poêle à granulés, Cheminée / insert',
+          'Puits perdu',
+        ],
       ),
-      (null, HeatingEnergy.fuelOil, null, ['Fioul']),
-      (null, HeatingEnergy.wood, null, ['Bois']),
+      (
+        null,
+        [HeatingSystem.fuelOil, HeatingSystem.districtHeating],
+        null,
+        ['Fioul, Réseau de chaleur'],
+      ),
+      (
+        null,
+        [HeatingSystem.solar, HeatingSystem.other],
+        null,
+        ['Solaire, Autre'],
+      ),
     ]) {
       await pump(
         tester,
@@ -178,7 +192,7 @@ void main() {
             id: _id,
             ownerId: 'user-id',
             levels: levels,
-            heatingEnergy: energy,
+            heatingSystems: systems,
             sanitation: sanitation,
             roomsCount: 1,
           ),

@@ -62,9 +62,19 @@ class TechnicalCubit extends Cubit<TechnicalState> {
 
   void roofYearChanged(String value) => emit(state.copyWith(roofYear: value));
 
-  /// Selects the main energy (required: tapping it again keeps it).
-  void heatingEnergyChanged(HeatingEnergy value) =>
-      emit(state.copyWith(heatingEnergy: value));
+  /// Adds or removes [value] (multiple choice, kept in the design order).
+  void heatingSystemToggled(HeatingSystem value) {
+    final selected = state.heatingSystems.contains(value);
+    emit(
+      state.copyWith(
+        heatingSystems: [
+          for (final item in HeatingSystem.values)
+            if (item == value ? !selected : state.heatingSystems.contains(item))
+              item,
+        ],
+      ),
+    );
+  }
 
   /// Picks [value], or clears the answer ("Non précisé") when null.
   void heatPumpTypeChanged(HeatPumpType? value) =>

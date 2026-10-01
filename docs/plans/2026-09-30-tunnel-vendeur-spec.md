@@ -158,8 +158,8 @@ Layout:
    - Label `Mitoyenneté` + chips `Indépendant`, `1 côté`, `2 côtés`, `3 côtés` (Indépendant).
    - Row: `Toiture` Select (`Tuiles`) · `Année toiture` (2016) with `ProvenanceTag.declared` below.
 5. h2 `Chauffage & assainissement`
-   - Label `Énergie principale` + chips `Électricité`, `Gaz`, `Fioul`, `Pompe à chaleur`, `Bois` (Pompe à chaleur).
-   - If Pompe à chaleur: row `Type de PAC` Select (`Air / eau`) · `Année PAC` (2021) with `ProvenanceTag.document` (`Extrait d’un document`).
+   - Label `Énergie principale` + chips `Électricité`, `Gaz`, `Fioul`, `Pompe à chaleur`, `Bois` (Pompe à chaleur). **Superseded by US-04.10**: label `Systèmes de chauffage (plusieurs choix possibles)` + multi chips `Électrique`, `Pompe à chaleur`, `Gaz`, `Fioul`, `Poêle à bois`, `Poêle à granulés`, `Cheminée / insert`, `Réseau de chaleur`, `Solaire`, `Autre`.
+   - If Pompe à chaleur (among the systems): row `Type de PAC` Select (`Air / eau`) · `Année PAC` (2021) with `ProvenanceTag.document` (`Extrait d’un document`).
    - Label `Assainissement` + chips `Tout-à-l’égout`, `Fosse septique`, `Puits perdu` (Tout-à-l’égout).
 6. h2 `Extérieur & équipements`
    - Label `Équipements extérieurs` + chips (multi) `Piscine`, `Garage`, `Terrasse`, `Abri de jardin`, `Portail motorisé` (first three selected).
@@ -181,7 +181,7 @@ Inputs:
 | Mitoyenneté | chips single | `Indépendant`, `1 côté`, `2 côtés`, `3 côtés` | no (maison) | – |
 | Toiture | select | shown `Tuiles`; propose `Tuiles`, `Ardoises`, `Toit-terrasse`, `Bac acier`, `Zinc`, `Autre` | no | – |
 | Année toiture | number | – | no | ≥ construction year, ≤ now |
-| Énergie principale | chips single | `Électricité`, `Gaz`, `Fioul`, `Pompe à chaleur`, `Bois` | yes | – |
+| Systèmes de chauffage (US-04.10, replaces Énergie principale) | chips multi | `Électrique`, `Pompe à chaleur`, `Gaz`, `Fioul`, `Poêle à bois`, `Poêle à granulés`, `Cheminée / insert`, `Réseau de chaleur`, `Solaire`, `Autre` | ≥ 1 (maison, appartement); optional (autre); not asked (terrain) | – |
 | Type de PAC | select (if PAC) | shown `Air / eau`; propose `Air / eau`, `Air / air`, `Géothermique` | no | – |
 | Année PAC | number (if PAC) | – | no | ≤ now |
 | Assainissement | chips single | `Tout-à-l’égout`, `Fosse septique`, `Puits perdu` | no | – |
@@ -352,7 +352,8 @@ All tables: `id uuid pk default gen_random_uuid()`, `created_at/updated_at times
 | adjacency | text check in ('independant','1','2','3') | V4b |
 | roof_type | text | V4b |
 | roof_year | smallint | V4b |
-| heating_energy | text check in ('electricite','gaz','fioul','pac','bois') | V4b |
+| heating_energy | text check in ('electricite','gaz','fioul','pac','bois') | V4b (legacy, no longer written; superseded by heating_systems) |
+| heating_systems | text[] ('electricite','pac','gaz','fioul','bois','granules','cheminee','reseau_chaleur','solaire','autre'), backfilled from heating_energy | V4b (US-04.10) |
 | heat_pump_type | text | V4b |
 | heat_pump_year | smallint | V4b |
 | sanitation | text check in ('tout_a_l_egout','fosse_septique','puits_perdu') | V4b |

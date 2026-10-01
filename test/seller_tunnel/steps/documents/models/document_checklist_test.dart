@@ -26,7 +26,7 @@ const _complete = Property(
   constructionYear: 1998,
   livingAreaM2: 115,
   roomsCount: 5,
-  heatingEnergy: HeatingEnergy.heatPump,
+  heatingSystems: [HeatingSystem.heatPump],
   sanitation: Sanitation.mainsSewer,
   measurementMethod: MeasurementMethod.manual,
   noiseLevel: 3,
@@ -49,15 +49,17 @@ void main() {
           DocumentKind.energyBills: DocumentRowStatus.optional,
           DocumentKind.worksInvoice: DocumentRowStatus.optional,
           DocumentKind.identityDocument: DocumentRowStatus.missing,
-          DocumentKind.diagnostics: DocumentRowStatus.missing,
+          // Optional: never blocking nor counted as missing.
+          DocumentKind.diagnostics: DocumentRowStatus.optional,
           DocumentKind.sanitationReport: DocumentRowStatus.optional,
+          DocumentKind.other: DocumentRowStatus.optional,
         },
       );
       expect(checklist.sanitationRule, SanitationReportRule.unknown);
-      expect(checklist.missingCount, 4);
+      expect(checklist.missingCount, 3);
       expect(checklist.blockingKinds, DocumentChecklist.submissionKinds);
       expect(checklist.canSubmit, isFalse);
-      expect(checklist.optionalMissingCount, 2);
+      expect(checklist.optionalMissingCount, 1);
       expect(checklist.score, 0);
       expect(checklist.nextBestKind, DocumentKind.titleDeed);
     });
@@ -68,12 +70,14 @@ void main() {
           Property(id: 'p', ownerId: 'u', sanitation: sanitation),
           const [],
         );
-        final spanc = checklist.rows.last;
+        final spanc = checklist.rows.singleWhere(
+          (row) => row.kind == DocumentKind.sanitationReport,
+        );
         expect(checklist.sanitationRule, SanitationReportRule.required);
         expect(spanc.kind, DocumentKind.sanitationReport);
         expect(spanc.isRequired, isTrue);
         expect(spanc.status, DocumentRowStatus.missing);
-        expect(checklist.missingCount, 5);
+        expect(checklist.missingCount, 4);
       }
     });
 
@@ -96,7 +100,12 @@ void main() {
       final checklist = DocumentChecklist.of(_complete, const []);
 
       expect(checklist.sanitationRule, SanitationReportRule.mainsSewer);
-      expect(checklist.rows.last.status, DocumentRowStatus.notConcerned);
+      expect(
+        checklist.rows
+            .singleWhere((row) => row.kind == DocumentKind.sanitationReport)
+            .status,
+        DocumentRowStatus.notConcerned,
+      );
       // Answers only: 30 points.
       expect(checklist.score, 30);
     });
@@ -127,16 +136,18 @@ void main() {
           DocumentKind.energyBills: DocumentRowStatus.analyzing,
           DocumentKind.worksInvoice: DocumentRowStatus.received,
           DocumentKind.identityDocument: DocumentRowStatus.rejected,
-          DocumentKind.diagnostics: DocumentRowStatus.missing,
+          DocumentKind.diagnostics: DocumentRowStatus.optional,
           DocumentKind.sanitationReport: DocumentRowStatus.notConcerned,
           DocumentKind.plan: DocumentRowStatus.received,
+          DocumentKind.other: DocumentRowStatus.optional,
         },
       );
       expect(checklist.rows[2].documents, hasLength(2));
-      expect(checklist.missingCount, 2);
+      expect(checklist.missingCount, 1);
       // A rejected identity document still blocks the sending.
       expect(checklist.blockingKinds, [DocumentKind.identityDocument]);
-      expect(checklist.optionalMissingCount, 1);
+      expect(checklist.optionalMissingCount, 0);
+      // The optional diagnostics still count in the score.
       // Documents 45/80 of 70 + answers 30 = 69.
       expect(checklist.score, 69);
       expect(checklist.nextBestKind, DocumentKind.diagnostics);

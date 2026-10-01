@@ -71,11 +71,19 @@
 
 ## Retours du porteur de projet (test sur iPhone, 2026-10-01)
 
-## US-04.10 · Plusieurs moyens de chauffage (V4b) 🚧
+## US-04.10 · Plusieurs moyens de chauffage (V4b) ✅
 *En tant que vendeur, je veux indiquer tous les moyens de chauffage de mon bien (ex. : électrique + poêle).*
+- [x] Choix multiple (électrique, PAC, gaz, fioul, poêle à bois, poêle à granulés, cheminée, réseau de chaleur, solaire, autre) ; au moins un pour maison / appartement ; champs PAC si PAC cochée. Migration `heating_systems` (reprise de l’ancienne énergie).
+- Choix multiple `Systèmes de chauffage` : électrique, pompe à chaleur, gaz, fioul, poêle à bois, poêle à granulés, cheminée / insert, réseau de chaleur, solaire, autre.
+- Au moins un système pour une maison ou un appartement ; facultatif pour « Autre » ; non demandé pour un terrain.
+- Les questions PAC (type, année) s’affichent dès que la pompe à chaleur fait partie des systèmes.
+- Colonne `properties.heating_systems` (migration `20261001141655_heating_systems`, reprise de `heating_energy`, qui n’est plus écrite) ; l’aperçu V8 liste tous les systèmes.
 
-## US-04.11 · Scan ou import pour chaque document, scan multipage (V7) 🚧
+## US-04.11 · Scan ou import pour chaque document, scan multipage (V7) ✅
 *En tant que vendeur, je veux pouvoir scanner ou importer chaque document individuellement, et scanner un document de plusieurs pages.*
+- [x] « Scanner » et « Importer » sur chaque ligne ; ligne « Autre document ».
+- [x] Scan multipage (scanner natif iPhone), pages réordonnables / supprimables, un seul PDF ≤ 20 Mo ; « Réessayer » sans rescanner en cas d’échec d’envoi.
+- [x] Diagnostics facultatifs (seuls titre de propriété et pièce d’identité bloquent l’envoi).
 
 ## US-04.12 · Refonte graphique de l’aperçu des données (V8) 📋
 *En tant que vendeur, je veux un aperçu de mes données plus lisible et agréable.* — à retravailler graphiquement (backlog).

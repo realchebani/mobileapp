@@ -1,29 +1,7 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:mobileapp/l10n/l10n.dart';
 import 'package:mobileapp/seller_tunnel/steps/documents/data/document_picker.dart';
-import 'package:mobileapp/seller_tunnel/steps/documents/widgets/document_labels.dart';
 import 'package:mobileapp/ui/ui.dart';
-import 'package:property_repository/property_repository.dart';
-
-/// Asks the kind of the document just picked (not designed: a sheet
-/// listing the kinds). Returns null when dismissed.
-Future<DocumentKind?> showDocumentKindSheet(BuildContext context) {
-  final l10n = context.l10n;
-  return _showOptionSheet(
-    context,
-    title: l10n.documentsKindSheetTitle,
-    options: [
-      for (final kind in DocumentKind.values)
-        DocumentOption(
-          value: kind,
-          title: l10n.documentKind(kind),
-          icon: kind == DocumentKind.plan
-              ? RealestyIcons.plan
-              : RealestyIcons.file,
-        ),
-    ],
-  );
-}
 
 /// "Importer": files (PDF, images) or the photo library. Returns null when
 /// dismissed.

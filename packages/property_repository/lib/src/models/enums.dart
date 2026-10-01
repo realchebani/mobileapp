@@ -131,13 +131,40 @@ enum Adjacency implements DbEnum {
   final String value;
 }
 
-/// V4b · main heating energy.
+/// V4b · main heating energy (legacy `heating_energy`, superseded by
+/// [HeatingSystem]; its codes are the first ones of [HeatingSystem]).
 enum HeatingEnergy implements DbEnum {
   electricity('electricite'),
   gas('gaz'),
   fuelOil('fioul'),
   heatPump('pac'),
   wood('bois');
+
+  new(this.value);
+
+  @override
+  final String value;
+}
+
+/// V4b · heating systems (multiple choice, `heating_systems`).
+enum HeatingSystem implements DbEnum {
+  /// Radiateurs électriques.
+  electricity('electricite'),
+  heatPump('pac'),
+  gas('gaz'),
+  fuelOil('fioul'),
+
+  /// Chaudière ou poêle à bois.
+  wood('bois'),
+
+  /// Poêle à granulés.
+  pellets('granules'),
+
+  /// Cheminée ou insert.
+  fireplace('cheminee'),
+  districtHeating('reseau_chaleur'),
+  solar('solaire'),
+  other('autre');
 
   new(this.value);
 

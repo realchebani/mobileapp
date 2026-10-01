@@ -22,7 +22,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../helpers/helpers.dart';
 import '../../seller_tunnel/steps/location/location_fixtures.dart';
 
-/// The camera, returning a small in-memory photo.
+/// The photo library, returning a small in-memory photo.
 class _FakeImagePicker extends ImagePickerPlatform {
   @override
   Future<XFile?> getImageFromSource({
@@ -408,12 +408,17 @@ void main() {
       await enter('Année de construction', '1998');
       await enter('Surface habitable', '100');
       await tap(find.text('R+1'));
-      await tap(find.text('Gaz'));
+      // Several heating systems (US-04.10).
+      await tap(find.text('Électrique'));
+      await tap(find.text('Poêle à granulés'));
       await tap(find.text('Enregistrer et continuer'));
       expect(find.byType(MethodPage), findsOneWidget);
       final technical = continuedTo(SellerTunnelStep.method);
       expect(technical[PropertyColumns.constructionYear], 1998);
-      expect(technical[PropertyColumns.heatingEnergy], HeatingEnergy.gas);
+      expect(technical[PropertyColumns.heatingSystems], [
+        HeatingSystem.electricity,
+        HeatingSystem.pellets,
+      ]);
 
       // V5 · Méthode de relevé.
       await tap(find.text('Saisir manuellement'));
@@ -442,7 +447,8 @@ void main() {
       continuedTo(SellerTunnelStep.documents);
 
       // V7 · Documents: not sent without the title deed and the identity
-      // document, which are photographed (camera mocked) and uploaded.
+      // document, which are imported from the photos (picker mocked; the
+      // multi-page scan is tested with V7) and uploaded.
       await tap(find.text('Envoyer mon dossier à l’expert'));
       expect(find.byType(DocumentsPage), findsOneWidget);
       expect(
@@ -474,10 +480,12 @@ void main() {
         );
       });
       for (final kind in ['Titre de propriété', 'Pièce d’identité']) {
-        final scan = find.bySemanticsLabel('Scanner · $kind');
-        await tester.ensureVisible(scan);
+        final import = find.bySemanticsLabel('Importer · $kind');
+        await tester.ensureVisible(import);
         await tester.pumpAndSettle();
-        await tester.tap(scan);
+        await tester.tap(import);
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Photothèque'));
         await tester.pumpAndSettle();
       }
       expect(uploaded, [DocumentKind.titleDeed, DocumentKind.identityDocument]);

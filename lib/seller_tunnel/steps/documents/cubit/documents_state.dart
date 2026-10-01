@@ -30,7 +30,7 @@ enum DocumentsNotice {
   openFailed,
 }
 
-/// A validated file, ready to upload.
+/// A validated file (or the PDF of a scan), ready to upload.
 final class PickedDocument extends Equatable {
   const new({
     required this.fileName,
@@ -46,15 +46,26 @@ final class PickedDocument extends Equatable {
   List<Object?> get props => [fileName, mimeType, bytes.length];
 }
 
+/// A file whose upload failed, kept to retry it.
+final class FailedUpload extends Equatable {
+  const new({required this.file, required this.kind});
+
+  final PickedDocument file;
+  final DocumentKind kind;
+
+  @override
+  List<Object?> get props => [file, kind];
+}
+
 /// State of V7 · Le Vault documents.
 final class DocumentsState extends Equatable {
   const new({
     required this.property,
     required this.documents,
     this.picking = false,
-    this.pending,
     this.uploading,
     this.busyDocumentIds = const {},
+    this.failedUploads = const [],
     this.notice,
     this.noticeCount = 0,
     this.showsSubmissionErrors = false,
@@ -69,14 +80,14 @@ final class DocumentsState extends Equatable {
   /// Whether a picker is open.
   final bool picking;
 
-  /// Picked file waiting for its kind, if any.
-  final PickedDocument? pending;
-
   /// File being uploaded, if any.
   final PickedDocument? uploading;
 
   /// Documents being deleted or opened.
   final Set<String> busyDocumentIds;
+
+  /// Files whose upload failed, oldest first, to retry or discard.
+  final List<FailedUpload> failedUploads;
 
   /// Last notice; [noticeCount] changes each time one is emitted.
   final DocumentsNotice? notice;
@@ -92,8 +103,7 @@ final class DocumentsState extends Equatable {
   bool get isUploading => uploading != null;
 
   /// Whether a document change is in progress (inputs are then disabled).
-  bool get isBusy =>
-      picking || pending != null || isUploading || busyDocumentIds.isNotEmpty;
+  bool get isBusy => picking || isUploading || busyDocumentIds.isNotEmpty;
 
   /// Whether the expert took the dossier over: documents can then only be
   /// opened (row level security refuses changes).
@@ -104,9 +114,9 @@ final class DocumentsState extends Equatable {
   DocumentsState copyWith({
     List<PropertyDocument>? documents,
     bool? picking,
-    PickedDocument? Function()? pending,
     PickedDocument? Function()? uploading,
     Set<String>? busyDocumentIds,
+    List<FailedUpload>? failedUploads,
     DocumentsNotice? notice,
     bool? showsSubmissionErrors,
   }) {
@@ -114,9 +124,9 @@ final class DocumentsState extends Equatable {
       property: property,
       documents: documents ?? this.documents,
       picking: picking ?? this.picking,
-      pending: pending == null ? this.pending : pending(),
       uploading: uploading == null ? this.uploading : uploading(),
       busyDocumentIds: busyDocumentIds ?? this.busyDocumentIds,
+      failedUploads: failedUploads ?? this.failedUploads,
       notice: notice ?? this.notice,
       noticeCount: notice == null ? noticeCount : noticeCount + 1,
       showsSubmissionErrors:
@@ -129,9 +139,9 @@ final class DocumentsState extends Equatable {
     property,
     documents,
     picking,
-    pending,
     uploading,
     busyDocumentIds,
+    failedUploads,
     notice,
     noticeCount,
     showsSubmissionErrors,

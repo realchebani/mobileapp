@@ -8,6 +8,7 @@ import 'package:mobileapp/l10n/l10n.dart';
 import 'package:mobileapp/seller_tunnel/cubit/seller_tunnel_cubit.dart';
 import 'package:mobileapp/seller_tunnel/models/seller_tunnel_step.dart';
 import 'package:mobileapp/seller_tunnel/steps/technical/cubit/technical_cubit.dart';
+import 'package:mobileapp/seller_tunnel/steps/technical/models/heating_system_label.dart';
 import 'package:mobileapp/seller_tunnel/steps/technical/models/technical_options.dart';
 import 'package:mobileapp/seller_tunnel/steps/technical/widgets/technical_input_formatters.dart';
 import 'package:mobileapp/seller_tunnel/steps/technical/widgets/technical_question.dart';
@@ -96,7 +97,7 @@ class _TechnicalViewState extends State<TechnicalView> {
         ? _levelsKey
         : state.roofYearError != null
         ? _roofRowKey
-        : state.heatingEnergyError != null
+        : state.heatingSystemsError != null
         ? _heatingKey
         : state.heatPumpYearError != null
         ? _heatPumpRowKey
@@ -518,23 +519,23 @@ class _TechnicalViewState extends State<TechnicalView> {
     return _section(l10n.technicalSectionHeating, [
       TechnicalQuestion(
         key: _heatingKey,
-        label: l10n.technicalHeatingEnergy,
+        label: l10n.technicalHeatingSystems,
         errorText: _error(
           context,
           state,
-          state.heatingEnergyError,
-          required: () => l10n.technicalErrorHeatingEnergy,
+          state.heatingSystemsError,
+          required: () => l10n.technicalErrorHeatingSystems,
         ),
         footer: _provenance(
           state,
-          PropertyColumns.heatingEnergy,
-          hasValue: state.heatingEnergy != null,
+          PropertyColumns.heatingSystems,
+          hasValue: state.heatingSystems.isNotEmpty,
         ),
         child: _chips(
-          values: HeatingEnergy.values,
-          label: (value) => _energyLabel(l10n, value),
-          selected: (value) => state.heatingEnergy == value,
-          onTap: enabled ? cubit.heatingEnergyChanged : null,
+          values: HeatingSystem.values,
+          label: (value) => heatingSystemLabel(l10n, value),
+          selected: state.heatingSystems.contains,
+          onTap: enabled ? cubit.heatingSystemToggled : null,
         ),
       ),
       if (state.asksHeatPump)
@@ -707,15 +708,6 @@ class _TechnicalViewState extends State<TechnicalView> {
         RoofType.steelSheet => l10n.technicalRoofSteelSheet,
         RoofType.zinc => l10n.technicalRoofZinc,
         RoofType.other => l10n.technicalRoofOther,
-      };
-
-  static String _energyLabel(AppLocalizations l10n, HeatingEnergy value) =>
-      switch (value) {
-        HeatingEnergy.electricity => l10n.technicalEnergyElectricity,
-        HeatingEnergy.gas => l10n.technicalEnergyGas,
-        HeatingEnergy.fuelOil => l10n.technicalEnergyFuelOil,
-        HeatingEnergy.heatPump => l10n.technicalEnergyHeatPump,
-        HeatingEnergy.wood => l10n.technicalEnergyWood,
       };
 
   static String _heatPumpLabel(AppLocalizations l10n, HeatPumpType value) =>

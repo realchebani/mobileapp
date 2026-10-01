@@ -1,13 +1,15 @@
 import 'dart:async';
 import 'dart:typed_data';
 
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:mobileapp/app/app.dart';
 import 'package:mobileapp/seller_tunnel/seller_tunnel.dart';
 import 'package:mobileapp/seller_tunnel/steps/documents/data/document_picker.dart';
+import 'package:mobileapp/seller_tunnel/steps/documents/data/scan_pdf_builder.dart';
+import 'package:mobileapp/seller_tunnel/steps/documents/scan/document_scan_page.dart';
 import 'package:mobileapp/seller_tunnel/steps/documents/widgets/document_files_sheet.dart';
-import 'package:mobileapp/seller_tunnel/steps/documents/widgets/document_option_sheets.dart';
 import 'package:mobileapp/seller_tunnel/steps/documents/widgets/transparency_score_card.dart';
 import 'package:mobileapp/ui/ui.dart';
 import 'package:mocktail/mocktail.dart';
@@ -16,6 +18,8 @@ import 'package:property_repository/property_repository.dart';
 import '../../../helpers/helpers.dart';
 
 class _MockDocumentPicker extends Mock implements DocumentPicker;
+
+class _MockScanPdfBuilder extends Mock implements ScanPdfBuilder;
 
 const _nbsp = '\u00a0';
 
@@ -57,7 +61,7 @@ final _mockupState = SellerTunnelState(
     constructionYear: 1998,
     livingAreaM2: 115,
     roomsCount: 5,
-    heatingEnergy: HeatingEnergy.heatPump,
+    heatingSystems: [HeatingSystem.heatPump],
     sanitation: Sanitation.mainsSewer,
     measurementMethod: MeasurementMethod.manual,
     noiseLevel: 3,
@@ -82,13 +86,22 @@ Finder _row(String title) => find.widgetWithText(RealestyListItem, title);
 
 Finder _button(String label) => find.widgetWithText(RealestyButton, label);
 
+/// The "Scanner"/"Importer" link of a row.
+Finder _link(String semanticLabel) => find.byWidgetPredicate(
+  (w) => w is RealestyPressable && w.semanticLabel == semanticLabel,
+);
+
+final _pdf = Uint8List.fromList([1, 2, 3]);
+
 void main() {
   late MockPropertyRepository repository;
   late _MockDocumentPicker picker;
+  late _MockScanPdfBuilder pdfBuilder;
   late List<Uri> opened;
 
-  setUpAll(() {
-    registerFallbackValue(DocumentSource.camera);
+  setUpAll(() async {
+    await loadRealestyFonts();
+    registerFallbackValue(DocumentSource.files);
     registerFallbackValue(DocumentKind.other);
     registerFallbackValue(_titleDeed);
     registerFallbackValue(Uint8List(0));
@@ -98,10 +111,16 @@ void main() {
   setUp(() {
     repository = MockPropertyRepository();
     picker = _MockDocumentPicker();
+    pdfBuilder = _MockScanPdfBuilder();
     opened = [];
     when(() => picker.pick(any())).thenAnswer(
       (_) async => XFile.fromData(Uint8List(10), path: '/tmp/photo.jpg'),
     );
+    when(() => picker.scanPages(maxPages: any(named: 'maxPages'))).thenAnswer(
+      (_) async => [XFile.fromData(Uint8List(4), path: 'page-1.jpg')],
+    );
+    when(() => pdfBuilder.build(any(), maxBytes: any(named: 'maxBytes')))
+        .thenAnswer((_) async => _pdf);
     when(
       () => repository.uploadDocument(
         ownerId: any(named: 'ownerId'),
@@ -133,6 +152,7 @@ void main() {
     await tester.pumpTunnelPage(
       DocumentsPage(
         documentPicker: picker,
+        scanPdfBuilder: pdfBuilder,
         openUrl: (uri) async {
           opened.add(uri);
           return true;
@@ -145,21 +165,36 @@ void main() {
     return cubit;
   }
 
-  void verifyUpload(DocumentKind kind) => verify(
+  void verifyUpload(DocumentKind kind, {bool scanned = false}) => verify(
     () => repository.uploadDocument(
       ownerId: 'user-id',
       propertyId: 'property-id',
       kind: kind,
-      fileName: 'photo.jpg',
-      bytes: any(named: 'bytes'),
-      mimeType: 'image/jpeg',
+      fileName: scanned
+          ? any(named: 'fileName', that: endsWith('.pdf'))
+          : 'photo.jpg',
+      bytes: scanned ? _pdf : any(named: 'bytes'),
+      mimeType: scanned ? 'application/pdf' : 'image/jpeg',
     ),
   ).called(1);
+
+  /// Scans one page of a document of the row [kind], then "Terminer".
+  Future<void> scan(WidgetTester tester, String kind) async {
+    final link = find.bySemanticsLabel('Scanner · $kind');
+    await tester.ensureVisible(link);
+    await tester.pumpAndSettle();
+    await tester.tap(link);
+    await tester.pumpAndSettle();
+    expect(find.byType(DocumentScanView), findsOneWidget);
+    await tester.tap(_button('Terminer'));
+    await tester.pumpAndSettle();
+  }
 
   group(DocumentsPage, () {
     test('opens the documents with url_launcher by default', () {
       expect(const DocumentsPage().openUrl, isNotNull);
       expect(const DocumentsPage().documentPicker, isNull);
+      expect(const DocumentsPage().scanPdfBuilder, isNull);
     });
 
     testWidgets('uses the device pickers by default', (tester) async {
@@ -168,6 +203,9 @@ void main() {
         sellerTunnelCubit: mockSellerTunnelCubit(_mockupState),
       );
       expect(find.byType(DocumentsView), findsOneWidget);
+      final context = tester.element(find.byType(DocumentsView));
+      expect(context.read<DocumentPicker>(), isA<PlatformDocumentPicker>());
+      expect(context.read<ScanPdfBuilder>(), isA<IsolateScanPdfBuilder>());
     });
 
     testWidgets('shows the documents, their statuses and the score', (
@@ -179,7 +217,7 @@ void main() {
       expect(find.text('7/7'), findsOneWidget);
       expect(
         find.text(
-          'Dernière étape$_nbsp: vos documents. Photographiez-les ou '
+          'Dernière étape$_nbsp: vos documents. Scannez-les ou '
           'importez-les$_nbsp: l’expert s’en sert pour vérifier votre '
           'dossier.',
         ),
@@ -219,14 +257,37 @@ void main() {
       expect(find.text('Reçu'), findsOneWidget);
       expect(find.text('Obligatoire pour la certification'), findsOneWidget);
       expect(find.text('DPE, électricité, amiante…'), findsOneWidget);
-      expect(find.text('Manquant'), findsNWidgets(2));
+      // The diagnostics are optional.
+      expect(find.text('Manquant'), findsOneWidget);
+      expect(
+        find.descendant(
+          of: _row('Diagnostics'),
+          matching: find.text('Facultatif'),
+        ),
+        findsOneWidget,
+      );
+      expect(_row('Autre document'), findsOneWidget);
+      // Every row can be scanned or imported, except a report not
+      // concerned.
+      for (final kind in [
+        'Titre de propriété',
+        'Taxe foncière',
+        'Factures d’énergie',
+        'Factures de travaux',
+        'Pièce d’identité',
+        'Diagnostics',
+        'Autre document',
+      ]) {
+        expect(_link('Scanner · $kind'), findsOneWidget);
+        expect(_link('Importer · $kind'), findsOneWidget);
+      }
+      expect(_link('Scanner · Rapport SPANC'), findsNothing);
+      expect(find.text('Scanner'), findsNWidgets(7));
+      expect(find.text('Importer'), findsNWidgets(7));
       expect(find.text('Raccordé au tout-à-l’égout'), findsOneWidget);
       expect(find.text('Non concerné'), findsOneWidget);
       expect(
-        find.text(
-          'Titre de propriété et pièce d’identité requis$_nbsp; 1 autre '
-          'document pourra vous être redemandé',
-        ),
+        find.text('Titre de propriété et pièce d’identité requis pour l’envoi'),
         findsOneWidget,
       );
       expect(find.text('Envoyer mon dossier à l’expert'), findsOneWidget);
@@ -253,40 +314,30 @@ void main() {
       );
 
       expect(find.text('3'), findsOneWidget);
-      expect(find.text('Manquant'), findsNWidgets(5));
-      expect(find.text('Facultatif'), findsNWidgets(2));
+      expect(find.text('Manquant'), findsNWidgets(4));
+      expect(find.text('Facultatif'), findsNWidgets(4));
       expect(
         find.text('Obligatoire en assainissement individuel'),
         findsOneWidget,
       );
       expect(
         find.text(
-          'Titre de propriété et pièce d’identité requis$_nbsp; 3 autres '
+          'Titre de propriété et pièce d’identité requis$_nbsp; 2 autres '
           'documents pourront vous être redemandés',
         ),
         findsOneWidget,
       );
     });
 
-    testWidgets('"Scanner" photographs a document and asks its kind', (
+    testWidgets('"Scanner" of a row uploads the PDF of the scanned pages', (
       tester,
     ) async {
       final tunnel = await pump(tester);
 
-      await tester.tap(_button('Scanner'));
-      await tester.pumpAndSettle();
-      verify(() => picker.pick(DocumentSource.camera)).called(1);
-      expect(find.text('Quel est ce document$_nbsp?'), findsOneWidget);
+      await scan(tester, 'Pièce d’identité');
 
-      await tester.tap(
-        find.descendant(
-          of: find.byType(DocumentOptionSheet<DocumentKind>),
-          matching: find.text('Pièce d’identité'),
-        ),
-      );
-      await tester.pumpAndSettle();
-
-      verifyUpload(DocumentKind.identityDocument);
+      expect(find.byType(DocumentScanView), findsNothing);
+      verifyUpload(DocumentKind.identityDocument, scanned: true);
       verify(
         () => tunnel.updateChildren(
           documents: [..._mockupState.documents, _newDocument],
@@ -294,23 +345,28 @@ void main() {
       ).called(1);
       expect(find.text('Document ajouté à votre dossier'), findsOneWidget);
       expect(
-        find.text(
-          '1 document manquant$_nbsp: l’expert pourra vous le '
-          'redemander',
-        ),
+        find.text('Tous les documents obligatoires sont là'),
         findsOneWidget,
       );
     });
 
-    testWidgets('dismissing the kind sheet drops the file', (tester) async {
+    testWidgets('a row with files can still be scanned', (tester) async {
       await pump(tester);
 
-      await tester.tap(_button('Scanner'));
-      await tester.pumpAndSettle();
-      await tester.tapAt(const Offset(10, 10));
+      await scan(tester, 'Titre de propriété');
+
+      verifyUpload(DocumentKind.titleDeed, scanned: true);
+    });
+
+    testWidgets('an abandoned scan uploads nothing', (tester) async {
+      when(() => picker.scanPages(maxPages: any(named: 'maxPages')))
+          .thenAnswer((_) async => null);
+      await pump(tester);
+
+      await tester.tap(find.bySemanticsLabel('Scanner · Diagnostics'));
       await tester.pumpAndSettle();
 
-      expect(find.byType(DocumentOptionSheet<DocumentKind>), findsNothing);
+      expect(find.byType(DocumentScanView), findsNothing);
       verifyNever(
         () => repository.uploadDocument(
           ownerId: any(named: 'ownerId'),
@@ -321,17 +377,20 @@ void main() {
           mimeType: any(named: 'mimeType'),
         ),
       );
-      // The buttons are enabled again.
       expect(
-        tester.widget<RealestyButton>(_button('Scanner')).onPressed,
+        tester
+            .widget<RealestyPressable>(_link('Scanner · Diagnostics'))
+            .onPressed,
         isNotNull,
       );
     });
 
-    testWidgets('"Importer" picks a file, then asks its kind', (tester) async {
+    testWidgets('"Importer" of a row uploads a file of that kind', (
+      tester,
+    ) async {
       await pump(tester);
 
-      await tester.tap(_button('Importer'));
+      await tester.tap(find.bySemanticsLabel('Importer · Pièce d’identité'));
       await tester.pumpAndSettle();
       expect(find.text('Importer un document'), findsOneWidget);
       expect(
@@ -342,28 +401,18 @@ void main() {
       await tester.pumpAndSettle();
 
       verify(() => picker.pick(DocumentSource.files)).called(1);
-      expect(find.byType(DocumentOptionSheet<DocumentKind>), findsOneWidget);
+      verifyUpload(DocumentKind.identityDocument);
     });
 
     testWidgets('dismissing the source sheet picks nothing', (tester) async {
       await pump(tester);
 
-      await tester.tap(_button('Importer'));
+      await tester.tap(find.bySemanticsLabel('Importer · Titre de propriété'));
       await tester.pumpAndSettle();
       await tester.tapAt(const Offset(10, 10));
       await tester.pumpAndSettle();
 
       verifyNever(() => picker.pick(any()));
-    });
-
-    testWidgets('"Scanner" of a missing row uploads that kind', (tester) async {
-      await pump(tester);
-
-      await tester.tap(find.bySemanticsLabel('Scanner · Pièce d’identité'));
-      await tester.pumpAndSettle();
-
-      expect(find.byType(DocumentOptionSheet<DocumentKind>), findsNothing);
-      verifyUpload(DocumentKind.identityDocument);
     });
 
     testWidgets('"Importer" of the diagnostics row uploads diagnostics', (
@@ -396,18 +445,24 @@ void main() {
       ).thenAnswer((_) => upload.future);
       await pump(tester);
 
-      await tester.tap(find.bySemanticsLabel('Scanner · Pièce d’identité'));
+      await tester.tap(find.bySemanticsLabel('Importer · Pièce d’identité'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Photothèque'));
       await tester.pump();
       await tester.pump();
 
       expect(_row('photo.jpg'), findsOneWidget);
       expect(find.text('Envoi en cours…'), findsOneWidget);
       expect(
-        tester.widget<RealestyButton>(_button('Scanner')).onPressed,
+        tester
+            .widget<RealestyPressable>(_link('Scanner · Diagnostics'))
+            .onPressed,
         isNull,
       );
       expect(
-        tester.widget<RealestyButton>(_button('Importer')).onPressed,
+        tester
+            .widget<RealestyPressable>(_link('Importer · Diagnostics'))
+            .onPressed,
         isNull,
       );
       expect(
@@ -428,7 +483,9 @@ void main() {
       );
       await pump(tester);
 
-      await tester.tap(_button('Scanner'));
+      await tester.tap(find.bySemanticsLabel('Importer · Diagnostics'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Fichiers'));
       await tester.pumpAndSettle();
 
       expect(
@@ -618,13 +675,27 @@ void main() {
         find.text('Votre dossier est en cours d’examen par l’expert'),
         findsOneWidget,
       );
-      for (final label in [
-        'Scanner',
-        'Importer',
-        'Envoyer mon dossier à l’expert',
-      ]) {
-        expect(tester.widget<RealestyButton>(_button(label)).onPressed, isNull);
-      }
+      // No "Scanner"/"Importer" link, no hint about the sending, no
+      // promise of deletion.
+      expect(
+        tester.widget<AgentActionBar>(find.byType(AgentActionBar)).hint,
+        isNull,
+      );
+      expect(
+        find.text(
+          'Documents chiffrés, consultés uniquement par l’expert en charge '
+          'de votre dossier.',
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('Scanner'), findsNothing);
+      expect(find.text('Importer'), findsNothing);
+      expect(
+        tester
+            .widget<RealestyButton>(_button('Envoyer mon dossier à l’expert'))
+            .onPressed,
+        isNull,
+      );
 
       // The files can still be opened, not deleted.
       await tester.tap(_row('Titre de propriété'));
@@ -645,11 +716,23 @@ void main() {
     testWidgets('row links have a 44 px touch target', (tester) async {
       await pump(tester);
 
-      final size = tester.getSize(
+      for (final label in [
+        'Scanner · Pièce d’identité',
+        'Importer · Pièce d’identité',
+      ]) {
+        final size = tester.getSize(find.bySemanticsLabel(label));
+        expect(size.height, greaterThanOrEqualTo(44));
+        expect(size.width, greaterThanOrEqualTo(44));
+      }
+      // Side by side, under the title.
+      final scanLink = tester.getRect(
         find.bySemanticsLabel('Scanner · Pièce d’identité'),
       );
-      expect(size.height, greaterThanOrEqualTo(44));
-      expect(size.width, greaterThanOrEqualTo(44));
+      final importLink = tester.getRect(
+        find.bySemanticsLabel('Importer · Pièce d’identité'),
+      );
+      expect(importLink.left, greaterThanOrEqualTo(scanLink.right));
+      expect(importLink.top, scanLink.top);
     });
 
     testWidgets('congratulates a complete dossier', (tester) async {
@@ -718,13 +801,8 @@ void main() {
       expect(_row('Titre de propriété').hitTestable(), findsOneWidget);
 
       // Adding the identity document leaves the title deed.
-      await tester.ensureVisible(
-        find.bySemanticsLabel('Scanner · Pièce d’identité'),
-      );
-      await tester.pumpAndSettle();
-      await tester.tap(find.bySemanticsLabel('Scanner · Pièce d’identité'));
-      await tester.pumpAndSettle();
-      verifyUpload(DocumentKind.identityDocument);
+      await scan(tester, 'Pièce d’identité');
+      verifyUpload(DocumentKind.identityDocument, scanned: true);
       expect(
         find.text(
           'Pour envoyer votre dossier, ajoutez votre titre de propriété.',
@@ -850,7 +928,9 @@ void main() {
       );
 
       expect(
-        tester.widget<RealestyButton>(_button('Scanner')).onPressed,
+        tester
+            .widget<RealestyPressable>(_link('Scanner · Diagnostics'))
+            .onPressed,
         isNull,
       );
       expect(
@@ -860,6 +940,105 @@ void main() {
       expect(
         tester.widget<AgentActionBar>(find.byType(AgentActionBar)).isLoading,
         isTrue,
+      );
+    });
+
+    testWidgets('a failed scan can be retried or removed', (tester) async {
+      var uploads = 0;
+      when(
+        () => repository.uploadDocument(
+          ownerId: any(named: 'ownerId'),
+          propertyId: any(named: 'propertyId'),
+          kind: any(named: 'kind'),
+          fileName: any(named: 'fileName'),
+          bytes: any(named: 'bytes'),
+          mimeType: any(named: 'mimeType'),
+        ),
+      ).thenAnswer((_) async {
+        if (uploads++ < 2) throw const DocumentUploadFailure();
+        return _newDocument;
+      });
+      when(() => repository.getDocuments(any()))
+          .thenAnswer((_) async => _mockupState.documents);
+      final tunnel = await pump(tester);
+
+      await scan(tester, 'Pièce d’identité');
+      expect(
+        find.text(
+          'L’envoi du document a échoué. Vérifiez votre connexion, puis '
+          'touchez «${_nbsp}Réessayer$_nbsp».',
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('Pièce d’identité · échec de l’envoi'), findsOneWidget);
+
+      // Not sent while a file would be lost.
+      await tester.pump(const Duration(seconds: 10));
+      await tester.pumpAndSettle();
+      await tester.tap(_button('Envoyer mon dossier à l’expert'));
+      await tester.pump();
+      expect(
+        find.text(
+          'Un document n’a pas pu être envoyé$_nbsp: réessayez ou '
+          'retirez-le avant d’envoyer votre dossier.',
+        ),
+        findsOneWidget,
+      );
+      verifyNever(() => tunnel.saveAndContinue(any(), any()));
+
+      final retry = find.byWidgetPredicate(
+        (w) =>
+            w is RealestyPressable &&
+            (w.semanticLabel?.startsWith('Réessayer l’envoi de') ?? false),
+      );
+      await tester.ensureVisible(retry);
+      await tester.pumpAndSettle();
+      await tester.tap(retry);
+      await tester.pumpAndSettle();
+      expect(uploads, 2);
+      expect(find.text('Pièce d’identité · échec de l’envoi'), findsOneWidget);
+
+      await tester.tap(retry);
+      await tester.pumpAndSettle();
+      expect(uploads, 3);
+      expect(find.text('Pièce d’identité · échec de l’envoi'), findsNothing);
+      expect(find.text('Document ajouté à votre dossier'), findsOneWidget);
+    });
+
+    testWidgets('a failed upload can be removed', (tester) async {
+      when(
+        () => repository.uploadDocument(
+          ownerId: any(named: 'ownerId'),
+          propertyId: any(named: 'propertyId'),
+          kind: any(named: 'kind'),
+          fileName: any(named: 'fileName'),
+          bytes: any(named: 'bytes'),
+          mimeType: any(named: 'mimeType'),
+        ),
+      ).thenThrow(const DocumentUploadFailure());
+      when(() => repository.getDocuments(any()))
+          .thenAnswer((_) async => _mockupState.documents);
+      await pump(tester);
+
+      await tester.tap(find.bySemanticsLabel('Importer · Diagnostics'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Fichiers'));
+      await tester.pumpAndSettle();
+      expect(find.text('Diagnostics · échec de l’envoi'), findsOneWidget);
+
+      await tester.tap(find.bySemanticsLabel('Retirer photo.jpg'));
+      await tester.pumpAndSettle();
+      expect(find.text('Diagnostics · échec de l’envoi'), findsNothing);
+    });
+
+    testWidgets('shortens the send button with large text', (tester) async {
+      tester.platformDispatcher.textScaleFactorTestValue = 1.3;
+      addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+      await pump(tester);
+
+      expect(
+        tester.widget<AgentActionBar>(find.byType(AgentActionBar)).label,
+        'Envoyer à l’expert',
       );
     });
 

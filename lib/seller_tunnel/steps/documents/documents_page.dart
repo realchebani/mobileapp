@@ -7,7 +7,9 @@ import 'package:mobileapp/seller_tunnel/cubit/seller_tunnel_cubit.dart';
 import 'package:mobileapp/seller_tunnel/models/seller_tunnel_step.dart';
 import 'package:mobileapp/seller_tunnel/steps/documents/cubit/documents_cubit.dart';
 import 'package:mobileapp/seller_tunnel/steps/documents/data/document_picker.dart';
+import 'package:mobileapp/seller_tunnel/steps/documents/data/scan_pdf_builder.dart';
 import 'package:mobileapp/seller_tunnel/steps/documents/models/document_checklist.dart';
+import 'package:mobileapp/seller_tunnel/steps/documents/scan/document_scan_page.dart';
 import 'package:mobileapp/seller_tunnel/steps/documents/widgets/document_files_sheet.dart';
 import 'package:mobileapp/seller_tunnel/steps/documents/widgets/document_labels.dart';
 import 'package:mobileapp/seller_tunnel/steps/documents/widgets/document_option_sheets.dart';
@@ -18,32 +20,52 @@ import 'package:mobileapp/ui/ui.dart';
 import 'package:property_repository/property_repository.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-/// V7 · Le Vault documents: the documents of the dossier (photographed or
-/// imported), their computed statuses, the transparency score and the
-/// submission of the dossier to the expert.
+/// V7 · Le Vault documents: the documents of the dossier (scanned or
+/// imported, row by row), their computed statuses, the transparency score
+/// and the submission of the dossier to the expert.
 class DocumentsPage extends StatelessWidget {
-  const new({this.documentPicker, this.openUrl = launchUrl, super.key});
+  const new({
+    this.documentPicker,
+    this.scanPdfBuilder,
+    this.openUrl = launchUrl,
+    super.key,
+  });
 
-  /// Defaults to the camera, photo library and files of the device.
+  /// Defaults to the document scanner, photo library and files of the
+  /// device.
   final DocumentPicker? documentPicker;
+
+  /// Combines the scanned pages into a PDF; defaults to
+  /// [IsolateScanPdfBuilder].
+  final ScanPdfBuilder? scanPdfBuilder;
 
   /// Opens a document (its signed URL).
   final DocumentUrlOpener openUrl;
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) {
-        final tunnel = context.read<SellerTunnelCubit>().state;
-        return DocumentsCubit(
-          propertyRepository: context.read<PropertyRepository>(),
-          documentPicker: documentPicker ?? PlatformDocumentPicker(),
-          openUrl: openUrl,
-          property: tunnel.property!,
-          documents: tunnel.documents,
-        );
-      },
-      child: const DocumentsView(),
+    return MultiRepositoryProvider(
+      providers: [
+        RepositoryProvider<DocumentPicker>(
+          create: (_) => documentPicker ?? PlatformDocumentPicker(),
+        ),
+        RepositoryProvider<ScanPdfBuilder>(
+          create: (_) => scanPdfBuilder ?? const IsolateScanPdfBuilder(),
+        ),
+      ],
+      child: BlocProvider(
+        create: (context) {
+          final tunnel = context.read<SellerTunnelCubit>().state;
+          return DocumentsCubit(
+            propertyRepository: context.read<PropertyRepository>(),
+            documentPicker: context.read<DocumentPicker>(),
+            openUrl: openUrl,
+            property: tunnel.property!,
+            documents: tunnel.documents,
+          );
+        },
+        child: const DocumentsView(),
+      ),
     );
   }
 }
@@ -58,36 +80,19 @@ class DocumentsView extends StatefulWidget {
 class _DocumentsViewState extends State<DocumentsView> {
   static const SellerTunnelStep _step = SellerTunnelStep.documents;
 
-  /// "Scanner": a photo of a document of [kind] (asked after the photo
-  /// when null).
-  static Future<void> _scan(BuildContext context, [DocumentKind? kind]) =>
-      _add(context, DocumentSource.camera, kind);
-
-  /// "Importer": a file or a photo of the library.
-  static Future<void> _import(
-    BuildContext context, [
-    DocumentKind? kind,
-  ]) async {
-    final source = await showDocumentSourceSheet(context);
-    if (source == null || !context.mounted) return;
-    await _add(context, source, kind);
+  /// "Scanner": a multi-page scan of a document of [kind], uploaded as
+  /// one PDF.
+  static Future<void> _scan(BuildContext context, DocumentKind kind) async {
+    final cubit = context.read<DocumentsCubit>();
+    final scan = await showDocumentScan(context, kind: kind);
+    if (scan != null) await cubit.addScan(scan, kind: kind);
   }
 
-  static Future<void> _add(
-    BuildContext context,
-    DocumentSource source,
-    DocumentKind? kind,
-  ) => context.read<DocumentsCubit>().pick(source, kind: kind);
-
-  /// Asks the kind of the picked file, then uploads it.
-  static Future<void> _askKind(BuildContext context) async {
-    final cubit = context.read<DocumentsCubit>();
-    final kind = await showDocumentKindSheet(context);
-    if (kind == null) {
-      cubit.pendingDiscarded();
-    } else {
-      await cubit.kindChosen(kind);
-    }
+  /// "Importer": a file or a photo of the library, as a document of [kind].
+  static Future<void> _import(BuildContext context, DocumentKind kind) async {
+    final source = await showDocumentSourceSheet(context);
+    if (source == null || !context.mounted) return;
+    await context.read<DocumentsCubit>().pick(source, kind: kind);
   }
 
   /// Rows of the documents needed to send the dossier, to reveal them.
@@ -108,6 +113,15 @@ class _DocumentsViewState extends State<DocumentsView> {
         isError: true,
       );
       context.goToTunnelStep(tunnel.state.resumeStep);
+      return;
+    }
+    if (context.read<DocumentsCubit>().state.failedUploads.isNotEmpty) {
+      // Sending now would lose these files.
+      showRealestySnackBar(
+        context,
+        context.l10n.documentsSubmitFailedUploads,
+        isError: true,
+      );
       return;
     }
     final blocking = checklist.blockingKinds;
@@ -184,11 +198,6 @@ class _DocumentsViewState extends State<DocumentsView> {
         ),
         BlocListener<DocumentsCubit, DocumentsState>(
           listenWhen: (previous, current) =>
-              previous.pending == null && current.pending != null,
-          listener: (context, _) => unawaited(_askKind(context)),
-        ),
-        BlocListener<DocumentsCubit, DocumentsState>(
-          listenWhen: (previous, current) =>
               previous.noticeCount != current.noticeCount &&
               _noticeMessage(l10n, current.notice!) != null,
           listener: (context, state) => showRealestySnackBar(
@@ -204,10 +213,15 @@ class _DocumentsViewState extends State<DocumentsView> {
           onBack: () => context.goBackFrom(_step),
         ),
         actionBar: AgentActionBar(
-          hint: checklist.canSubmit
+          hint: state.isLocked
+              ? null
+              : checklist.canSubmit
               ? l10n.documentsActionHint(checklist.optionalMissingCount)
               : l10n.documentsActionHintBlocked(checklist.optionalMissingCount),
-          label: l10n.documentsSubmit,
+          // The full label does not fit with large text.
+          label: MediaQuery.textScalerOf(context).scale(1) > 1.15
+              ? l10n.documentsSubmitShort
+              : l10n.documentsSubmit,
           variant: RealestyButtonVariant.accent,
           trailingIcon: RealestyIcons.chevronRight,
           isLoading: tunnelSaving,
@@ -248,35 +262,21 @@ class _DocumentsViewState extends State<DocumentsView> {
             rowKeys: _rowKeys,
             showsSubmissionErrors: state.showsSubmissionErrors,
             uploading: state.uploading,
+            failedUploads: state.failedUploads,
             enabled: enabled,
+            isLocked: state.isLocked,
             canOpen: canOpen,
             onScan: (kind) => _scan(context, kind),
             onImport: (kind) => _import(context, kind),
             onOpenFiles: (kind) => showDocumentFilesSheet(context, kind),
+            onRetry: context.read<DocumentsCubit>().retryUpload,
+            onDiscard: context.read<DocumentsCubit>().discardFailedUpload,
           ),
-          Row(
-            spacing: 10,
-            children: [
-              Expanded(
-                child: RealestyButton(
-                  label: l10n.documentsScan,
-                  leadingIcon: RealestyIcons.camera,
-                  height: 48,
-                  onPressed: enabled ? () => _scan(context) : null,
-                ),
-              ),
-              Expanded(
-                child: RealestyButton(
-                  label: l10n.documentsImport,
-                  leadingIcon: RealestyIcons.upload,
-                  variant: RealestyButtonVariant.secondary,
-                  height: 48,
-                  onPressed: enabled ? () => _import(context) : null,
-                ),
-              ),
-            ],
+          _PrivacyNote(
+            message: state.isLocked
+                ? l10n.documentsPrivacyNoteLocked
+                : l10n.documentsPrivacyNote,
           ),
-          _PrivacyNote(message: l10n.documentsPrivacyNote),
         ],
       ),
     );
@@ -291,11 +291,15 @@ class _DocumentsCard extends StatelessWidget {
     required this.rowKeys,
     required this.showsSubmissionErrors,
     required this.uploading,
+    required this.failedUploads,
     required this.enabled,
+    required this.isLocked,
     required this.canOpen,
     required this.onScan,
     required this.onImport,
     required this.onOpenFiles,
+    required this.onRetry,
+    required this.onDiscard,
   });
 
   final DocumentChecklist checklist;
@@ -306,13 +310,21 @@ class _DocumentsCard extends StatelessWidget {
   /// Whether the missing documents needed to send are shown as errors.
   final bool showsSubmissionErrors;
   final PickedDocument? uploading;
+
+  /// Files whose upload failed ("Réessayer" / "Retirer").
+  final List<FailedUpload> failedUploads;
   final bool enabled;
+
+  /// Whether the dossier is read-only (no "Scanner"/"Importer" links).
+  final bool isLocked;
 
   /// Whether the files can be listed and opened (also when locked).
   final bool canOpen;
   final ValueChanged<DocumentKind> onScan;
   final ValueChanged<DocumentKind> onImport;
   final ValueChanged<DocumentKind> onOpenFiles;
+  final ValueChanged<FailedUpload> onRetry;
+  final ValueChanged<FailedUpload> onDiscard;
 
   @override
   Widget build(BuildContext context) {
@@ -334,7 +346,42 @@ class _DocumentsCard extends StatelessWidget {
             _row(
               context,
               row,
-              isLast: index == rows.length - 1 && uploading == null,
+              isLast:
+                  index == rows.length - 1 &&
+                  uploading == null &&
+                  failedUploads.isEmpty,
+            ),
+          for (final (index, failed) in failedUploads.indexed)
+            RealestyListItem(
+              key: ObjectKey(failed),
+              title: failed.file.fileName,
+              subtitle: l10n.documentsUploadFailedRow(
+                l10n.documentKind(failed.kind),
+              ),
+              leadingIcon: RealestyIcons.file,
+              tone: RealestyListTileTone.error,
+              showDivider:
+                  index < failedUploads.length - 1 || uploading != null,
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _RowAction(
+                    label: l10n.documentsRetry,
+                    icon: RealestyIcons.upload,
+                    semanticLabel: l10n.documentsRetryFile(
+                      failed.file.fileName,
+                    ),
+                    onPressed: enabled ? () => onRetry(failed) : null,
+                  ),
+                  RealestyIconButton(
+                    icon: RealestyIcons.close,
+                    semanticLabel: l10n.documentsDiscardFile(
+                      failed.file.fileName,
+                    ),
+                    onPressed: enabled ? () => onDiscard(failed) : null,
+                  ),
+                ],
+              ),
             ),
           if (uploading != null)
             RealestyListItem(
@@ -358,51 +405,33 @@ class _DocumentsCard extends StatelessWidget {
 
   Widget _row(BuildContext context, DocumentRow row, {required bool isLast}) {
     final l10n = context.l10n;
-    final badge = documentStatusBadge(l10n, row.status);
-    final needsFile =
-        row.status == DocumentRowStatus.missing ||
-        row.status == DocumentRowStatus.rejected;
+    final c = context.realestyColors;
     final kindLabel = l10n.documentKind(row.kind);
-    // Diagnostics are reports (PDF) rather than paper to photograph.
-    final imports = row.kind == DocumentKind.diagnostics;
     final showsError =
         showsSubmissionErrors && checklist.blockingKinds.contains(row.kind);
+    final hasActions =
+        !isLocked && row.status != DocumentRowStatus.notConcerned;
     final item = RealestyListItem(
       key: ValueKey(row.kind),
       title: kindLabel,
       subtitle: l10n.documentRowSubtitle(row, checklist.sanitationRule),
       leadingIcon: RealestyIcons.file,
       tone: documentStatusTone(row.status),
-      showDivider: !isLast && !showsError,
+      showDivider: !isLast && !showsError && !hasActions,
       onTap: row.documents.isEmpty || !canOpen
           ? null
           : () => onOpenFiles(row.kind),
-      trailing: needsFile
-          ? Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                badge,
-                _RowAction(
-                  label: imports ? l10n.documentsImport : l10n.documentsScan,
-                  semanticLabel: imports
-                      ? l10n.documentsImportFor(kindLabel)
-                      : l10n.documentsScanFor(kindLabel),
-                  onPressed: enabled
-                      ? () => imports ? onImport(row.kind) : onScan(row.kind)
-                      : null,
-                ),
-              ],
-            )
-          : badge,
+      trailing: documentStatusBadge(l10n, row.status),
     );
     final key = rowKeys[row.kind];
-    if (!showsError) {
+    if (!showsError && !hasActions) {
       return key == null ? item : KeyedSubtree(key: key, child: item);
     }
-    final c = context.realestyColors;
     return Container(
       key: key,
-      padding: const EdgeInsets.only(bottom: RealestySpacing.sm),
+      padding: hasActions
+          ? null
+          : const EdgeInsets.only(bottom: RealestySpacing.sm),
       decoration: BoxDecoration(
         border: isLast
             ? null
@@ -412,31 +441,63 @@ class _DocumentsCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           item,
-          Text(
-            l10n.documentsRequiredForSubmission,
-            style: RealestyTextStyles.fieldError.copyWith(color: c.erreur),
-          ),
+          if (showsError)
+            Padding(
+              padding: const EdgeInsets.only(left: _actionsIndent),
+              child: Text(
+                l10n.documentsRequiredForSubmission,
+                style: RealestyTextStyles.fieldError.copyWith(color: c.erreur),
+              ),
+            ),
+          if (hasActions)
+            Padding(
+              padding: const EdgeInsets.only(left: _actionsIndent - 10),
+              // Side by side; one under the other with very large text.
+              child: Wrap(
+                children: [
+                  _RowAction(
+                    label: l10n.documentsScan,
+                    icon: RealestyIcons.scan,
+                    semanticLabel: l10n.documentsScanFor(kindLabel),
+                    onPressed: enabled ? () => onScan(row.kind) : null,
+                  ),
+                  _RowAction(
+                    label: l10n.documentsImport,
+                    icon: RealestyIcons.upload,
+                    semanticLabel: l10n.documentsImportFor(kindLabel),
+                    onPressed: enabled ? () => onImport(row.kind) : null,
+                  ),
+                ],
+              ),
+            ),
         ],
       ),
     );
   }
+
+  /// Left inset of the lines under a row, aligned with its title (tile 40
+  /// + gap 12).
+  static const double _actionsIndent = 40 + RealestySpacing.sm;
 }
 
-/// Action link of a row ("Scanner"), 13/700 Vert texte, with a 44 px
-/// touch target.
+/// Action link of a row ("Scanner", "Importer"): icon and 13/700 Vert
+/// texte label, with a 44 px touch target.
 class _RowAction extends StatelessWidget {
   const new({
     required this.label,
+    required this.icon,
     required this.semanticLabel,
     required this.onPressed,
   });
 
   final String label;
+  final RealestyIcons icon;
   final String semanticLabel;
   final VoidCallback? onPressed;
 
   @override
   Widget build(BuildContext context) {
+    final color = context.realestyColors.vertTexte;
     return RealestyPressable(
       onPressed: onPressed,
       semanticLabel: semanticLabel,
@@ -445,16 +506,21 @@ class _RowAction extends StatelessWidget {
           minWidth: RealestySpacing.minTouchTarget,
           minHeight: RealestySpacing.minTouchTarget,
         ),
-        child: Align(
-          widthFactor: 1,
-          heightFactor: 1,
-          alignment: Alignment.centerRight,
-          child: Text(
-            label,
-            style: RealestyTextStyles.listSubtitle.copyWith(
-              fontWeight: FontWeight.w700,
-              color: context.realestyColors.vertTexte,
-            ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            spacing: 6,
+            children: [
+              RealestyIcon(icon, size: 16, color: color),
+              Text(
+                label,
+                style: RealestyTextStyles.listSubtitle.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: color,
+                ),
+              ),
+            ],
           ),
         ),
       ),

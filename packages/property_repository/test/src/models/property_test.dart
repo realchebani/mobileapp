@@ -40,6 +40,7 @@ void main() {
     'roof_type': 'Tuiles',
     'roof_year': 2016,
     'heating_energy': 'pac',
+    'heating_systems': ['pac', 'granules'],
     'heat_pump_type': 'Air / eau',
     'heat_pump_year': 2021,
     'sanitation': 'tout_a_l_egout',
@@ -87,6 +88,10 @@ void main() {
       expect(property.wallMaterial, WallMaterial.concreteBlock);
       expect(property.adjacency, Adjacency.detached);
       expect(property.heatingEnergy, HeatingEnergy.heatPump);
+      expect(property.heatingSystems, [
+        HeatingSystem.heatPump,
+        HeatingSystem.pellets,
+      ]);
       expect(property.sanitation, Sanitation.mainsSewer);
       expect(property.outdoorEquipment, [
         OutdoorEquipment.pool,
@@ -107,6 +112,7 @@ void main() {
         'servitude_passage',
         'autre',
       ]);
+      expect(property.toJson()['heating_systems'], ['pac', 'granules']);
     });
 
     test('defaults a minimal row', () {
@@ -116,6 +122,7 @@ void main() {
       expect(property.currentStep, 1);
       expect(property.parcelConfirmed, isFalse);
       expect(property.specialSituations, isEmpty);
+      expect(property.heatingSystems, isEmpty);
       expect(property.provenance, isEmpty);
       expect(property.notifyPush, isTrue);
       expect(Property.fromJson(property.toJson()), property);
@@ -168,6 +175,13 @@ void main() {
       expect(parseDbEnumList(Glazing.values, null), isEmpty);
     });
 
+    test('keep the legacy heating energy codes as heating systems', () {
+      // The heating_systems migration backfills one from the other.
+      for (final energy in HeatingEnergy.values) {
+        expect(parseDbEnum(HeatingSystem.values, energy.value), isNotNull);
+      }
+    });
+
     test('have distinct values', () {
       for (final values in <List<DbEnum>>[
         PropertyStatus.values,
@@ -179,6 +193,7 @@ void main() {
         WallMaterial.values,
         Adjacency.values,
         HeatingEnergy.values,
+        HeatingSystem.values,
         Sanitation.values,
         OutdoorEquipment.values,
         MeasurementMethod.values,

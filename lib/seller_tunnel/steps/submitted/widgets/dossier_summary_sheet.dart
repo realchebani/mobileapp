@@ -2,6 +2,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:mobileapp/l10n/l10n.dart';
 import 'package:mobileapp/seller_tunnel/cubit/seller_tunnel_cubit.dart';
 import 'package:mobileapp/seller_tunnel/models/seller_tunnel_step.dart';
+import 'package:mobileapp/seller_tunnel/steps/technical/models/heating_system_label.dart';
 import 'package:mobileapp/seller_tunnel/widgets/widgets.dart';
 import 'package:mobileapp/ui/ui.dart';
 import 'package:property_repository/property_repository.dart';
@@ -116,7 +117,12 @@ class DossierSummarySheet extends StatelessWidget {
           ),
           (
             l10n.submittedSummaryHeating,
-            orMissing(_energy(l10n, property.heatingEnergy)),
+            property.heatingSystems.isEmpty
+                ? missing
+                : [
+                    for (final system in property.heatingSystems)
+                      heatingSystemLabel(l10n, system),
+                  ].join(', '),
           ),
           (
             l10n.submittedSummarySanitation,
@@ -253,16 +259,6 @@ class DossierSummarySheet extends StatelessWidget {
         PropertyLevels.singleStorey => l10n.technicalLevelsSingleStorey,
         PropertyLevels.oneUpperFloor => l10n.technicalLevelsOneUpperFloor,
         PropertyLevels.twoOrMoreUpperFloors => l10n.technicalLevelsTwoOrMore,
-        null => null,
-      };
-
-  static String? _energy(AppLocalizations l10n, HeatingEnergy? energy) =>
-      switch (energy) {
-        HeatingEnergy.electricity => l10n.technicalEnergyElectricity,
-        HeatingEnergy.gas => l10n.technicalEnergyGas,
-        HeatingEnergy.fuelOil => l10n.technicalEnergyFuelOil,
-        HeatingEnergy.heatPump => l10n.technicalEnergyHeatPump,
-        HeatingEnergy.wood => l10n.technicalEnergyWood,
         null => null,
       };
 
