@@ -38,8 +38,12 @@
 ## US-04.6 · Surfaces pièce par pièce (V5, V5c) 📋
 *En tant que vendeur, je veux saisir mes pièces et leurs surfaces pour obtenir la surface habitable.*
 
-## US-04.7 · Cadre de vie (V6) 📋
+## US-04.7 · Cadre de vie (V6) ✅
 *En tant que vendeur, je veux décrire les atouts et points de vigilance du quartier.*
+- [x] Atouts et points de vigilance (10 max chacun), ajout / modification / suppression dans une fiche (saisie écrite à la place de la voix).
+- [x] Niveau de bruit 1–10 (curseur), vis-à-vis, note libre.
+- [x] Carte « Données du quartier » en attente de sources externes.
+- Décisions à valider : libellés du bruit (Très calme → Très bruyant) ; destinataire de la note (« futurs visiteurs » selon la maquette, « expert » selon le cahier des charges).
 
 ## US-04.8 · Coffre de documents et envoi (V7) 📋
 *En tant que vendeur, je veux déposer mes documents et envoyer mon dossier à l'expert.*
