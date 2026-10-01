@@ -500,5 +500,530 @@
     "tunnelBackToHome": "Retour à mon dossier",
     "@tunnelBackToHome": {
         "description": "Button back to the seller entry screen"
+    },
+    "ownersIntro": "Bonjour ! Je vais vous accompagner pas à pas, à votre rythme. Pour commencer : êtes-vous le seul et unique propriétaire de ce bien ?",
+    "@ownersIntro": {
+        "description": "V1 · question de l’agent Realesty sur la propriété du bien"
+    },
+    "ownersSingleTitle": "Unique propriétaire",
+    "@ownersSingleTitle": {
+        "description": "V1 · carte « un seul propriétaire »"
+    },
+    "ownersMultipleTitle": "Plusieurs propriétaires",
+    "@ownersMultipleTitle": {
+        "description": "V1 · carte « plusieurs propriétaires »"
+    },
+    "ownersMultipleSubtitle": "Couple, indivision, héritage…",
+    "@ownersMultipleSubtitle": {
+        "description": "V1 · sous-titre de la carte « plusieurs propriétaires »"
+    },
+    "ownersOwnerOneLabel": "Propriétaire 1 · vous",
+    "@ownersOwnerOneLabel": {
+        "description": "V1 · légende de la section du premier propriétaire (l’utilisateur)"
+    },
+    "ownersFirstNameLabel": "Prénom",
+    "@ownersFirstNameLabel": {
+        "description": "V1 · libellé du champ prénom"
+    },
+    "ownersLastNameLabel": "Nom",
+    "@ownersLastNameLabel": {
+        "description": "V1 · libellé du champ nom"
+    },
+    "ownersPhoneLabel": "Téléphone",
+    "@ownersPhoneLabel": {
+        "description": "V1 · libellé du champ téléphone"
+    },
+    "ownersPhoneHint": "06 12 34 56 78",
+    "@ownersPhoneHint": {
+        "description": "V1 · exemple affiché dans le champ téléphone vide"
+    },
+    "ownersEmailLabel": "E-mail",
+    "@ownersEmailLabel": {
+        "description": "V1 · libellé du champ e-mail"
+    },
+    "ownersEmailOptionalLabel": "E-mail (facultatif)",
+    "@ownersEmailOptionalLabel": {
+        "description": "V1 · libellé du champ e-mail facultatif d’un co-propriétaire"
+    },
+    "ownersEmailHint": "nom@exemple.fr",
+    "@ownersEmailHint": {
+        "description": "V1 · exemple affiché dans le champ e-mail vide"
+    },
+    "ownersErrorRequired": "Champ obligatoire",
+    "@ownersErrorRequired": {
+        "description": "V1 · erreur d’un champ obligatoire vide"
+    },
+    "ownersErrorPhone": "Numéro invalide, par exemple 06 12 34 56 78",
+    "@ownersErrorPhone": {
+        "description": "V1 · erreur de format du téléphone (numéro français)"
+    },
+    "ownersErrorEmail": "Adresse e-mail invalide",
+    "@ownersErrorEmail": {
+        "description": "V1 · erreur de format de l’e-mail"
+    },
+    "ownersCoOwnerRole": "Co-propriétaire",
+    "@ownersCoOwnerRole": {
+        "description": "V1 · sous-titre d’une carte de co-propriétaire sans téléphone"
+    },
+    "ownersCoOwnerSubtitle": "Co-propriétaire · {phone}",
+    "@ownersCoOwnerSubtitle": {
+        "description": "V1 · sous-titre d’une carte de co-propriétaire avec son téléphone",
+        "placeholders": {
+            "phone": {
+                "type": "String",
+                "example": "06 98 76 54 32"
+            }
+        }
+    },
+    "ownersEditCoOwner": "Modifier {name}",
+    "@ownersEditCoOwner": {
+        "description": "V1 · libellé d’accessibilité du bouton modifier d’un co-propriétaire",
+        "placeholders": {
+            "name": {
+                "type": "String",
+                "example": "Marc Durand"
+            }
+        }
+    },
+    "ownersAddCoOwner": "Ajouter un co-propriétaire",
+    "@ownersAddCoOwner": {
+        "description": "V1 · bouton d’ajout d’un co-propriétaire et titre de la feuille d’ajout"
+    },
+    "ownersEditCoOwnerTitle": "Modifier le co-propriétaire",
+    "@ownersEditCoOwnerTitle": {
+        "description": "V1 · titre de la feuille de modification d’un co-propriétaire"
+    },
+    "ownersSheetAdd": "Ajouter",
+    "@ownersSheetAdd": {
+        "description": "V1 · bouton de validation de la feuille d’ajout d’un co-propriétaire"
+    },
+    "ownersSheetSave": "Enregistrer",
+    "@ownersSheetSave": {
+        "description": "V1 · bouton de validation de la feuille de modification d’un co-propriétaire"
+    },
+    "contextAgentMessage": "Depuis quelle année êtes-vous propriétaire ? Et de quel type de bien s’agit-il ? J’adapterai mes questions.",
+    "@contextAgentMessage": {
+        "description": "Contexte (V3) : question de l’agent"
+    },
+    "contextHint": "Les questions facultatives peuvent être passées",
+    "@contextHint": {
+        "description": "Contexte (V3) : indication au-dessus de « Continuer »"
+    },
+    "contextPropertyTypeLabel": "Type de bien",
+    "@contextPropertyTypeLabel": {
+        "description": "Contexte (V3) : légende de la section du type de bien"
+    },
+    "contextTypeHouse": "Maison",
+    "@contextTypeHouse": {
+        "description": "Contexte (V3) : type de bien"
+    },
+    "contextTypeApartment": "Appartement",
+    "@contextTypeApartment": {
+        "description": "Contexte (V3) : type de bien"
+    },
+    "contextTypeLand": "Terrain",
+    "@contextTypeLand": {
+        "description": "Contexte (V3) : type de bien"
+    },
+    "contextTypeOther": "Autre",
+    "@contextTypeOther": {
+        "description": "Contexte (V3) : type de bien"
+    },
+    "contextTypeOtherSubtitle": "Immeuble, local, garage…",
+    "@contextTypeOtherSubtitle": {
+        "description": "Contexte (V3) : exemples sous le type « Autre »"
+    },
+    "contextTypeOtherLabel": "Précisez le type de bien",
+    "@contextTypeOtherLabel": {
+        "description": "Contexte (V3) : champ libre du type « Autre »"
+    },
+    "contextTypeOtherHint": "Ex. : local commercial",
+    "@contextTypeOtherHint": {
+        "description": "Contexte (V3) : exemple dans le champ libre du type « Autre »"
+    },
+    "contextHistoryLabel": "Historique",
+    "@contextHistoryLabel": {
+        "description": "Contexte (V3) : légende de la section historique"
+    },
+    "contextPurchaseYear": "Année d’achat",
+    "@contextPurchaseYear": {
+        "description": "Contexte (V3) : champ année d’achat"
+    },
+    "contextPurchasePrice": "Prix d’achat",
+    "@contextPurchasePrice": {
+        "description": "Contexte (V3) : champ prix d’achat"
+    },
+    "contextOptional": "Facultatif",
+    "@contextOptional": {
+        "description": "Contexte (V3) : mention sous un champ facultatif"
+    },
+    "contextSelfBuiltLabel": "Construit par vous ?",
+    "@contextSelfBuiltLabel": {
+        "description": "Contexte (V3) : question « construit par vous »"
+    },
+    "contextYes": "Oui",
+    "@contextYes": {
+        "description": "Contexte (V3) : réponse oui"
+    },
+    "contextNo": "Non",
+    "@contextNo": {
+        "description": "Contexte (V3) : réponse non"
+    },
+    "contextSaleReasonLabel": "Raison de la vente",
+    "@contextSaleReasonLabel": {
+        "description": "Contexte (V3) : question raison de la vente"
+    },
+    "contextReasonRelocation": "Mutation",
+    "@contextReasonRelocation": {
+        "description": "Contexte (V3) : raison de la vente"
+    },
+    "contextReasonMoreSpace": "Agrandissement",
+    "@contextReasonMoreSpace": {
+        "description": "Contexte (V3) : raison de la vente"
+    },
+    "contextReasonSeparation": "Séparation",
+    "@contextReasonSeparation": {
+        "description": "Contexte (V3) : raison de la vente"
+    },
+    "contextReasonInvestment": "Investissement",
+    "@contextReasonInvestment": {
+        "description": "Contexte (V3) : raison de la vente"
+    },
+    "contextReasonOther": "Autre",
+    "@contextReasonOther": {
+        "description": "Contexte (V3) : raison de la vente"
+    },
+    "contextPreviouslyEstimatedLabel": "Déjà estimé par une agence ?",
+    "@contextPreviouslyEstimatedLabel": {
+        "description": "Contexte (V3) : question estimation précédente"
+    },
+    "contextEstimateTitle": "Estimation précédente",
+    "@contextEstimateTitle": {
+        "description": "Contexte (V3) : légende de la carte d’estimation (une seule carte)"
+    },
+    "contextEstimateTitleNumbered": "Estimation précédente {number}",
+    "@contextEstimateTitleNumbered": {
+        "description": "Contexte (V3) : légende numérotée d’une carte d’estimation (plusieurs cartes)",
+        "placeholders": {
+            "number": {
+                "type": "int"
+            }
+        }
+    },
+    "contextEstimatePrice": "Prix estimé",
+    "@contextEstimatePrice": {
+        "description": "Contexte (V3) : champ prix estimé"
+    },
+    "contextEstimateDate": "Date",
+    "@contextEstimateDate": {
+        "description": "Contexte (V3) : champ date de l’estimation"
+    },
+    "contextEstimateDateHint": "mm/aaaa",
+    "@contextEstimateDateHint": {
+        "description": "Contexte (V3) : format attendu de la date de l’estimation"
+    },
+    "contextEstimateAgency": "Agence",
+    "@contextEstimateAgency": {
+        "description": "Contexte (V3) : champ agence"
+    },
+    "contextEstimateAgencyHint": "Nom de l’agence",
+    "@contextEstimateAgencyHint": {
+        "description": "Contexte (V3) : exemple du champ agence"
+    },
+    "contextEstimateAdd": "Ajouter une autre agence",
+    "@contextEstimateAdd": {
+        "description": "Contexte (V3) : bouton d’ajout d’une estimation"
+    },
+    "contextEstimateRemove": "Supprimer {title}",
+    "@contextEstimateRemove": {
+        "description": "Contexte (V3) : libellé d’accessibilité du bouton de suppression d’une estimation",
+        "placeholders": {
+            "title": {
+                "type": "String"
+            }
+        }
+    },
+    "contextErrorPropertyType": "Choisissez le type de bien",
+    "@contextErrorPropertyType": {
+        "description": "Contexte (V3) : erreur type de bien manquant"
+    },
+    "contextErrorPurchaseYear": "Indiquez l’année d’achat",
+    "@contextErrorPurchaseYear": {
+        "description": "Contexte (V3) : erreur année d’achat manquante"
+    },
+    "contextErrorYearRange": "Indiquez une année entre {min} et {max}",
+    "@contextErrorYearRange": {
+        "description": "Contexte (V3) : erreur année hors limites",
+        "placeholders": {
+            "min": {
+                "type": "String"
+            },
+            "max": {
+                "type": "String"
+            }
+        }
+    },
+    "contextErrorAmountRange": "Indiquez un montant entre {min} et {max} €",
+    "@contextErrorAmountRange": {
+        "description": "Contexte (V3) : erreur montant hors limites (montants déjà formatés)",
+        "placeholders": {
+            "min": {
+                "type": "String"
+            },
+            "max": {
+                "type": "String"
+            }
+        }
+    },
+    "contextErrorSelfBuilt": "Indiquez si vous avez construit ce bien",
+    "@contextErrorSelfBuilt": {
+        "description": "Contexte (V3) : erreur réponse « construit par vous » manquante"
+    },
+    "contextErrorEstimatePrice": "Indiquez le prix estimé",
+    "@contextErrorEstimatePrice": {
+        "description": "Contexte (V3) : erreur prix estimé manquant"
+    },
+    "contextErrorMonthFormat": "Format attendu : mm/aaaa",
+    "@contextErrorMonthFormat": {
+        "description": "Contexte (V3) : erreur date d’estimation invalide"
+    },
+    "contextErrorMonthFuture": "Indiquez une date passée",
+    "@contextErrorMonthFuture": {
+        "description": "Contexte (V3) : erreur date d’estimation dans le futur"
+    },
+    "locationIntroAsk": "Où se situe votre bien ? Saisissez son adresse ou géolocalisez-vous : je retrouverai sa parcelle cadastrale.",
+    "@locationIntroAsk": {
+        "description": "V2 · question de l’agent tant qu’aucune parcelle n’est localisée"
+    },
+    "locationIntroParcel": "J’ai localisé votre parcelle : section {section}, n° {numero}, pour {surface} m². Cela correspond-il exactement aux limites de votre propriété ?",
+    "@locationIntroParcel": {
+        "description": "V2 · message de l’agent quand une parcelle est sélectionnée",
+        "placeholders": {
+            "section": {
+                "type": "String",
+                "example": "AB"
+            },
+            "numero": {
+                "type": "String",
+                "example": "98"
+            },
+            "surface": {
+                "type": "String",
+                "example": "540"
+            }
+        }
+    },
+    "locationIntroParcels": "J’ai sélectionné {count} parcelles, pour {surface} m² au total. Cela correspond-il exactement aux limites de votre propriété ?",
+    "@locationIntroParcels": {
+        "description": "V2 · message de l’agent quand plusieurs parcelles sont sélectionnées",
+        "placeholders": {
+            "count": {
+                "type": "int"
+            },
+            "surface": {
+                "type": "String",
+                "example": "1 080"
+            }
+        }
+    },
+    "locationIntroNoParcel": "Je n’ai pas pu localiser la parcelle cadastrale. Touchez votre terrain sur la carte, ou continuez : un expert la vérifiera.",
+    "@locationIntroNoParcel": {
+        "description": "V2 · message de l’agent quand la parcelle est introuvable ou le cadastre indisponible"
+    },
+    "locationAddressLabel": "Adresse du bien",
+    "@locationAddressLabel": {
+        "description": "V2 · libellé du champ adresse"
+    },
+    "locationAddressHint": "Numéro, rue, commune",
+    "@locationAddressHint": {
+        "description": "V2 · exemple affiché dans le champ adresse vide"
+    },
+    "locationAddressRequired": "Indiquez l’adresse du bien",
+    "@locationAddressRequired": {
+        "description": "V2 · erreur quand l’adresse est vide"
+    },
+    "locationSuggestionsUnavailable": "Suggestions indisponibles pour le moment. Vous pouvez saisir l’adresse complète.",
+    "@locationSuggestionsUnavailable": {
+        "description": "V2 · sous le champ adresse quand la recherche d’adresses échoue (hors connexion)"
+    },
+    "locationLocateMe": "Me géolocaliser",
+    "@locationLocateMe": {
+        "description": "V2 · bouton de géolocalisation (carte et état vide)"
+    },
+    "locationZoomIn": "Zoomer",
+    "@locationZoomIn": {
+        "description": "V2 · libellé d’accessibilité du bouton zoom avant de la carte"
+    },
+    "locationZoomOut": "Dézoomer",
+    "@locationZoomOut": {
+        "description": "V2 · libellé d’accessibilité du bouton zoom arrière de la carte"
+    },
+    "locationMapLabel": "Vue aérienne du terrain. Touchez une parcelle pour la sélectionner.",
+    "@locationMapLabel": {
+        "description": "V2 · libellé d’accessibilité de la carte"
+    },
+    "locationMapEmpty": "Saisissez l’adresse ou géolocalisez-vous pour afficher la vue aérienne.",
+    "@locationMapEmpty": {
+        "description": "V2 · texte à la place de la carte tant qu’aucune position n’est connue"
+    },
+    "locationMapAttribution": "© IGN",
+    "@locationMapAttribution": {
+        "description": "V2 · attribution des images aériennes (IGN, Licence Ouverte)"
+    },
+    "locationParcelSearching": "Recherche de la parcelle…",
+    "@locationParcelSearching": {
+        "description": "V2 · pastille de la carte pendant la recherche cadastrale"
+    },
+    "locationParcelSelected": "Parcelle {section} {numero} sélectionnée",
+    "@locationParcelSelected": {
+        "description": "V2 · pastille de la carte avec la parcelle sélectionnée",
+        "placeholders": {
+            "section": {
+                "type": "String",
+                "example": "AB"
+            },
+            "numero": {
+                "type": "String",
+                "example": "98"
+            }
+        }
+    },
+    "locationParcelsSelected": "{count} parcelles sélectionnées",
+    "@locationParcelsSelected": {
+        "description": "V2 · pastille de la carte avec plusieurs parcelles sélectionnées",
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
+    "locationParcelHeading": "Section · Parcelle",
+    "@locationParcelHeading": {
+        "description": "V2 · légende de l’identifiant cadastral dans la carte parcelle"
+    },
+    "locationParcelId": "{section} · {numero}",
+    "@locationParcelId": {
+        "description": "V2 · identifiant cadastral affiché (section · numéro)",
+        "placeholders": {
+            "section": {
+                "type": "String",
+                "example": "AB"
+            },
+            "numero": {
+                "type": "String",
+                "example": "98"
+            }
+        }
+    },
+    "locationParcelArea": "Surface cadastrale",
+    "@locationParcelArea": {
+        "description": "V2 · légende de la contenance cadastrale"
+    },
+    "locationSquareMeters": "{value} m²",
+    "@locationSquareMeters": {
+        "description": "V2 · surface en mètres carrés",
+        "placeholders": {
+            "value": {
+                "type": "String",
+                "example": "540"
+            }
+        }
+    },
+    "locationSourceExternal": "Source externe",
+    "@locationSourceExternal": {
+        "description": "V2 · étiquette de provenance des données cadastrales"
+    },
+    "locationParcelSource": "Registre cadastral · à confirmer avec votre titre de propriété",
+    "@locationParcelSource": {
+        "description": "V2 · précision sous la carte parcelle"
+    },
+    "locationConfirm": "Oui, c’est correct",
+    "@locationConfirm": {
+        "description": "V2 · bouton de confirmation de la parcelle"
+    },
+    "locationConfirmed": "C’est confirmé",
+    "@locationConfirmed": {
+        "description": "V2 · bouton de confirmation une fois la parcelle confirmée"
+    },
+    "locationEdit": "Modifier / ajouter",
+    "@locationEdit": {
+        "description": "V2 · bouton pour modifier ou ajouter des parcelles sur la carte"
+    },
+    "locationEditHint": "Touchez la carte pour ajouter ou retirer une parcelle, puis confirmez.",
+    "@locationEditHint": {
+        "description": "V2 · bandeau affiché en mode modification des parcelles"
+    },
+    "locationConfirmRequired": "Confirmez la parcelle ou modifiez-la avant de continuer.",
+    "@locationConfirmRequired": {
+        "description": "V2 · erreur quand la parcelle n’est pas confirmée"
+    },
+    "locationParcelNotFound": "Aucune parcelle cadastrale à cet endroit. Touchez votre terrain sur la carte.",
+    "@locationParcelNotFound": {
+        "description": "V2 · bandeau quand aucune parcelle n’est trouvée au point"
+    },
+    "locationParcelUnavailable": "Cadastre momentanément indisponible. Vous pouvez continuer : un expert vérifiera la parcelle.",
+    "@locationParcelUnavailable": {
+        "description": "V2 · bandeau quand l’API cadastre est injoignable"
+    },
+    "locationSituationsQuestion": "Êtes-vous concerné par une situation particulière ?",
+    "@locationSituationsQuestion": {
+        "description": "V2 · question des situations particulières"
+    },
+    "locationSituationRightOfWay": "Servitude de passage",
+    "@locationSituationRightOfWay": {
+        "description": "V2 · puce situation particulière"
+    },
+    "locationSituationNetworks": "Servitude de réseaux",
+    "@locationSituationNetworks": {
+        "description": "V2 · puce situation particulière"
+    },
+    "locationSituationOther": "Autre",
+    "@locationSituationOther": {
+        "description": "V2 · puce situation particulière"
+    },
+    "locationSituationNone": "Aucune",
+    "@locationSituationNone": {
+        "description": "V2 · puce « aucune situation particulière » (exclusive)"
+    },
+    "locationSituationOtherLabel": "Précisez la situation",
+    "@locationSituationOtherLabel": {
+        "description": "V2 · champ libre quand « Autre » est choisi"
+    },
+    "locationSituationsRequired": "Choisissez au moins une réponse.",
+    "@locationSituationsRequired": {
+        "description": "V2 · erreur quand aucune situation n’est choisie"
+    },
+    "locationLocateServiceDisabled": "Activez la localisation de votre téléphone pour vous géolocaliser.",
+    "@locationLocateServiceDisabled": {
+        "description": "V2 · message quand la localisation du téléphone est désactivée"
+    },
+    "locationLocatePermissionDenied": "Autorisez l’accès à votre position dans les réglages pour vous géolocaliser.",
+    "@locationLocatePermissionDenied": {
+        "description": "V2 · message quand l’accès à la position est refusé"
+    },
+    "locationLocateUnavailable": "Position introuvable. Saisissez l’adresse du bien.",
+    "@locationLocateUnavailable": {
+        "description": "V2 · message quand la position ne peut pas être obtenue"
+    },
+    "ownersErrorOwnership": "Indiquez si vous êtes le seul propriétaire",
+    "@ownersErrorOwnership": {
+        "description": "V1 · erreur quand aucune carte de situation de propriété n’est choisie"
+    },
+    "ownersErrorCoOwners": "Ajoutez au moins un co-propriétaire",
+    "@ownersErrorCoOwners": {
+        "description": "V1 · erreur quand « Plusieurs propriétaires » est choisi sans co-propriétaire"
+    },
+    "ownersSheetDelete": "Supprimer ce co-propriétaire",
+    "@ownersSheetDelete": {
+        "description": "V1 · bouton de suppression dans la feuille de modification d’un co-propriétaire"
+    },
+    "contextErrorMonthTooEarly": "Indiquez une date à partir de {year}",
+    "@contextErrorMonthTooEarly": {
+        "description": "Contexte (V3) : erreur date d’estimation trop ancienne",
+        "placeholders": {
+            "year": {
+                "type": "String"
+            }
+        }
     }
 }
