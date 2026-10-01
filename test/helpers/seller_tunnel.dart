@@ -1,5 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:geo_repository/geo_repository.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:mobileapp/app/app.dart';
@@ -41,6 +42,7 @@ extension PumpSellerTunnel on WidgetTester {
     Widget widget, {
     SellerTunnelCubit? sellerTunnelCubit,
     PropertyRepository? propertyRepository,
+    GeoRepository? geoRepository,
     AppBloc? appBloc,
     GoRouter? goRouter,
   }) {
@@ -50,6 +52,7 @@ extension PumpSellerTunnel on WidgetTester {
         child: widget,
       ),
       propertyRepository: propertyRepository,
+      geoRepository: geoRepository,
       appBloc: appBloc,
       goRouter: goRouter,
     );

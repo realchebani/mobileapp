@@ -1,5 +1,6 @@
 import 'package:auth_repository/auth_repository.dart';
 import 'package:bloc_test/bloc_test.dart';
+import 'package:geo_repository/geo_repository.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobileapp/app/app.dart';
 import 'package:mobileapp/login/login.dart';
@@ -14,6 +15,8 @@ class MockAuthRepository extends Mock implements AuthRepository;
 class MockProfileRepository extends Mock implements ProfileRepository;
 
 class MockPropertyRepository extends Mock implements PropertyRepository;
+
+class MockGeoRepository extends Mock implements GeoRepository;
 
 class MockSellerTunnelCubit extends MockCubit<SellerTunnelState>
     implements SellerTunnelCubit;

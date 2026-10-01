@@ -27,6 +27,7 @@ class RealestyTextField extends StatelessWidget {
     this.obscureText = false,
     this.autofocus = false,
     this.enabled = true,
+    this.maxLines = 1,
     this.footer,
     super.key,
   });
@@ -57,6 +58,10 @@ class RealestyTextField extends StatelessWidget {
   final bool obscureText;
   final bool autofocus;
   final bool enabled;
+
+  /// Lines the field grows to (from one) before scrolling; long values
+  /// wrap instead of scrolling horizontally when above 1.
+  final int maxLines;
 
   /// Optional widget below the box, e.g. a provenance tag.
   final Widget? footer;
@@ -103,6 +108,8 @@ class RealestyTextField extends StatelessWidget {
             obscureText: obscureText,
             autofocus: autofocus,
             enabled: enabled,
+            minLines: maxLines > 1 ? 1 : null,
+            maxLines: maxLines,
             style: RealestyTextStyles.body.copyWith(
               color: enabled ? colors.encre : muted,
             ),

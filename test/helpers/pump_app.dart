@@ -1,6 +1,7 @@
 import 'package:auth_repository/auth_repository.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:geo_repository/geo_repository.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:mobileapp/app/app.dart';
@@ -26,6 +27,7 @@ extension PumpApp on WidgetTester {
     AuthRepository? authRepository,
     ProfileRepository? profileRepository,
     PropertyRepository? propertyRepository,
+    GeoRepository? geoRepository,
     OnboardingRepository? onboardingRepository,
     AppBloc? appBloc,
     LoginCubit? loginCubit,
@@ -38,6 +40,7 @@ extension PumpApp on WidgetTester {
         authRepository: authRepository,
         profileRepository: profileRepository,
         propertyRepository: propertyRepository,
+        geoRepository: geoRepository,
         onboardingRepository: onboardingRepository,
         appBloc: appBloc,
         loginCubit: loginCubit,
@@ -61,6 +64,7 @@ extension PumpApp on WidgetTester {
     AuthRepository? authRepository,
     ProfileRepository? profileRepository,
     PropertyRepository? propertyRepository,
+    GeoRepository? geoRepository,
     OnboardingRepository? onboardingRepository,
     AppBloc? appBloc,
     LoginCubit? loginCubit,
@@ -72,6 +76,7 @@ extension PumpApp on WidgetTester {
         authRepository: authRepository,
         profileRepository: profileRepository,
         propertyRepository: propertyRepository,
+        geoRepository: geoRepository,
         onboardingRepository: onboardingRepository,
         appBloc: appBloc,
         loginCubit: loginCubit,
@@ -94,6 +99,7 @@ class _AppProviders extends StatelessWidget {
     this.authRepository,
     this.profileRepository,
     this.propertyRepository,
+    this.geoRepository,
     this.onboardingRepository,
     this.appBloc,
     this.loginCubit,
@@ -104,6 +110,7 @@ class _AppProviders extends StatelessWidget {
   final AuthRepository? authRepository;
   final ProfileRepository? profileRepository;
   final PropertyRepository? propertyRepository;
+  final GeoRepository? geoRepository;
   final OnboardingRepository? onboardingRepository;
   final AppBloc? appBloc;
   final LoginCubit? loginCubit;
@@ -121,6 +128,9 @@ class _AppProviders extends StatelessWidget {
         ),
         RepositoryProvider<PropertyRepository>.value(
           value: propertyRepository ?? MockPropertyRepository(),
+        ),
+        RepositoryProvider<GeoRepository>.value(
+          value: geoRepository ?? MockGeoRepository(),
         ),
         RepositoryProvider<OnboardingRepository>.value(
           value: onboardingRepository ?? MockOnboardingRepository(),

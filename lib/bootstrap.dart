@@ -4,6 +4,7 @@ import 'dart:developer';
 import 'package:auth_repository/auth_repository.dart';
 import 'package:bloc/bloc.dart';
 import 'package:flutter/widgets.dart';
+import 'package:geo_repository/geo_repository.dart';
 import 'package:mobileapp/app/app.dart';
 import 'package:mobileapp/ui/ui.dart';
 import 'package:profile_repository/profile_repository.dart';
@@ -16,6 +17,7 @@ typedef AppBuilder = FutureOr<Widget> Function({
   required AuthRepository authRepository,
   required ProfileRepository profileRepository,
   required PropertyRepository propertyRepository,
+  required GeoRepository geoRepository,
   required OnboardingRepository onboardingRepository,
 });
 
@@ -56,6 +58,7 @@ Future<void> bootstrap(AppBuilder builder) async {
       ),
       profileRepository: ProfileRepository(client: client),
       propertyRepository: PropertyRepository(client: client),
+      geoRepository: GeoRepository(),
       onboardingRepository: OnboardingRepository(preferences: preferences),
     ),
   );

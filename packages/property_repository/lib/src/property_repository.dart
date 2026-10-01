@@ -201,9 +201,11 @@ class PropertyRepository {
   Future<List<PropertyParcel>> getParcels(String propertyId) =>
       _list(_parcels, propertyId);
 
-  /// Inserts or updates (by id) [parcel]; returns the saved row.
+  /// Inserts or updates [parcel], matched by its cadastre identifier within
+  /// the property (`property_id`, `idu`), so that saving again a parcel
+  /// whose insert answer was lost does not fail; returns the saved row.
   Future<PropertyParcel> saveParcel(PropertyParcel parcel) =>
-      _save(_parcels, parcel.toJson());
+      _save(_parcels, parcel.toJson(), onConflict: 'property_id,idu');
 
   /// Deletes the parcel [id].
   Future<void> deleteParcel(String id) => _delete(_parcels, id);
@@ -288,11 +290,15 @@ class PropertyRepository {
     }
   }
 
-  Future<T> _save<T>(_Table<T> table, Map<String, Object?> row) async {
+  Future<T> _save<T>(
+    _Table<T> table,
+    Map<String, Object?> row, {
+    String? onConflict,
+  }) async {
     try {
       final saved = await _client
           .from(table.name)
-          .upsert(row)
+          .upsert(row, onConflict: onConflict)
           .select()
           .single();
       return table.fromJson(saved);

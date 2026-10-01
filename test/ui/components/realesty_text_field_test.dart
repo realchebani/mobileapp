@@ -69,5 +69,16 @@ void main() {
       final field = tester.widget<TextField>(find.byType(TextField));
       expect(field.style?.color, c.texteDiscret);
     });
+
+    testWidgets('is single-line by default and can grow', (tester) async {
+      await tester.pumpRealesty(const RealestyTextField(label: 'Nom'));
+      var field = tester.widget<TextField>(find.byType(TextField));
+      expect((field.minLines, field.maxLines), (null, 1));
+      await tester.pumpRealesty(
+        const RealestyTextField(label: 'Adresse', maxLines: 2),
+      );
+      field = tester.widget<TextField>(find.byType(TextField));
+      expect((field.minLines, field.maxLines), (1, 2));
+    });
   });
 }

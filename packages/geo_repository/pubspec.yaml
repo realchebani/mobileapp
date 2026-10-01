@@ -1,0 +1,15 @@
+name: geo_repository
+description: Realesty geographic data — French address search (BAN) and cadastral parcels (API Carto IGN).
+version: 0.1.0+1
+publish_to: none
+
+environment:
+  sdk: ^3.13.0
+
+dependencies:
+  equatable: ^3.0.0
+  http: ^1.6.0
+
+dev_dependencies:
+  test: ^1.32.0
+  very_good_analysis: ^11.0.0

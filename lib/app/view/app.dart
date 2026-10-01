@@ -1,6 +1,7 @@
 import 'package:auth_repository/auth_repository.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:geo_repository/geo_repository.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:mobileapp/app/bloc/app_bloc.dart';
@@ -24,6 +25,7 @@ class App extends StatelessWidget {
     required this.profileRepository,
     required this.propertyRepository,
     required this.onboardingRepository,
+    this.geoRepository,
     this.enableDesignSystem,
     super.key,
   });
@@ -32,6 +34,9 @@ class App extends StatelessWidget {
   final ProfileRepository profileRepository;
   final PropertyRepository propertyRepository;
   final OnboardingRepository onboardingRepository;
+
+  /// Addresses and cadastre (seller tunnel V2); a default one when null.
+  final GeoRepository? geoRepository;
 
   /// Whether the design system gallery is reachable; defaults to the
   /// development flavor.
@@ -45,6 +50,11 @@ class App extends StatelessWidget {
         RepositoryProvider.value(value: profileRepository),
         RepositoryProvider.value(value: propertyRepository),
         RepositoryProvider.value(value: onboardingRepository),
+        RepositoryProvider<GeoRepository>(
+          lazy: false,
+          create: (_) => geoRepository ?? GeoRepository(),
+          dispose: (repository) => repository.close(),
+        ),
       ],
       child: MultiBlocProvider(
         providers: [

@@ -39,6 +39,11 @@ jobs:
     with:
       working_directory: packages/profile_repository
 
+  geo_repository:
+    uses: VeryGoodOpenSource/very_good_workflows/.github/workflows/dart_package.yml@v1
+    with:
+      working_directory: packages/geo_repository
+
   property_repository:
     uses: VeryGoodOpenSource/very_good_workflows/.github/workflows/dart_package.yml@v1
     with:

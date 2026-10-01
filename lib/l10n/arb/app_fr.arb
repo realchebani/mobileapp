@@ -1025,5 +1025,21 @@
                 "type": "String"
             }
         }
+    },
+    "locationAddressPick": "Choisissez une adresse dans la liste",
+    "@locationAddressPick": {
+        "description": "V2 · erreur quand l’adresse saisie n’a pas été choisie parmi les suggestions"
+    },
+    "locationParcelRequired": "Sélectionnez au moins une parcelle sur la carte.",
+    "@locationParcelRequired": {
+        "description": "V2 · erreur quand toutes les parcelles ont été retirées"
+    },
+    "locationToggleCenterParcel": "Ajouter ou retirer la parcelle au centre de la carte",
+    "@locationToggleCenterParcel": {
+        "description": "V2 · action d’accessibilité de la carte en mode modification"
+    },
+    "locationSelectCenterParcel": "Sélectionner la parcelle au centre de la carte",
+    "@locationSelectCenterParcel": {
+        "description": "V2 · action d’accessibilité de la carte"
     }
 }

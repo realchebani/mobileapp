@@ -339,6 +339,18 @@ void main() {
       });
     }
 
+    test(
+      'saveParcel upserts on the cadastre identifier of the property',
+      () async {
+        respond = (_) => json([parcelRow]);
+        await repository.saveParcel(PropertyParcel.fromJson(parcelRow));
+        expect(
+          requests.single.url.queryParameters['on_conflict'],
+          'property_id,idu',
+        );
+      },
+    );
+
     test('getDocuments lists the documents', () async {
       respond = (_) => json([documentRow]);
       expect(await repository.getDocuments(propertyId), [

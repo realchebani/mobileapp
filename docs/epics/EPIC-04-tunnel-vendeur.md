@@ -17,8 +17,13 @@
 - [x] Copropriétaires : ajout, modification et suppression dans une fiche dédiée.
 - [x] Validation à l’appui sur « Continuer », enregistrement robuste (pas de doublon ni de perte de saisie pendant l’enregistrement).
 
-## US-04.3 · Localisation & cadastre (V2) 📋
+## US-04.3 · Localisation & cadastre (V2) ✅
 *En tant que vendeur, je veux retrouver mon adresse et ma parcelle cadastrale sans les saisir entièrement.*
+- [x] Adresse avec suggestions (géocodage Géoplateforme) ou « Me géolocaliser ».
+- [x] Parcelle cadastrale trouvée automatiquement (API Carto IGN), affichée sur la photo aérienne IGN ; ajout / retrait de parcelles en touchant la carte ; confirmation.
+- [x] Situations particulières (aucune, indivision, etc.).
+- [x] Fonctionne hors ligne en mode dégradé (adresse saisie, parcelle non confirmée).
+- Décision validée : V1–V3 (terrain, « Autre », bornes des montants, suppression dans la fiche).
 
 ## US-04.4 · Contexte & type de bien (V3) ✅
 *En tant que vendeur, je veux décrire le type de bien et son historique (achat, estimations précédentes).*

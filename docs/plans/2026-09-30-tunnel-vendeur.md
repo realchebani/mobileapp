@@ -7,7 +7,8 @@ Cahier des charges détaillé (écrans, textes, champs, modèle de données) : [
 
 ## Décisions prises (à valider par le porteur de projet)
 - **Écran d'abord** : toutes les réponses se font au clavier/à l'écran. Reportés : audit vocal (V4, micro), scan caméra/AR (V5b), extraction OCR des documents, agent « Une question ? ».
-- **Données publiques gratuites** : adresse via api-adresse.data.gouv.fr (BAN), parcelle via apicarto.ign.fr (cadastre), carte `flutter_map` avec tuiles IGN.
+- **Données publiques gratuites** : adresse via le service de géocodage de la Géoplateforme (`data.geopf.fr/geocodage`, successeur de api-adresse.data.gouv.fr arrêté le 31/01/2026), parcelle via apicarto.ign.fr (cadastre), photo aérienne IGN (WMTS Géoplateforme).
+- **Carte maison** : `flutter_map` et `geolocator` ont été écartés car ils tirent des dépendances sous licences refusées par la CI (ISC, MPL-2.0). La carte est un widget Web-Mercator maison (glisser, boutons + / −), la position vient des implémentations iOS/Android de geolocator (MIT).
 - **Base** : nouvelles tables uniquement ajoutées (aucune modification destructive), RLS « le propriétaire du dossier seulement », appliquées par `supabase db push`.
 - **Listes non spécifiées dans le design** (exposition, toiture, vitrage…) : propositions du cahier des charges, section « Open questions ».
 - Coquilles du design corrigées dans l'app (« Vous serez alerté(e) », « analysés et seront ajustés »).
