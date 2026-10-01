@@ -4,6 +4,7 @@ Journal des arbitrages du porteur de projet, du plus récent au plus ancien. Cha
 
 | Date | Décision | Contexte |
 |---|---|---|
+| 2026-10-01 | **Voix (STT / TTS) via OpenRouter** aussi, avec des modèles audio peu coûteux (pas de reconnaissance vocale sur l'appareil) | EPIC-06 |
 | 2026-10-01 | **IA via OpenRouter**, modèle **Claude (Anthropic)** ; clé stockée uniquement dans les secrets Supabase (`OPENROUTER_API_KEY`) | EPIC-06 |
 | 2026-10-01 | **Estimation non certifiée** : croisement ventes DVF + tendance du prix au m², **sans annonces en v1** (pas de source ouverte légale) ; affichée sur la carte « Tendance IA » (V8) et l'écran « Synthèse du marché » (V8b) | EPIC-05 |
 | 2026-10-01 | Ordre de la feuille de route : tunnel vendeur à l'écran → estimation non certifiée + voix / agent IA → Dashboard vendeur (V9+) | — |
