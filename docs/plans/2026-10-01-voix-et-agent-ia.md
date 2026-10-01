@@ -291,3 +291,7 @@ Parallélisme : vague 1 = A1, A2, A3, A6, A9 ; vague 2 = A4, A5, A8 ; vague 3 = 
 7. V4 en fond Nuit confirmé ? Feuille V6 Night ou claire ?
 8. Fin de l’audit vocal : relecture obligatoire sur V4b (proposé) ou passage direct à V5 ?
 9. Phase 2 : interruption de l’agent (barge-in), temps réel, dictée V3 / V5c, agent « Une question ? » — dans EPIC-06 ou un epic séparé ?
+
+## Arbitrages du porteur de projet (2026-10-01)
+- **Modèles configurables, benchmark d'abord** : la chaîne STT → agent → TTS est paramétrable côté serveur (identifiants de modèles OpenRouter) ; un benchmark sur 20 phrases réelles enregistrées compare les options (Voxtral / Whisper ; Claude Haiku / Sonnet / Gemini Flash-Lite ; TTS) avant de fixer les modèles par défaut avec le porteur de projet.
+- **RGPD : consentement explicite** au premier usage du micro (écran d'information : fournisseurs qui traitent l'audio, aucune conservation de l'audio), mode écran toujours disponible.

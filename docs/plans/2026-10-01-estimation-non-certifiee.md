@@ -350,3 +350,8 @@ CI : ajouter un job `deno test` / `deno lint` / `deno fmt --check` pour `supabas
 8. Tuile « Délai de vente moyen » : la masquer ou la remplacer par « Ventes analysées {n} » ?
 9. **Modèle IA** de l’explication : défaut `anthropic/claude-opus-5.5` (≈ 0,012 $ par estimation, calculée une seule fois) ; Sonnet 5.5 / Haiku 4.5 possibles. RGPD : routage Anthropic seulement, `data_collection: "deny"`.
 10. Appartements : surface Carrez (`lot*_surface_carrez`) plutôt que `surface_reelle_bati` quand elle existe ? Paris / Lyon / Marseille : par arrondissement (proposé) ?
+
+## Arbitrages du porteur de projet (2026-10-01)
+- **Pas d'ajustements en v1** : estimation = prix au m² du secteur × surface habitable, avec fourchette (quartiles). Les ajustements (annexes, terrain, année, piscine, garage) sont retirés du périmètre v1 ; la section « Ce qui influence votre estimation » ne montre que des facteurs non chiffrés.
+- **Discrétion** : la rue d'une vente comparable n'est affichée que si au moins 3 ventes y figurent ; sinon « Secteur proche · 400 m ».
+- Rappels : calcul unique à l'envoi, pas d'estimation sous 5 ventes comparables, l'IA rédige seulement l'explication.

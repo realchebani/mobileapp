@@ -4,6 +4,8 @@ Journal des arbitrages du porteur de projet, du plus récent au plus ancien. Cha
 
 | Date | Décision | Contexte |
 |---|---|---|
+| 2026-10-01 | Estimation : **sans ajustements en v1** (prix m² du secteur × surface habitable) ; rue d'une vente comparable affichée **seulement si ≥ 3 ventes** dans la rue | EPIC-05 |
+| 2026-10-01 | Voix : **modèles configurables, benchmark d'abord** ; **consentement explicite** au premier usage du micro (RGPD) | EPIC-06 |
 | 2026-10-01 | Estimation non certifiée : **calculée une seule fois, à l'envoi du dossier** (l'expert certifie ensuite) ; ventes comparables affichées **avec la rue, sans numéro** ; **pas d'estimation sous 5 ventes comparables** (« l'expert s'en charge ») ; l'IA rédige l'explication, ne produit aucun chiffre | EPIC-05 |
 | 2026-10-01 | **Voix (STT / TTS) via OpenRouter** aussi, avec des modèles audio peu coûteux (pas de reconnaissance vocale sur l'appareil) | EPIC-06 |
 | 2026-10-01 | **IA via OpenRouter**, modèle **Claude (Anthropic)** ; clé stockée uniquement dans les secrets Supabase (`OPENROUTER_API_KEY`) | EPIC-06 |
