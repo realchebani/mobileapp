@@ -29,7 +29,7 @@ class SellerTunnelCubit extends Cubit<SellerTunnelState> {
   final String _ownerId;
   final Duration _timeout;
 
-  /// Loads the latest draft of the user (created if needed) and its
+  /// Loads the dossier of the user (a new draft if none) and its
   /// child collections.
   Future<void> load() async {
     if (state.status == SellerTunnelStatus.loading) return;
@@ -37,7 +37,7 @@ class SellerTunnelCubit extends Cubit<SellerTunnelState> {
     try {
       final repository = _propertyRepository;
       final property = await repository
-          .getOrCreateDraft(_ownerId)
+          .getOrCreateDossier(_ownerId)
           .timeout(_timeout);
       final id = property.id;
       final (owners, parcels, estimates, rooms, items, documents) = await (
@@ -92,12 +92,12 @@ class SellerTunnelCubit extends Cubit<SellerTunnelState> {
       PropertyColumns.currentStep: next.number > currentStep
           ? next.number
           : currentStep,
-    }, next: next);
+    }, from: step);
   }
 
   Future<void> _save(
     Map<String, Object?> patch, {
-    SellerTunnelStep? next,
+    SellerTunnelStep? from,
   }) async {
     final property = state.property;
     if (property == null || state.isSaving) return;
@@ -111,7 +111,8 @@ class SellerTunnelCubit extends Cubit<SellerTunnelState> {
         state.copyWith(
           property: updated,
           saveStatus: SellerTunnelSaveStatus.success,
-          nextStep: next,
+          nextStep: from?.next,
+          continuedFrom: from,
         ),
       );
     } on Object catch (error, stackTrace) {

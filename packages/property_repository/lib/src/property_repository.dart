@@ -91,25 +91,17 @@ class PropertyRepository {
   // Properties.
   // ---------------------------------------------------------------------
 
-  /// Returns the most recently updated draft of [ownerId], creating one
-  /// when there is none.
+  /// Returns the dossier of [ownerId]: the most recently updated one, in
+  /// any status (so a submitted dossier is found again), or a new draft
+  /// when the user has none.
+  ///
+  /// A user has at most one draft (unique index): when a concurrent call
+  /// created it first, that draft is returned.
   ///
   /// Throws [PropertyLoadFailure] or [PropertySaveFailure] on error.
-  Future<Property> getOrCreateDraft(String ownerId) async {
-    final Map<String, dynamic>? existing;
-    try {
-      existing = await _client
-          .from(_properties)
-          .select()
-          .eq(PropertyColumns.ownerId, ownerId)
-          .eq(PropertyColumns.status, PropertyStatus.draft.value)
-          .order(PropertyColumns.updatedAt)
-          .limit(1)
-          .maybeSingle();
-    } on Object catch (error, stackTrace) {
-      Error.throwWithStackTrace(PropertyLoadFailure(error), stackTrace);
-    }
-    if (existing != null) return Property.fromJson(existing);
+  Future<Property> getOrCreateDossier(String ownerId) async {
+    final existing = await _latestDossier(ownerId);
+    if (existing != null) return existing;
     try {
       final row = await _client
           .from(_properties)
@@ -117,8 +109,31 @@ class PropertyRepository {
           .select()
           .single();
       return Property.fromJson(row);
+    } on PostgrestException catch (error, stackTrace) {
+      if (error.code == _uniqueViolation) {
+        final created = await _latestDossier(ownerId);
+        if (created != null) return created;
+      }
+      Error.throwWithStackTrace(PropertySaveFailure(error), stackTrace);
     } on Object catch (error, stackTrace) {
       Error.throwWithStackTrace(PropertySaveFailure(error), stackTrace);
+    }
+  }
+
+  static const _uniqueViolation = '23505';
+
+  Future<Property?> _latestDossier(String ownerId) async {
+    try {
+      final row = await _client
+          .from(_properties)
+          .select()
+          .eq(PropertyColumns.ownerId, ownerId)
+          .order(PropertyColumns.updatedAt)
+          .limit(1)
+          .maybeSingle();
+      return row == null ? null : Property.fromJson(row);
+    } on Object catch (error, stackTrace) {
+      Error.throwWithStackTrace(PropertyLoadFailure(error), stackTrace);
     }
   }
 
@@ -145,7 +160,10 @@ class PropertyRepository {
   /// property [id] and returns the updated property.
   ///
   /// Values may be Dart enums, lists of them and [DateTime]s: they are
-  /// encoded as stored.
+  /// encoded as stored. Only send the columns that change (not
+  /// [Property.toJson], which also holds columns the app may not write).
+  /// The `provenance` column is replaced as a whole: build it with
+  /// [Property.mergeProvenance] to keep the other entries.
   ///
   /// Throws [PropertyNotFoundFailure] when no property was updated and
   /// [PropertySaveFailure] on any other error.

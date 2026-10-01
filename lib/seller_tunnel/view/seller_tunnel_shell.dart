@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:mobileapp/app/app.dart';
 import 'package:mobileapp/l10n/l10n.dart';
@@ -38,7 +39,8 @@ class SellerTunnelShell extends StatelessWidget {
 /// therefore rely on `SellerTunnelState.property` being set.
 ///
 /// Also reacts to saves: opens `nextStep` after a successful
-/// `saveAndContinue` and shows a snackbar when a save failed.
+/// `saveAndContinue` (if the user is still on the saved step) and shows a
+/// snackbar when a save failed.
 class SellerTunnelGate extends StatelessWidget {
   const new({required this.child, super.key});
 
@@ -56,7 +58,13 @@ class SellerTunnelGate extends StatelessWidget {
         switch (state.saveStatus) {
           case SellerTunnelSaveStatus.success:
             final next = state.nextStep;
-            if (next != null) context.goToTunnelStep(next);
+            // Only if the user is still on the step that was saved (they
+            // may have gone back while it was saving).
+            if (next != null &&
+                GoRouter.of(context).state.matchedLocation ==
+                    state.continuedFrom?.path) {
+              context.goToTunnelStep(next);
+            }
           case SellerTunnelSaveStatus.failure:
             showRealestySnackBar(
               context,

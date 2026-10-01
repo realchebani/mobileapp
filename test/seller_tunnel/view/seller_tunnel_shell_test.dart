@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:bloc_test/bloc_test.dart';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:mobileapp/app/app.dart';
 import 'package:mobileapp/profile/profile.dart';
@@ -13,6 +14,8 @@ import 'package:property_repository/property_repository.dart';
 
 import '../../helpers/helpers.dart';
 
+class _MockGoRouterState extends Mock implements GoRouterState;
+
 void main() {
   group(SellerTunnelShell, () {
     testWidgets('loads the dossier of the user, then shows the child', (
@@ -20,7 +23,7 @@ void main() {
     ) async {
       final repository = MockPropertyRepository();
       final draft = Completer<Property>();
-      when(() => repository.getOrCreateDraft(any()))
+      when(() => repository.getOrCreateDossier(any()))
           .thenAnswer((_) => draft.future);
       when(() => repository.getOwners(any())).thenAnswer((_) async => []);
       when(() => repository.getParcels(any())).thenAnswer((_) async => []);
@@ -48,7 +51,7 @@ void main() {
       draft.complete(testProperty);
       await tester.pumpAndSettle();
       expect(find.text('child'), findsOneWidget);
-      verify(() => repository.getOrCreateDraft('user-id')).called(1);
+      verify(() => repository.getOrCreateDossier('user-id')).called(1);
     });
   });
 
@@ -58,6 +61,10 @@ void main() {
     setUp(() {
       goRouter = MockGoRouter();
       when(() => goRouter.go(any())).thenReturn(null);
+      final routerState = _MockGoRouterState();
+      when(() => routerState.matchedLocation)
+          .thenReturn(AppRoutes.sellerOwners);
+      when(() => goRouter.state).thenReturn(routerState);
     });
 
     testWidgets('offers to retry or sign out after a failure', (tester) async {
@@ -92,9 +99,17 @@ void main() {
           loaded.copyWith(
             saveStatus: SellerTunnelSaveStatus.success,
             nextStep: SellerTunnelStep.location,
+            continuedFrom: SellerTunnelStep.owners,
           ),
           loaded.copyWith(saveStatus: SellerTunnelSaveStatus.inProgress),
           loaded.copyWith(saveStatus: SellerTunnelSaveStatus.success),
+          loaded.copyWith(saveStatus: SellerTunnelSaveStatus.inProgress),
+          // Saved from a step the user already left: no navigation.
+          loaded.copyWith(
+            saveStatus: SellerTunnelSaveStatus.success,
+            nextStep: SellerTunnelStep.technical,
+            continuedFrom: SellerTunnelStep.context,
+          ),
         ]),
         initialState: loaded,
       );
@@ -106,7 +121,7 @@ void main() {
       await tester.pump();
 
       verify(() => goRouter.go(AppRoutes.sellerLocation)).called(1);
-      verifyNoMoreInteractions(goRouter);
+      verifyNever(() => goRouter.go(AppRoutes.sellerTechnical));
     });
 
     testWidgets('shows an error when a save failed', (tester) async {

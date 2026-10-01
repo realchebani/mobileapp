@@ -27,7 +27,9 @@ class AgentActionBar extends StatelessWidget {
   /// Main action; null disables it.
   final VoidCallback? onPressed;
 
-  /// Hint above the actions, e.g. "Répondez à la voix ou à l’écran".
+  /// Hint above the actions. The voice hint ("Répondez à la voix ou à
+  /// l’écran", `l10n.tunnelHintVoiceOrScreen`) is hidden while the
+  /// microphone is.
   final String? hint;
 
   /// Shows a spinner in the main action and blocks taps.
@@ -45,6 +47,9 @@ class AgentActionBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final c = context.realestyColors;
+    final hint = showMic || this.hint != l10n.tunnelHintVoiceOrScreen
+        ? this.hint
+        : null;
     return DecoratedBox(
       decoration: BoxDecoration(
         color: c.ivoire,
@@ -66,7 +71,7 @@ class AgentActionBar extends StatelessWidget {
             children: [
               if (hint != null)
                 Text(
-                  hint!,
+                  hint,
                   textAlign: TextAlign.center,
                   style: RealestyTextStyles.badge.copyWith(
                     fontWeight: FontWeight.w400,

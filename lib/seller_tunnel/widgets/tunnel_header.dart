@@ -91,7 +91,7 @@ class TunnelHeader extends StatelessWidget {
                 _trailing(context, number),
               ],
             ),
-            const SizedBox(height: RealestySpacing.sm),
+            const SizedBox(height: 10),
             SegmentedProgress(
               total: SellerTunnelStep.count,
               completed: number,

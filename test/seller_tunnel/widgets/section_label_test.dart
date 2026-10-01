@@ -6,16 +6,16 @@ import '../../helpers/helpers.dart';
 
 void main() {
   testWidgets('SectionLabel renders uppercase', (tester) async {
-    await tester.pumpApp(const SectionLabel('Type de bien'));
+    await tester.pumpApp(SectionLabel('Type de bien', key: UniqueKey()));
     expect(find.text('TYPE DE BIEN'), findsOneWidget);
   });
 
   testWidgets('SectionTitle renders the title and trailing', (tester) async {
     await tester.pumpApp(
-      const Column(
+      Column(
         children: [
-          SectionTitle('Atouts', trailing: Text('3')),
-          SectionTitle('Carte d’identité'),
+          SectionTitle('Atouts', trailing: const Text('3'), key: UniqueKey()),
+          SectionTitle('Carte d’identité', key: UniqueKey()),
         ],
       ),
     );

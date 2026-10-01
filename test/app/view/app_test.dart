@@ -39,7 +39,7 @@ void main() {
     authRepository = MockAuthRepository();
     profileRepository = MockProfileRepository();
     propertyRepository = MockPropertyRepository();
-    when(() => propertyRepository.getOrCreateDraft(any())).thenAnswer(
+    when(() => propertyRepository.getOrCreateDossier(any())).thenAnswer(
       (_) async => const Property(id: 'property-id', ownerId: 'user-id'),
     );
     when(() => propertyRepository.getOwners(any())).thenAnswer((_) async => []);
@@ -191,18 +191,23 @@ void main() {
               (invocation.positionalArguments[1] as Map)['current_step'] as int,
         ),
       );
+      when(() => propertyRepository.getOrCreateDossier(any())).thenAnswer(
+        (_) async => const Property(
+          id: 'property-id',
+          ownerId: 'user-id',
+          currentStep: 4,
+        ),
+      );
       await pumpApp(tester);
       await emitUser(tester, user);
       expect(find.byType(SellerHomePage), findsOneWidget);
 
-      await tester.tap(find.text('Commencer l’audit'));
+      // Resumes at V4b (V1–V3 are covered by their own page tests).
+      await tester.tap(find.text('Reprendre l’audit (étape 4/7)'));
       await tester.pumpAndSettle();
-      expect(find.byType(OwnersPage), findsOneWidget);
+      expect(find.byType(TechnicalPage), findsOneWidget);
 
       for (final page in [
-        LocationPage,
-        PropertyContextPage,
-        TechnicalPage,
         MethodPage,
         SurfacesPage,
         LifestylePage,

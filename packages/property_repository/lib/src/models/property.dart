@@ -313,7 +313,15 @@ class Property extends Equatable {
     return parseDbEnum(Provenance.values, value) ?? Provenance.declared;
   }
 
-  /// The row of this property, as stored.
+  /// The [provenance] map with [updates] (column → [Provenance]) applied,
+  /// to send as the `provenance` column of a patch; other entries are kept.
+  Map<String, Object?> mergeProvenance(Map<String, Provenance> updates) => {
+    ...provenance,
+    for (final MapEntry(:key, :value) in updates.entries) key: value.value,
+  };
+
+  /// The row of this property, as stored (including columns the app may not
+  /// write: never send it as an update).
   Map<String, Object?> toJson() {
     return {
       PropertyColumns.id: id,

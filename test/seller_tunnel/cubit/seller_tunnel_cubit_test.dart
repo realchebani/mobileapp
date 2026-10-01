@@ -27,7 +27,7 @@ void main() {
 
   setUp(() {
     repository = MockPropertyRepository();
-    when(() => repository.getOrCreateDraft(any()))
+    when(() => repository.getOrCreateDossier(any()))
         .thenAnswer((_) async => property);
     when(() => repository.getOwners(any())).thenAnswer((_) async => [owner]);
     when(() => repository.getParcels(any())).thenAnswer((_) async => []);
@@ -66,7 +66,7 @@ void main() {
         loaded,
       ],
       verify: (_) {
-        verify(() => repository.getOrCreateDraft(ownerId)).called(1);
+        verify(() => repository.getOrCreateDossier(ownerId)).called(1);
         verify(() => repository.getDocuments('property-id')).called(1);
       },
     );
@@ -75,7 +75,7 @@ void main() {
       'fails when the draft cannot be loaded, then retries',
       setUp: () {
         var calls = 0;
-        when(() => repository.getOrCreateDraft(any())).thenAnswer((_) async {
+        when(() => repository.getOrCreateDossier(any())).thenAnswer((_) async {
           if (calls++ == 0) throw const PropertyLoadFailure();
           return property;
         });
@@ -111,7 +111,7 @@ void main() {
     blocTest<SellerTunnelCubit, SellerTunnelState>(
       'fails after the timeout',
       setUp: () =>
-          when(() => repository.getOrCreateDraft(any()))
+          when(() => repository.getOrCreateDossier(any()))
               .thenAnswer((_) => Completer<Property>().future),
       build: () => build(timeout: const Duration(milliseconds: 10)),
       act: (cubit) => cubit.load(),
@@ -133,7 +133,7 @@ void main() {
 
     test('ignores results after close', () async {
       final completer = Completer<Property>();
-      when(() => repository.getOrCreateDraft(any()))
+      when(() => repository.getOrCreateDossier(any()))
           .thenAnswer((_) => completer.future);
       final cubit = build();
       final loading = cubit.load();
@@ -145,7 +145,7 @@ void main() {
 
     test('ignores failures after close', () async {
       final completer = Completer<Property>();
-      when(() => repository.getOrCreateDraft(any()))
+      when(() => repository.getOrCreateDossier(any()))
           .thenAnswer((_) => completer.future);
       final cubit = build();
       final loading = cubit.load();
@@ -180,6 +180,7 @@ void main() {
           property: updated,
           saveStatus: SellerTunnelSaveStatus.success,
           nextStep: SellerTunnelStep.location,
+          continuedFrom: SellerTunnelStep.owners,
         ),
       ],
       verify: (_) => verify(
@@ -317,9 +318,11 @@ void main() {
       const state = SellerTunnelState(
         saveStatus: SellerTunnelSaveStatus.success,
         nextStep: SellerTunnelStep.location,
+        continuedFrom: SellerTunnelStep.owners,
       );
       expect(state.copyWith().saveStatus, SellerTunnelSaveStatus.success);
       expect(state.copyWith().nextStep, isNull);
+      expect(state.copyWith().continuedFrom, isNull);
       expect(state.isSaving, isFalse);
     });
   });

@@ -135,6 +135,21 @@ void main() {
       );
     });
 
+    test('mergeProvenance keeps the other entries', () {
+      final property = Property.fromJson(fullRow);
+      expect(
+        property.mergeProvenance({
+          PropertyColumns.roofYear: Provenance.document,
+          PropertyColumns.poolType: Provenance.expert,
+        }),
+        {
+          'roof_year': 'document',
+          'heat_pump_year': {'source': 'document', 'document_id': 'd1'},
+          'pool_type': 'expert',
+        },
+      );
+    });
+
     test('has 7 steps', () {
       expect(Property.stepCount, 7);
     });

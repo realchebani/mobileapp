@@ -14,16 +14,40 @@ void main() {
       var taps = 0;
       await tester.pumpApp(
         AgentActionBar(
-          hint: 'Répondez à la voix ou à l’écran',
+          hint: 'Les questions facultatives peuvent être passées',
           label: 'Continuer',
           onPressed: () => taps++,
         ),
       );
 
-      expect(find.text('Répondez à la voix ou à l’écran'), findsOneWidget);
+      expect(
+        find.text('Les questions facultatives peuvent être passées'),
+        findsOneWidget,
+      );
       expect(find.byType(RealestyMicButton), findsNothing);
       await tester.tap(find.text('Continuer'));
       expect(taps, 1);
+    });
+
+    testWidgets('hides the voice hint without microphone', (tester) async {
+      await tester.pumpApp(
+        AgentActionBar(
+          hint: 'Répondez à la voix ou à l’écran',
+          label: 'Continuer',
+          onPressed: () {},
+        ),
+      );
+      expect(find.text('Répondez à la voix ou à l’écran'), findsNothing);
+
+      await tester.pumpApp(
+        AgentActionBar(
+          hint: 'Répondez à la voix ou à l’écran',
+          label: 'Continuer',
+          onPressed: () {},
+          showMic: true,
+        ),
+      );
+      expect(find.text('Répondez à la voix ou à l’écran'), findsOneWidget);
     });
 
     testWidgets('shows the microphone and a loading action', (tester) async {

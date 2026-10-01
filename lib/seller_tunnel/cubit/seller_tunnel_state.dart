@@ -20,6 +20,7 @@ final class SellerTunnelState extends Equatable {
     this.lifestyleItems = const [],
     this.documents = const [],
     this.nextStep,
+    this.continuedFrom,
   });
 
   final SellerTunnelStatus status;
@@ -36,8 +37,11 @@ final class SellerTunnelState extends Equatable {
   final List<PropertyDocument> documents;
 
   /// Screen to open after a successful `saveAndContinue`; only set on that
-  /// success state ([copyWith] resets it).
+  /// success state ([copyWith] resets it and [continuedFrom]).
   final SellerTunnelStep? nextStep;
+
+  /// The step [nextStep] continues from (same lifetime as [nextStep]).
+  final SellerTunnelStep? continuedFrom;
 
   /// The screen where the dossier resumes.
   SellerTunnelStep get resumeStep =>
@@ -56,6 +60,7 @@ final class SellerTunnelState extends Equatable {
     List<LifestyleItem>? lifestyleItems,
     List<PropertyDocument>? documents,
     SellerTunnelStep? nextStep,
+    SellerTunnelStep? continuedFrom,
   }) {
     return SellerTunnelState(
       status: status ?? this.status,
@@ -68,6 +73,7 @@ final class SellerTunnelState extends Equatable {
       lifestyleItems: lifestyleItems ?? this.lifestyleItems,
       documents: documents ?? this.documents,
       nextStep: nextStep,
+      continuedFrom: continuedFrom,
     );
   }
 
@@ -83,5 +89,6 @@ final class SellerTunnelState extends Equatable {
     lifestyleItems,
     documents,
     nextStep,
+    continuedFrom,
   ];
 }
