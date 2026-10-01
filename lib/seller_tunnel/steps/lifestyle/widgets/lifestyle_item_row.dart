@@ -37,10 +37,8 @@ class LifestyleItemRow extends StatelessWidget {
                 shape: BoxShape.circle,
                 color: isAsset ? c.vertTeinte : c.attentionFond,
               ),
-              // No warning-triangle icon in the design system yet: the
-              // watch points use the info circle.
               child: RealestyIcon(
-                isAsset ? RealestyIcons.check : RealestyIcons.infoCircle,
+                isAsset ? RealestyIcons.check : RealestyIcons.warning,
                 size: 16,
                 color: isAsset ? c.vertTexte : c.attention,
               ),

@@ -73,9 +73,9 @@ class SurfacesCubit extends Cubit<SurfacesState> {
     ],
   );
 
-  /// "Tout est correct, continuer": shows the error when there is no room;
-  /// otherwise deletes the removed rooms, then writes the new and changed
-  /// ones (unchanged rows are not written), in table order.
+  /// "Tout est correct, continuer": shows the error when there is no
+  /// living-space room; otherwise deletes the removed rooms, then writes the
+  /// new and changed ones (unchanged rows are not written), in table order.
   Future<void> submit() async {
     if (state.isSubmitting) return;
     if (!state.isValid) {
@@ -163,7 +163,8 @@ class SurfacesCubit extends Cubit<SurfacesState> {
     ceilingHeightM: room.ceilingHeightM,
     floorCovering: input.floorCovering,
     glazing: input.glazing,
-    isMain: input.isMain,
+    isMain: input.isMain && !input.isAnnex,
+    isAnnex: input.isAnnex,
     source: room.source,
     photosCount: room.photosCount,
     scanData: room.scanData,
@@ -180,6 +181,7 @@ class SurfacesCubit extends Cubit<SurfacesState> {
     floorCovering: room.floorCovering,
     glazing: room.glazing,
     isMain: room.isMain,
+    isAnnex: room.isAnnex,
     source: room.source,
     photosCount: room.photosCount,
     scanData: room.scanData,

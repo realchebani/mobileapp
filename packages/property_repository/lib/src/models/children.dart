@@ -213,6 +213,7 @@ class Room extends Equatable {
     this.floorCovering,
     this.glazing,
     this.isMain = false,
+    this.isAnnex = false,
     this.source = MeasurementMethod.manual,
     this.photosCount = 0,
     this.scanData,
@@ -230,6 +231,7 @@ class Room extends Equatable {
     floorCovering: json['floor_covering'] as String?,
     glazing: parseDbEnum(Glazing.values, json['glazing']),
     isMain: json['is_main'] as bool? ?? false,
+    isAnnex: json['is_annex'] as bool? ?? false,
     source:
         parseDbEnum(MeasurementMethod.values, json['source']) ??
         MeasurementMethod.manual,
@@ -249,6 +251,9 @@ class Room extends Equatable {
 
   /// Pièce principale (living room, bedroom, office…).
   final bool isMain;
+
+  /// Annexe (garage, cellier…): not part of the living area.
+  final bool isAnnex;
   final MeasurementMethod source;
   final int photosCount;
   final Map<String, dynamic>? scanData;
@@ -264,6 +269,7 @@ class Room extends Equatable {
     'floor_covering': floorCovering,
     'glazing': glazing?.value,
     'is_main': isMain,
+    'is_annex': isAnnex,
     'source': source.value,
     'photos_count': photosCount,
     'scan_data': scanData,
@@ -281,6 +287,7 @@ class Room extends Equatable {
     floorCovering,
     glazing,
     isMain,
+    isAnnex,
     source,
     photosCount,
     scanData,

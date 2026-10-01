@@ -35,6 +35,14 @@ void main() {
       expect(SellerTunnelStep.resumeAt(99), SellerTunnelStep.submitted);
     });
 
+    test('finds the step of a path', () {
+      for (final step in SellerTunnelStep.values) {
+        expect(SellerTunnelStep.fromPath(step.path), step);
+      }
+      expect(SellerTunnelStep.fromPath(AppRoutes.seller), isNull);
+      expect(SellerTunnelStep.fromPath('/vendeur/audit/inconnu'), isNull);
+    });
+
     test('links the screens', () {
       expect(SellerTunnelStep.owners.previous, isNull);
       expect(SellerTunnelStep.owners.next, SellerTunnelStep.location);

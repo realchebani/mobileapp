@@ -167,6 +167,13 @@ final class DocumentChecklist extends Equatable {
     DocumentKind.diagnostics,
   };
 
+  /// Kinds without which the dossier cannot be sent (a file not rejected
+  /// is needed), in display order.
+  static const List<DocumentKind> submissionKinds = [
+    DocumentKind.titleDeed,
+    DocumentKind.identityDocument,
+  ];
+
   /// Weight of each kind in the documents part of the score.
   static const Map<DocumentKind, int> scoreWeights = {
     DocumentKind.titleDeed: 20,
@@ -196,6 +203,28 @@ final class DocumentChecklist extends Equatable {
   /// Required documents not provided.
   int get missingCount =>
       rows.where((row) => row.isRequired && !row.status.isProvided).length;
+
+  /// The [submissionKinds] not provided yet, in display order: the dossier
+  /// can only be sent once there are none.
+  List<DocumentKind> get blockingKinds => [
+    for (final row in rows)
+      if (submissionKinds.contains(row.kind) && !row.status.isProvided)
+        row.kind,
+  ];
+
+  /// Whether the dossier can be sent ([blockingKinds] is empty).
+  bool get canSubmit => blockingKinds.isEmpty;
+
+  /// Required documents not provided that do not block the sending (the
+  /// expert can ask for them later).
+  int get optionalMissingCount => rows
+      .where(
+        (row) =>
+            row.isRequired &&
+            !row.status.isProvided &&
+            !submissionKinds.contains(row.kind),
+      )
+      .length;
 
   static DocumentRowStatus _statusOf(
     List<PropertyDocument> files, {

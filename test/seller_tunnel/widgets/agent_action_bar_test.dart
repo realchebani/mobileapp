@@ -58,6 +58,7 @@ void main() {
           onPressed: () {},
           isLoading: true,
           variant: RealestyButtonVariant.accent,
+          trailingIcon: RealestyIcons.chevronRight,
           showMic: true,
           onMicPressed: () => mic++,
         ),
@@ -66,6 +67,7 @@ void main() {
       final button = tester.widget<RealestyButton>(find.byType(RealestyButton));
       expect(button.isLoading, isTrue);
       expect(button.variant, RealestyButtonVariant.accent);
+      expect(button.trailingIcon, RealestyIcons.chevronRight);
       expect(button.loadingSemanticLabel, 'chargement en cours');
       await tester.tap(find.bySemanticsLabel('Parler à l’agent'));
       expect(mic, 1);

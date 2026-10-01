@@ -43,25 +43,31 @@ enum FloorCovering {
 }
 
 /// Quick names of the room form; [isMain] rooms are "pièces
-/// principales" (living room, bedrooms, office).
+/// principales" (living room, bedrooms, office) and [isAnnex] rooms are
+/// annexes (not part of the living area).
 enum RoomSuggestion {
-  entrance(isMain: false),
+  entrance(),
   livingRoom(isMain: true),
-  kitchen(isMain: false),
+  kitchen(),
   bedroom(isMain: true),
-  bathroom(isMain: false),
-  showerRoom(isMain: false),
-  toilet(isMain: false),
+  bathroom(),
+  showerRoom(),
+  toilet(),
   office(isMain: true),
-  storeroom(isMain: false),
-  hallway(isMain: false),
-  garage(isMain: false),
-  other(isMain: false);
+  hallway(),
+  storeroom(isAnnex: true),
+  laundry(isAnnex: true),
+  garage(isAnnex: true),
+  basement(isAnnex: true),
+  other();
 
-  new({required this.isMain});
+  new({this.isMain = false, this.isAnnex = false});
 
   /// Whether this kind of room is a main room by default.
   final bool isMain;
+
+  /// Whether this kind of room is an annex by default.
+  final bool isAnnex;
 
   /// Several rooms of this kind are numbered ("Chambre 2").
   bool get isNumbered => this == bedroom;
@@ -75,9 +81,11 @@ enum RoomSuggestion {
     showerRoom => l10n.surfacesRoomShowerRoom,
     toilet => l10n.surfacesRoomToilet,
     office => l10n.surfacesRoomOffice,
-    storeroom => l10n.surfacesRoomStoreroom,
     hallway => l10n.surfacesRoomHallway,
+    storeroom => l10n.surfacesRoomStoreroom,
+    laundry => l10n.surfacesRoomLaundry,
     garage => l10n.surfacesRoomGarage,
+    basement => l10n.surfacesRoomBasement,
     other => l10n.surfacesRoomOther,
   };
 }

@@ -43,7 +43,13 @@ class DossierSummarySheet extends StatelessWidget {
 
     final parcels = state.parcels;
     final landArea = parcels.fold<int>(0, (sum, p) => sum + (p.areaM2 ?? 0));
-    final roomsArea = state.rooms.fold<double>(0, (sum, r) => sum + r.areaM2);
+    final livingRooms = state.rooms.where((r) => !r.isAnnex).toList();
+    final annexes = state.rooms.where((r) => r.isAnnex).toList();
+    String roomsArea(List<Room> rooms) {
+      final total = rooms.fold<double>(0, (sum, r) => sum + r.areaM2);
+      return frenchNumber(total, decimalDigits: total % 1 == 0 ? 0 : 1);
+    }
+
     final assets = state.lifestyleItems
         .where((item) => item.kind == LifestyleItemKind.asset)
         .length;
@@ -123,16 +129,21 @@ class DossierSummarySheet extends StatelessWidget {
         [
           (
             l10n.submittedSummaryRooms,
-            state.rooms.isEmpty
+            livingRooms.isEmpty
                 ? missing
                 : l10n.submittedSummaryRoomsTotal(
-                    state.rooms.length,
-                    frenchNumber(
-                      roomsArea,
-                      decimalDigits: roomsArea % 1 == 0 ? 0 : 1,
-                    ),
+                    livingRooms.length,
+                    roomsArea(livingRooms),
                   ),
           ),
+          if (annexes.isNotEmpty)
+            (
+              l10n.submittedSummaryAnnexes,
+              l10n.submittedSummaryAnnexesTotal(
+                annexes.length,
+                roomsArea(annexes),
+              ),
+            ),
         ],
       ),
       (

@@ -48,9 +48,14 @@ class DocumentsPage extends StatelessWidget {
   }
 }
 
-class DocumentsView extends StatelessWidget {
+class DocumentsView extends StatefulWidget {
   const new({super.key});
 
+  @override
+  State<DocumentsView> createState() => _DocumentsViewState();
+}
+
+class _DocumentsViewState extends State<DocumentsView> {
   static const SellerTunnelStep _step = SellerTunnelStep.documents;
 
   /// "Scanner": a photo of a document of [kind] (asked after the photo
@@ -85,9 +90,15 @@ class DocumentsView extends StatelessWidget {
     }
   }
 
-  /// "Envoyer mon dossier à l’expert": allowed with missing documents, once
-  /// the previous steps are done.
-  static void _submit(BuildContext context, DocumentChecklist checklist) {
+  /// Rows of the documents needed to send the dossier, to reveal them.
+  final Map<DocumentKind, GlobalKey> _rowKeys = {
+    for (final kind in DocumentChecklist.submissionKinds) kind: GlobalKey(),
+  };
+
+  /// "Envoyer mon dossier à l’expert": once the previous steps are done
+  /// and with the title deed and the identity document (other missing
+  /// documents can be asked for later).
+  void _submit(DocumentChecklist checklist) {
     final tunnel = context.read<SellerTunnelCubit>();
     final property = tunnel.state.property!;
     if (property.currentStep < _step.number) {
@@ -97,6 +108,19 @@ class DocumentsView extends StatelessWidget {
         isError: true,
       );
       context.goToTunnelStep(tunnel.state.resumeStep);
+      return;
+    }
+    final blocking = checklist.blockingKinds;
+    if (blocking.isNotEmpty) {
+      context.read<DocumentsCubit>().submissionBlocked();
+      final target = _rowKeys[blocking.first]!.currentContext;
+      if (target != null) {
+        Scrollable.ensureVisible(
+          target,
+          duration: RealestyMotion.page,
+          alignment: 0.3,
+        );
+      }
       return;
     }
     unawaited(
@@ -128,6 +152,14 @@ class DocumentsView extends StatelessWidget {
 
   static bool _isError(DocumentsNotice notice) =>
       notice != DocumentsNotice.uploaded && notice != DocumentsNotice.deleted;
+
+  /// "votre titre de propriété et votre pièce d’identité".
+  static String _documentList(AppLocalizations l10n, List<DocumentKind> kinds) {
+    final names = [for (final kind in kinds) l10n.documentKindInSentence(kind)];
+    return names.length == 1
+        ? names.single
+        : l10n.documentsTwoItems(names.first, names.last);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -172,13 +204,16 @@ class DocumentsView extends StatelessWidget {
           onBack: () => context.goBackFrom(_step),
         ),
         actionBar: AgentActionBar(
-          hint: l10n.documentsActionHint(checklist.missingCount),
+          hint: checklist.canSubmit
+              ? l10n.documentsActionHint(checklist.optionalMissingCount)
+              : l10n.documentsActionHintBlocked(checklist.optionalMissingCount),
           label: l10n.documentsSubmit,
           variant: RealestyButtonVariant.accent,
+          trailingIcon: RealestyIcons.chevronRight,
           isLoading: tunnelSaving,
           onPressed: state.isBusy || state.isLocked
               ? null
-              : () => _submit(context, checklist),
+              : () => _submit(checklist),
         ),
         children: [
           AgentIntro(message: l10n.documentsAgentMessage),
@@ -196,8 +231,22 @@ class DocumentsView extends StatelessWidget {
                     l10n.documentKindInSentence(nextBest),
                   ),
           ),
+          if (state.showsSubmissionErrors && !checklist.canSubmit)
+            Semantics(
+              liveRegion: true,
+              child: Text(
+                l10n.documentsSubmitBlocked(
+                  _documentList(l10n, checklist.blockingKinds),
+                ),
+                style: RealestyTextStyles.fieldError.copyWith(
+                  color: context.realestyColors.erreur,
+                ),
+              ),
+            ),
           _DocumentsCard(
             checklist: checklist,
+            rowKeys: _rowKeys,
+            showsSubmissionErrors: state.showsSubmissionErrors,
             uploading: state.uploading,
             enabled: enabled,
             canOpen: canOpen,
@@ -239,6 +288,8 @@ class DocumentsView extends StatelessWidget {
 class _DocumentsCard extends StatelessWidget {
   const new({
     required this.checklist,
+    required this.rowKeys,
+    required this.showsSubmissionErrors,
     required this.uploading,
     required this.enabled,
     required this.canOpen,
@@ -248,6 +299,12 @@ class _DocumentsCard extends StatelessWidget {
   });
 
   final DocumentChecklist checklist;
+
+  /// Keys of the rows needed to send the dossier.
+  final Map<DocumentKind, GlobalKey> rowKeys;
+
+  /// Whether the missing documents needed to send are shown as errors.
+  final bool showsSubmissionErrors;
   final PickedDocument? uploading;
   final bool enabled;
 
@@ -308,13 +365,15 @@ class _DocumentsCard extends StatelessWidget {
     final kindLabel = l10n.documentKind(row.kind);
     // Diagnostics are reports (PDF) rather than paper to photograph.
     final imports = row.kind == DocumentKind.diagnostics;
-    return RealestyListItem(
+    final showsError =
+        showsSubmissionErrors && checklist.blockingKinds.contains(row.kind);
+    final item = RealestyListItem(
       key: ValueKey(row.kind),
       title: kindLabel,
       subtitle: l10n.documentRowSubtitle(row, checklist.sanitationRule),
       leadingIcon: RealestyIcons.file,
       tone: documentStatusTone(row.status),
-      showDivider: !isLast,
+      showDivider: !isLast && !showsError,
       onTap: row.documents.isEmpty || !canOpen
           ? null
           : () => onOpenFiles(row.kind),
@@ -335,6 +394,30 @@ class _DocumentsCard extends StatelessWidget {
               ],
             )
           : badge,
+    );
+    final key = rowKeys[row.kind];
+    if (!showsError) {
+      return key == null ? item : KeyedSubtree(key: key, child: item);
+    }
+    final c = context.realestyColors;
+    return Container(
+      key: key,
+      padding: const EdgeInsets.only(bottom: RealestySpacing.sm),
+      decoration: BoxDecoration(
+        border: isLast
+            ? null
+            : Border(bottom: BorderSide(color: c.bordureCarte)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          item,
+          Text(
+            l10n.documentsRequiredForSubmission,
+            style: RealestyTextStyles.fieldError.copyWith(color: c.erreur),
+          ),
+        ],
+      ),
     );
   }
 }

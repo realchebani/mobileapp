@@ -81,6 +81,7 @@ class _RoomSheetState extends State<RoomSheet> {
   late String? _covering = widget.initial?.floorCovering;
   late Glazing? _glazing = widget.initial?.glazing;
   late bool _isMain = widget.initial?.isMain ?? false;
+  late bool _isAnnex = widget.initial?.isAnnex ?? false;
   final GlobalKey _nameKey = GlobalKey();
   final GlobalKey _areaKey = GlobalKey();
   RoomSuggestion? _suggestion;
@@ -121,6 +122,7 @@ class _RoomSheetState extends State<RoomSheet> {
             floorCovering: _covering,
             glazing: _glazing,
             isMain: _isMain,
+            isAnnex: _isAnnex,
           ),
         ),
       );
@@ -146,6 +148,7 @@ class _RoomSheetState extends State<RoomSheet> {
     setState(() {
       _suggestion = suggestion;
       _isMain = suggestion.isMain;
+      _isAnnex = suggestion.isAnnex;
       if (suggestion == RoomSuggestion.other) {
         _name.clear();
         _nameFocus.requestFocus();
@@ -227,10 +230,22 @@ class _RoomSheetState extends State<RoomSheet> {
               onChanged: _changed,
               errorText: _submitted ? _nameError : null,
             ),
+            // An annex is never a main room: each box clears the other.
             RealestyCheckbox(
               value: _isMain,
               label: l10n.surfacesMainRoomLabel,
-              onChanged: (value) => setState(() => _isMain = value),
+              onChanged: (value) => setState(() {
+                _isMain = value;
+                if (value) _isAnnex = false;
+              }),
+            ),
+            RealestyCheckbox(
+              value: _isAnnex,
+              label: l10n.surfacesAnnexLabel,
+              onChanged: (value) => setState(() {
+                _isAnnex = value;
+                if (value) _isMain = false;
+              }),
             ),
             RealestyTextField(
               key: _areaKey,

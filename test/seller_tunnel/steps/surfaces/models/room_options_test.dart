@@ -41,9 +41,11 @@ void main() {
         'Salle d’eau',
         'WC',
         'Bureau',
-        'Cellier',
         'Dégagement',
+        'Cellier',
+        'Buanderie',
         'Garage',
+        'Sous-sol',
         'Autre',
       ],
     );
@@ -56,6 +58,18 @@ void main() {
         RoomSuggestion.livingRoom,
         RoomSuggestion.bedroom,
         RoomSuggestion.office,
+      ],
+    );
+    expect(
+      [
+        for (final s in RoomSuggestion.values)
+          if (s.isAnnex) s,
+      ],
+      [
+        RoomSuggestion.storeroom,
+        RoomSuggestion.laundry,
+        RoomSuggestion.garage,
+        RoomSuggestion.basement,
       ],
     );
     expect(RoomSuggestion.bedroom.isNumbered, isTrue);
@@ -83,6 +97,7 @@ void main() {
       floorCovering: 'parquet',
       glazing: Glazing.double,
       isMain: true,
+      isAnnex: true,
     );
     expect(
       RoomInput.fromRoom(room),
@@ -93,6 +108,7 @@ void main() {
         floorCovering: 'parquet',
         glazing: Glazing.double,
         isMain: true,
+        isAnnex: true,
       ),
     );
   });

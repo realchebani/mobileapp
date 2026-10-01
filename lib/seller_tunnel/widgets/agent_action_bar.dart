@@ -12,6 +12,7 @@ class AgentActionBar extends StatelessWidget {
     this.hint,
     this.isLoading = false,
     this.variant = RealestyButtonVariant.primary,
+    this.trailingIcon,
     this.showMic = voiceEnabled,
     this.onMicPressed,
     super.key,
@@ -37,6 +38,9 @@ class AgentActionBar extends StatelessWidget {
 
   /// Primary (default) or accent (V7 "Envoyer mon dossier").
   final RealestyButtonVariant variant;
+
+  /// Optional icon after the main action label.
+  final RealestyIcons? trailingIcon;
 
   /// Whether the microphone button is shown.
   final bool showMic;
@@ -90,6 +94,7 @@ class AgentActionBar extends StatelessWidget {
                     child: RealestyButton(
                       label: label,
                       variant: variant,
+                      trailingIcon: trailingIcon,
                       isLoading: isLoading,
                       loadingSemanticLabel: l10n.tunnelLoading,
                       onPressed: onPressed,

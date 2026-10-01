@@ -15,8 +15,9 @@ import 'package:mobileapp/seller_tunnel/widgets/widgets.dart';
 import 'package:mobileapp/ui/ui.dart';
 import 'package:property_repository/property_repository.dart';
 
-/// V5c · Récapitulatif des surfaces: the rooms table (manual entry in v1)
-/// and the living area it adds up to.
+/// V5c · Récapitulatif des surfaces: the rooms table (manual entry in v1),
+/// the living area (surface habitable) of the rooms and the area of the
+/// annexes (garage, cellier…).
 class SurfacesPage extends StatelessWidget {
   const new({super.key});
 
@@ -56,9 +57,11 @@ class _SurfacesViewState extends State<SurfacesView> {
         final property = tunnel.state.property!;
         unawaited(
           tunnel.saveAndContinue(_step, {
-            PropertyColumns.livingAreaM2: state.totalArea,
+            PropertyColumns.livingAreaM2: state.livingArea,
+            PropertyColumns.annexAreaM2: state.annexArea,
             PropertyColumns.provenance: property.mergeProvenance({
               PropertyColumns.livingAreaM2: Provenance.declared,
+              PropertyColumns.annexAreaM2: Provenance.declared,
             }),
           }),
         );
@@ -162,7 +165,7 @@ class _SurfacesViewState extends State<SurfacesView> {
             message: count == 0
                 ? l10n.surfacesAgentEmptyMessage
                 : l10n.surfacesAgentMessage(
-                    RoomArea.short(state.totalArea),
+                    RoomArea.short(state.livingArea),
                     state.mainRoomsCount,
                   ),
           ),
@@ -184,7 +187,8 @@ class _SurfacesViewState extends State<SurfacesView> {
             children: [
               RoomsTable(
                 groups: state.roomsByLevel,
-                totalArea: state.totalArea,
+                livingArea: state.livingArea,
+                annexArea: state.hasAnnexes ? state.annexArea : null,
                 onEdit: busy ? null : (room) => _editRoom(state, room),
               ),
               if (state.showErrors && !state.isValid)

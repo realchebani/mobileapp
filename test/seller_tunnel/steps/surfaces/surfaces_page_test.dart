@@ -42,6 +42,16 @@ const _wc = Room(
   sortOrder: 2,
 );
 
+const _garage = Room(
+  id: 'r4',
+  propertyId: 'property-id',
+  name: 'Garage',
+  level: RoomLevel.groundFloor,
+  areaM2: 18,
+  sortOrder: 3,
+  isAnnex: true,
+);
+
 const _property = Property(
   id: 'property-id',
   ownerId: 'user-id',
@@ -117,10 +127,55 @@ void main() {
       expect(find.text('38,5'), findsOneWidget);
       expect(find.text('Parquet chêne'), findsOneWidget);
       expect(find.text('Moquette'), findsOneWidget);
-      expect(find.text('Surface totale déclarée'), findsOneWidget);
+      expect(find.text('Surface habitable'), findsOneWidget);
+      expect(find.textContaining('Annexes'), findsNothing);
+      expect(find.text('Annexe'), findsNothing);
       expect(find.text('52,5${_nbsp}m²'), findsOneWidget);
       expect(find.bySemanticsLabel('Modifier Séjour'), findsOneWidget);
       expect(find.text('Tout est correct, continuer'), findsOneWidget);
+    });
+
+    testWidgets('counts the annexes apart from the living area', (
+      tester,
+    ) async {
+      final cubit = await pump(
+        tester,
+        state: _state(rooms: const [_living, _bedroom, _wc, _garage]),
+      );
+
+      expect(
+        find.textContaining('Nous obtenons 52,5${_nbsp}m² habitables'),
+        findsOneWidget,
+      );
+      expect(find.text('Annexe'), findsOneWidget);
+      expect(find.text('Surface habitable'), findsOneWidget);
+      expect(find.text('52,5${_nbsp}m²'), findsOneWidget);
+      expect(find.text('Annexes$_nbsp: 18,0${_nbsp}m²'), findsOneWidget);
+
+      await tester.tap(find.text('Tout est correct, continuer'));
+      await tester.pumpAndSettle();
+      verify(
+        () => cubit.saveAndContinue(SellerTunnelStep.surfaces, {
+          PropertyColumns.livingAreaM2: 52.5,
+          PropertyColumns.annexAreaM2: 18.0,
+          PropertyColumns.provenance: {
+            'construction_year': 'document',
+            'living_area_m2': 'declared',
+            'annex_area_m2': 'declared',
+          },
+        }),
+      ).called(1);
+    });
+
+    testWidgets('annexes alone cannot continue', (tester) async {
+      final cubit = await pump(tester, state: _state(rooms: const [_garage]));
+      await tester.tap(find.text('Tout est correct, continuer'));
+      await tester.pumpAndSettle();
+      expect(
+        find.text('Ajoutez au moins une pièce habitable pour continuer.'),
+        findsOneWidget,
+      );
+      verifyNever(() => cubit.saveAndContinue(any(), any()));
     });
 
     testWidgets('templates the agent message by count', (tester) async {
@@ -161,7 +216,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(
-        find.text('Ajoutez au moins une pièce pour continuer.'),
+        find.text('Ajoutez au moins une pièce habitable pour continuer.'),
         findsOneWidget,
       );
       verifyNever(() => cubit.saveAndContinue(any(), any()));
@@ -239,9 +294,11 @@ void main() {
       verify(
         () => cubit.saveAndContinue(SellerTunnelStep.surfaces, {
           PropertyColumns.livingAreaM2: 50.9,
+          PropertyColumns.annexAreaM2: 0.0,
           PropertyColumns.provenance: {
             'construction_year': 'document',
             'living_area_m2': 'declared',
+            'annex_area_m2': 'declared',
           },
         }),
       ).called(1);
@@ -331,7 +388,7 @@ void main() {
       await tester.tap(find.text('Tout est correct, continuer'));
       await tester.pumpAndSettle();
       expect(
-        find.text('Ajoutez au moins une pièce pour continuer.'),
+        find.text('Ajoutez au moins une pièce habitable pour continuer.'),
         findsOneWidget,
       );
     });

@@ -224,7 +224,8 @@ void main() {
       expect(find.text('Non concerné'), findsOneWidget);
       expect(
         find.text(
-          '2 documents manquants$_nbsp: l’expert pourra vous les redemander',
+          'Titre de propriété et pièce d’identité requis$_nbsp; 1 autre '
+          'document pourra vous être redemandé',
         ),
         findsOneWidget,
       );
@@ -260,7 +261,8 @@ void main() {
       );
       expect(
         find.text(
-          '5 documents manquants$_nbsp: l’expert pourra vous les redemander',
+          'Titre de propriété et pièce d’identité requis$_nbsp; 3 autres '
+          'documents pourront vous être redemandés',
         ),
         findsOneWidget,
       );
@@ -452,6 +454,17 @@ void main() {
       await tester.tap(find.bySemanticsLabel('Ouvrir titre.pdf'));
       await tester.pumpAndSettle();
       expect(opened, [Uri.parse('https://storage.example/signed')]);
+      expect(
+        tester
+            .widget<RealestyIconButton>(
+              find.ancestor(
+                of: find.bySemanticsLabel('Supprimer titre.pdf'),
+                matching: find.byType(RealestyIconButton),
+              ),
+            )
+            .icon,
+        RealestyIcons.trash,
+      );
 
       await tester.tap(find.bySemanticsLabel('Supprimer titre.pdf'));
       await tester.pumpAndSettle();
@@ -667,8 +680,86 @@ void main() {
       expect(_row('Autre document'), findsOneWidget);
     });
 
+    testWidgets('"Envoyer mon dossier" needs the title deed and the identity '
+        'document', (tester) async {
+      final tunnel = await pump(
+        tester,
+        height: 844,
+        state: const SellerTunnelState(
+          status: SellerTunnelStatus.success,
+          property: Property(
+            id: 'property-id',
+            ownerId: 'user-id',
+            currentStep: 7,
+            sanitation: Sanitation.mainsSewer,
+          ),
+        ),
+      );
+      expect(
+        find.text('Indispensable pour envoyer votre dossier'),
+        findsNothing,
+      );
+
+      await tester.tap(_button('Envoyer mon dossier à l’expert'));
+      await tester.pumpAndSettle();
+      verifyNever(() => tunnel.saveAndContinue(any(), any()));
+      expect(
+        find.text(
+          'Pour envoyer votre dossier, ajoutez votre titre de propriété et '
+          'votre pièce d’identité.',
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.text('Indispensable pour envoyer votre dossier'),
+        findsNWidgets(2),
+      );
+      // The first one is revealed.
+      expect(_row('Titre de propriété').hitTestable(), findsOneWidget);
+
+      // Adding the identity document leaves the title deed.
+      await tester.ensureVisible(
+        find.bySemanticsLabel('Scanner · Pièce d’identité'),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.bySemanticsLabel('Scanner · Pièce d’identité'));
+      await tester.pumpAndSettle();
+      verifyUpload(DocumentKind.identityDocument);
+      expect(
+        find.text(
+          'Pour envoyer votre dossier, ajoutez votre titre de propriété.',
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.text('Indispensable pour envoyer votre dossier'),
+        findsOneWidget,
+      );
+      expect(
+        find.text('Titre de propriété et pièce d’identité requis pour l’envoi'),
+        findsNothing,
+      );
+      // Once the "uploaded" snackbar is gone.
+      await tester.pump(const Duration(seconds: 10));
+      await tester.pumpAndSettle();
+      await tester.tap(_button('Envoyer mon dossier à l’expert'));
+      await tester.pumpAndSettle();
+      verifyNever(() => tunnel.saveAndContinue(any(), any()));
+    });
+
     testWidgets('"Envoyer mon dossier" submits the dossier', (tester) async {
-      final tunnel = await pump(tester);
+      final tunnel = await pump(
+        tester,
+        state: SellerTunnelState(
+          status: SellerTunnelStatus.success,
+          property: _mockupState.property,
+          documents: [..._mockupState.documents, _newDocument],
+        ),
+      );
+      expect(
+        tester.widget<AgentActionBar>(find.byType(AgentActionBar)).trailingIcon,
+        RealestyIcons.chevronRight,
+      );
 
       await tester.tap(_button('Envoyer mon dossier à l’expert'));
       await tester.pump();
@@ -683,7 +774,7 @@ void main() {
               as Map<String, Object?>;
       expect(patch[PropertyColumns.status], PropertyStatus.submitted);
       expect(patch[PropertyColumns.submittedAt], isA<DateTime>());
-      expect(patch[PropertyColumns.transparencyScore], 69);
+      expect(patch[PropertyColumns.transparencyScore], 83);
     });
 
     testWidgets('a dossier sent again keeps its submission date', (
@@ -700,6 +791,7 @@ void main() {
             currentStep: 8,
             submittedAt: DateTime.utc(2026, 9, 24),
           ),
+          documents: [_titleDeed, _newDocument],
         ),
       );
 

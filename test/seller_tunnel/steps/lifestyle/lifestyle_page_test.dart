@@ -108,6 +108,10 @@ void main() {
       expect(find.textContaining('atouts de la maison'), findsOneWidget);
       expect(find.text(_asset.label), findsOneWidget);
       expect(find.text(_watch.label), findsOneWidget);
+      final icons = tester
+          .widgetList<RealestyIcon>(find.byType(RealestyIcon))
+          .map((icon) => icon.icon);
+      expect(icons, containsAll([RealestyIcons.check, RealestyIcons.warning]));
       expect(find.text('3/10 · Calme'), findsOneWidget);
       expect(find.text('Boulangerie'), findsOneWidget);
       expect(find.text('11/500'), findsOneWidget);

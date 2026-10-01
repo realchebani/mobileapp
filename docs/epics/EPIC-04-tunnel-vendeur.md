@@ -1,7 +1,7 @@
 # EPIC-04 · Tunnel vendeur (audit du bien)
 
 **Objectif** : permettre au vendeur de constituer le dossier complet de son bien (propriétaires, localisation, contexte, caractéristiques techniques, surfaces, cadre de vie, documents) puis de l'envoyer à un expert pour validation.
-**Statut** : 🚧 En cours · Plan : [2026-09-30-tunnel-vendeur](../plans/2026-09-30-tunnel-vendeur.md)
+**Statut** : ✅ Terminé (v1 à l’écran ; voix + agent IA, carte Mapbox et données de marché V8b à suivre) · Plan : [2026-09-30-tunnel-vendeur](../plans/2026-09-30-tunnel-vendeur.md)
 
 ## US-04.1 · Dossier du bien enregistré ✅
 *En tant que vendeur, je veux que mes réponses soient enregistrées au fur et à mesure, pour reprendre plus tard là où je me suis arrêté.*
@@ -37,20 +37,20 @@
 - [x] Carte d’identité, gros œuvre, chauffage & assainissement, extérieur & équipements ; champs PAC / piscine conditionnels.
 - [x] Adapté au type : appartement sans niveaux/mitoyenneté/toiture ; terrain limité à l’assainissement et l’extérieur.
 - [x] Étiquettes de provenance (Déclaré, Extrait d’un document, Source externe).
-- Décisions à valider : listes proposées (exposition, toiture, type de PAC, type de piscine) ; adaptation appartement / terrain.
+- Validé : adaptation appartement / terrain. À valider : listes proposées (exposition, toiture, type de PAC, type de piscine).
 
 ## US-04.6 · Surfaces pièce par pièce (V5, V5c) ✅
 *En tant que vendeur, je veux saisir mes pièces et leurs surfaces pour obtenir la surface habitable.*
 - [x] V5 : saisie manuelle (scan caméra et import de plan « Bientôt »).
 - [x] V5c : pièces par niveau, fiche d’ajout / modification (nom, surface, niveau, revêtement, vitrage, pièce principale), total « Surface totale déclarée » en direct.
-- Question produit : le total additionne toutes les pièces (y compris garage, cellier) — à distinguer de la surface habitable légale ?
+- [x] Surface habitable et annexes distinguées (garage, cellier, sous-sol, buanderie en annexe par défaut ; une annexe ne peut pas être pièce principale).
 
 ## US-04.7 · Cadre de vie (V6) ✅
 *En tant que vendeur, je veux décrire les atouts et points de vigilance du quartier.*
 - [x] Atouts et points de vigilance (10 max chacun), ajout / modification / suppression dans une fiche (saisie écrite à la place de la voix).
 - [x] Niveau de bruit 1–10 (curseur), vis-à-vis, note libre.
 - [x] Carte « Données du quartier » en attente de sources externes.
-- Décisions à valider : libellés du bruit (Très calme → Très bruyant) ; destinataire de la note (« futurs visiteurs » selon la maquette, « expert » selon le cahier des charges).
+- Validé : libellés du bruit ; la note est destinée aux futurs visiteurs.
 
 ## US-04.8 · Coffre de documents et envoi (V7) ✅
 *En tant que vendeur, je veux déposer mes documents et envoyer mon dossier à l'expert.*
@@ -58,7 +58,8 @@
 - [x] Ajout par photo (caméra) ou import (fichiers / photothèque), 20 Mo max, stockage privé ; ouverture par lien temporaire ; suppression.
 - [x] Score de transparence (v1 calculé dans l’app : 70 % documents, 30 % réponses).
 - [x] « Envoyer mon dossier à l’expert » (statut envoyé) ; dossier et fichiers verrouillés dès que l’expert le prend en charge.
-- Décisions à valider : pièces obligatoires (titre, taxe foncière, identité, diagnostics, + SPANC si assainissement individuel) ; envoi possible avec des pièces manquantes ; pondération du score.
+- [x] Envoi bloqué sans titre de propriété ni pièce d’identité ; les autres pièces peuvent suivre (validé).
+- [x] Dossier verrouillé dans l’app dès l’envoi : les étapes redirigent vers V8.
 
 ## US-04.9 · Attente de validation (V8) ✅
 *En tant que vendeur, je veux savoir où en est la validation de mon dossier.*

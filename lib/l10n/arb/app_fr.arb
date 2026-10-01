@@ -489,18 +489,6 @@
   "@tunnelLoading": {
     "description": "Announced while a button is loading"
   },
-  "tunnelProvisionalMessage": "Cette étape arrive bientôt. Continuez pour découvrir la suite du parcours.",
-  "@tunnelProvisionalMessage": {
-    "description": "Agent message of a step not built yet"
-  },
-  "tunnelSubmittedTitle": "Dossier envoyé",
-  "@tunnelSubmittedTitle": {
-    "description": "Title of the provisional V8 screen"
-  },
-  "tunnelBackToHome": "Retour à mon dossier",
-  "@tunnelBackToHome": {
-    "description": "Button back to the seller entry screen"
-  },
   "ownersIntro": "Bonjour ! Je vais vous accompagner pas à pas, à votre rythme. Pour commencer : êtes-vous le seul et unique propriétaire de ce bien ?",
   "@ownersIntro": {
     "description": "V1 · question de l’agent Realesty sur la propriété du bien"
@@ -1272,9 +1260,23 @@
       }
     }
   },
-  "surfacesTotalLabel": "Surface totale déclarée",
+  "surfacesTotalLabel": "Surface habitable",
   "@surfacesTotalLabel": {
-    "description": "V5c · libellé du total des surfaces déclarées"
+    "description": "V5c · libellé du total des pièces habitables (hors annexes)"
+  },
+  "surfacesAnnexTotal": "Annexes : {area} m²",
+  "@surfacesAnnexTotal": {
+    "description": "V5c · total des annexes (garage, cellier…) sous la surface habitable",
+    "placeholders": {
+      "area": {
+        "type": "String",
+        "example": "24,5"
+      }
+    }
+  },
+  "surfacesAnnexTag": "Annexe",
+  "@surfacesAnnexTag": {
+    "description": "V5c · étiquette d’une pièce annexe dans le tableau"
   },
   "surfacesAreaValue": "{area} m²",
   "@surfacesAreaValue": {
@@ -1298,9 +1300,9 @@
   "@surfacesEmpty": {
     "description": "V5c · tableau vide"
   },
-  "surfacesErrorNoRooms": "Ajoutez au moins une pièce pour continuer.",
+  "surfacesErrorNoRooms": "Ajoutez au moins une pièce habitable pour continuer.",
   "@surfacesErrorNoRooms": {
-    "description": "V5c · erreur sans pièce"
+    "description": "V5c · erreur : aucune pièce habitable"
   },
   "surfacesEditRoom": "Modifier {name}",
   "@surfacesEditRoom": {
@@ -1424,6 +1426,14 @@
   "@surfacesRoomGarage": {
     "description": "Nom de pièce proposé"
   },
+  "surfacesRoomBasement": "Sous-sol",
+  "@surfacesRoomBasement": {
+    "description": "V5c · nom rapide : sous-sol (annexe)"
+  },
+  "surfacesRoomLaundry": "Buanderie",
+  "@surfacesRoomLaundry": {
+    "description": "V5c · nom rapide : buanderie (annexe)"
+  },
   "surfacesRoomOther": "Autre",
   "@surfacesRoomOther": {
     "description": "Nom de pièce proposé (saisie libre)"
@@ -1447,6 +1457,10 @@
   "surfacesMainRoomLabel": "Pièce principale (séjour, chambre, bureau)",
   "@surfacesMainRoomLabel": {
     "description": "V5c · case pièce principale"
+  },
+  "surfacesAnnexLabel": "Annexe (non habitable)",
+  "@surfacesAnnexLabel": {
+    "description": "V5c · case à cocher : la pièce est une annexe, hors surface habitable"
   },
   "surfacesLevelLabel": "Niveau",
   "@surfacesLevelLabel": {
@@ -2179,9 +2193,25 @@
   "@submittedSummaryRooms": {
     "description": "V8 · aperçu : pièces du relevé"
   },
-  "submittedSummaryRoomsTotal": "{count, plural, =0{Aucune pièce} =1{1 pièce} other{{count} pièces}} · {area} m²",
+  "submittedSummaryRoomsTotal": "{count, plural, =0{Aucune pièce} =1{1 pièce} other{{count} pièces}} · {area} m² habitables",
   "@submittedSummaryRoomsTotal": {
-    "description": "V8 · aperçu : total des pièces et surface",
+    "description": "V8 · aperçu : nombre de pièces habitables et surface habitable",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "area": {
+        "type": "String"
+      }
+    }
+  },
+  "submittedSummaryAnnexes": "Annexes",
+  "@submittedSummaryAnnexes": {
+    "description": "V8 · aperçu : annexes du relevé (hors surface habitable)"
+  },
+  "submittedSummaryAnnexesTotal": "{count, plural, =1{1 annexe} other{{count} annexes}} · {area} m²",
+  "@submittedSummaryAnnexesTotal": {
+    "description": "V8 · aperçu : nombre et surface des annexes",
     "placeholders": {
       "count": {
         "type": "int"
@@ -2619,5 +2649,40 @@
   "submittedSummaryBedrooms": "Chambres",
   "@submittedSummaryBedrooms": {
     "description": "V8 · aperçu : nombre de chambres"
+  },
+  "documentsActionHintBlocked": "{count, plural, =0{Titre de propriété et pièce d’identité requis pour l’envoi} =1{Titre de propriété et pièce d’identité requis ; 1 autre document pourra vous être redemandé} other{Titre de propriété et pièce d’identité requis ; {count} autres documents pourront vous être redemandés}}",
+  "@documentsActionHintBlocked": {
+    "description": "V7 · indication au-dessus du bouton d’envoi tant que le titre de propriété ou la pièce d’identité manque (count : autres documents obligatoires manquants)",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "documentsSubmitBlocked": "Pour envoyer votre dossier, ajoutez {documents}.",
+  "@documentsSubmitBlocked": {
+    "description": "V7 · erreur à l’envoi sans titre de propriété ou pièce d’identité (documents : les pièces manquantes)",
+    "placeholders": {
+      "documents": {
+        "type": "String",
+        "example": "votre titre de propriété et votre pièce d’identité"
+      }
+    }
+  },
+  "documentsTwoItems": "{first} et {second}",
+  "@documentsTwoItems": {
+    "description": "V7 · liste de deux documents",
+    "placeholders": {
+      "first": {
+        "type": "String"
+      },
+      "second": {
+        "type": "String"
+      }
+    }
+  },
+  "documentsRequiredForSubmission": "Indispensable pour envoyer votre dossier",
+  "@documentsRequiredForSubmission": {
+    "description": "V7 · erreur sous la ligne d’un document indispensable à l’envoi"
   }
 }

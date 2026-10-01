@@ -202,7 +202,7 @@ class _FileRow extends StatelessWidget {
                   onPressed: onOpen,
                 ),
                 RealestyIconButton(
-                  icon: RealestyIcons.close,
+                  icon: RealestyIcons.trash,
                   semanticLabel: l10n.documentsDeleteFile(name),
                   onPressed: canDelete ? onDelete : null,
                 ),

@@ -57,6 +57,7 @@ final class DocumentsState extends Equatable {
     this.busyDocumentIds = const {},
     this.notice,
     this.noticeCount = 0,
+    this.showsSubmissionErrors = false,
   });
 
   /// The dossier (for the computed statuses and the score).
@@ -81,6 +82,10 @@ final class DocumentsState extends Equatable {
   final DocumentsNotice? notice;
   final int noticeCount;
 
+  /// Whether the documents needed to send the dossier are shown as errors
+  /// (after a blocked "Envoyer").
+  final bool showsSubmissionErrors;
+
   /// Statuses, missing count and transparency score.
   DocumentChecklist get checklist => DocumentChecklist.of(property, documents);
 
@@ -103,6 +108,7 @@ final class DocumentsState extends Equatable {
     PickedDocument? Function()? uploading,
     Set<String>? busyDocumentIds,
     DocumentsNotice? notice,
+    bool? showsSubmissionErrors,
   }) {
     return DocumentsState(
       property: property,
@@ -113,6 +119,8 @@ final class DocumentsState extends Equatable {
       busyDocumentIds: busyDocumentIds ?? this.busyDocumentIds,
       notice: notice ?? this.notice,
       noticeCount: notice == null ? noticeCount : noticeCount + 1,
+      showsSubmissionErrors:
+          showsSubmissionErrors ?? this.showsSubmissionErrors,
     );
   }
 
@@ -126,5 +134,6 @@ final class DocumentsState extends Equatable {
     busyDocumentIds,
     notice,
     noticeCount,
+    showsSubmissionErrors,
   ];
 }

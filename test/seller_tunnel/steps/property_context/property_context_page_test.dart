@@ -256,6 +256,14 @@ void main() {
         'for a plot of land', (tester) async {
       await pump(tester);
 
+      expect(
+        tester
+            .widget<SelectableCard>(
+              find.widgetWithText(SelectableCard, 'Autre').first,
+            )
+            .icon,
+        RealestyIcons.grid,
+      );
       await tester.tap(find.text('Autre').first);
       await tester.pump();
       await tester.enterText(_field('Précisez le type de bien'), 'Garage');

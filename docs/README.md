@@ -9,7 +9,7 @@ Statuts : ✅ Terminé · 🚧 En cours · 📋 À faire
 | [EPIC-01](epics/EPIC-01-socle-projet.md) | Socle du projet & installation sur iPhone | ✅ |
 | [EPIC-02](epics/EPIC-02-design-system.md) | Design system | ✅ |
 | [EPIC-03](epics/EPIC-03-authentification.md) | Authentification par lien magique | ✅ |
-| [EPIC-04](epics/EPIC-04-tunnel-vendeur.md) | Tunnel vendeur (audit du bien) | 🚧 |
+| [EPIC-04](epics/EPIC-04-tunnel-vendeur.md) | Tunnel vendeur (audit du bien) | ✅ |
 
 ## Plans d'implémentation
 

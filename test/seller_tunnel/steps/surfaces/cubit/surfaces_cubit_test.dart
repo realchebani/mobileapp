@@ -73,12 +73,32 @@ void main() {
     test('starts with the saved rooms and their totals', () {
       final state = build().state;
       expect(state.rooms, [_living, _kitchen]);
-      expect(state.totalArea, 51.3);
+      expect(state.livingArea, 51.3);
+      expect(state.annexArea, 0);
+      expect(state.hasAnnexes, isFalse);
       expect(state.mainRoomsCount, 1);
       expect(state.isValid, isTrue);
       expect(_groups(state), [
         [RoomLevel.groundFloor, _living, _kitchen],
       ]);
+    });
+
+    test('annexes count apart from the living area', () {
+      const garage = Room(
+        id: 'g',
+        propertyId: 'p',
+        name: 'Garage',
+        areaM2: 18.25,
+        isAnnex: true,
+      );
+      var state = build(rooms: const [_living, garage, _kitchen]).state;
+      expect(state.livingArea, 51.3);
+      expect(state.annexArea, 18.25);
+      expect(state.hasAnnexes, isTrue);
+      expect(state.isValid, isTrue);
+      state = build(rooms: const [garage]).state;
+      expect(state.livingArea, 0);
+      expect(state.isValid, isFalse);
     });
 
     test('groups the rooms by level, rooms without a level last', () {
@@ -147,6 +167,34 @@ void main() {
     );
 
     blocTest<SurfacesCubit, SurfacesState>(
+      'an annex is never a main room',
+      build: () => build(rooms: const []),
+      act: (cubit) => cubit.roomAdded(
+        const RoomInput(
+          name: 'Garage',
+          level: RoomLevel.groundFloor,
+          areaM2: 18,
+          isMain: true,
+          isAnnex: true,
+        ),
+      ),
+      expect: () => [
+        const SurfacesState(
+          rooms: [
+            Room(
+              id: 'new-0',
+              propertyId: 'p',
+              name: 'Garage',
+              level: RoomLevel.groundFloor,
+              areaM2: 18,
+              isAnnex: true,
+            ),
+          ],
+        ),
+      ],
+    );
+
+    blocTest<SurfacesCubit, SurfacesState>(
       'roomDeleted removes the room',
       build: build,
       act: (cubit) => cubit.roomDeleted('r1'),
@@ -160,6 +208,24 @@ void main() {
       build: () => build(rooms: const []),
       act: (cubit) => cubit.submit(),
       expect: () => [const SurfacesState(showErrors: true, submitAttempts: 1)],
+      verify: (_) => verifyZeroInteractions(repository),
+    );
+
+    blocTest<SurfacesCubit, SurfacesState>(
+      'submit with annexes only shows the error',
+      build: () => build(rooms: const []),
+      act: (cubit) async {
+        cubit.roomAdded(
+          const RoomInput(name: 'Cave', level: null, areaM2: 9, isAnnex: true),
+        );
+        await cubit.submit();
+      },
+      skip: 1,
+      expect: () => [
+        isA<SurfacesState>()
+            .having((s) => s.showErrors, 'showErrors', isTrue)
+            .having((s) => s.submitAttempts, 'submitAttempts', 1),
+      ],
       verify: (_) => verifyZeroInteractions(repository),
     );
 

@@ -124,6 +124,55 @@ void main() {
       verifyNever(() => goRouter.go(AppRoutes.sellerTechnical));
     });
 
+    testWidgets('sends the steps of a sent dossier to V8', (tester) async {
+      final cubit = mockSellerTunnelCubit(
+        const SellerTunnelState(
+          status: SellerTunnelStatus.success,
+          property: Property(
+            id: 'property-id',
+            ownerId: 'user-id',
+            status: PropertyStatus.inReview,
+            currentStep: 8,
+          ),
+        ),
+      );
+      await tester.pumpTunnelPage(
+        const SellerTunnelGate(child: Text('child')),
+        sellerTunnelCubit: cubit,
+        goRouter: goRouter,
+      );
+      expect(find.text('child'), findsNothing);
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+
+      await tester.pump();
+      verify(() => goRouter.go(AppRoutes.sellerSubmitted)).called(1);
+    });
+
+    testWidgets('shows V8 of a sent dossier', (tester) async {
+      final routerState = _MockGoRouterState();
+      when(() => routerState.matchedLocation)
+          .thenReturn(AppRoutes.sellerSubmitted);
+      when(() => goRouter.state).thenReturn(routerState);
+      final cubit = mockSellerTunnelCubit(
+        const SellerTunnelState(
+          status: SellerTunnelStatus.success,
+          property: Property(
+            id: 'property-id',
+            ownerId: 'user-id',
+            status: PropertyStatus.certified,
+          ),
+        ),
+      );
+      await tester.pumpTunnelPage(
+        const SellerTunnelGate(child: Text('child')),
+        sellerTunnelCubit: cubit,
+        goRouter: goRouter,
+      );
+      await tester.pump();
+      expect(find.text('child'), findsOneWidget);
+      verifyNever(() => goRouter.go(any()));
+    });
+
     testWidgets('shows an error when a save failed', (tester) async {
       final cubit = mockSellerTunnelCubit();
       const loaded = SellerTunnelState(

@@ -44,6 +44,7 @@ dev_dependencies:
   flutter_launcher_icons: ^0.14.4
   flutter_test:
     sdk: flutter
+  image_picker_platform_interface: ^2.11.1
   mocktail: ^1.0.5
   very_good_analysis: ^11.0.0
 

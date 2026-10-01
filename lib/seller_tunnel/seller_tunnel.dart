@@ -9,7 +9,6 @@ export 'steps/property_context/property_context_page.dart';
 export 'steps/submitted/submitted_page.dart';
 export 'steps/surfaces/surfaces_page.dart';
 export 'steps/technical/technical_page.dart';
-export 'view/provisional_step_view.dart';
 export 'view/seller_home_page.dart';
 export 'view/seller_tunnel_navigation.dart';
 export 'view/seller_tunnel_shell.dart';

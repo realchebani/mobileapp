@@ -33,6 +33,7 @@ abstract final class PropertyColumns {
   static const orientation = 'orientation';
   static const livingAreaM2 = 'living_area_m2';
   static const livingRoomAreaM2 = 'living_room_area_m2';
+  static const annexAreaM2 = 'annex_area_m2';
   static const roomsCount = 'rooms_count';
   static const bedroomsCount = 'bedrooms_count';
   static const levels = 'levels';
@@ -99,6 +100,7 @@ class Property extends Equatable {
     this.orientation,
     this.livingAreaM2,
     this.livingRoomAreaM2,
+    this.annexAreaM2,
     this.roomsCount,
     this.bedroomsCount,
     this.levels,
@@ -176,6 +178,7 @@ class Property extends Equatable {
       orientation: json[PropertyColumns.orientation] as String?,
       livingAreaM2: readDouble(json[PropertyColumns.livingAreaM2]),
       livingRoomAreaM2: readDouble(json[PropertyColumns.livingRoomAreaM2]),
+      annexAreaM2: readDouble(json[PropertyColumns.annexAreaM2]),
       roomsCount: readInt(json[PropertyColumns.roomsCount]),
       bedroomsCount: readInt(json[PropertyColumns.bedroomsCount]),
       levels: parseDbEnum(PropertyLevels.values, json[PropertyColumns.levels]),
@@ -268,6 +271,10 @@ class Property extends Equatable {
   final String? orientation;
   final double? livingAreaM2;
   final double? livingRoomAreaM2;
+
+  /// Surface of the annexes (garage, cellier…), not part of
+  /// [livingAreaM2].
+  final double? annexAreaM2;
   final int? roomsCount;
   final int? bedroomsCount;
   final PropertyLevels? levels;
@@ -352,6 +359,7 @@ class Property extends Equatable {
       PropertyColumns.orientation: orientation,
       PropertyColumns.livingAreaM2: livingAreaM2,
       PropertyColumns.livingRoomAreaM2: livingRoomAreaM2,
+      PropertyColumns.annexAreaM2: annexAreaM2,
       PropertyColumns.roomsCount: roomsCount,
       PropertyColumns.bedroomsCount: bedroomsCount,
       PropertyColumns.levels: levels?.value,
@@ -414,6 +422,7 @@ class Property extends Equatable {
     orientation,
     livingAreaM2,
     livingRoomAreaM2,
+    annexAreaM2,
     roomsCount,
     bedroomsCount,
     levels,

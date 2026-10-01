@@ -72,6 +72,14 @@ enum SellerTunnelStep {
     return submitted;
   }
 
+  /// The step whose screen is at [path], or null.
+  static SellerTunnelStep? fromPath(String path) {
+    for (final step in values) {
+      if (step.path == path) return step;
+    }
+    return null;
+  }
+
   /// The following screen ([submitted] after [documents] and itself).
   SellerTunnelStep get next =>
       this == submitted ? submitted : values[index + 1];

@@ -10,6 +10,7 @@ final class RoomInput extends Equatable {
     this.floorCovering,
     this.glazing,
     this.isMain = false,
+    this.isAnnex = false,
   });
 
   /// The answers of [room].
@@ -20,6 +21,7 @@ final class RoomInput extends Equatable {
     floorCovering: room.floorCovering,
     glazing: room.glazing,
     isMain: room.isMain,
+    isAnnex: room.isAnnex,
   );
 
   final String name;
@@ -31,6 +33,9 @@ final class RoomInput extends Equatable {
   final Glazing? glazing;
   final bool isMain;
 
+  /// Annexe: not part of the living area (never a main room).
+  final bool isAnnex;
+
   @override
   List<Object?> get props => [
     name,
@@ -39,5 +44,6 @@ final class RoomInput extends Equatable {
     floorCovering,
     glazing,
     isMain,
+    isAnnex,
   ];
 }

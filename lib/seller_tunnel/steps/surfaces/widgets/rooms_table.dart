@@ -6,19 +6,25 @@ import 'package:mobileapp/ui/ui.dart';
 import 'package:property_repository/property_repository.dart';
 
 /// The V5c rooms card: rooms grouped by level (name, surface, floor
-/// covering, edit button) and the total bar.
+/// covering, edit button; annexes tagged) and the total bar (living area,
+/// then the annexes).
 class RoomsTable extends StatelessWidget {
   const new({
     required this.groups,
-    required this.totalArea,
+    required this.livingArea,
     required this.onEdit,
+    this.annexArea,
     super.key,
   });
 
   /// Rooms by level (null: no level), as `SurfacesState.roomsByLevel`.
   final List<(RoomLevel?, List<Room>)> groups;
 
-  final double totalArea;
+  /// Surface habitable: the rooms that are not annexes.
+  final double livingArea;
+
+  /// Area of the annexes; null hides the annexes line.
+  final double? annexArea;
 
   /// Edits a room; null disables the edit buttons.
   final ValueChanged<Room>? onEdit;
@@ -74,27 +80,41 @@ class RoomsTable extends StatelessWidget {
             color: c.encre,
             child: Padding(
               padding: const EdgeInsets.all(14),
-              child: Row(
-                spacing: RealestySpacing.xs,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                spacing: RealestySpacing.xxs,
                 children: [
-                  Expanded(
-                    child: Text(
-                      l10n.surfacesTotalLabel,
-                      style: RealestyTextStyles.body.copyWith(
-                        fontWeight: FontWeight.w700,
-                        color: c.surface,
+                  Row(
+                    spacing: RealestySpacing.xs,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          l10n.surfacesTotalLabel,
+                          style: RealestyTextStyles.body.copyWith(
+                            fontWeight: FontWeight.w700,
+                            color: c.surface,
+                          ),
+                        ),
+                      ),
+                      Text(
+                        l10n.surfacesAreaValue(RoomArea.format(livingArea)),
+                        style: RealestyTextStyles.title2.copyWith(
+                          fontSize: 20,
+                          height: 1.1,
+                          letterSpacing: -0.4,
+                          color: c.surface,
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (annexArea case final annexArea?)
+                    Text(
+                      l10n.surfacesAnnexTotal(RoomArea.format(annexArea)),
+                      textAlign: TextAlign.end,
+                      style: RealestyTextStyles.listSubtitle.copyWith(
+                        color: c.nuitTexteDiscret,
                       ),
                     ),
-                  ),
-                  Text(
-                    l10n.surfacesAreaValue(RoomArea.format(totalArea)),
-                    style: RealestyTextStyles.title2.copyWith(
-                      fontSize: 20,
-                      height: 1.1,
-                      letterSpacing: -0.4,
-                      color: c.surface,
-                    ),
-                  ),
                 ],
               ),
             ),
@@ -129,7 +149,20 @@ class _RoomRow extends StatelessWidget {
       child: Row(
         spacing: 6,
         children: [
-          Expanded(flex: 8, child: Text(room.name, style: textStyle)),
+          Expanded(
+            flex: 8,
+            child: room.isAnnex
+                ? Wrap(
+                    spacing: 6,
+                    runSpacing: 4,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: [
+                      Text(room.name, style: textStyle),
+                      RealestyBadge(label: l10n.surfacesAnnexTag),
+                    ],
+                  )
+                : Text(room.name, style: textStyle),
+          ),
           SizedBox(
             width: 64,
             child: FittedBox(

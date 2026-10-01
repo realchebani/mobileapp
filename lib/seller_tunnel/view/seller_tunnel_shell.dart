@@ -41,6 +41,9 @@ class SellerTunnelShell extends StatelessWidget {
 /// Also reacts to saves: opens `nextStep` after a successful
 /// `saveAndContinue` (if the user is still on the saved step) and shows a
 /// snackbar when a save failed.
+///
+/// Once the dossier is sent (`SellerTunnelState.isLocked`), the editable
+/// steps redirect to V8 (`SellerTunnelState.lockRedirect`).
 class SellerTunnelGate extends StatelessWidget {
   const new({required this.child, super.key});
 
@@ -48,9 +51,20 @@ class SellerTunnelGate extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final status = context.select<SellerTunnelCubit, SellerTunnelStatus>(
-      (cubit) => cubit.state.status,
-    );
+    final (status, isLocked) = context
+        .select<SellerTunnelCubit, (SellerTunnelStatus, bool)>(
+          (cubit) => (cubit.state.status, cubit.state.isLocked),
+        );
+    final lockRedirect = status == SellerTunnelStatus.success && isLocked
+        ? context.read<SellerTunnelCubit>().state.lockRedirect(
+            GoRouter.of(context).state.matchedLocation,
+          )
+        : null;
+    if (lockRedirect != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (context.mounted) context.go(lockRedirect);
+      });
+    }
     return BlocListener<SellerTunnelCubit, SellerTunnelState>(
       listenWhen: (previous, current) =>
           previous.saveStatus != current.saveStatus,
@@ -77,6 +91,8 @@ class SellerTunnelGate extends StatelessWidget {
         }
       },
       child: switch (status) {
+        SellerTunnelStatus.success when lockRedirect != null =>
+          const _Loading(),
         SellerTunnelStatus.success => child,
         SellerTunnelStatus.failure => const _LoadFailure(),
         SellerTunnelStatus.initial ||

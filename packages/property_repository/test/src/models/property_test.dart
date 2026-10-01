@@ -31,6 +31,7 @@ void main() {
     'orientation': 'Sud',
     'living_area_m2': 115,
     'living_room_area_m2': 38.5,
+    'annex_area_m2': 24.5,
     'rooms_count': 5,
     'bedrooms_count': 3,
     'levels': 'r1',
@@ -81,6 +82,7 @@ void main() {
       expect(property.propertyType, PropertyType.house);
       expect(property.saleReason, SaleReason.moreSpace);
       expect(property.livingAreaM2, 115.0);
+      expect(property.annexAreaM2, 24.5);
       expect(property.levels, PropertyLevels.oneUpperFloor);
       expect(property.wallMaterial, WallMaterial.concreteBlock);
       expect(property.adjacency, Adjacency.detached);

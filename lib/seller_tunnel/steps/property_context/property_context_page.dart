@@ -364,8 +364,7 @@ class _PropertyContextViewState extends State<PropertyContextView> {
     PropertyType.house => RealestyIcons.home,
     PropertyType.apartment => RealestyIcons.building,
     PropertyType.land => RealestyIcons.land,
-    // No grid icon in the design system yet (mockup: 2×2 grid).
-    PropertyType.other => RealestyIcons.cube,
+    PropertyType.other => RealestyIcons.grid,
   };
 
   static String _typeLabel(AppLocalizations l10n, PropertyType type) =>

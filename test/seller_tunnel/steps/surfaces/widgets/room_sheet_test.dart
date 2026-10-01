@@ -14,6 +14,18 @@ Finder _field(String label) => find.descendant(
   matching: find.byType(TextField),
 );
 
+final Finder _mainBox = find.widgetWithText(
+  RealestyCheckbox,
+  'Pièce principale (séjour, chambre, bureau)',
+);
+final Finder _annexBox = find.widgetWithText(
+  RealestyCheckbox,
+  'Annexe (non habitable)',
+);
+
+bool _checked(WidgetTester tester, Finder box) =>
+    tester.widget<RealestyCheckbox>(box).value;
+
 void main() {
   late RoomSheetResult? result;
   late bool closed;
@@ -62,10 +74,8 @@ void main() {
 
       await tester.tap(find.text('Séjour'));
       await tester.pump();
-      expect(
-        tester.widget<RealestyCheckbox>(find.byType(RealestyCheckbox)).value,
-        isTrue,
-      );
+      expect(_checked(tester, _mainBox), isTrue);
+      expect(_checked(tester, _annexBox), isFalse);
       await tester.enterText(_field('Surface'), '38,5');
       await tester.tap(find.byType(RealestySelect<RoomLevel>));
       await tester.pumpAndSettle();
@@ -79,7 +89,7 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('Double').last);
       await tester.pumpAndSettle();
-      await tester.tap(find.byType(RealestyCheckbox));
+      await tester.tap(_mainBox);
       await tester.pump();
 
       await tester.tap(find.text('Ajouter'));
@@ -184,10 +194,73 @@ void main() {
       await tester.tap(find.text('Autre'));
       await tester.pump();
       expect(find.text('Chambre 5'), findsNothing);
+      expect(_checked(tester, _mainBox), isFalse);
+      expect(_checked(tester, _annexBox), isFalse);
+    });
+
+    testWidgets('annex chips tick "Annexe"; the two boxes exclude each other', (
+      tester,
+    ) async {
+      await open(tester);
+      for (final name in ['Garage', 'Cellier', 'Buanderie']) {
+        await tester.tap(find.text(name));
+        await tester.pump();
+        expect(_checked(tester, _annexBox), isTrue, reason: name);
+        expect(_checked(tester, _mainBox), isFalse, reason: name);
+      }
+      await tester.tap(find.text('Sous-sol').first);
+      await tester.pump();
+      expect(find.widgetWithText(RealestyTextField, 'Sous-sol'), findsOne);
+      expect(_checked(tester, _annexBox), isTrue);
+
+      await tester.tap(_mainBox);
+      await tester.pump();
+      expect(_checked(tester, _mainBox), isTrue);
+      expect(_checked(tester, _annexBox), isFalse);
+      await tester.tap(_annexBox);
+      await tester.pump();
+      expect(_checked(tester, _mainBox), isFalse);
+      expect(_checked(tester, _annexBox), isTrue);
+      // Unticking one leaves the other unticked.
+      await tester.tap(_annexBox);
+      await tester.pump();
+      expect(_checked(tester, _annexBox), isFalse);
+      await tester.tap(_mainBox);
+      await tester.pump();
+      await tester.tap(_mainBox);
+      await tester.pump();
+      expect(_checked(tester, _mainBox), isFalse);
+      await tester.tap(_annexBox);
+      await tester.pump();
+
+      await tester.enterText(_field('Surface'), '20');
+      await tester.tap(find.text('Ajouter'));
+      await tester.pumpAndSettle();
       expect(
-        tester.widget<RealestyCheckbox>(find.byType(RealestyCheckbox)).value,
-        isFalse,
+        (result! as RoomSheetSaved).room,
+        const RoomInput(
+          name: 'Sous-sol',
+          level: RoomLevel.groundFloor,
+          areaM2: 20,
+          isAnnex: true,
+        ),
       );
+    });
+
+    testWidgets('edits an annex', (tester) async {
+      await open(
+        tester,
+        initial: const RoomInput(
+          name: 'Cave',
+          level: RoomLevel.basement,
+          areaM2: 9,
+          isAnnex: true,
+        ),
+      );
+      expect(_checked(tester, _annexBox), isTrue);
+      await tester.tap(find.text('Enregistrer'));
+      await tester.pumpAndSettle();
+      expect((result! as RoomSheetSaved).room.isAnnex, isTrue);
     });
 
     testWidgets('edits a room and keeps an unknown covering', (tester) async {

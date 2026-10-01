@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobileapp/app/app.dart';
 import 'package:mobileapp/seller_tunnel/seller_tunnel.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:property_repository/property_repository.dart';
@@ -312,6 +313,60 @@ void main() {
         ).resumeStep,
         SellerTunnelStep.method,
       );
+    });
+
+    test('is locked once the dossier is sent', () {
+      expect(const SellerTunnelState().isLocked, isFalse);
+      for (final status in PropertyStatus.values) {
+        final state = SellerTunnelState(
+          property: Property(
+            id: 'p',
+            ownerId: 'u',
+            status: status,
+            currentStep: 3,
+          ),
+        );
+        final locked = status != PropertyStatus.draft;
+        expect(state.isLocked, locked, reason: status.name);
+        expect(
+          state.resumeStep,
+          locked ? SellerTunnelStep.submitted : SellerTunnelStep.context,
+          reason: status.name,
+        );
+      }
+    });
+
+    test('redirects the editable steps of a sent dossier to V8', () {
+      const draft = SellerTunnelState(
+        property: Property(id: 'p', ownerId: 'u', currentStep: 8),
+      );
+      for (final step in SellerTunnelStep.values) {
+        expect(draft.lockRedirect(step.path), isNull);
+      }
+      for (final status in [
+        PropertyStatus.submitted,
+        PropertyStatus.inReview,
+        PropertyStatus.certified,
+      ]) {
+        final state = SellerTunnelState(
+          property: Property(
+            id: 'p',
+            ownerId: 'u',
+            status: status,
+            currentStep: 8,
+          ),
+        );
+        for (final step in SellerTunnelStep.values) {
+          expect(
+            state.lockRedirect(step.path),
+            step == SellerTunnelStep.submitted
+                ? isNull
+                : AppRoutes.sellerSubmitted,
+            reason: '${status.name} ${step.name}',
+          );
+        }
+        expect(state.lockRedirect(AppRoutes.seller), isNull);
+      }
     });
 
     test('copyWith keeps values and resets nextStep', () {

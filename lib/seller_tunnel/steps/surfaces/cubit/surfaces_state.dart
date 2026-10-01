@@ -32,11 +32,20 @@ final class SurfacesState extends Equatable {
 
   bool get isSubmitting => submission == SurfacesSubmission.inProgress;
 
-  /// At least one room is needed to continue.
-  bool get isValid => rooms.isNotEmpty;
+  /// At least one living-space room (not an annex) is needed to continue.
+  bool get isValid => rooms.any((room) => !room.isAnnex);
 
-  /// Living area: the sum of the rooms (m², 2 decimals).
-  double get totalArea =>
+  /// Living area (surface habitable): the sum of the rooms that are not
+  /// annexes (m², 2 decimals).
+  double get livingArea => _sum(rooms.where((room) => !room.isAnnex));
+
+  /// Area of the annexes (m², 2 decimals).
+  double get annexArea => _sum(rooms.where((room) => room.isAnnex));
+
+  /// Whether some rooms are annexes.
+  bool get hasAnnexes => rooms.any((room) => room.isAnnex);
+
+  static double _sum(Iterable<Room> rooms) =>
       RoomArea.round(rooms.fold(0, (sum, room) => sum + room.areaM2));
 
   /// Number of "pièces principales".

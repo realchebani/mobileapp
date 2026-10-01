@@ -69,6 +69,7 @@ void main() {
       floorCovering: 'Parquet chêne',
       glazing: Glazing.double,
       isMain: true,
+      isAnnex: true,
       source: MeasurementMethod.scan,
       photosCount: 4,
       scanData: {'points': 12},
@@ -80,6 +81,7 @@ void main() {
       'area_m2': 2,
     });
     expect(bare, const Room(propertyId: 'p1', name: 'WC', areaM2: 2));
+    expect(bare.isAnnex, isFalse);
   });
 
   test('LifestyleItem round-trips and defaults', () {

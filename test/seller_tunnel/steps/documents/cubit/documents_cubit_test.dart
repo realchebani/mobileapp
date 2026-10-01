@@ -492,6 +492,21 @@ void main() {
       expect: () => const [initial],
     );
 
+    blocTest<DocumentsCubit, DocumentsState>(
+      'submissionBlocked shows the documents needed to send, once',
+      build: build,
+      act: (cubit) => cubit
+        ..submissionBlocked()
+        ..submissionBlocked(),
+      expect: () => const [
+        DocumentsState(
+          property: testProperty,
+          documents: [],
+          showsSubmissionErrors: true,
+        ),
+      ],
+    );
+
     group('delete', () {
       blocTest<DocumentsCubit, DocumentsState>(
         'deletes the document',

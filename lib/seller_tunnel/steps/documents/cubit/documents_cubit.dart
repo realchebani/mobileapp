@@ -113,6 +113,14 @@ class DocumentsCubit extends Cubit<DocumentsState> {
     await _upload(pending, kind);
   }
 
+  /// "Envoyer" was tapped while documents needed to send are missing:
+  /// shows them (until they are provided).
+  void submissionBlocked() {
+    if (!state.showsSubmissionErrors) {
+      emit(state.copyWith(showsSubmissionErrors: true));
+    }
+  }
+
   /// Drops the pending file (its kind was not given).
   void pendingDiscarded() {
     if (!isClosed) emit(state.copyWith(pending: () => null));

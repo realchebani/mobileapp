@@ -9,7 +9,8 @@ import '../../../../helpers/helpers.dart';
 const nb = '\u00a0';
 const _id = 'property-id';
 
-Room _room(double area) => Room(propertyId: _id, name: 'Pièce', areaM2: area);
+Room _room(double area, {bool isAnnex = false}) =>
+    Room(propertyId: _id, name: 'Pièce', areaM2: area, isAnnex: isAnnex);
 
 LifestyleItem _item(LifestyleItemKind kind) =>
     LifestyleItem(propertyId: _id, kind: kind, label: 'x');
@@ -48,7 +49,7 @@ void main() {
       ),
       PropertyParcel(propertyId: _id, idu: '69043000AB0124'),
     ],
-    rooms: [_room(38.5), _room(12)],
+    rooms: [_room(38.5), _room(12), _room(18, isAnnex: true)],
     lifestyleItems: [
       _item(LifestyleItemKind.asset),
       _item(LifestyleItemKind.asset),
@@ -101,7 +102,9 @@ void main() {
       'R+1',
       'Pompe à chaleur',
       'Tout-à-l’égout',
-      '2 pièces · 50,5${nb}m²',
+      '2 pièces · 50,5${nb}m² habitables',
+      'Annexes',
+      '1 annexe · 18${nb}m²',
       '2 éléments',
       '1 élément',
       '1 document',

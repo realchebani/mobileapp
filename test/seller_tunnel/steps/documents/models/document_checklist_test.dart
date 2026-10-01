@@ -55,6 +55,9 @@ void main() {
       );
       expect(checklist.sanitationRule, SanitationReportRule.unknown);
       expect(checklist.missingCount, 4);
+      expect(checklist.blockingKinds, DocumentChecklist.submissionKinds);
+      expect(checklist.canSubmit, isFalse);
+      expect(checklist.optionalMissingCount, 2);
       expect(checklist.score, 0);
       expect(checklist.nextBestKind, DocumentKind.titleDeed);
     });
@@ -131,6 +134,9 @@ void main() {
       );
       expect(checklist.rows[2].documents, hasLength(2));
       expect(checklist.missingCount, 2);
+      // A rejected identity document still blocks the sending.
+      expect(checklist.blockingKinds, [DocumentKind.identityDocument]);
+      expect(checklist.optionalMissingCount, 1);
       // Documents 45/80 of 70 + answers 30 = 69.
       expect(checklist.score, 69);
       expect(checklist.nextBestKind, DocumentKind.diagnostics);
@@ -142,6 +148,9 @@ void main() {
       ]);
 
       expect(checklist.missingCount, 0);
+      expect(checklist.blockingKinds, isEmpty);
+      expect(checklist.canSubmit, isTrue);
+      expect(checklist.optionalMissingCount, 0);
       expect(checklist.score, 100);
       expect(checklist.nextBestKind, isNull);
     });

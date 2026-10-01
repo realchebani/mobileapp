@@ -60,6 +60,24 @@ void main() {
       }
     });
 
+    testWidgets('shows a trailing icon after the label', (tester) async {
+      await tester.pumpRealesty(
+        RealestyButton(
+          label: 'Envoyer',
+          variant: RealestyButtonVariant.accent,
+          trailingIcon: RealestyIcons.chevronRight,
+          onPressed: () {},
+        ),
+      );
+      final icon = tester.widget<RealestyIcon>(find.byType(RealestyIcon));
+      expect(icon.icon, RealestyIcons.chevronRight);
+      expect(icon.color, c.encre);
+      expect(
+        tester.getTopLeft(find.byType(RealestyIcon)).dx,
+        greaterThan(tester.getTopRight(find.text('Envoyer')).dx),
+      );
+    });
+
     testWidgets('loading shows a spinner and ignores taps', (tester) async {
       var taps = 0;
       await tester.pumpRealesty(
