@@ -11,6 +11,7 @@ import 'package:mobileapp/app/router/stream_listenable.dart';
 import 'package:mobileapp/l10n/l10n.dart';
 import 'package:mobileapp/login/login.dart';
 import 'package:mobileapp/profile/profile.dart';
+import 'package:mobileapp/seller_tunnel/voice/voice_services.dart';
 import 'package:mobileapp/ui/ui.dart';
 import 'package:profile_repository/profile_repository.dart';
 import 'package:property_repository/property_repository.dart';
@@ -26,6 +27,7 @@ class App extends StatelessWidget {
     required this.propertyRepository,
     required this.onboardingRepository,
     this.geoRepository,
+    this.voiceServices,
     this.enableDesignSystem,
     super.key,
   });
@@ -37,6 +39,9 @@ class App extends StatelessWidget {
 
   /// Addresses and cadastre (seller tunnel V2); a default one when null.
   final GeoRepository? geoRepository;
+
+  /// Voice input and the AI agent (EPIC-06); disabled when null.
+  final VoiceServices? voiceServices;
 
   /// Whether the design system gallery is reachable; defaults to the
   /// development flavor.
@@ -50,6 +55,7 @@ class App extends StatelessWidget {
         RepositoryProvider.value(value: profileRepository),
         RepositoryProvider.value(value: propertyRepository),
         RepositoryProvider.value(value: onboardingRepository),
+        RepositoryProvider.value(value: voiceServices ?? const VoiceServices()),
         RepositoryProvider<GeoRepository>(
           lazy: false,
           create: (_) => geoRepository ?? GeoRepository(),

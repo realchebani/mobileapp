@@ -63,7 +63,11 @@ final class SellerTunnelState extends Equatable {
   String? lockRedirect(String location) {
     if (!isLocked) return null;
     final step = SellerTunnelStep.fromPath(location);
-    if (step == null || step == SellerTunnelStep.submitted) return null;
+    if (step == SellerTunnelStep.submitted) return null;
+    // Every audit screen, steps and their variants (V4 voice) alike.
+    if (step == null && !location.startsWith('${AppRoutes.sellerAudit}/')) {
+      return null;
+    }
     return SellerTunnelStep.submitted.path;
   }
 

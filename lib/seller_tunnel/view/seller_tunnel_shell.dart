@@ -7,7 +7,9 @@ import 'package:mobileapp/app/app.dart';
 import 'package:mobileapp/l10n/l10n.dart';
 import 'package:mobileapp/profile/profile.dart';
 import 'package:mobileapp/seller_tunnel/cubit/seller_tunnel_cubit.dart';
+import 'package:mobileapp/seller_tunnel/models/seller_tunnel_step.dart';
 import 'package:mobileapp/seller_tunnel/view/seller_tunnel_navigation.dart';
+import 'package:mobileapp/seller_tunnel/voice/voice_services.dart';
 import 'package:mobileapp/ui/ui.dart';
 import 'package:property_repository/property_repository.dart';
 
@@ -77,7 +79,14 @@ class SellerTunnelGate extends StatelessWidget {
             if (next != null &&
                 GoRouter.of(context).state.matchedLocation ==
                     state.continuedFrom?.path) {
-              context.goToTunnelStep(next);
+              // V3 → V4 (voice audit) when voice is available; V4 falls
+              // back to V4b (screen mode) without consent.
+              if (next == SellerTunnelStep.technical &&
+                  VoiceServices.of(context).isAvailable) {
+                context.go(AppRoutes.sellerVoiceAudit);
+              } else {
+                context.goToTunnelStep(next);
+              }
             }
           case SellerTunnelSaveStatus.failure:
             showRealestySnackBar(

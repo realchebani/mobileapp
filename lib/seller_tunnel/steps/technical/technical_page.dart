@@ -3,7 +3,9 @@ import 'dart:math';
 
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:mobileapp/app/router/app_routes.dart';
 import 'package:mobileapp/l10n/l10n.dart';
 import 'package:mobileapp/seller_tunnel/cubit/seller_tunnel_cubit.dart';
 import 'package:mobileapp/seller_tunnel/models/seller_tunnel_step.dart';
@@ -149,11 +151,16 @@ class _TechnicalViewState extends State<TechnicalView> {
           onBack: saving ? null : () => context.goBackFrom(_step),
         ),
         actionBar: AgentActionBar(
-          // Hidden while the microphone is (voice input comes later).
+          // Hidden while the microphone is (voice disabled for the
+          // flavor or not consented).
           hint: l10n.tunnelHintVoiceOrScreen,
           label: l10n.technicalSaveAndContinue,
           isLoading: saving,
           onPressed: cubit.submit,
+          // V4 · audit vocal (not for land: nothing to ask by voice).
+          onMicPressed: saving || !state.asksBuilding
+              ? null
+              : () => context.go(AppRoutes.sellerVoiceAudit),
         ),
         children: [
           if (state.asksBuilding) ...[

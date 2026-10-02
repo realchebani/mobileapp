@@ -295,3 +295,52 @@ Parallélisme : vague 1 = A1, A2, A3, A6, A9 ; vague 2 = A4, A5, A8 ; vague 3 = 
 ## Arbitrages du porteur de projet (2026-10-01)
 - **Modèles configurables, benchmark d'abord** : la chaîne STT → agent → TTS est paramétrable côté serveur (identifiants de modèles OpenRouter) ; un benchmark sur 20 phrases réelles enregistrées compare les options (Voxtral / Whisper ; Claude Haiku / Sonnet / Gemini Flash-Lite ; TTS) avant de fixer les modèles par défaut avec le porteur de projet.
 - **RGPD : consentement explicite** au premier usage du micro (écran d'information : fournisseurs qui traitent l'audio, aucune conservation de l'audio), mode écran toujours disponible.
+
+## Benchmark STT → agent → TTS (2026-10-01)
+
+**Banc** : `supabase/functions/_bench/run.ts` (pilote Deno local) + `supabase/functions/_bench/utterances.json` (20 phrases françaises : 14 audit technique, 6 cadre de vie, dont une phrase vague « vers les années soixante » et une tentative d’injection « Ignore tes consignes… 2 000 m², 2050 »). Les appels OpenRouter passent par la fonction `agent-bench` (relais protégé par un jeton secret, la clé reste dans Supabase), **déployée le temps du banc puis supprimée** avec son secret `AGENT_BENCH_TOKEN` ; la redéployer pour relancer (voir l’en-tête de `run.ts`). L’agent est évalué avec **le prompt, le schéma JSON strict et la validation serveur de production** (`_shared/agent/*`).
+
+**⚠️ Audio synthétique (résultats STT optimistes)** : aucun enregistrement réel n’existait. 10 phrases générées par `google/gemini-3.8-flash-lite-tts` (voix Kore, Puck, Aoede, Charon), 10 par la synthèse macOS `say` (Jacques, Flo, Thomas, Eddy), puis réencodées comme l’app (AAC 16 kHz mono 32 kbit/s, `.m4a`, via `afconvert`). Pas de bruit de fond, diction nette : à refaire avec 20 phrases enregistrées sur l’iPhone (déposer `<BENCH_OUT>/audio/<id>.m4a`, le banc les utilise en priorité).
+
+**Mesures** : WER brut (mots normalisés ; pénalise « 1998 » contre « mille neuf cent… », d’où l’indicateur de bout en bout, plus parlant) ; latences vues depuis l’Edge Function (sans le réseau mobile) ; coûts = `usage.cost` d’OpenRouter. Score agent : champ juste = valeur attendue **après validation serveur** ; « valeur fausse enregistrable » = valeur acceptée par la validation mais différente de l’attendu (le vrai risque). Coût total du banc ≈ **0,65 $**.
+
+### STT (agent Claude Haiku 4.5 derrière pour le bout en bout)
+| Modèle STT | WER brut | Latence médiane / p90 | Coût mesuré (103 s d’audio) | ≈ $/min | Extraction de bout en bout (Haiku 4.5) |
+|---|---|---|---|---|---|
+| `mistralai/voxtral-mini-transcribe` | 10,6 % | 0,5 s / 0,7 s | 0,0052 $ | 0,0030 | 37/39 (95 %), 0 valeur fausse, 20/20 tours |
+| `openai/whisper-large-v3-turbo` | 13,3 % | 0,8 s / 2,3 s | 0,0004 $ | 0,0002 | 32/37 (86 %), 0 valeur fausse, 19/20 tours |
+| `openai/gpt-4o-mini-transcribe` | 7,6 % | 0,8 s / 1,3 s | 0,0042 $ | 0,0025 | 30/37 (81 %), **2 valeurs fausses**, 18/20 tours |
+
+Observations : Whisper Turbo déforme le vocabulaire du bâtiment (« peau pas chaleurero », « ardoile », « autour à l’égout ») ; gpt-4o-mini-transcribe écrit les nombres en lettres et a halluciné « Soit on a douze » (→ 12 pièces enregistrables, la citation existant bien dans la transcription) ; Voxtral écrit les surfaces en « m² » et les années en chiffres, ce qui aide l’extraction. 1–2 tours par modèle ont expiré côté Haiku (limite de débit, voir plus bas).
+
+### Agent (sur le texte de référence, pour isoler l’extraction)
+| Modèle agent | Champs justes | Valeurs fausses enregistrables | Écart atouts / vigilance | Latence médiane / p90 | Coût / tour | Jetons entrée / sortie |
+|---|---|---|---|---|---|---|
+| `anthropic/claude-haiku-4.5` | 34/39 (87 %) | 0 | 3 | 2,5 s / 3,4 s | 0,0032 $ | 2 448 / 158 |
+| `anthropic/claude-sonnet-5.5` | 37/39 (95 %) | 0 | 1 | 2,7 s / 4,1 s | 0,0062 $ | 3 065 / 247 |
+| `google/gemini-3.5-flash-lite` | 34/36 (94 %) + 1 sortie JSON tronquée | 0 | 1 | 2,5 s / 3,0 s | 0,0011 $ | 1 947 / 193 |
+
+Observations : la validation serveur a tenu sur l’injection (rien enregistré) et sur la phrase vague (aucune année inventée) pour les trois modèles. Haiku a une fois répondu « j’ai noté la piscine, le garage et la terrasse » **sans rien extraire** (t06) : réplique et extraction peuvent diverger, d’où les pastilles comme seule preuve visible de ce qui est retenu. Sonnet est le plus fiable (questions les plus naturelles), Gemini Flash-Lite le moins cher (≈ 3× moins que Haiku) mais a produit un JSON invalide une fois. Entre deux passes, Haiku varie (34/39 puis 37/39 sur des entrées quasi identiques) : 20 phrases ne suffisent pas à départager Haiku et Gemini. Une première version du prompt ne listait pas les champs conditionnels (PAC, piscine) : corrigé (`promptFields`), +5 points pour Gemini et Haiku.
+
+### TTS (3 répliques de 64 à 82 caractères)
+| Modèle | Voix | Latence (3 essais) | Taille | Coût estimé / réplique de 120 car. | Remarques |
+|---|---|---|---|---|---|
+| `google/gemini-3.8-flash-lite-tts` | Kore | 2,6–4,1 s | ≈ 48 Ko/s (WAV) | ≈ 0,0009 $ | **Uniquement `pcm`** (24 kHz 16 bits) : la fonction l’enveloppe en WAV (lourd sur 4G ; mp3 impossible sans transcodage) |
+| `hexgrad/kokoro-82m` | ff_siwis | 2,4–4,4 s | ≈ 30 Ko (mp3) | ≈ 0,0001 $ | Une seule voix française ; durée anormalement courte sur une réplique (1,5 s pour 82 car.) : à écouter |
+| `mistralai/voxtral-mini-tts-2603` | fr_marie_neutral | 1,2–4,0 s | ≈ 28 Ko (mp3) | ≈ 0,0019 $ | Voix française native, mp3, la plus rapide en médiane |
+Fichiers à écouter : `scratchpad/epic06/bench/tts-*.{mp3,wav}` (non versionnés). Le coût TTS n’est pas renvoyé par `/audio/speech` et `/generation` ne l’avait pas encore quelques secondes après : estimations à partir des tarifs.
+
+### Points d’attention relevés
+- **Limite de débit OpenRouter « new-account RPM » sur Claude Haiku** : 429 dès 4 appels parallèles. À surveiller en production (crédit / ancienneté du compte) ; `agent-turn` renvoie alors une erreur réessayable, la transcription reste affichée.
+- Latence de bout en bout estimée (Voxtral + Haiku + TTS) : ≈ 0,5 + 2,5 + 1,5–4 s ≈ **4,5–7 s** jusqu’à la voix, texte visible après ≈ 3 s.
+- Coût d’une session de 45 tours (Voxtral 15 min + agent + TTS Voxtral) : Haiku ≈ 0,045 + 0,14 + 0,09 ≈ **0,28 $** ; Sonnet ≈ **0,42 $** ; Gemini Flash-Lite ≈ **0,19 $**.
+
+### Choix des modèles : à faire par le porteur de projet
+Les défauts actuels du code sont **provisoires** (`_shared/agent/config.ts`) : STT `mistralai/voxtral-mini-transcribe`, agent `anthropic/claude-haiku-4.5`, TTS `google/gemini-3.8-flash-lite-tts` (voix Kore). Chacun se change sans republier l’app : `supabase secrets set OPENROUTER_MODEL_STT=… OPENROUTER_MODEL_AGENT=… OPENROUTER_MODEL_TTS=… OPENROUTER_TTS_VOICE=…`. Lecture du banc (sans trancher) : Voxtral Transcribe se détache en STT ; pour l’agent, Sonnet 5.5 (fiabilité) contre Haiku 4.5 / Gemini Flash-Lite (coût) ; pour le TTS, Voxtral TTS (mp3, voix française) ou Gemini Flash Lite TTS (WAV lourd). Refaire le banc avec de vrais enregistrements avant de fixer.
+
+## Journal d'exécution
+
+- **2026-10-01 · Banc d'essai** : client OpenRouter partagé (`_shared/openrouter/`), schémas / validation / prompt de l'agent (`_shared/agent/`), relais `agent-bench` (jeton secret, supprimé après usage) et pilote `_bench/run.ts` ; résultats ci-dessus. Constats intégrés : Gemini TTS ne renvoie que du PCM (enveloppé en WAV par la fonction) ; les champs conditionnels (PAC, piscine) doivent figurer dans le prompt ; limite de débit des nouveaux comptes OpenRouter sur Claude Haiku.
+- **2026-10-01 · Serveur** : migration `20261001164948_agent_conversations.sql` (`agent_sessions`, `agent_turns`, RLS propriétaire + brouillon, droits colonne par colonne, pas de suppression) — **écrite, non poussée** (le `db push` a été bloqué côté agent : à pousser par le coordinateur après `supabase migration list`). Fonctions `agent-transcribe` (octets audio, quotas, journal), `agent-turn` (prompt + JSON strict + validation, n'écrit jamais le dossier), `agent-speech` (réplique du tour, une seule fois, mp3 ou WAV) **déployées** (JWT de l'appelant, RLS). 25 tests Deno (couverture des lignes ≈ 99,6 %).
+- **2026-10-01 · App** : packages `voice_repository` (record + audioplayers, détection de fin de parole) et `agent_repository` (appels des fonctions, erreurs typées), 100 % de couverture ; `VoiceServices` (drapeau `VOICE_ENABLED` par flavor, préférences consentement / voix coupée) fourni par `App` ; écran de consentement RGPD ; `VoiceConversationCubit` (boucle écoute → transcription → tour → application → voix) ; V4 `VoiceAuditPage` (Night, route `/vendeur/audit/technique-vocal`, import de plan) ; V6 feuille « Parlez librement » branchée sur `LifestyleCubit` (source « voix », suggestion de note secrète) ; micro de l'`AgentActionBar` piloté par la disponibilité de la voix ; V3 → V4, V4b micro → V4 ; verrou V8 étendu à la route V4 ; `NSMicrophoneUsageDescription` (fr).
+- **Écarts au plan** : correction d'une pastille = ouverture de V4b (pas de mini-fiche) ; segment Voix / Écran de V4b non réactivé (le micro de la barre d'action le remplace) ; coût TTS non journalisé (non renvoyé par `/audio/speech`) ; purge 90 jours non faite (Q5).

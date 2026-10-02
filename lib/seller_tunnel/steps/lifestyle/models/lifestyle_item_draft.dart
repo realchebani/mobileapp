@@ -53,7 +53,12 @@ class CharLengthFormatter extends TextInputFormatter {
 /// that saving it again after a lost answer updates the same
 /// `lifestyle_items` row instead of inserting a duplicate.
 final class LifestyleItemDraft extends Equatable {
-  const new({required this.id, required this.kind, required this.label});
+  const new({
+    required this.id,
+    required this.kind,
+    required this.label,
+    this.source = LifestyleItemSource.declared,
+  });
 
   /// The draft of a saved row.
   new fromItem(LifestyleItem item, {String Function()? newId})
@@ -61,14 +66,25 @@ final class LifestyleItemDraft extends Equatable {
         id: item.id ?? (newId ?? generateUuidV4)(),
         kind: item.kind,
         label: item.label,
+        source: item.source,
       );
 
   final String id;
   final LifestyleItemKind kind;
   final String label;
 
-  LifestyleItemDraft copyWith({String? label}) =>
-      LifestyleItemDraft(id: id, kind: kind, label: label ?? this.label);
+  /// [LifestyleItemSource.voice] when the agent proposed it (V6 "Parlez
+  /// librement"), kept when the seller edits it.
+  final LifestyleItemSource source;
+
+  bool get fromVoice => source == LifestyleItemSource.voice;
+
+  LifestyleItemDraft copyWith({String? label}) => LifestyleItemDraft(
+    id: id,
+    kind: kind,
+    label: label ?? this.label,
+    source: source,
+  );
 
   /// The `lifestyle_items` row of this draft, at [sortOrder] in its list.
   LifestyleItem toItem({required String propertyId, required int sortOrder}) =>
@@ -78,10 +94,11 @@ final class LifestyleItemDraft extends Equatable {
         kind: kind,
         label: label,
         sortOrder: sortOrder,
+        source: source,
       );
 
   @override
-  List<Object?> get props => [id, kind, label];
+  List<Object?> get props => [id, kind, label, source];
 }
 
 /// A random (version 4) UUID, e.g. `0f8fad5b-d9cb-469f-a165-70867728950e`.

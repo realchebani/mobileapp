@@ -1,3 +1,4 @@
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobileapp/seller_tunnel/seller_tunnel.dart';
 import 'package:mobileapp/ui/ui.dart';
@@ -6,8 +7,36 @@ import '../../helpers/helpers.dart';
 
 void main() {
   group(AgentActionBar, () {
-    test('hides the microphone in this version', () {
-      expect(AgentActionBar.voiceEnabled, isFalse);
+    testWidgets('shows the microphone when voice is available', (tester) async {
+      final voice = await testVoiceServices();
+      var mic = 0;
+      await tester.pumpApp(
+        RepositoryProvider.value(
+          value: voice,
+          child: AgentActionBar(
+            hint: 'Répondez à la voix ou à l’écran',
+            label: 'Continuer',
+            onPressed: () {},
+            onMicPressed: () => mic++,
+          ),
+        ),
+      );
+      expect(find.text('Répondez à la voix ou à l’écran'), findsOneWidget);
+      await tester.tap(find.byType(RealestyMicButton));
+      expect(mic, 1);
+    });
+
+    testWidgets('hides the microphone when voice is unavailable', (
+      tester,
+    ) async {
+      await tester.pumpApp(
+        AgentActionBar(
+          label: 'Continuer',
+          onPressed: () {},
+          onMicPressed: () {},
+        ),
+      );
+      expect(find.byType(RealestyMicButton), findsNothing);
     });
 
     testWidgets('shows the hint and the main action', (tester) async {

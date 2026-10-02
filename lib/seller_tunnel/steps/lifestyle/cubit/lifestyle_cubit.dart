@@ -1,3 +1,4 @@
+import 'package:agent_repository/agent_repository.dart';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:mobileapp/seller_tunnel/steps/lifestyle/models/lifestyle_item_draft.dart';
@@ -100,6 +101,64 @@ class LifestyleCubit extends Cubit<LifestyleState> {
 
   void secretNoteChanged(String note) =>
       _edit((s) => s.copyWith(secretNote: note));
+
+  /// Adds what the voice agent understood (V6 "Parlez librement"): the
+  /// items (source "voix", within the limits), the noise and overlooking
+  /// it heard, and a secret note as a suggestion only. Nothing is saved
+  /// before "Continuer".
+  Future<void> voiceTurnApplied(AgentTurn turn) async => _edit((s) {
+    var next = s;
+    for (final item in turn.lifestyleItems) {
+      final kind = item.isAsset
+          ? LifestyleItemKind.asset
+          : LifestyleItemKind.watchPoint;
+      final label = item.label.trim();
+      final known = next
+          .itemsOf(kind)
+          .any((draft) => draft.label.toLowerCase() == label.toLowerCase());
+      if (known || !next.canAdd(kind) || !isValidLifestyleLabel(label)) {
+        continue;
+      }
+      next = _withItems(next, kind, [
+        ...next.itemsOf(kind),
+        LifestyleItemDraft(
+          id: _newId(),
+          kind: kind,
+          label: label,
+          source: LifestyleItemSource.voice,
+        ),
+      ]);
+    }
+    final noise = turn.patch[PropertyColumns.noiseLevel];
+    if (noise is num) {
+      next = next.copyWith(noiseLevel: noise.toInt().clamp(1, 10));
+    }
+    final overlooking = parseDbEnum(
+      Overlooking.values,
+      turn.patch[PropertyColumns.overlooking],
+    );
+    if (overlooking != null) next = next.copyWith(overlooking: overlooking);
+    final note = turn.suggestions[PropertyColumns.secretNote]?.trim();
+    if (note != null && note.isNotEmpty) {
+      next = next.copyWith(secretNoteSuggestion: () => note);
+    }
+    return next;
+  });
+
+  /// Uses the suggested secret note (appended to the current note).
+  void secretNoteSuggestionUsed() => _edit((s) {
+    final suggestion = s.secretNoteSuggestion;
+    if (suggestion == null) return s;
+    final current = s.secretNote.trim();
+    final note = current.isEmpty ? suggestion : '$current\n$suggestion';
+    return s.copyWith(
+      secretNote: String.fromCharCodes(note.runes.take(secretNoteMaxLength)),
+      secretNoteSuggestion: () => null,
+    );
+  });
+
+  void secretNoteSuggestionDismissed() =>
+      _edit((s) => s.copyWith(secretNoteSuggestion: () => null));
 
   /// "Continuer": deletes the rows no longer wanted, then writes the new
   /// and changed items (unchanged rows are not written). Each result is

@@ -2870,5 +2870,205 @@
         "type": "int"
       }
     }
+  },
+  "voiceConsentTitle": "Répondre à la voix",
+  "@voiceConsentTitle": {
+    "description": "Consentement voix : titre"
+  },
+  "voiceConsentIntro": "Avant d’activer le micro, voici ce que devient votre voix.",
+  "@voiceConsentIntro": {
+    "description": "Consentement voix : introduction"
+  },
+  "voiceConsentProvidersTitle": "Qui traite votre voix ?",
+  "@voiceConsentProvidersTitle": {
+    "description": "Consentement voix : titre de la section prestataires"
+  },
+  "voiceConsentProviders": "Votre voix est envoyée à OpenRouter, qui la confie à des fournisseurs de modèles d’IA : Mistral AI pour la transcription, Anthropic ou Google pour comprendre vos réponses et pour la voix de l’agent. Ces traitements peuvent avoir lieu hors de l’Union européenne.",
+  "@voiceConsentProviders": {
+    "description": "Consentement voix : prestataires qui traitent l’audio"
+  },
+  "voiceConsentRetentionTitle": "Ce qui est conservé",
+  "@voiceConsentRetentionTitle": {
+    "description": "Consentement voix : titre de la section conservation"
+  },
+  "voiceConsentRetention": "L’enregistrement audio n’est jamais conservé, ni sur votre téléphone ni sur nos serveurs. Le texte transcrit et les réponses retenues sont gardés avec votre dossier.",
+  "@voiceConsentRetention": {
+    "description": "Consentement voix : aucune conservation de l’audio"
+  },
+  "voiceConsentIdentity": "Aucune donnée d’identité (nom, téléphone, e-mail, adresse) n’est envoyée à ces fournisseurs.",
+  "@voiceConsentIdentity": {
+    "description": "Consentement voix : pas de données d’identité"
+  },
+  "voiceConsentScreen": "Vous pouvez à tout moment répondre à l’écran à la place.",
+  "@voiceConsentScreen": {
+    "description": "Consentement voix : mode écran toujours disponible"
+  },
+  "voiceConsentAccept": "J’accepte et j’active le micro",
+  "@voiceConsentAccept": {
+    "description": "Consentement voix : bouton accepter"
+  },
+  "voiceConsentDecline": "Continuer à l’écran",
+  "@voiceConsentDecline": {
+    "description": "Consentement voix : bouton refuser"
+  },
+  "voicePermissionDenied": "L’accès au micro est refusé. Autorisez-le dans les Réglages ou continuez à l’écran.",
+  "@voicePermissionDenied": {
+    "description": "Voix : micro refusé"
+  },
+  "voiceOpenSettings": "Réglages",
+  "@voiceOpenSettings": {
+    "description": "Voix : ouvrir les Réglages"
+  },
+  "voiceErrorEmpty": "Je n’ai rien entendu, réessayez.",
+  "@voiceErrorEmpty": {
+    "description": "Voix : rien entendu"
+  },
+  "voiceErrorNetwork": "Je n’ai pas pu traiter votre réponse. Vérifiez votre connexion et réessayez.",
+  "@voiceErrorNetwork": {
+    "description": "Voix : erreur réseau ou prestataire"
+  },
+  "voiceErrorQuota": "Vous avez atteint la limite d’utilisation de la voix pour aujourd’hui. Continuez à l’écran.",
+  "@voiceErrorQuota": {
+    "description": "Voix : quota atteint"
+  },
+  "voiceErrorLocked": "Votre dossier est envoyé : il ne peut plus être modifié.",
+  "@voiceErrorLocked": {
+    "description": "Voix : dossier verrouillé"
+  },
+  "voiceErrorTooLong": "Votre réponse est trop longue. Faites des phrases plus courtes.",
+  "@voiceErrorTooLong": {
+    "description": "Voix : enregistrement trop long"
+  },
+  "voiceErrorSave": "Vos réponses n’ont pas pu être enregistrées.",
+  "@voiceErrorSave": {
+    "description": "Voix : échec d’enregistrement des réponses"
+  },
+  "voiceRetry": "Réessayer",
+  "@voiceRetry": {
+    "description": "Voix : réessayer"
+  },
+  "voiceListening": "L’agent vous écoute…",
+  "@voiceListening": {
+    "description": "Voix : état écoute"
+  },
+  "voiceTranscribing": "Je retranscris…",
+  "@voiceTranscribing": {
+    "description": "Voix : état transcription"
+  },
+  "voiceThinking": "L’agent réfléchit…",
+  "@voiceThinking": {
+    "description": "Voix : état réflexion"
+  },
+  "voiceSpeaking": "L’agent vous répond…",
+  "@voiceSpeaking": {
+    "description": "Voix : état réponse"
+  },
+  "voicePaused": "En pause",
+  "@voicePaused": {
+    "description": "Voix : état pause"
+  },
+  "voiceDone": "J’ai tout ce qu’il me faut",
+  "@voiceDone": {
+    "description": "Voix : fin de l’audit"
+  },
+  "voiceFinishSpeaking": "J’ai fini",
+  "@voiceFinishSpeaking": {
+    "description": "Voix : bouton fin de phrase"
+  },
+  "voiceMuteAgent": "Couper la voix de l’agent",
+  "@voiceMuteAgent": {
+    "description": "Voix : couper la voix de l’agent"
+  },
+  "voiceUnmuteAgent": "Réactiver la voix de l’agent",
+  "@voiceUnmuteAgent": {
+    "description": "Voix : réactiver la voix de l’agent"
+  },
+  "voicePause": "Mettre en pause",
+  "@voicePause": {
+    "description": "Voix : pause"
+  },
+  "voiceResume": "Reprendre",
+  "@voiceResume": {
+    "description": "Voix : reprendre"
+  },
+  "voiceAuditTitle": "Audit technique",
+  "@voiceAuditTitle": {
+    "description": "Audit vocal (V4) : titre"
+  },
+  "voiceAuditBadge": "Vocal",
+  "@voiceAuditBadge": {
+    "description": "Audit vocal (V4) : pastille"
+  },
+  "voiceAuditClose": "Fermer",
+  "@voiceAuditClose": {
+    "description": "Audit vocal (V4) : fermer"
+  },
+  "voiceAuditIntro": "Bonjour ! Décrivez-moi votre bien : année de construction, surfaces, matériaux, toiture, chauffage… Je remplis le dossier au fur et à mesure.",
+  "@voiceAuditIntro": {
+    "description": "Audit vocal (V4) : première réplique de l’agent"
+  },
+  "voiceAuditPlanText": "Vous avez un plan ? Importez-le pour pré-remplir pièces et surfaces.",
+  "@voiceAuditPlanText": {
+    "description": "Audit vocal (V4) : carte plan"
+  },
+  "voiceAuditPlanImport": "Importer",
+  "@voiceAuditPlanImport": {
+    "description": "Audit vocal (V4) : importer un plan"
+  },
+  "voiceAuditPlanImported": "Plan ajouté à votre coffre",
+  "@voiceAuditPlanImported": {
+    "description": "Audit vocal (V4) : plan importé"
+  },
+  "voiceAuditPlanError": "Le plan n’a pas pu être importé.",
+  "@voiceAuditPlanError": {
+    "description": "Audit vocal (V4) : échec d’import du plan"
+  },
+  "voiceAuditScreenMode": "Passer en mode écran",
+  "@voiceAuditScreenMode": {
+    "description": "Audit vocal (V4) : mode écran"
+  },
+  "voiceAuditSkip": "Passer",
+  "@voiceAuditSkip": {
+    "description": "Audit vocal (V4) : passer"
+  },
+  "voiceAuditReview": "Vérifier mes réponses",
+  "@voiceAuditReview": {
+    "description": "Audit vocal (V4) : relecture sur V4b"
+  },
+  "voiceAuditStart": "Commencer",
+  "@voiceAuditStart": {
+    "description": "Audit vocal (V4) : démarrer l’écoute"
+  },
+  "voiceAuditFactsHint": "Touchez une information pour la corriger à l’écran.",
+  "@voiceAuditFactsHint": {
+    "description": "Audit vocal (V4) : aide sur les pastilles"
+  },
+  "lifestyleVoiceHint": "Parlez librement, l’agent classe vos réponses",
+  "@lifestyleVoiceHint": {
+    "description": "Cadre de vie (V6) : indication du micro"
+  },
+  "lifestyleVoiceTitle": "Parlez librement",
+  "@lifestyleVoiceTitle": {
+    "description": "Cadre de vie (V6) : titre de la feuille vocale"
+  },
+  "lifestyleVoiceIntro": "Parlez-moi du quartier : commerces, écoles, transports, calme, voisinage… Je classe vos réponses en atouts et points de vigilance.",
+  "@lifestyleVoiceIntro": {
+    "description": "Cadre de vie (V6) : première réplique de l’agent"
+  },
+  "lifestyleVoiceAdded": "Ajouté à la voix",
+  "@lifestyleVoiceAdded": {
+    "description": "Cadre de vie (V6) : étiquette d’un élément ajouté à la voix"
+  },
+  "lifestyleVoiceSecretSuggestion": "Suggestion pour la note secrète :",
+  "@lifestyleVoiceSecretSuggestion": {
+    "description": "Cadre de vie (V6) : suggestion de note secrète"
+  },
+  "lifestyleVoiceSecretUse": "Utiliser",
+  "@lifestyleVoiceSecretUse": {
+    "description": "Cadre de vie (V6) : utiliser la suggestion"
+  },
+  "lifestyleVoiceClose": "Terminer",
+  "@lifestyleVoiceClose": {
+    "description": "Cadre de vie (V6) : fermer la feuille vocale"
   }
 }
