@@ -48,13 +48,15 @@
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSCameraUsageDescription</key>
-	<string>L’appareil photo permet de photographier les documents de votre bien (titre de propriété, factures, diagnostics…).</string>
+	<string>L’appareil photo permet de photographier les pièces et les documents de votre bien (plan, titre de propriété, factures…).</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Votre position permet de retrouver l’adresse et la parcelle cadastrale de votre bien.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Le micro vous permet de répondre à l’agent Realesty à la voix. Votre voix est transcrite par nos prestataires et n’est pas conservée.</string>
+	<key>NSMotionUsageDescription</key>
+	<string>Realesty utilise l’inclinaison du téléphone pour vous aider à prendre des photos bien droites.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Vos photos permettent d’importer les documents de votre bien dans votre dossier.</string>
+	<string>Vos photos permettent d’ajouter à votre dossier les photos de vos pièces, votre plan et les documents de votre bien.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

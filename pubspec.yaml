@@ -13,6 +13,7 @@ dependencies:
   auth_repository:
     path: packages/auth_repository
   bloc: ^9.2.1
+  camera: ^0.12.1
   cunning_document_scanner: ^3.0.3
   equatable: ^3.0.0
   file_selector: ^1.1.0
@@ -39,6 +40,7 @@ dependencies:
     path: packages/property_repository
   sale_repository:
     path: packages/sale_repository
+  sensors_plus: ^7.1.1
   shared_preferences: ^2.5.5
   supabase_flutter: ^2.18.0
   url_launcher: ^6.3.2

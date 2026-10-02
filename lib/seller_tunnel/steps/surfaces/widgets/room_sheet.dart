@@ -24,17 +24,27 @@ final class RoomSheetDeleted extends RoomSheetResult {
   const new();
 }
 
+/// The room was entered and its photos are to be opened ("Photos de la
+/// pièce", EPIC-15).
+final class RoomSheetPhotos extends RoomSheetResult {
+  const new(this.room);
+
+  final RoomInput room;
+}
+
 /// Opens the room form (not designed: a bottom sheet). Returns null when
 /// dismissed.
 ///
 /// Edits [initial] (which can then also be deleted) when given, adds a
 /// room on [defaultLevel] otherwise. [otherNames] are the names of the
-/// other rooms (to number the bedrooms).
+/// other rooms (to number the bedrooms). With [photosCount], the room has
+/// a "Photos de la pièce" button (EPIC-15).
 Future<RoomSheetResult?> showRoomSheet(
   BuildContext context, {
   RoomInput? initial,
   RoomLevel defaultLevel = RoomLevel.groundFloor,
   List<String> otherNames = const [],
+  int? photosCount,
 }) {
   return showModalBottomSheet<RoomSheetResult>(
     context: context,
@@ -44,6 +54,7 @@ Future<RoomSheetResult?> showRoomSheet(
       initial: initial,
       defaultLevel: defaultLevel,
       otherNames: otherNames,
+      photosCount: photosCount,
     ),
   );
 }
@@ -55,12 +66,16 @@ class RoomSheet extends StatefulWidget {
     this.initial,
     this.defaultLevel = RoomLevel.groundFloor,
     this.otherNames = const [],
+    this.photosCount,
     super.key,
   });
 
   final RoomInput? initial;
   final RoomLevel defaultLevel;
   final List<String> otherNames;
+
+  /// Photos of the room; null hides the photos button.
+  final int? photosCount;
 
   /// Maximum length of a room name (`rooms.name`).
   static const nameMaxLength = 60;
@@ -115,10 +130,14 @@ class _RoomSheetState extends State<RoomSheet> {
     return null;
   }
 
-  void _submit() {
+  void _submit() => _finish(RoomSheetSaved.new);
+
+  /// Closes the sheet with [result] of the answers when they are valid;
+  /// shows the errors otherwise.
+  void _finish(RoomSheetResult Function(RoomInput room) result) {
     if (_nameError == null && _areaError == null) {
       Navigator.of(context).pop(
-        RoomSheetSaved(
+        result(
           RoomInput(
             name: _name.text.trim(),
             level: _level,
@@ -319,6 +338,21 @@ class _RoomSheetState extends State<RoomSheet> {
               label: isEdit ? l10n.surfacesSheetSave : l10n.surfacesSheetAdd,
               onPressed: _submit,
             ),
+            if (widget.photosCount case final count?)
+              RealestyButton(
+                label: l10n.surfacesSheetPhotos(count),
+                variant: RealestyButtonVariant.secondary,
+                leadingIcon: RealestyIcons.camera,
+                onPressed: () => _finish(RoomSheetPhotos.new),
+              ),
+            if (isEdit && (widget.photosCount ?? 0) > 0)
+              Text(
+                l10n.surfacesSheetDeletePhotos(widget.photosCount!),
+                textAlign: TextAlign.center,
+                style: RealestyTextStyles.listSubtitle.copyWith(
+                  color: c.texteDiscret,
+                ),
+              ),
             if (isEdit)
               RealestyButton(
                 label: l10n.surfacesSheetDelete,

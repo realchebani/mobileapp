@@ -64,19 +64,26 @@ final class DocumentRow extends Equatable {
 }
 
 /// The documents expected for a property, their statuses and the
-/// transparency score (v1, computed in the app).
+/// transparency score (v1, computed in the app). The photos of the main
+/// rooms count in the score and are needed to send the dossier (EPIC-15).
 final class DocumentChecklist extends Equatable {
   const new _({
     required this.rows,
     required this.sanitationRule,
     required this.score,
     required this.nextBestKind,
+    this.missingPhotoRooms = const [],
+    this.photosNextBest = false,
   });
 
-  /// Computes the checklist of [property] given its [documents]; the
-  /// listed documents and the answers of the score depend on its type
-  /// (`PropertyTypeProfile`).
-  factory of(Property property, List<PropertyDocument> documents) {
+  /// Computes the checklist of [property] given its [documents] and its
+  /// [rooms]; the listed documents, the answers of the score and the
+  /// photos needed depend on its type (`PropertyTypeProfile`).
+  factory of(
+    Property property,
+    List<PropertyDocument> documents, {
+    List<Room> rooms = const [],
+  }) {
     final profile = PropertyTypeProfile.of(property.propertyType);
     final listed = profile.documentKinds;
     final sanitationRule = switch (property.sanitation) {
@@ -116,7 +123,7 @@ final class DocumentChecklist extends Equatable {
 
     // Weighted completeness of the documents and of the answers.
     var expected = 0;
-    var provided = 0;
+    var provided = 0.0;
     DocumentKind? nextBest;
     var nextBestWeight = 0;
     for (final row in rows) {
@@ -138,6 +145,29 @@ final class DocumentChecklist extends Equatable {
         nextBestWeight = weight;
       }
     }
+    // The photos of the main rooms (EPIC-15), as one more document.
+    final mainRooms = profile.requiresRoomPhotos
+        ? [
+            for (final room in rooms)
+              if (room.isMain) room,
+          ]
+        : const <Room>[];
+    final missingPhotoRooms = [
+      for (final room in mainRooms)
+        if (room.photosCount == 0) room,
+    ];
+    var photosNextBest = false;
+    if (mainRooms.isNotEmpty) {
+      expected += photosWeight;
+      provided +=
+          photosWeight *
+          (mainRooms.length - missingPhotoRooms.length) /
+          mainRooms.length;
+      if (missingPhotoRooms.isNotEmpty && photosWeight > nextBestWeight) {
+        nextBest = null;
+        photosNextBest = true;
+      }
+    }
     final answers = profile.scoredAnswers(property);
     final answered = answers.where((answered) => answered).length;
     final score =
@@ -149,8 +179,14 @@ final class DocumentChecklist extends Equatable {
       sanitationRule: sanitationRule,
       score: score.round().clamp(0, 100),
       nextBestKind: nextBest,
+      missingPhotoRooms: missingPhotoRooms,
+      photosNextBest: photosNextBest,
     );
   }
+
+  /// Weight of the photos of the main rooms in the documents part of the
+  /// score (proportional to the main rooms with a photo).
+  static const photosWeight = 15;
 
   /// Kinds required for every property (the sanitation report is required
   /// when the sanitation is individual). The diagnostics are optional: they
@@ -193,6 +229,14 @@ final class DocumentChecklist extends Equatable {
 
   /// The missing document that would raise the score the most, if any.
   final DocumentKind? nextBestKind;
+
+  /// The main rooms without a photo (EPIC-15): the dossier can only be
+  /// sent once there are none.
+  final List<Room> missingPhotoRooms;
+
+  /// Whether the photos of the main rooms would raise the score the most
+  /// (then [nextBestKind] is null).
+  final bool photosNextBest;
 
   /// Required documents not provided.
   int get missingCount =>
@@ -246,5 +290,12 @@ final class DocumentChecklist extends Equatable {
   }
 
   @override
-  List<Object?> get props => [rows, sanitationRule, score, nextBestKind];
+  List<Object?> get props => [
+    rows,
+    sanitationRule,
+    score,
+    nextBestKind,
+    missingPhotoRooms,
+    photosNextBest,
+  ];
 }

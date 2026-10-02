@@ -84,6 +84,7 @@ void main() {
       (invocation) async => invocation.positionalArguments.single as Room,
     );
     when(() => repository.deleteRoom(any())).thenAnswer((_) async {});
+    when(() => repository.deleteRoomPhotos(any())).thenAnswer((_) async {});
   });
 
   Future<MockSellerTunnelCubit> pump(

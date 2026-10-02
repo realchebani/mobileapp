@@ -64,6 +64,7 @@ class DocumentsPage extends StatelessWidget {
             openUrl: openUrl,
             property: tunnel.property!,
             documents: tunnel.documents,
+            rooms: tunnel.rooms,
           );
         },
         child: const DocumentsView(),
@@ -118,6 +119,9 @@ class _DocumentsViewState extends State<DocumentsView> {
     for (final kind in DocumentChecklist.submissionKinds) kind: GlobalKey(),
   };
 
+  /// The message of the missing photos (EPIC-15), to reveal it.
+  final GlobalKey _photosKey = GlobalKey();
+
   /// "Envoyer mon dossier à l’expert": once the previous steps are done
   /// and with the title deed and the identity document (other missing
   /// documents can be asked for later).
@@ -143,15 +147,25 @@ class _DocumentsViewState extends State<DocumentsView> {
       return;
     }
     final blocking = checklist.blockingKinds;
-    if (blocking.isNotEmpty) {
+    if (blocking.isNotEmpty || checklist.missingPhotoRooms.isNotEmpty) {
       context.read<DocumentsCubit>().submissionBlocked();
-      final target = _rowKeys[blocking.first]!.currentContext;
-      if (target != null) {
-        Scrollable.ensureVisible(
-          target,
-          duration: RealestyMotion.page,
-          alignment: 0.3,
-        );
+      final key = blocking.isEmpty ? _photosKey : _rowKeys[blocking.first]!;
+      void reveal() {
+        final target = key.currentContext;
+        if (target != null) {
+          Scrollable.ensureVisible(
+            target,
+            duration: RealestyMotion.page,
+            alignment: 0.3,
+          );
+        }
+      }
+
+      // The message of the photos shows from the next frame on.
+      if (key.currentContext == null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) => reveal());
+      } else {
+        reveal();
       }
       return;
     }
@@ -260,9 +274,11 @@ class _DocumentsViewState extends State<DocumentsView> {
         actionBar: AgentActionBar(
           hint: state.isLocked
               ? null
-              : checklist.canSubmit
-              ? l10n.documentsActionHint(checklist.optionalMissingCount)
-              : l10n.documentsActionHintBlocked(checklist.optionalMissingCount),
+              : !checklist.canSubmit
+              ? l10n.documentsActionHintBlocked(checklist.optionalMissingCount)
+              : checklist.missingPhotoRooms.isNotEmpty
+              ? l10n.documentsActionHintPhotos
+              : l10n.documentsActionHint(checklist.optionalMissingCount),
           // The full label does not fit with large text.
           label: MediaQuery.textScalerOf(context).scale(1) > 1.15
               ? l10n.documentsSubmitShort
@@ -284,12 +300,44 @@ class _DocumentsViewState extends State<DocumentsView> {
             ),
           TransparencyScoreCard(
             score: checklist.score,
-            hint: nextBest == null
+            hint: checklist.photosNextBest
+                ? l10n.documentsScorePhotosHint
+                : nextBest == null
                 ? l10n.documentsScoreComplete
                 : l10n.documentsScoreHint(
                     l10n.documentKindInSentence(nextBest),
                   ),
           ),
+          if (state.showsSubmissionErrors &&
+              checklist.missingPhotoRooms.isNotEmpty)
+            Column(
+              key: _photosKey,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              spacing: RealestySpacing.xs,
+              children: [
+                Semantics(
+                  liveRegion: true,
+                  child: Text(
+                    l10n.documentsPhotosMissing(
+                      [
+                        for (final room in checklist.missingPhotoRooms)
+                          room.name,
+                      ].join(', '),
+                    ),
+                    style: RealestyTextStyles.fieldError.copyWith(
+                      color: context.realestyColors.erreur,
+                    ),
+                  ),
+                ),
+                RealestyButton(
+                  label: l10n.documentsPhotosAction,
+                  variant: RealestyButtonVariant.secondary,
+                  leadingIcon: RealestyIcons.camera,
+                  onPressed: () =>
+                      context.goToTunnelStep(SellerTunnelStep.surfaces),
+                ),
+              ],
+            ),
           if (state.showsSubmissionErrors && !checklist.canSubmit)
             Semantics(
               liveRegion: true,

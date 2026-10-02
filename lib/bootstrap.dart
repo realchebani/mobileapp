@@ -7,6 +7,7 @@ import 'package:bloc/bloc.dart';
 import 'package:flutter/widgets.dart';
 import 'package:geo_repository/geo_repository.dart';
 import 'package:mobileapp/app/app.dart';
+import 'package:mobileapp/seller_tunnel/photos/photo_services.dart';
 import 'package:mobileapp/seller_tunnel/voice/voice_services.dart';
 import 'package:mobileapp/ui/ui.dart';
 import 'package:profile_repository/profile_repository.dart';
@@ -26,6 +27,7 @@ typedef AppBuilder = FutureOr<Widget> Function({
   required ValuationRepository valuationRepository,
   required NotificationRepository notificationRepository,
   VoiceServices? voiceServices,
+  PhotoServices? photoServices,
 });
 
 Future<void> bootstrap(AppBuilder builder) async {
@@ -78,6 +80,11 @@ Future<void> bootstrap(AppBuilder builder) async {
         createRecorder: VoiceRecorder.new,
         createPlayer: VoicePlayer.new,
         preferences: VoicePreferences(preferences: preferences),
+      ),
+      // Room photos (EPIC-15): the device camera and library, the vision AI
+      // with the consent remembered on the device.
+      photoServices: PhotoServices(
+        preferences: PhotoPreferences(preferences: preferences),
       ),
     ),
   );

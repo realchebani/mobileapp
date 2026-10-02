@@ -18,6 +18,7 @@ Statuts : ✅ Terminé · 🚧 En cours · 📋 À faire
 | [EPIC-12](epics/EPIC-12-back-office-expert.md) | Back-office expert (certification web) | 📋 |
 | [EPIC-14](epics/EPIC-14-voix-etendue.md) | Voix étendue à tout le tunnel vendeur (dictée de pièces) | 📋 |
 | [EPIC-13](epics/EPIC-13-multi-biens.md) | Plusieurs biens & lots de vente | 📋 |
+| [EPIC-15](epics/EPIC-15-photos-du-bien.md) | Photos du bien (pièces, IA de vision, lecture de plan) | 🚧 |
 
 ## Plans d'implémentation
 
@@ -33,6 +34,7 @@ Chaque chantier commence par un plan, versionné dans [`plans/`](plans/) (`AAAA-
 | 2026-10-02 | [Voix étendue à tout le tunnel](plans/2026-10-02-voix-etendue.md) (questions ouvertes, après EPIC-13) | EPIC-14 |
 | 2026-10-02 | [Plusieurs biens & lots de vente](plans/2026-10-02-multi-biens.md) (validé, livré) | EPIC-13 |
 | 2026-10-02 | [Étude : capture visuelle du bien](plans/2026-10-02-capture-visuelle-etude.md) (questions ouvertes) | — |
+| 2026-10-02 | [Photos du bien](plans/2026-10-02-photos-du-bien.md) (livré, à essayer sur l’iPhone) | EPIC-15 |
 | 2026-10-03 | [Formules & mise en vente](plans/2026-10-03-offres-et-mise-en-vente.md) (questions ouvertes) | EPIC-08 |
 | 2026-10-03 | [Coffre-fort & compte](plans/2026-10-03-coffre-fort-et-compte.md) (questions ouvertes) | EPIC-11 |
 | 2026-10-03 | [Back-office expert](plans/2026-10-03-back-office-expert.md) (questions ouvertes) | EPIC-12 |

@@ -8,6 +8,7 @@ import 'package:mobileapp/app/app.dart';
 import 'package:mobileapp/l10n/l10n.dart';
 import 'package:mobileapp/login/login.dart';
 import 'package:mobileapp/profile/profile.dart';
+import 'package:mobileapp/seller_tunnel/photos/photo_services.dart';
 import 'package:mobileapp/ui/ui.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:profile_repository/profile_repository.dart';
@@ -36,10 +37,12 @@ extension PumpApp on WidgetTester {
     LoginCubit? loginCubit,
     ProfileCubit? profileCubit,
     GoRouter? goRouter,
+    PhotoServices? photoServices,
     Locale locale = const Locale('fr'),
   }) {
     return pumpWidget(
       _AppProviders(
+        photoServices: photoServices,
         authRepository: authRepository,
         profileRepository: profileRepository,
         propertyRepository: propertyRepository,
@@ -115,9 +118,11 @@ class _AppProviders extends StatelessWidget {
     this.appBloc,
     this.loginCubit,
     this.profileCubit,
+    this.photoServices,
   });
 
   final Widget child;
+  final PhotoServices? photoServices;
   final AuthRepository? authRepository;
   final ProfileRepository? profileRepository;
   final PropertyRepository? propertyRepository;
@@ -153,6 +158,9 @@ class _AppProviders extends StatelessWidget {
         ),
         RepositoryProvider<NotificationRepository>.value(
           value: notificationRepository ?? MockNotificationRepository(),
+        ),
+        RepositoryProvider<PhotoServices>.value(
+          value: photoServices ?? const PhotoServices(),
         ),
       ],
       child: MultiBlocProvider(

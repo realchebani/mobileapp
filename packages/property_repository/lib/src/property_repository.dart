@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:property_repository/property_repository.dart';
@@ -100,6 +101,32 @@ final class LotFrozenFailure extends PropertyFailure {
 
   @override
   String get _name => 'LotFrozenFailure';
+}
+
+/// Thrown when a room already has 12 photos, or the property 150
+/// (EPIC-15, enforced by the database).
+final class RoomPhotoLimitFailure extends PropertyFailure {
+  const new([super.error]);
+
+  @override
+  String get _name => 'RoomPhotoLimitFailure';
+}
+
+/// Thrown when the daily quota of the vision AI is used up (HTTP 429).
+final class VisionQuotaFailure extends PropertyFailure {
+  const new([super.error]);
+
+  @override
+  String get _name => 'VisionQuotaFailure';
+}
+
+/// Thrown when the vision AI cannot answer (analysis of a photo, reading
+/// of a plan).
+final class VisionRequestFailure extends PropertyFailure {
+  const new([super.error]);
+
+  @override
+  String get _name => 'VisionRequestFailure';
 }
 
 /// {@template property_repository}
@@ -231,7 +258,17 @@ class PropertyRepository {
         paths.addAll([for (final file in files) '$folder/${file.name}']);
         if (files.length < _filesPage) break;
       }
-      if (paths.isNotEmpty) await bucket.remove(paths);
+      // The room photos live in sub-folders, which list() does not walk.
+      final photos = await _client
+          .from(_roomPhotos)
+          .select('storage_path')
+          .eq('property_id', property.id);
+      paths.addAll([for (final row in photos) row['storage_path']! as String]);
+      for (var start = 0; start < paths.length; start += _filesPage) {
+        await bucket.remove(
+          paths.sublist(start, min(start + _filesPage, paths.length)),
+        );
+      }
       final deleted = await _client
           .from(_properties)
           .delete()
@@ -610,6 +647,256 @@ class PropertyRepository {
           .createSignedUrl(storagePath, expiresIn.inSeconds);
     } on Object catch (error, stackTrace) {
       Error.throwWithStackTrace(PropertyLoadFailure(error), stackTrace);
+    }
+  }
+
+  // ---------------------------------------------------------------------
+  // Room photos and vision AI (EPIC-15).
+  // ---------------------------------------------------------------------
+
+  static const _roomPhotos = 'room_photos';
+
+  /// Name of the Edge Function analysing a room photo.
+  static const visionRoomFunction = 'vision-room';
+
+  /// Name of the Edge Function reading a floor plan.
+  static const planReaderFunction = 'plan-reader';
+
+  /// Version of the consent to the vision AI the seller accepted in the
+  /// app; the vision functions refuse a request without it.
+  static const visionConsent = 'photo_analysis_v1';
+
+  /// Where the photo [photoId] of the room [roomId] is stored.
+  static String roomPhotoPath({
+    required String ownerId,
+    required String propertyId,
+    required String roomId,
+    required String photoId,
+  }) => '$ownerId/$propertyId/photos/$roomId/$photoId.jpg';
+
+  /// The photos of [propertyId] (only those of [roomId] when given), in
+  /// their order.
+  ///
+  /// Throws [PropertyLoadFailure] on error.
+  Future<List<RoomPhoto>> getRoomPhotos(
+    String propertyId, {
+    String? roomId,
+  }) async {
+    try {
+      var query = _client
+          .from(_roomPhotos)
+          .select()
+          .eq('property_id', propertyId);
+      if (roomId != null) query = query.eq('room_id', roomId);
+      final rows = await query
+          .order('sort_order', ascending: true)
+          .order('created_at', ascending: true);
+      return [for (final row in rows) RoomPhoto.fromJson(row)];
+    } on Object catch (error, stackTrace) {
+      Error.throwWithStackTrace(PropertyLoadFailure(error), stackTrace);
+    }
+  }
+
+  /// Uploads the JPEG [bytes] as the photo [photo] (whose id the app
+  /// chose, see [roomPhotoPath]) and records it; returns the saved row.
+  ///
+  /// Retry-safe: the file is overwritten and a row already recorded (an
+  /// earlier answer was lost) is returned as is. Throws
+  /// [DocumentUploadFailure] when the upload fails, [RoomPhotoLimitFailure]
+  /// when the room or the property has too many photos and
+  /// [PropertySaveFailure] when recording fails. The file is removed only
+  /// when the database refused the row (an answer lost on the network may
+  /// hide a row that was recorded: see [discardRoomPhoto]).
+  Future<RoomPhoto> uploadRoomPhoto(
+    RoomPhoto photo, {
+    required Uint8List bytes,
+  }) async {
+    final bucket = _client.storage.from(documentsBucket);
+    try {
+      await bucket.uploadBinary(
+        photo.storagePath,
+        bytes,
+        fileOptions: const FileOptions(contentType: 'image/jpeg', upsert: true),
+      );
+    } on Object catch (error, stackTrace) {
+      Error.throwWithStackTrace(DocumentUploadFailure(error), stackTrace);
+    }
+    try {
+      final row = await _client
+          .from(_roomPhotos)
+          .insert(photo.toInsertJson())
+          .select()
+          .single();
+      return RoomPhoto.fromJson(row);
+    } on Object catch (error, stackTrace) {
+      if (error is PostgrestException && error.code == _uniqueViolation) {
+        final stored = await getRoomPhotos(
+          photo.propertyId,
+          roomId: photo.roomId,
+        ).then<List<RoomPhoto>?>((photos) => photos, onError: (_) => null);
+        final same = stored?.where((p) => p.id == photo.id);
+        if (same != null && same.isNotEmpty) return same.first;
+      }
+      if (error is PostgrestException) {
+        try {
+          await bucket.remove([photo.storagePath]);
+        } on Object {
+          // Best effort: an orphan file only wastes storage.
+        }
+      }
+      Error.throwWithStackTrace(
+        error is PostgrestException &&
+                error.message == 'room_photo_limit_reached'
+            ? RoomPhotoLimitFailure(error)
+            : PropertySaveFailure(error),
+        stackTrace,
+      );
+    }
+  }
+
+  /// Deletes [photo]: its row, then its file — only when the row was
+  /// actually deleted (a locked dossier keeps its photos).
+  ///
+  /// Throws [PropertyDeleteFailure] on error.
+  Future<void> deleteRoomPhoto(RoomPhoto photo) async {
+    try {
+      final deleted = await _client
+          .from(_roomPhotos)
+          .delete()
+          .eq('id', photo.id)
+          .select('id');
+      if (deleted.isEmpty) return;
+      await _client.storage.from(documentsBucket).remove([photo.storagePath]);
+    } on Object catch (error, stackTrace) {
+      Error.throwWithStackTrace(PropertyDeleteFailure(error), stackTrace);
+    }
+  }
+
+  /// Gives up [photo], whose upload failed or was not confirmed: its row if
+  /// it was recorded anyway, and its file (best effort, never throws).
+  Future<void> discardRoomPhoto(RoomPhoto photo) async {
+    try {
+      await _client.from(_roomPhotos).delete().eq('id', photo.id);
+    } on Object {
+      // Best effort: the row may not exist.
+    }
+    try {
+      await _client.storage.from(documentsBucket).remove([photo.storagePath]);
+    } on Object {
+      // Best effort: an orphan file only wastes storage.
+    }
+  }
+
+  /// Deletes every photo of the room [roomId] (before the room itself):
+  /// their rows, then the files of the rows deleted.
+  ///
+  /// Throws [PropertyDeleteFailure] on error.
+  Future<void> deleteRoomPhotos(String roomId) async {
+    try {
+      final deleted = await _client
+          .from(_roomPhotos)
+          .delete()
+          .eq('room_id', roomId)
+          .select('storage_path');
+      if (deleted.isEmpty) return;
+      await _client.storage.from(documentsBucket).remove([
+        for (final row in deleted) row['storage_path']! as String,
+      ]);
+    } on Object catch (error, stackTrace) {
+      Error.throwWithStackTrace(PropertyDeleteFailure(error), stackTrace);
+    }
+  }
+
+  /// Stores the order of [photos] (their position in the list); returns
+  /// them with their new `sort_order`. Only the photos whose order changes
+  /// are written.
+  ///
+  /// Throws [PropertySaveFailure] on error.
+  Future<List<RoomPhoto>> reorderRoomPhotos(List<RoomPhoto> photos) async {
+    try {
+      return [
+        for (final (index, photo) in photos.indexed)
+          if (photo.sortOrder == index)
+            photo
+          else
+            RoomPhoto.fromJson(
+              await _client
+                  .from(_roomPhotos)
+                  .update({'sort_order': index})
+                  .eq('id', photo.id)
+                  .select()
+                  .single(),
+            ),
+      ];
+    } on Object catch (error, stackTrace) {
+      Error.throwWithStackTrace(PropertySaveFailure(error), stackTrace);
+    }
+  }
+
+  /// Temporary URLs of the files at [paths] (photos), by path; a file that
+  /// cannot be signed is left out.
+  ///
+  /// Throws [PropertyLoadFailure] on error.
+  Future<Map<String, String>> getPhotoUrls(
+    List<String> paths, {
+    Duration expiresIn = const Duration(hours: 1),
+  }) async {
+    if (paths.isEmpty) return const {};
+    try {
+      final results = await _client.storage
+          .from(documentsBucket)
+          .createSignedUrlsResult(paths, expiresIn.inSeconds);
+      return {
+        for (final result in results)
+          if (result case SignedUrlSuccess(:final path, :final signedUrl))
+            path: signedUrl,
+      };
+    } on Object catch (error, stackTrace) {
+      Error.throwWithStackTrace(PropertyLoadFailure(error), stackTrace);
+    }
+  }
+
+  /// Asks the vision AI to analyse the photo [photoId] (once: a stored
+  /// analysis is returned as is) and returns its suggestions.
+  ///
+  /// Throws [VisionQuotaFailure] when the daily quota is used up and
+  /// [VisionRequestFailure] on any other error.
+  Future<RoomPhotoAnalysis> analyzeRoomPhoto(String photoId) async {
+    final data = await _invokeVision(visionRoomFunction, {'photo_id': photoId});
+    return RoomPhotoAnalysis.fromJson(
+      data['analysis']! as Map<String, dynamic>,
+    );
+  }
+
+  /// Asks the vision AI to read the floor plan [documentId] (a `plan`
+  /// document, JPEG or PNG) and returns the rooms printed on it.
+  ///
+  /// Throws [VisionQuotaFailure] when the daily quota is used up and
+  /// [VisionRequestFailure] on any other error.
+  Future<PlanReading> readPlan(String documentId) async {
+    final data = await _invokeVision(planReaderFunction, {
+      'document_id': documentId,
+    });
+    return PlanReading.fromJson(data['reading']! as Map<String, dynamic>);
+  }
+
+  Future<Map<String, dynamic>> _invokeVision(
+    String function,
+    Map<String, Object?> body,
+  ) async {
+    try {
+      final response = await _client.functions.invoke(
+        function,
+        body: {...body, 'consent': visionConsent},
+      );
+      return response.data as Map<String, dynamic>;
+    } on Object catch (error, stackTrace) {
+      Error.throwWithStackTrace(
+        error is FunctionException && error.status == 429
+            ? VisionQuotaFailure(error)
+            : VisionRequestFailure(error),
+        stackTrace,
+      );
     }
   }
 

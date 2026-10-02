@@ -1206,21 +1206,13 @@
   "@methodAgentMessage": {
     "description": "V5 · question de l’agent sur la méthode de relevé"
   },
-  "methodScanTitle": "Scanner avec la caméra",
-  "@methodScanTitle": {
-    "description": "V5 · carte méthode scan"
-  },
-  "methodScanDescription": "Surfaces, volumes et revêtements détectés pendant que vous filmez chaque pièce à 360°.",
-  "@methodScanDescription": {
-    "description": "V5 · description de la méthode scan"
-  },
-  "methodPlanTitle": "Importer ou photographier un plan",
+  "methodPlanTitle": "Lire un plan",
   "@methodPlanTitle": {
-    "description": "V5 · carte méthode plan"
+    "description": "V5 · carte lecture de plan · titre (EPIC-15)"
   },
-  "methodPlanDescription": "L’IA extrait la liste des pièces et leurs surfaces pour pré-remplir le tableau.",
+  "methodPlanDescription": "Photographiez votre plan : l’IA relève les pièces et les surfaces imprimées, vous vérifiez chaque ligne.",
   "@methodPlanDescription": {
-    "description": "V5 · description de la méthode plan"
+    "description": "V5 · carte lecture de plan · description (EPIC-15)"
   },
   "methodManualTitle": "Saisir manuellement",
   "@methodManualTitle": {
@@ -1230,13 +1222,9 @@
   "@methodManualDescription": {
     "description": "V5 · description de la saisie manuelle"
   },
-  "methodSoonBadge": "Bientôt",
-  "@methodSoonBadge": {
-    "description": "V5 · badge des méthodes pas encore disponibles"
-  },
-  "methodNote": "Les mesures réalisées au téléphone sont estimatives. Elles sont distinguées des surfaces issues d’un plan et vérifiées par l’expert.",
+  "methodNote": "Les pièces lues sur un plan restent à vérifier : elles sont distinguées des pièces saisies et contrôlées par l’expert.",
   "@methodNote": {
-    "description": "V5 · note sur les mesures estimatives"
+    "description": "V5 · note sous les méthodes (EPIC-15 : la carte caméra est retirée)"
   },
   "surfacesAgentMessage": "{count, plural, =0{Et voilà ! Nous obtenons {total} m² habitables. Tout vous semble correct ?} =1{Et voilà ! Nous obtenons {total} m² habitables répartis sur 1 pièce principale. Tout vous semble correct ?} other{Et voilà ! Nous obtenons {total} m² habitables répartis sur {count} pièces principales. Tout vous semble correct ?}}",
   "@surfacesAgentMessage": {
@@ -4864,5 +4852,718 @@
   "voiceDictationCancel": "Annuler",
   "@voiceDictationCancel": {
     "description": "Dictée simple : bouton qui ferme la feuille sans rien garder"
+  },
+  "photosConsentTitle": "Analyse de vos photos par l’IA",
+  "@photosConsentTitle": {
+    "description": "EPIC-15 · consentement IA de vision · titre"
+  },
+  "photosConsentIntro": "Avec votre accord, une IA regarde vos photos pour vous proposer le type de pièce, le revêtement de sol et le vitrage, et signaler ce qui gênerait l’expert ou l’annonce. Rien n’est appliqué sans vous.",
+  "@photosConsentIntro": {
+    "description": "EPIC-15 · consentement IA de vision · introduction"
+  },
+  "photosConsentProvidersTitle": "Qui voit vos photos",
+  "@photosConsentProvidersTitle": {
+    "description": "EPIC-15 · consentement · titre de la section fournisseurs"
+  },
+  "photosConsentProviders": "Les photos, et les plans que vous photographiez, sont envoyés via OpenRouter à un fournisseur de modèle d’IA qui ne les conserve pas et ne s’en sert pas pour s’entraîner.",
+  "@photosConsentProviders": {
+    "description": "EPIC-15 · consentement · fournisseurs"
+  },
+  "photosConsentNoFiguresTitle": "Jamais de mesure",
+  "@photosConsentNoFiguresTitle": {
+    "description": "EPIC-15 · consentement · titre de la section chiffres"
+  },
+  "photosConsentNoFigures": "L’IA ne calcule aucune surface ni aucune dimension : seuls vos chiffres et ceux imprimés sur vos plans comptent.",
+  "@photosConsentNoFigures": {
+    "description": "EPIC-15 · consentement · pas de mesure"
+  },
+  "photosConsentPeople": "Évitez les personnes dans le champ : il n’y a pas de floutage automatique. Une photo où quelqu’un apparaît vous sera signalée.",
+  "@photosConsentPeople": {
+    "description": "EPIC-15 · consentement · personnes dans le champ"
+  },
+  "photosConsentKept": "Vos photos restent dans votre dossier pour l’expert ; vous pouvez les supprimer tant que le dossier n’est pas envoyé.",
+  "@photosConsentKept": {
+    "description": "EPIC-15 · consentement · conservation"
+  },
+  "photosConsentAccept": "J’accepte l’analyse",
+  "@photosConsentAccept": {
+    "description": "EPIC-15 · consentement · accepter"
+  },
+  "photosConsentDecline": "Continuer sans l’IA",
+  "@photosConsentDecline": {
+    "description": "EPIC-15 · consentement · refuser"
+  },
+  "photosCameraInstruction": "Personne dans le champ · Allumez et ouvrez les rideaux",
+  "@photosCameraInstruction": {
+    "description": "EPIC-15 · prise de vue · consigne en haut de l’écran"
+  },
+  "photosCameraClose": "Fermer l’appareil photo",
+  "@photosCameraClose": {
+    "description": "EPIC-15 · prise de vue · bouton fermer (accessibilité)"
+  },
+  "photosCameraShutter": "Prendre la photo",
+  "@photosCameraShutter": {
+    "description": "EPIC-15 · prise de vue · déclencheur (accessibilité)"
+  },
+  "photosCameraKept": "{count, plural, =0{Aucune photo prise} =1{1 photo prise} other{{count} photos prises}}",
+  "@photosCameraKept": {
+    "description": "EPIC-15 · prise de vue · nombre de photos gardées",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "photosCameraLevelOk": "Téléphone droit",
+  "@photosCameraLevelOk": {
+    "description": "EPIC-15 · prise de vue · niveau correct"
+  },
+  "photosCameraLevelTilted": "Redressez le téléphone",
+  "@photosCameraLevelTilted": {
+    "description": "EPIC-15 · prise de vue · téléphone penché"
+  },
+  "photosCameraDenied": "Autorisez l’appareil photo dans les Réglages pour photographier vos pièces.",
+  "@photosCameraDenied": {
+    "description": "EPIC-15 · prise de vue · accès refusé"
+  },
+  "photosCameraSettings": "Ouvrir les Réglages",
+  "@photosCameraSettings": {
+    "description": "EPIC-15 · prise de vue · bouton Réglages"
+  },
+  "photosCameraUnavailable": "L’appareil photo n’est pas disponible. Utilisez la photothèque.",
+  "@photosCameraUnavailable": {
+    "description": "EPIC-15 · prise de vue · caméra indisponible"
+  },
+  "photosCameraFailed": "La photo n’a pas pu être prise. Réessayez.",
+  "@photosCameraFailed": {
+    "description": "EPIC-15 · prise de vue · échec"
+  },
+  "photosReviewMessage": "Photo à vérifier : {issues}. Reprenez-la si possible.",
+  "@photosReviewMessage": {
+    "description": "EPIC-15 · prise de vue · défauts détectés sur la photo",
+    "placeholders": {
+      "issues": {
+        "type": "String",
+        "example": "sombre, floue"
+      }
+    }
+  },
+  "photosReviewRetake": "Reprendre",
+  "@photosReviewRetake": {
+    "description": "EPIC-15 · prise de vue · reprendre la photo"
+  },
+  "photosReviewKeep": "Garder",
+  "@photosReviewKeep": {
+    "description": "EPIC-15 · prise de vue · garder la photo malgré les défauts"
+  },
+  "photosIssueDark": "Sombre",
+  "@photosIssueDark": {
+    "description": "EPIC-15 · défaut de photo : trop sombre"
+  },
+  "photosIssueOverexposed": "Surexposée",
+  "@photosIssueOverexposed": {
+    "description": "EPIC-15 · défaut de photo : surexposée"
+  },
+  "photosIssueBlurry": "Floue",
+  "@photosIssueBlurry": {
+    "description": "EPIC-15 · défaut de photo : floue"
+  },
+  "photosIssueTilted": "Penchée",
+  "@photosIssueTilted": {
+    "description": "EPIC-15 · défaut de photo : penchée"
+  },
+  "photosIssueCluttered": "Encombrée",
+  "@photosIssueCluttered": {
+    "description": "EPIC-15 · défaut de photo : pièce encombrée"
+  },
+  "photosTitle": "Photos · {room}",
+  "@photosTitle": {
+    "description": "EPIC-15 · Photos de la pièce · titre",
+    "placeholders": {
+      "room": {
+        "type": "String",
+        "example": "Séjour"
+      }
+    }
+  },
+  "photosBack": "Retour aux pièces",
+  "@photosBack": {
+    "description": "EPIC-15 · Photos de la pièce · bouton retour (accessibilité)"
+  },
+  "photosCount": "{count, plural, =0{Aucune photo} =1{1 photo} other{{count} photos}}",
+  "@photosCount": {
+    "description": "EPIC-15 · nombre de photos",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "photosIntroMain": "{room} est une pièce principale : ajoutez au moins une photo pour pouvoir envoyer votre dossier. Montrez la pièce entière, et ses défauts éventuels.",
+  "@photosIntroMain": {
+    "description": "EPIC-15 · Photos de la pièce · message de l’agent (pièce principale)",
+    "placeholders": {
+      "room": {
+        "type": "String",
+        "example": "Séjour"
+      }
+    }
+  },
+  "photosIntro": "Des photos de {room} aident l’expert à préparer sa visite et serviront plus tard à votre annonce.",
+  "@photosIntro": {
+    "description": "EPIC-15 · Photos de la pièce · message de l’agent",
+    "placeholders": {
+      "room": {
+        "type": "String",
+        "example": "Cellier"
+      }
+    }
+  },
+  "photosTipsTitle": "Pour de bonnes photos",
+  "@photosTipsTitle": {
+    "description": "EPIC-15 · conseils de prise de vue · titre"
+  },
+  "photosTipAngle": "Placez-vous dans un angle, téléphone droit, à hauteur de poitrine.",
+  "@photosTipAngle": {
+    "description": "EPIC-15 · conseil · cadrage"
+  },
+  "photosTipLight": "Allumez la lumière et ouvrez les rideaux.",
+  "@photosTipLight": {
+    "description": "EPIC-15 · conseil · lumière"
+  },
+  "photosTipPeople": "Personne dans le champ, ni dans les miroirs.",
+  "@photosTipPeople": {
+    "description": "EPIC-15 · conseil · personnes"
+  },
+  "photosTipDefects": "Montrez aussi les défauts (fissures, humidité) : l’expert en a besoin.",
+  "@photosTipDefects": {
+    "description": "EPIC-15 · conseil · défauts pour l’expert"
+  },
+  "photosTakePhotos": "Photographier",
+  "@photosTakePhotos": {
+    "description": "EPIC-15 · bouton appareil photo"
+  },
+  "photosLibrary": "Photothèque",
+  "@photosLibrary": {
+    "description": "EPIC-15 · bouton photothèque"
+  },
+  "photosEmpty": "Aucune photo pour l’instant.",
+  "@photosEmpty": {
+    "description": "EPIC-15 · aucune photo"
+  },
+  "photosLoadError": "Les photos n’ont pas pu être chargées.",
+  "@photosLoadError": {
+    "description": "EPIC-15 · erreur de chargement"
+  },
+  "photosRetry": "Réessayer",
+  "@photosRetry": {
+    "description": "EPIC-15 · réessayer"
+  },
+  "photosDiscard": "Retirer",
+  "@photosDiscard": {
+    "description": "EPIC-15 · retirer une photo non envoyée"
+  },
+  "photosSending": "Envoi en cours",
+  "@photosSending": {
+    "description": "EPIC-15 · photo en cours d’envoi (accessibilité)"
+  },
+  "photosSendingHint": "Envoi de vos photos…",
+  "@photosSendingHint": {
+    "description": "EPIC-15 · indication pendant l’envoi"
+  },
+  "photosUploadFailed": "Échec de l’envoi",
+  "@photosUploadFailed": {
+    "description": "EPIC-15 · photo non envoyée"
+  },
+  "photosTile": "Photo",
+  "@photosTile": {
+    "description": "EPIC-15 · vignette (accessibilité)"
+  },
+  "photosMain": "Principale",
+  "@photosMain": {
+    "description": "EPIC-15 · première photo de la pièce"
+  },
+  "photosPeopleVisible": "Personne visible",
+  "@photosPeopleVisible": {
+    "description": "EPIC-15 · une personne est visible sur la photo"
+  },
+  "photosLimit": "{count} sur {max}",
+  "@photosLimit": {
+    "description": "EPIC-15 · nombre de photos sur le maximum",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "photosDone": "Terminé",
+  "@photosDone": {
+    "description": "EPIC-15 · fermer l’écran des photos"
+  },
+  "photosEnableAnalysis": "Activer les suggestions de l’IA",
+  "@photosEnableAnalysis": {
+    "description": "EPIC-15 · réactiver l’IA de vision après un refus"
+  },
+  "photosSuggestionsTitle": "Suggestions de l’IA",
+  "@photosSuggestionsTitle": {
+    "description": "EPIC-15 · carte des suggestions · titre"
+  },
+  "photosSuggestionsTag": "Suggestion IA",
+  "@photosSuggestionsTag": {
+    "description": "EPIC-15 · étiquette de provenance des suggestions"
+  },
+  "photosSuggestionsWaiting": "{count, plural, =1{L’IA regarde votre photo…} other{L’IA regarde vos {count} photos…}}",
+  "@photosSuggestionsWaiting": {
+    "description": "EPIC-15 · analyse en cours",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "photosSuggestionKind": "Type de pièce : {kind}",
+  "@photosSuggestionKind": {
+    "description": "EPIC-15 · suggestion du type de pièce",
+    "placeholders": {
+      "kind": {
+        "type": "String",
+        "example": "Cuisine"
+      }
+    }
+  },
+  "photosSuggestionCovering": "Revêtement : {covering}",
+  "@photosSuggestionCovering": {
+    "description": "EPIC-15 · suggestion du revêtement",
+    "placeholders": {
+      "covering": {
+        "type": "String",
+        "example": "Carrelage"
+      }
+    }
+  },
+  "photosSuggestionGlazing": "Vitrage : {glazing}",
+  "@photosSuggestionGlazing": {
+    "description": "EPIC-15 · suggestion du vitrage",
+    "placeholders": {
+      "glazing": {
+        "type": "String",
+        "example": "Double"
+      }
+    }
+  },
+  "photosSuggestionApply": "Appliquer",
+  "@photosSuggestionApply": {
+    "description": "EPIC-15 · appliquer une suggestion"
+  },
+  "photosSuggestionNote": "Ajouter",
+  "@photosSuggestionNote": {
+    "description": "EPIC-15 · ajouter un constat à la description"
+  },
+  "photosSuggestionsNone": "Rien à changer : vos réponses correspondent aux photos.",
+  "@photosSuggestionsNone": {
+    "description": "EPIC-15 · aucune suggestion"
+  },
+  "photosSuggestionsApplied": "{count, plural, =1{1 suggestion appliquée : elle sera enregistrée avec « Tout est correct, continuer ».} other{{count} suggestions appliquées : elles seront enregistrées avec « Tout est correct, continuer ».}}",
+  "@photosSuggestionsApplied": {
+    "description": "EPIC-15 · suggestions appliquées",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "photosPeopleWarning": "{count, plural, =1{Une personne est visible sur 1 photo : reprenez-la ou supprimez-la.} other{Une personne est visible sur {count} photos : reprenez-les ou supprimez-les.}}",
+  "@photosPeopleWarning": {
+    "description": "EPIC-15 · photos avec une personne",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "photosPeopleRetake": "Une personne est visible : reprenez ou supprimez cette photo.",
+  "@photosPeopleRetake": {
+    "description": "EPIC-15 · détail · personne visible"
+  },
+  "photosPersonalItems": "À ranger avant les photos de l’annonce : {items}",
+  "@photosPersonalItems": {
+    "description": "EPIC-15 · objets personnels repérés par l’IA",
+    "placeholders": {
+      "items": {
+        "type": "String",
+        "example": "Photos de famille, Courrier"
+      }
+    }
+  },
+  "photosAnalysisFailed": "{count, plural, =1{1 photo n’a pas pu être analysée.} other{{count} photos n’ont pas pu être analysées.}}",
+  "@photosAnalysisFailed": {
+    "description": "EPIC-15 · analyses en échec",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "photosDetailTitle": "Photo {index} sur {count}",
+  "@photosDetailTitle": {
+    "description": "EPIC-15 · détail d’une photo · titre",
+    "placeholders": {
+      "index": {
+        "type": "int"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "photosDetailClose": "Fermer",
+  "@photosDetailClose": {
+    "description": "EPIC-15 · détail · fermer"
+  },
+  "photosDetailChecks": "Contrôles",
+  "@photosDetailChecks": {
+    "description": "EPIC-15 · détail · contrôles qualité"
+  },
+  "photosDetailNoIssue": "Aucun défaut détecté.",
+  "@photosDetailNoIssue": {
+    "description": "EPIC-15 · détail · aucun défaut"
+  },
+  "photosDetailIssues": "À vérifier : {issues}.",
+  "@photosDetailIssues": {
+    "description": "EPIC-15 · détail · défauts",
+    "placeholders": {
+      "issues": {
+        "type": "String",
+        "example": "sombre, floue"
+      }
+    }
+  },
+  "photosDetailAiNotes": "Vu par l’IA",
+  "@photosDetailAiNotes": {
+    "description": "EPIC-15 · détail · notes de l’IA"
+  },
+  "photosDetailMakeMain": "Mettre en premier",
+  "@photosDetailMakeMain": {
+    "description": "EPIC-15 · détail · photo principale"
+  },
+  "photosDetailDelete": "Supprimer la photo",
+  "@photosDetailDelete": {
+    "description": "EPIC-15 · détail · supprimer"
+  },
+  "photosNoticeLimit": "12 photos au plus par pièce.",
+  "@photosNoticeLimit": {
+    "description": "EPIC-15 · limite de photos"
+  },
+  "photosNoticeUploadFailed": "Une photo n’a pas pu être envoyée. Réessayez.",
+  "@photosNoticeUploadFailed": {
+    "description": "EPIC-15 · échec d’envoi"
+  },
+  "photosNoticeUnreadable": "Cette image n’a pas pu être lue.",
+  "@photosNoticeUnreadable": {
+    "description": "EPIC-15 · image illisible"
+  },
+  "photosNoticeAccessDenied": "Accès refusé : autorisez l’appareil photo ou les photos dans les Réglages.",
+  "@photosNoticeAccessDenied": {
+    "description": "EPIC-15 · accès refusé"
+  },
+  "photosNoticePickFailed": "La photothèque n’a pas pu s’ouvrir.",
+  "@photosNoticePickFailed": {
+    "description": "EPIC-15 · photothèque indisponible"
+  },
+  "photosNoticeDeleteFailed": "La photo n’a pas pu être supprimée.",
+  "@photosNoticeDeleteFailed": {
+    "description": "EPIC-15 · échec de suppression"
+  },
+  "photosNoticeReorderFailed": "L’ordre des photos n’a pas pu être enregistré.",
+  "@photosNoticeReorderFailed": {
+    "description": "EPIC-15 · échec du changement d’ordre"
+  },
+  "photosNoticeQuota": "Limite d’analyses du jour atteinte : réessayez demain.",
+  "@photosNoticeQuota": {
+    "description": "EPIC-15 · quota IA atteint"
+  },
+  "surfacesPhotosBadge": "{count, plural, =0{Aucune photo} =1{1 photo} other{{count} photos}}",
+  "@surfacesPhotosBadge": {
+    "description": "V5c · badge du nombre de photos (EPIC-15)",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "surfacesMainPhotosBadge": "Photos requises : {done}/{total}",
+  "@surfacesMainPhotosBadge": {
+    "description": "V5c · badge des pièces principales photographiées sur les pièces principales (EPIC-15)",
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "surfacesPhotosMissingHint": "Ajoutez au moins une photo de chaque pièce principale avant d’envoyer votre dossier.",
+  "@surfacesPhotosMissingHint": {
+    "description": "V5c · rappel des photos requises (EPIC-15)"
+  },
+  "surfacesRoomPhotos": "{count, plural, =0{Photos de {room} : aucune} =1{Photos de {room} : 1} other{Photos de {room} : {count}}}",
+  "@surfacesRoomPhotos": {
+    "description": "V5c · bouton photos d’une pièce (accessibilité, EPIC-15)",
+    "placeholders": {
+      "room": {
+        "type": "String",
+        "example": "Séjour"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "surfacesPhotoRequired": "Photo requise",
+  "@surfacesPhotoRequired": {
+    "description": "V5c · pièce principale sans photo (EPIC-15)"
+  },
+  "surfacesSheetPhotos": "{count, plural, =0{Photos de la pièce} other{Photos de la pièce ({count})}}",
+  "@surfacesSheetPhotos": {
+    "description": "V5c · fiche pièce · bouton photos (EPIC-15)",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "surfacesSheetDeletePhotos": "{count, plural, =1{La photo de cette pièce sera supprimée avec elle.} other{Les {count} photos de cette pièce seront supprimées avec elle.}}",
+  "@surfacesSheetDeletePhotos": {
+    "description": "V5c · fiche pièce · avertissement de suppression (EPIC-15)",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "surfacesRoomSaveError": "La pièce n’a pas pu être enregistrée. Réessayez.",
+  "@surfacesRoomSaveError": {
+    "description": "V5c · échec de l’enregistrement d’une pièce avant ses photos (EPIC-15)"
+  },
+  "methodPlanSheetTitle": "Votre plan",
+  "@methodPlanSheetTitle": {
+    "description": "V5 · feuille de choix du plan · titre (EPIC-15)"
+  },
+  "methodPlanScan": "Scanner le plan",
+  "@methodPlanScan": {
+    "description": "V5 · scanner le plan (EPIC-15)"
+  },
+  "methodPlanLibrary": "Choisir une photo",
+  "@methodPlanLibrary": {
+    "description": "V5 · photo du plan depuis la photothèque (EPIC-15)"
+  },
+  "methodPlanUploading": "Envoi du plan…",
+  "@methodPlanUploading": {
+    "description": "V5 · plan en cours d’envoi (EPIC-15)"
+  },
+  "methodPlanReading": "Lecture du plan…",
+  "@methodPlanReading": {
+    "description": "V5 · plan en cours de lecture (EPIC-15)"
+  },
+  "methodPlanError": "Le plan n’a pas pu être lu. Réessayez, ou saisissez vos pièces.",
+  "@methodPlanError": {
+    "description": "V5 · échec de lecture du plan (EPIC-15)"
+  },
+  "methodPlanUploadError": "Le plan n’a pas pu être envoyé. Réessayez.",
+  "@methodPlanUploadError": {
+    "description": "V5 · échec d’envoi du plan (EPIC-15)"
+  },
+  "methodPlanQuota": "Limite de lectures de plan du jour atteinte : saisissez vos pièces ou réessayez demain.",
+  "@methodPlanQuota": {
+    "description": "V5 · quota de lecture de plan (EPIC-15)"
+  },
+  "methodPlanSavedNoAi": "Plan déposé pour l’expert. Saisissez maintenant vos pièces.",
+  "@methodPlanSavedNoAi": {
+    "description": "V5 · plan déposé sans lecture IA (EPIC-15)"
+  },
+  "methodPlanAccessDenied": "Accès refusé : autorisez l’appareil photo ou les photos dans les Réglages.",
+  "@methodPlanAccessDenied": {
+    "description": "V5 · accès refusé (EPIC-15)"
+  },
+  "planReviewTitle": "Pièces lues sur le plan",
+  "@planReviewTitle": {
+    "description": "V5 · vérification du plan · titre (EPIC-15)"
+  },
+  "planReviewIntro": "Vérifiez chaque ligne : seules les surfaces imprimées sur le plan ont été relevées. Décochez ce qui est faux, corrigez au besoin.",
+  "@planReviewIntro": {
+    "description": "V5 · vérification du plan · message de l’agent (EPIC-15)"
+  },
+  "planReviewKeep": "Garder {room}",
+  "@planReviewKeep": {
+    "description": "V5 · vérification du plan · case garder (accessibilité, EPIC-15)",
+    "placeholders": {
+      "room": {
+        "type": "String",
+        "example": "Séjour"
+      }
+    }
+  },
+  "planReviewNameLabel": "Nom",
+  "@planReviewNameLabel": {
+    "description": "V5 · vérification du plan · nom de la pièce (EPIC-15)"
+  },
+  "planReviewAreaLabel": "Surface",
+  "@planReviewAreaLabel": {
+    "description": "V5 · vérification du plan · surface (EPIC-15)"
+  },
+  "planReviewLevelLabel": "Niveau",
+  "@planReviewLevelLabel": {
+    "description": "V5 · vérification du plan · niveau (EPIC-15)"
+  },
+  "planReviewAreaMissing": "Surface non imprimée : saisissez-la ou décochez la ligne.",
+  "@planReviewAreaMissing": {
+    "description": "V5 · vérification du plan · surface manquante (EPIC-15)"
+  },
+  "planReviewTotalMismatch": "La somme des pièces ({sum} m²) ne correspond pas au total imprimé ({total} m²) : vérifiez les surfaces.",
+  "@planReviewTotalMismatch": {
+    "description": "V5 · vérification du plan · écart avec le total imprimé (EPIC-15)",
+    "placeholders": {
+      "sum": {
+        "type": "String",
+        "example": "98,5"
+      },
+      "total": {
+        "type": "String",
+        "example": "102"
+      }
+    }
+  },
+  "planReviewTotalMatch": "Total imprimé sur le plan : {total} m²",
+  "@planReviewTotalMatch": {
+    "description": "V5 · vérification du plan · total imprimé (EPIC-15)",
+    "placeholders": {
+      "total": {
+        "type": "String",
+        "example": "102"
+      }
+    }
+  },
+  "planReviewAdd": "{count, plural, =0{Aucune pièce à ajouter} =1{Ajouter 1 pièce} other{Ajouter {count} pièces}}",
+  "@planReviewAdd": {
+    "description": "V5 · vérification du plan · bouton ajouter (EPIC-15)",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "planReviewEmpty": "Aucune pièce lisible sur ce plan. Essayez une photo plus nette, ou saisissez vos pièces.",
+  "@planReviewEmpty": {
+    "description": "V5 · vérification du plan · aucune pièce (EPIC-15)"
+  },
+  "planReviewNotPlan": "Cette image ne ressemble pas à un plan. Essayez une autre photo, ou saisissez vos pièces.",
+  "@planReviewNotPlan": {
+    "description": "V5 · vérification du plan · pas un plan (EPIC-15)"
+  },
+  "planReviewManual": "Saisir mes pièces",
+  "@planReviewManual": {
+    "description": "V5 · vérification du plan · saisie manuelle (EPIC-15)"
+  },
+  "planReviewSaveError": "Les pièces n’ont pas pu être enregistrées. Réessayez.",
+  "@planReviewSaveError": {
+    "description": "V5 · vérification du plan · échec d’enregistrement (EPIC-15)"
+  },
+  "planReviewBack": "Retour",
+  "@planReviewBack": {
+    "description": "V5 · vérification du plan · retour (accessibilité, EPIC-15)"
+  },
+  "documentsPhotosMissing": "Ajoutez au moins une photo de : {rooms}.",
+  "@documentsPhotosMissing": {
+    "description": "V7 · envoi bloqué par les photos des pièces principales (EPIC-15)",
+    "placeholders": {
+      "rooms": {
+        "type": "String",
+        "example": "Séjour, Chambre 1"
+      }
+    }
+  },
+  "documentsPhotosAction": "Ajouter les photos",
+  "@documentsPhotosAction": {
+    "description": "V7 · retour aux pièces pour les photos (EPIC-15)"
+  },
+  "documentsScorePhotosHint": "Ajoutez les photos de vos pièces principales pour gagner des points.",
+  "@documentsScorePhotosHint": {
+    "description": "V7 · score · conseil photos (EPIC-15)"
+  },
+  "submittedSummaryPhotos": "Photos",
+  "@submittedSummaryPhotos": {
+    "description": "V8 · aperçu · ligne photos (EPIC-15)"
+  },
+  "submittedSummaryPhotosCount": "{count, plural, =0{Aucune photo} =1{1 photo} other{{count} photos}}",
+  "@submittedSummaryPhotosCount": {
+    "description": "V8 · aperçu · nombre de photos (EPIC-15)",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "submittedSummaryRoomPhotos": "Photos · {room}",
+  "@submittedSummaryRoomPhotos": {
+    "description": "V8 · aperçu · photos d’une pièce (EPIC-15)",
+    "placeholders": {
+      "room": {
+        "type": "String",
+        "example": "Séjour"
+      }
+    }
+  },
+  "documentsActionHintPhotos": "Une photo de chaque pièce principale est requise pour l’envoi",
+  "@documentsActionHintPhotos": {
+    "description": "V7 · indication au-dessus du bouton d’envoi quand seules les photos manquent (EPIC-15)"
+  },
+  "surfacesPlanTag": "Plan",
+  "@surfacesPlanTag": {
+    "description": "V5c · étiquette d’une pièce lue sur le plan (provenance « Extrait d’un document », EPIC-15)"
+  },
+  "photosDisableAnalysis": "Désactiver les suggestions de l’IA",
+  "@photosDisableAnalysis": {
+    "description": "EPIC-15 · retirer le consentement à l’IA de vision"
+  },
+  "accountPhotoAnalysis": "Suggestions de l’IA sur les photos",
+  "@accountPhotoAnalysis": {
+    "description": "Compte · consentement à l’IA de vision (EPIC-15)"
+  },
+  "accountPhotoAnalysisOn": "Activées · touchez pour les désactiver",
+  "@accountPhotoAnalysisOn": {
+    "description": "Compte · IA de vision acceptée (EPIC-15)"
+  },
+  "accountPhotoAnalysisOff": "Désactivées · touchez pour les activer",
+  "@accountPhotoAnalysisOff": {
+    "description": "Compte · IA de vision refusée ou pas encore demandée (EPIC-15)"
+  },
+  "planReviewChoiceTitle": "Vous avez déjà {count, plural, =1{1 pièce} other{{count} pièces}}",
+  "@planReviewChoiceTitle": {
+    "description": "V5 · plan · choix ajouter ou remplacer (EPIC-15)",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "planReviewAddToRooms": "Ajouter à mes pièces",
+  "@planReviewAddToRooms": {
+    "description": "V5 · plan · ajouter les pièces lues (EPIC-15)"
+  },
+  "planReviewReplaceRooms": "Remplacer mes pièces",
+  "@planReviewReplaceRooms": {
+    "description": "V5 · plan · remplacer les pièces existantes (EPIC-15)"
+  },
+  "planReviewReplaceWarning": "Remplacer supprime vos pièces actuelles et leurs photos.",
+  "@planReviewReplaceWarning": {
+    "description": "V5 · plan · avertissement du remplacement (EPIC-15)"
+  },
+  "methodPlanRetry": "Relire le dernier plan",
+  "@methodPlanRetry": {
+    "description": "V5 · relire le plan déjà envoyé après un échec (EPIC-15)"
   }
 }

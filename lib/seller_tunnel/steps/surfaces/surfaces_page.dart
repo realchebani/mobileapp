@@ -7,6 +7,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:mobileapp/l10n/l10n.dart';
 import 'package:mobileapp/seller_tunnel/cubit/seller_tunnel_cubit.dart';
 import 'package:mobileapp/seller_tunnel/models/seller_tunnel_step.dart';
+import 'package:mobileapp/seller_tunnel/photos/view/room_photos_page.dart';
 import 'package:mobileapp/seller_tunnel/steps/surfaces/cubit/surfaces_cubit.dart';
 import 'package:mobileapp/seller_tunnel/steps/surfaces/models/room_area.dart';
 import 'package:mobileapp/seller_tunnel/steps/surfaces/models/room_input.dart';
@@ -19,9 +20,11 @@ import 'package:mobileapp/seller_tunnel/widgets/widgets.dart';
 import 'package:mobileapp/ui/ui.dart';
 import 'package:property_repository/property_repository.dart';
 
-/// V5c · Récapitulatif des surfaces: the rooms table (typed, or dictated to
-/// the voice agent: EPIC-14), the living area (surface habitable) of the
-/// rooms and the area of the annexes (garage, cellier…).
+/// V5c · Récapitulatif des surfaces: the rooms table (typed, dictated to
+/// the voice agent: EPIC-14, or read on a plan: EPIC-15), the living area
+/// (surface habitable) of the rooms and the area of the annexes (garage,
+/// cellier…), and the photos of each room (EPIC-15: a main room needs one
+/// to send the dossier).
 ///
 /// `?dictee=1` (V5 "Dicter mes pièces") opens the dictation on arrival.
 class SurfacesPage extends StatelessWidget {
@@ -115,13 +118,23 @@ class _SurfacesViewState extends State<SurfacesView> {
         final tunnel = context.read<SellerTunnelCubit>()
           ..updateChildren(rooms: state.savedRooms);
         final property = tunnel.state.property!;
+        // Totals of rooms all read on a plan come from a document.
+        Provenance provenanceOf(Iterable<Room> rooms) =>
+            rooms.isNotEmpty &&
+                rooms.every((room) => room.source == RoomSource.plan)
+            ? Provenance.document
+            : Provenance.declared;
         unawaited(
           tunnel.saveAndContinue(_step, {
             PropertyColumns.livingAreaM2: state.livingArea,
             PropertyColumns.annexAreaM2: state.annexArea,
             PropertyColumns.provenance: property.mergeProvenance({
-              PropertyColumns.livingAreaM2: Provenance.declared,
-              PropertyColumns.annexAreaM2: Provenance.declared,
+              PropertyColumns.livingAreaM2: provenanceOf(
+                state.rooms.where((room) => !room.isAnnex),
+              ),
+              PropertyColumns.annexAreaM2: provenanceOf(
+                state.rooms.where((room) => room.isAnnex),
+              ),
             }),
           }),
         );
@@ -157,9 +170,18 @@ class _SurfacesViewState extends State<SurfacesView> {
       context,
       defaultLevel: state.rooms.lastOrNull?.level ?? RoomLevel.groundFloor,
       otherNames: [for (final room in state.rooms) room.name],
+      photosCount: 0,
     );
     if (!mounted) return;
-    if (result is RoomSheetSaved) cubit.roomAdded(result.room);
+    switch (result) {
+      case RoomSheetSaved(:final room):
+        cubit.roomAdded(room);
+      case RoomSheetPhotos(:final room):
+        cubit.roomAdded(room);
+        await _openPhotos(cubit.state.rooms.last);
+      case RoomSheetDeleted() || null:
+        break;
+    }
   }
 
   Future<void> _editRoom(SurfacesState state, Room room) async {
@@ -172,16 +194,83 @@ class _SurfacesViewState extends State<SurfacesView> {
         for (final other in state.rooms)
           if (other.id != id) other.name,
       ],
+      photosCount: room.photosCount,
     );
     if (!mounted) return;
     switch (result) {
       case RoomSheetSaved(:final room):
         cubit.roomEdited(id, room);
+      case RoomSheetPhotos(:final room):
+        cubit.roomEdited(id, room);
+        await _openPhotos(
+          cubit.state.rooms.firstWhere((room) => room.id == id),
+        );
       case RoomSheetDeleted():
         cubit.roomDeleted(id);
       case null:
         break;
     }
+  }
+
+  /// The photos of [room] (EPIC-15): the room is written first (a photo
+  /// needs its row) and recorded in the dossier at once; the suggestions
+  /// the seller applied come back to the room form.
+  Future<void> _openPhotos(Room room) async {
+    final cubit = context.read<SurfacesCubit>();
+    final tunnel = context.read<SellerTunnelCubit>();
+    final l10n = context.l10n;
+    final id = room.id!;
+    await cubit.preparePhotos(id);
+    final saved = cubit.state.photosRoom;
+    if (!mounted) return;
+    if (saved == null || saved.id != id) {
+      showRealestySnackBar(context, l10n.surfacesRoomSaveError, isError: true);
+      return;
+    }
+    _recordInTunnel(tunnel, saved);
+    final result = await showRoomPhotos(
+      context,
+      ownerId: tunnel.state.property!.ownerId,
+      propertyId: saved.propertyId,
+      roomId: id,
+      room: RoomInput.fromRoom(saved),
+      otherNames: [
+        for (final other in cubit.state.rooms)
+          if (other.id != id) other.name,
+      ],
+    );
+    if (result == null || !mounted) return;
+    cubit.photosChanged(id, result.photosCount);
+    _recordInTunnel(
+      tunnel,
+      cubit.state.rooms.firstWhere((room) => room.id == id),
+      savedRow: saved,
+    );
+    if (result.room case final edited?) cubit.roomEdited(id, edited);
+  }
+
+  /// Records the stored row of a room in the dossier, with its photo
+  /// count (from [room]).
+  static void _recordInTunnel(
+    SellerTunnelCubit tunnel,
+    Room room, {
+    Room? savedRow,
+  }) {
+    final row = savedRow == null
+        ? room
+        : Room.fromJson({
+            ...savedRow.toJson(),
+            'photos_count': room.photosCount,
+          });
+    final rooms = tunnel.state.rooms;
+    tunnel.updateChildren(
+      rooms: rooms.any((other) => other.id == row.id)
+          ? [
+              for (final other in rooms)
+                if (other.id == row.id) row else other,
+            ]
+          : [...rooms, row],
+    );
   }
 
   @override
@@ -195,6 +284,13 @@ class _SurfacesViewState extends State<SurfacesView> {
     );
     final busy = tunnelSaving || state.isSubmitting;
     final count = state.rooms.length;
+    final requirePhotos = context.select<SellerTunnelCubit, bool>(
+      (cubit) => cubit.state.profile.requiresRoomPhotos,
+    );
+    final mainRooms = state.mainRooms.length;
+    final missingPhotos = requirePhotos
+        ? state.mainRoomsWithoutPhotos.length
+        : 0;
     return MultiBlocListener(
       listeners: [
         BlocListener<SurfacesCubit, SurfacesState>(
@@ -241,6 +337,23 @@ class _SurfacesViewState extends State<SurfacesView> {
                   label: l10n.surfacesRoomsCountBadge(count),
                   variant: RealestyBadgeVariant.certified,
                 ),
+                RealestyBadge(
+                  label: l10n.surfacesPhotosBadge(state.photosCount),
+                ),
+                // Rooms read on a plan (EPIC-15): tagged "Plan" below.
+                if (state.rooms.any((room) => room.source == RoomSource.plan))
+                  const ProvenanceTag(ProvenanceKind.document),
+                if (requirePhotos && mainRooms > 0)
+                  RealestyBadge(
+                    label: l10n.surfacesMainPhotosBadge(
+                      mainRooms - missingPhotos,
+                      mainRooms,
+                    ),
+                    variant: missingPhotos == 0
+                        ? RealestyBadgeVariant.certified
+                        : RealestyBadgeVariant.toComplete,
+                    showIcon: missingPhotos == 0,
+                  ),
               ],
             ),
           Column(
@@ -253,7 +366,9 @@ class _SurfacesViewState extends State<SurfacesView> {
                 livingArea: state.livingArea,
                 annexArea: state.hasAnnexes ? state.annexArea : null,
                 dictated: state.dictated,
+                requirePhotos: requirePhotos,
                 onEdit: busy ? null : (room) => _editRoom(state, room),
+                onPhotos: busy ? null : (room) => unawaited(_openPhotos(room)),
               ),
               if (state.showErrors && !state.isValid)
                 Semantics(
@@ -267,6 +382,11 @@ class _SurfacesViewState extends State<SurfacesView> {
                 ),
             ],
           ),
+          if (missingPhotos > 0)
+            InlineBanner(
+              message: l10n.surfacesPhotosMissingHint,
+              icon: RealestyIcons.camera,
+            ),
           RealestyButton(
             label: l10n.surfacesAddRoom,
             variant: RealestyButtonVariant.text,

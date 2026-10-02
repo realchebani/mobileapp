@@ -79,6 +79,8 @@ Uint8List compressPage(Uint8List page, ScanCompression compression) {
             interpolation: img.Interpolation.average,
           );
   }
+  // Privacy: no EXIF (GPS position, device, date) leaves the phone.
+  image.exif = img.ExifData();
   return img.encodeJpg(
     image,
     quality: compression.quality,

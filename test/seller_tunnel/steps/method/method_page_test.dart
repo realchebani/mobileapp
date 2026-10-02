@@ -15,7 +15,7 @@ MethodCard _card(WidgetTester tester, String title) =>
 
 void main() {
   group(MethodPage, () {
-    testWidgets('shows the methods, only the manual entry is available', (
+    testWidgets('shows the methods, the manual entry first, no camera scan', (
       tester,
     ) async {
       usePhoneSurface();
@@ -30,22 +30,21 @@ void main() {
         ),
         findsOneWidget,
       );
-      expect(find.text('Bientôt'), findsNWidgets(2));
-      // The available method comes first.
+      expect(find.text('Bientôt'), findsNothing);
+      // EPIC-15: the camera scan card was removed; the plan reading is on.
+      expect(find.text('Scanner avec la caméra'), findsNothing);
       expect(
         tester.getTopLeft(find.text('Saisir manuellement')).dy,
-        lessThan(tester.getTopLeft(find.text('Scanner avec la caméra')).dy),
+        lessThan(tester.getTopLeft(find.text('Lire un plan')).dy),
       );
-      expect(_card(tester, 'Scanner avec la caméra').onTap, isNull);
-      expect(_card(tester, 'Importer ou photographier un plan').onTap, isNull);
+      expect(_card(tester, 'Lire un plan').onTap, isNotNull);
       final manual = _card(tester, 'Saisir manuellement');
       expect(manual.onTap, isNotNull);
       expect(manual.highlighted, isTrue);
       expect(
         find.text(
-          'Les mesures réalisées au téléphone sont estimatives. Elles sont '
-          'distinguées des surfaces issues d’un plan et vérifiées par '
-          'l’expert.',
+          'Les pièces lues sur un plan restent à vérifier$_nbsp: elles sont '
+          'distinguées des pièces saisies et contrôlées par l’expert.',
         ),
         findsOneWidget,
       );

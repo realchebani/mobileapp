@@ -4,6 +4,7 @@ export 'cubit/seller_tunnel_cubits.dart';
 export 'market/market_synthesis_page.dart';
 export 'models/property_type_profile.dart';
 export 'models/seller_tunnel_step.dart';
+export 'photos/photos.dart';
 export 'steps/documents/documents_page.dart';
 export 'steps/lifestyle/lifestyle_page.dart';
 export 'steps/location/location_page.dart';

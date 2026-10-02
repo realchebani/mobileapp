@@ -83,6 +83,7 @@ extension PumpSellerTunnel on WidgetTester {
     GeoRepository? geoRepository,
     AppBloc? appBloc,
     GoRouter? goRouter,
+    PhotoServices? photoServices,
   }) {
     final tunnel = BlocProvider<SellerTunnelCubit>.value(
       value: sellerTunnelCubit ?? mockSellerTunnelCubit(),
@@ -99,6 +100,7 @@ extension PumpSellerTunnel on WidgetTester {
       geoRepository: geoRepository,
       appBloc: appBloc,
       goRouter: goRouter,
+      photoServices: photoServices,
     );
   }
 }

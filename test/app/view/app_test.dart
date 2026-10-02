@@ -35,6 +35,26 @@ class _FakeImagePicker extends ImagePickerPlatform {
       XFile.fromData(Uint8List(16), name: 'photo.jpg', path: 'photo.jpg');
 }
 
+/// The photo library of the walk: one photo.
+class _FakePhotoLibrary implements PhotoLibrary {
+  @override
+  Future<List<Uint8List>> pick({required int limit}) async => [Uint8List(8)];
+}
+
+/// Photos ready to upload as they are.
+class _FakePhotoProcessor implements PhotoProcessor {
+  @override
+  Future<ProcessedPhoto> process(
+    Uint8List bytes, {
+    double? tiltDegrees,
+  }) async => ProcessedPhoto(
+    bytes: bytes,
+    width: 4,
+    height: 3,
+    quality: const PhotoQuality(),
+  );
+}
+
 /// Encodes a patch value as the database would store it.
 Object? _encode(Object? value) => switch (value) {
   DbEnum() => value.value,
@@ -80,6 +100,9 @@ void main() {
     );
     registerFallbackValue(const PropertyParcel(propertyId: 'p', idu: 'x'));
     registerFallbackValue(const Room(propertyId: 'p', name: 'x', areaM2: 1));
+    registerFallbackValue(
+      const RoomPhoto(id: 'x', propertyId: 'p', roomId: 'r', storagePath: 's'),
+    );
     await loadRealestyFonts();
   });
 
@@ -158,6 +181,7 @@ void main() {
     bool onboardingSeen = true,
     bool? enableDesignSystem,
     GeoRepository? geoRepository,
+    PhotoServices Function(SharedPreferences preferences)? photoServices,
   }) async {
     SharedPreferences.setMockInitialValues({
       OnboardingRepository.seenKey: onboardingSeen,
@@ -172,6 +196,7 @@ void main() {
         valuationRepository: valuationRepository,
         notificationRepository: notificationRepository,
         geoRepository: geoRepository,
+        photoServices: photoServices?.call(preferences),
         enableDesignSystem: enableDesignSystem,
       ),
     );
@@ -428,7 +453,15 @@ void main() {
         return patches.last;
       }
 
-      await pumpApp(tester, geoRepository: geoRepository);
+      await pumpApp(
+        tester,
+        geoRepository: geoRepository,
+        photoServices: (preferences) => PhotoServices(
+          preferences: PhotoPreferences(preferences: preferences),
+          library: _FakePhotoLibrary(),
+          processor: _FakePhotoProcessor(),
+        ),
+      );
       await emitUser(tester, user);
       await tap(find.text('Commencer l’audit'));
 
@@ -500,11 +533,39 @@ void main() {
         MeasurementMethod.manual,
       );
 
-      // V5c · Surfaces: one room.
+      // V5c · Surfaces: one room, a main one, with its photo (EPIC-15:
+      // needed to send the dossier; the vision AI is declined).
       await tap(find.text('Ajouter une pièce'));
       await tap(find.text('Chambre'));
       await tester.enterText(field('Surface'), '12');
       await tap(find.text('Ajouter'));
+      when(
+        () => propertyRepository.getRoomPhotos(
+          any(),
+          roomId: any(named: 'roomId'),
+        ),
+      ).thenAnswer((_) async => []);
+      when(() => propertyRepository.getPhotoUrls(any()))
+          .thenAnswer((_) async => {});
+      when(
+        () => propertyRepository.uploadRoomPhoto(
+          any(),
+          bytes: any(named: 'bytes'),
+        ),
+      ).thenAnswer(
+        (invocation) async =>
+            invocation.positionalArguments.single as RoomPhoto,
+      );
+      await tap(find.bySemanticsLabel('Photos de Chambre 1\u00a0: aucune'));
+      expect(find.byType(RoomPhotosPage), findsOneWidget);
+      await tap(find.text('Photothèque'));
+      expect(find.byType(PhotoConsentPage), findsOneWidget);
+      await tap(find.text('Continuer sans l’IA'));
+      await tap(find.text('Terminé'));
+      expect(
+        find.bySemanticsLabel('Photos de Chambre 1\u00a0: 1'),
+        findsOneWidget,
+      );
       await tap(find.text('Tout est correct, continuer'));
       expect(find.byType(LifestylePage), findsOneWidget);
       expect(
