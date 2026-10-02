@@ -62,7 +62,7 @@ Deno.test("template explanation", () => {
 Deno.test("explanationFacts carries no address and the confidence level", () => {
   const facts = explanationFacts(subject(), result);
   assertEquals(facts.fiabilite, "élevée");
-  assertEquals(facts.dernieres_ventes_connues, "décembre 2025");
+  assertEquals(facts.annee_des_dernieres_ventes, 2025);
   assertEquals(explanationFacts(subject(), { ...result, confidence: 50 }).fiabilite, "moyenne");
   assertEquals(explanationFacts(subject(), { ...result, confidence: 10 }).fiabilite, "faible");
   assertEquals(

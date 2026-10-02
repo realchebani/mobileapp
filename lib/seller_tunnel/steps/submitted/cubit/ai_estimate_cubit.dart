@@ -21,6 +21,9 @@ enum AiEstimateStatus {
 
   /// The computation or its reading failed: "Réessayer".
   failed,
+
+  /// Too many computations asked today (backend cost cap): no retry.
+  rateLimited,
 }
 
 class AiEstimateState extends Equatable {
@@ -98,7 +101,13 @@ class AiEstimateCubit extends Cubit<AiEstimateState> {
       await _propertyRepository.requestEstimate(_propertyId);
     } on Object catch (error, stackTrace) {
       addError(error, stackTrace);
-      _emit(const AiEstimateState(status: AiEstimateStatus.failed));
+      _emit(
+        AiEstimateState(
+          status: error is EstimateRateLimitFailure
+              ? AiEstimateStatus.rateLimited
+              : AiEstimateStatus.failed,
+        ),
+      );
       return;
     }
     await _poll(++_generation);

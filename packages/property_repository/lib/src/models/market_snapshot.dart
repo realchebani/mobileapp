@@ -65,7 +65,7 @@ class ComparableSale extends Equatable {
   const new({
     required this.propertyType,
     required this.areaM2,
-    required this.soldOn,
+    required this.soldYear,
     required this.priceEur,
     required this.priceM2Eur,
     this.street,
@@ -81,7 +81,7 @@ class ComparableSale extends Equatable {
     areaM2: readInt(json['area_m2']) ?? 0,
     rooms: readInt(json['rooms']),
     landM2: readInt(json['land_m2']),
-    soldOn: _readMonth(json['sold_on']),
+    soldYear: readInt(json['sold_year']) ?? 0,
     distanceM: readInt(json['distance_m']),
     priceEur: readInt(json['price_eur']) ?? 0,
     priceM2Eur: readInt(json['price_m2_eur']) ?? 0,
@@ -93,8 +93,8 @@ class ComparableSale extends Equatable {
   final int? rooms;
   final int? landM2;
 
-  /// Month of the sale (first day).
-  final DateTime soldOn;
+  /// Year of the sale only (no month, for discretion).
+  final int soldYear;
 
   /// Rounded distance to the property, null when unknown.
   final int? distanceM;
@@ -108,7 +108,7 @@ class ComparableSale extends Equatable {
     areaM2,
     rooms,
     landM2,
-    soldOn,
+    soldYear,
     distanceM,
     priceEur,
     priceM2Eur,
@@ -163,12 +163,6 @@ class SemesterMedian extends Equatable {
 
   @override
   List<Object?> get props => [semester, medianM2, count];
-}
-
-DateTime _readMonth(Object? value) {
-  final text = value as String? ?? '';
-  return DateTime.tryParse(text.length == 7 ? '$text-01' : text) ??
-      DateTime(1970);
 }
 
 List<T> _readList<T>(

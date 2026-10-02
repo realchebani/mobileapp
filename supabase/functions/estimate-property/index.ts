@@ -36,17 +36,20 @@ function depsFor(request: Request): Deps {
         .eq("id", propertyId).maybeSingle();
       fail("properties", error);
       if (!data) return null;
-      const [parcels, lifestyle] = await Promise.all([
+      const [parcels, lifestyle, documents] = await Promise.all([
         user.from("property_parcels").select("area_m2").eq("property_id", propertyId),
         user.from("lifestyle_items").select("kind, label").eq("property_id", propertyId)
           .order("sort_order"),
+        user.from("property_documents").select("kind, status").eq("property_id", propertyId),
       ]);
       fail("property_parcels", parcels.error);
       fail("lifestyle_items", lifestyle.error);
+      fail("property_documents", documents.error);
       return {
         property: data as unknown as PropertyRow,
         parcelAreas: (parcels.data ?? []).map((row) => row.area_m2 as number | null),
         lifestyle: (lifestyle.data ?? []) as Dossier["lifestyle"],
+        documents: (documents.data ?? []) as Dossier["documents"],
       };
     },
     async findFinal(propertyId) {
@@ -60,6 +63,18 @@ function depsFor(request: Request): Deps {
         .eq("property_id", propertyId).eq("status", "running").maybeSingle();
       fail("market_snapshots", error);
       return data;
+    },
+    async countRecentAttempts(ownerId, since) {
+      const { count, error } = await service.from("market_snapshots")
+        .select("id, properties!inner(owner_id)", { count: "exact", head: true })
+        .eq("properties.owner_id", ownerId).gte("created_at", since);
+      fail("market_snapshots", error);
+      return count ?? 0;
+    },
+    async markStale(id) {
+      const { error } = await service.from("market_snapshots")
+        .update({ status: "error", error: "stale" }).eq("id", id).eq("status", "running");
+      fail("market_snapshots", error);
     },
     async startSnapshot(_propertyId, row) {
       const { data, error } = await service.from("market_snapshots").insert(row)

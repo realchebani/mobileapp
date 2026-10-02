@@ -206,7 +206,8 @@ class MarketSynthesisView extends StatelessWidget {
           ],
         ),
       if (snapshot.factors.isNotEmpty) _FactorsCard(factors: snapshot.factors),
-      if (explanation.isNotEmpty) _ExplanationCard(text: explanation),
+      if (explanation.isNotEmpty)
+        _ExplanationCard(text: withRenderableSpaces(explanation)),
       Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(

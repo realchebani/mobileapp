@@ -39,7 +39,7 @@ void main() {
             'area_m2': 96,
             'rooms': 4,
             'land_m2': 286,
-            'sold_on': '2025-10',
+            'sold_year': 2025,
             'distance_m': 350,
             'price_eur': 384900,
             'price_m2_eur': 4009,
@@ -63,13 +63,13 @@ void main() {
       ]);
       expect(
         snapshot.comparables.single,
-        ComparableSale(
+        const ComparableSale(
           propertyType: PropertyType.house,
           street: 'Rue des Platanes',
           areaM2: 96,
           rooms: 4,
           landM2: 286,
-          soldOn: DateTime(2025, 10),
+          soldYear: 2025,
           distanceM: 350,
           priceEur: 384900,
           priceM2Eur: 4009,
@@ -89,16 +89,14 @@ void main() {
         'property_id': 'p1',
         'status': 'weird',
         'created_at': '2026-10-01T10:00:00Z',
-        'comparables': [
-          {'sold_on': null},
-        ],
+        'comparables': [<String, dynamic>{}],
         'factors': [<String, dynamic>{}],
         'semester_medians': [<String, dynamic>{}],
       });
       expect(snapshot.status, MarketSnapshotStatus.error);
       expect(snapshot.isFinal, isFalse);
       expect(snapshot.confidenceLevel, isNull);
-      expect(snapshot.comparables.single.soldOn, DateTime(1970));
+      expect(snapshot.comparables.single.soldYear, 0);
       expect(snapshot.comparables.single.areaM2, 0);
       expect(snapshot.factors.single.label, '');
       expect(snapshot.semesterMedians.single.semester, '');

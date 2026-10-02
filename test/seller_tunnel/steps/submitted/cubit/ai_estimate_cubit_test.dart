@@ -152,6 +152,22 @@ void main() {
   );
 
   blocTest<AiEstimateCubit, AiEstimateState>(
+    'too many computations today',
+    setUp: () {
+      answers([null]);
+      when(() => repository.requestEstimate(any()))
+          .thenThrow(const EstimateRateLimitFailure('x'));
+    },
+    build: build,
+    act: (cubit) => cubit.load(),
+    expect: () => [
+      computing,
+      const AiEstimateState(status: AiEstimateStatus.rateLimited),
+    ],
+    errors: () => [isA<EstimateRateLimitFailure>()],
+  );
+
+  blocTest<AiEstimateCubit, AiEstimateState>(
     'retry requests the estimate again after a failure only',
     setUp: () => answers([
       _snapshot(MarketSnapshotStatus.error),

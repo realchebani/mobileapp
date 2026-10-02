@@ -18,10 +18,10 @@ Deno.test("latestSaleDate", () => {
   assertEquals(latestSaleDate([]), null);
 });
 
-Deno.test("displayDistance rounds to 50 m then 100 m", () => {
+Deno.test("displayDistance rounds to 100 m", () => {
   assertEquals(displayDistance(null), null);
-  assertEquals(displayDistance(12), 50);
-  assertEquals(displayDistance(374), 350);
+  assertEquals(displayDistance(12), 100);
+  assertEquals(displayDistance(374), 400);
   assertEquals(displayDistance(1234), 1200);
 });
 
@@ -53,7 +53,8 @@ Deno.test("Chaponost house of 115 m²: estimate from the 500 m comparables", () 
   assertEquals(result.factors, [{ sign: "+", label: "Piscine" }]);
   // Weighted order, rounded distance, street only with ≥ 3 sales in it.
   const first = result.comparables[0];
-  assertEquals(first.sold_on, "2025-12");
+  assertEquals(first.sold_year, 2025);
+  assert(result.comparables.every((c) => !("sold_on" in c)));
   assertEquals(first.distance_m, 400);
   assert(result.comparables.some((c) => c.street === null));
   assert(result.comparables.some((c) => c.street === "Rue Hippolyte Bonnet"));

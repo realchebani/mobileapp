@@ -59,9 +59,9 @@ export interface Comparable {
   area_m2: number;
   rooms: number | null;
   land_m2: number | null;
-  /** `YYYY-MM`. */
-  sold_on: string;
-  /** Rounded distance (50 m under 1 km, then 100 m); null when unknown. */
+  /** Year of the sale only (owner decision: no month, for discretion). */
+  sold_year: number;
+  /** Distance rounded to 100 m; null when unknown. */
   distance_m: number | null;
   price_eur: number;
   price_m2_eur: number;

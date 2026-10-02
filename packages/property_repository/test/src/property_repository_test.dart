@@ -586,6 +586,26 @@ void main() {
         'EstimateRequestFailure(x)',
       );
     });
+
+    test('requestEstimate throws EstimateRateLimitFailure on 429', () async {
+      respond = (_) => json({'error': 'too_many_attempts'}, status: 429);
+      await expectLater(
+        repository.requestEstimate(propertyId),
+        failure<EstimateRateLimitFailure>(),
+      );
+      expect(
+        const EstimateRateLimitFailure('x').toString(),
+        'EstimateRateLimitFailure(x)',
+      );
+    });
+
+    test('requestEstimate wraps other errors', () async {
+      respond = (_) => throw Exception('offline');
+      await expectLater(
+        repository.requestEstimate(propertyId),
+        failure<EstimateRequestFailure>(),
+      );
+    });
   });
 
   test('defaults the clock', () {

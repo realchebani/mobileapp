@@ -71,10 +71,10 @@ interface Candidate {
   priceM2Today: number;
 }
 
-/** Rounded display distance: 50 m steps under 1 km, then 100 m. */
+/** Rounded display distance: 100 m steps (at least 100 m), for discretion. */
 export function displayDistance(distance: number | null): number | null {
   if (distance === null) return null;
-  return distance < 1000 ? Math.max(50, roundTo(distance, 50)) : roundTo(distance, 100);
+  return Math.max(100, roundTo(distance, 100));
 }
 
 export function insufficient(
@@ -219,7 +219,7 @@ export function computeEstimate(input: EstimateInput): EstimateResult {
         area_m2: Math.round(c.sale.areaM2),
         rooms: c.sale.rooms,
         land_m2: c.sale.landM2,
-        sold_on: c.sale.soldOn.slice(0, 7),
+        sold_year: Number(c.sale.soldOn.slice(0, 4)),
         distance_m: displayDistance(c.distance),
         price_eur: c.sale.priceEur,
         price_m2_eur: Math.round(c.sale.priceEur / c.sale.areaM2),

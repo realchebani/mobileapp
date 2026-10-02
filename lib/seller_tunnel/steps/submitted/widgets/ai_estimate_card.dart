@@ -177,13 +177,48 @@ class AiEstimateCard extends StatelessWidget {
             ),
           ),
           if (onSynthesis != null)
-            RealestyButton(
-              label: l10n.submittedAiSynthesis,
-              variant: RealestyButtonVariant.secondary,
-              leadingIcon: RealestyIcons.trending,
-              trailingIcon: RealestyIcons.chevronRight,
-              height: 48,
+            // Secondary button whose label wraps with large text sizes
+            // (RealestyButton keeps one line).
+            RealestyPressable(
               onPressed: onSynthesis,
+              semanticLabel: l10n.submittedAiSynthesis,
+              child: Container(
+                constraints: const BoxConstraints(minHeight: 48),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: RealestySpacing.md,
+                  vertical: RealestySpacing.xs,
+                ),
+                decoration: BoxDecoration(
+                  color: c.surface,
+                  borderRadius: BorderRadius.circular(RealestyRadius.button),
+                  border: Border.all(
+                    color: c.ligne,
+                    width: RealestyBorders.medium,
+                  ),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  spacing: RealestySpacing.xs,
+                  children: [
+                    RealestyIcon(RealestyIcons.trending, color: c.encre),
+                    Flexible(
+                      child: Text(
+                        l10n.submittedAiSynthesis,
+                        textAlign: TextAlign.center,
+                        style: RealestyTextStyles.button.copyWith(
+                          fontSize: 15,
+                          color: c.encre,
+                        ),
+                      ),
+                    ),
+                    RealestyIcon(
+                      RealestyIcons.chevronRight,
+                      size: 18,
+                      color: c.encre,
+                    ),
+                  ],
+                ),
+              ),
             ),
         ],
       ),

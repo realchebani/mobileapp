@@ -4,6 +4,7 @@ Journal des arbitrages du porteur de projet, du plus récent au plus ancien. Cha
 
 | Date | Décision | Contexte |
 |---|---|---|
+| 2026-10-02 | Ventes comparables : rue (si ≥ 3 ventes), **distance arrondie à 100 m** et **année de vente seulement** (pas de mois), partout | EPIC-05 |
 | 2026-10-01 | **Certification** : **mini back-office web** pour les experts, utilisable par un **expert embauché** (rôle dédié, accès restreint, confidentialité) et par des **experts partenaires** (saisie directe ou rapports saisis par l'équipe) | EPIC-12 (à créer) |
 | 2026-10-01 | Rapport V9b **structuré dans l'app + PDF** facultatif ; **barre d'onglets dès le début** (Mon bien · Visites · Coffre-fort · Compte, déconnexion dans Compte) ; **notifications dans l'app uniquement** (promesse d'e-mail retirée de V8) | EPIC-07 |
 | 2026-10-01 | Estimation : **sans ajustements en v1** (prix m² du secteur × surface habitable) ; rue d'une vente comparable affichée **seulement si ≥ 3 ventes** dans la rue | EPIC-05 |

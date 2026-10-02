@@ -282,6 +282,9 @@ class _AiEstimate extends StatelessWidget {
         message: l10n.submittedAiComputing,
         isLoading: true,
       ),
+      AiEstimateStatus.rateLimited => AiEstimateStatusCard(
+        message: l10n.submittedAiRateLimited,
+      ),
       AiEstimateStatus.failed => AiEstimateStatusCard(
         message: l10n.submittedAiFailed,
         onRetry: () => context.read<AiEstimateCubit>().retry(),

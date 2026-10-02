@@ -6,6 +6,7 @@ import type { InsufficientReason, Subject } from "../_shared/estimation/types.ts
 /** Columns of `properties` read by the function. */
 export const PROPERTY_COLUMNS = [
   "id",
+  "owner_id",
   "status",
   "property_type",
   "lat",
@@ -25,6 +26,7 @@ export const PROPERTY_COLUMNS = [
 
 export interface PropertyRow {
   id: string;
+  owner_id: string;
   status: string;
   property_type: string | null;
   lat: number | null;
@@ -46,6 +48,17 @@ export interface Dossier {
   property: PropertyRow;
   parcelAreas: (number | null)[];
   lifestyle: { kind: string; label: string }[];
+  documents: { kind: string; status: string }[];
+}
+
+/** Documents needed to send a dossier (same rule as V7). */
+export const REQUIRED_DOCUMENTS = ["titre_propriete", "piece_identite"];
+
+/** Whether [dossier] has a non-rejected title deed and identity document. */
+export function hasRequiredDocuments(dossier: Dossier): boolean {
+  return REQUIRED_DOCUMENTS.every((kind) =>
+    dossier.documents.some((d) => d.kind === kind && d.status !== "rejected")
+  );
 }
 
 export function toSubject(dossier: Dossier): Subject | InsufficientReason {

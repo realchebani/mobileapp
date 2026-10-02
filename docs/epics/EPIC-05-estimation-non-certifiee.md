@@ -8,7 +8,7 @@ Plan : `docs/plans/2026-10-01-estimation-non-certifiee.md` (section « Arbitrage
 Règles validées :
 - calcul **une seule fois, à l'envoi** du dossier (pas de recalcul ; l'expert certifie ensuite) ;
 - **sans ajustements en v1** : prix au m² du secteur × surface habitable, fourchette tirée des quartiles ;
-- ventes comparables avec **la rue sans le numéro**, rue affichée **seulement si ≥ 3 ventes** y figurent (sinon « Secteur proche ») ;
+- ventes comparables avec **la rue sans le numéro**, rue affichée **seulement si ≥ 3 ventes** y figurent (sinon « Secteur proche »), **distance arrondie à 100 m** et **année de vente seulement** (pas de mois), y compris dans le résultat stocké et les faits envoyés à l'IA ;
 - **moins de 5 ventes comparables → pas d'estimation**, message « l'expert s'en charge » ;
 - l'IA (Claude via OpenRouter) rédige seulement l'explication, aucun chiffre ;
 - libellé **« Non certifiée »** sur la carte V8 et l'écran V8b.
@@ -23,7 +23,8 @@ Règles validées :
 
 ## US-05.2 · Calcul unique de la tendance ✅
 *En tant que vendeur, je veux une fourchette indicative calculée à l'envoi de mon dossier à partir de ventes réelles proches.*
-- ✅ `estimate-property` : propriétaire seulement (JWT, sinon 404), dossier envoyé / en examen (sinon 409).
+- ✅ `estimate-property` : propriétaire seulement (JWT, sinon 404), dossier envoyé / en examen avec titre de propriété et pièce d'identité non rejetés (sinon 409).
+- ✅ Plafond de coût : 3 nouveaux calculs par utilisateur sur 24 h (429, message « Trop de demandes de calcul aujourd'hui » dans l'app, sans « Réessayer »).
 - ✅ Terrain / autre, surface ou localisation manquante, Alsace-Moselle / Mayotte → résultat définitif `insufficient` avec une raison.
 - ✅ Comparables même type, surface ± 30 %, 500 m → 1 km → 2 km → commune (3 ans) → commune (5 ans).
 - ✅ < 5 comparables → pas d'estimation, pas d'appel IA.
@@ -36,7 +37,7 @@ Règles validées :
 - ✅ 3 phrases courtes, vouvoiement, rappel « non certifiée ».
 - ✅ Tout nombre du texte doit venir des chiffres fournis, sinon texte gabarit.
 - ✅ Panne / délai (15 s) d'OpenRouter → gabarit ; l'estimation n'est jamais bloquée.
-- ✅ Aucune donnée personnelle envoyée ; modèle réglable (`OPENROUTER_MODEL_ESTIMATE`, défaut `anthropic/claude-opus-5.5`).
+- ✅ Aucune donnée personnelle ni texte libre du vendeur (atouts / points de vigilance V6) envoyé : seulement des faits structurés ; modèle réglable (`OPENROUTER_MODEL_ESTIMATE`, défaut `anthropic/claude-opus-5.5`).
 
 ## US-05.4 · Tendance IA sur V8 ✅
 - ✅ L'envoi V7 demande le calcul sans attendre ; V8 le redemande seulement si aucune tentative n'existe.
@@ -49,7 +50,7 @@ Règles validées :
 - ✅ Route autonome `/vendeur/marche`, lecture seule, retour vers V8.
 - ✅ Synthèse, bande Q1 / médiane / Q3 avec le bien, base de calcul (ventes, rayon ou commune, période).
 - ✅ Tuiles « Ventes sur 12 mois » et « Évolution des prix sur 1 an ».
-- ✅ 3 ventes comparables + « Voir les N ventes » ; facteurs + / − ; explication de l'agent ; sources DVF / Etalab / Licence Ouverte avec le mois des dernières ventes.
+- ✅ 3 ventes comparables (rue ou « Secteur proche », année, distance arrondie à 100 m) + « Voir les N ventes » ; facteurs + / − ; explication de l'agent ; sources DVF / Etalab / Licence Ouverte avec le mois des dernières ventes.
 - ✅ Masqués en v1 : Partager, rapport complet (V9b), délai de vente, annonces, « Une question ? ».
 - ✅ fr / en / es ; 100 % de couverture.
 

@@ -10,7 +10,11 @@ import { computeEstimate, insufficient } from "../_shared/estimation/estimate.ts
 import type { Explanation } from "../_shared/estimation/explain.ts";
 import { type EstimateResult, METHOD_VERSION, type Subject } from "../_shared/estimation/types.ts";
 import type { MarketData } from "./market.ts";
-import { type Dossier, toSubject } from "./subject.ts";
+import { type Dossier, hasRequiredDocuments, toSubject } from "./subject.ts";
+
+/** New computations allowed per user over [ATTEMPTS_WINDOW_MS] (cost cap). */
+export const MAX_ATTEMPTS_PER_DAY = 3;
+export const ATTEMPTS_WINDOW_MS = 24 * 60 * 60 * 1000;
 
 /** A `running` snapshot older than this is considered dead (CPU limit…). */
 export const STALE_RUNNING_MS = 150_000;
@@ -22,6 +26,10 @@ export interface Deps {
   loadDossier(propertyId: string): Promise<Dossier | null>;
   findFinal(propertyId: string): Promise<SnapshotRow | null>;
   findRunning(propertyId: string): Promise<{ id: string; created_at: string } | null>;
+  /** Snapshots created since [since] for the properties of [ownerId]. */
+  countRecentAttempts(ownerId: string, since: string): Promise<number>;
+  /** Marks a `running` snapshot as dead (only while it is still running). */
+  markStale(id: string): Promise<void>;
   /** Inserts a `running` snapshot; null when another one is running. */
   startSnapshot(propertyId: string, row: SnapshotRow): Promise<string | null>;
   updateSnapshot(id: string, row: SnapshotRow): Promise<void>;
@@ -173,8 +181,12 @@ export async function handle(request: Request, deps: Deps): Promise<Response> {
   if (running !== null) {
     const age = deps.now().getTime() - Date.parse(running.created_at);
     if (age < STALE_RUNNING_MS) return json(202, { status: "running" });
-    await deps.updateSnapshot(running.id, { status: "error", error: "stale" });
+    await deps.markStale(running.id);
   }
+  if (!hasRequiredDocuments(dossier)) return json(409, { error: "missing_documents" });
+  const since = new Date(deps.now().getTime() - ATTEMPTS_WINDOW_MS).toISOString();
+  const attempts = await deps.countRecentAttempts(dossier.property.owner_id, since);
+  if (attempts >= MAX_ATTEMPTS_PER_DAY) return json(429, { error: "too_many_attempts" });
   const snapshotId = await deps.startSnapshot(propertyId, {
     property_id: propertyId,
     status: "running",

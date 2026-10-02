@@ -16,10 +16,6 @@ String marketDistance(AppLocalizations l10n, int meters) => meters < 1000
           .marketDistanceKm(frenchNumber(meters / 1000, decimalDigits: 1))
           .replaceFirst(',0$noBreakSpace', noBreakSpace);
 
-/// "avr. 2025" in the app language.
-String marketMonth(AppLocalizations l10n, DateTime month) =>
-    DateFormat.yMMM(l10n.localeName).format(month);
-
 /// "décembre 2025" in the app language.
 String marketLongMonth(AppLocalizations l10n, DateTime month) =>
     DateFormat.yMMMM(l10n.localeName).format(month);

@@ -359,6 +359,28 @@ void main() {
       expect(find.byType(AiEstimateCard), findsOne);
     });
 
+    testWidgets('too many requests today: no retry', (tester) async {
+      when(() => repository.getMarketSnapshot(any()))
+          .thenAnswer((_) async => null);
+      when(() => repository.requestEstimate(any()))
+          .thenThrow(const EstimateRateLimitFailure('x'));
+      await pump(tester);
+      expect(find.textContaining('Trop de demandes de calcul'), findsOne);
+      expect(find.text('Réessayer'), findsNothing);
+    });
+
+    testWidgets('the market summary link wraps with large text', (
+      tester,
+    ) async {
+      tester.platformDispatcher.textScaleFactorTestValue = 1.3;
+      addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+      when(() => repository.getMarketSnapshot(any()))
+          .thenAnswer((_) async => _snapshot(MarketSnapshotStatus.ok));
+      await pump(tester);
+      expect(find.text('Voir la synthèse du marché'), findsOne);
+      expect(tester.takeException(), isNull);
+    });
+
     testWidgets('after a failure, "Réessayer" requests it again', (
       tester,
     ) async {

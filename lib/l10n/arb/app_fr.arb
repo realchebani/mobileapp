@@ -2993,7 +2993,7 @@
       }
     }
   },
-  "marketBasisRadius": "{count} ventes comparables · rayon de {distance} · {years} ans",
+  "marketBasisRadius": "{count} ventes comparables · rayon de {distance} · {years} ans",
   "@marketBasisRadius": {
     "description": "Base de calcul : nombre de ventes, rayon, période (V8b)",
     "placeholders": {
@@ -3008,7 +3008,7 @@
       }
     }
   },
-  "marketBasisCommune": "{count} ventes comparables · {city} · {years} ans",
+  "marketBasisCommune": "{count} ventes comparables · {city} · {years} ans",
   "@marketBasisCommune": {
     "description": "Base de calcul : nombre de ventes, commune, période (V8b)",
     "placeholders": {
@@ -3023,11 +3023,11 @@
       }
     }
   },
-  "marketSales12m": "Ventes sur 12 mois",
+  "marketSales12m": "Ventes sur 12 mois",
   "@marketSales12m": {
     "description": "Tuile du nombre de ventes (V8b)"
   },
-  "marketYoy": "Évolution des prix sur 1 an",
+  "marketYoy": "Évolution des prix sur 1 an",
   "@marketYoy": {
     "description": "Tuile de l’évolution des prix (V8b)"
   },
@@ -3075,26 +3075,26 @@
   "@marketComparableNearby": {
     "description": "Lieu d’une vente quand sa rue n’est pas affichée (moins de 3 ventes)"
   },
-  "marketComparableSold": "{place} · vendue en {month}",
+  "marketComparableSold": "{place} · vendue en {year}",
   "@marketComparableSold": {
-    "description": "Lieu et mois d’une vente comparable",
+    "description": "Lieu et année d’une vente comparable",
     "placeholders": {
       "place": {
         "type": "String"
       },
-      "month": {
+      "year": {
         "type": "String"
       }
     }
   },
-  "marketComparableSoldAt": "{place} · vendue en {month} · à {distance}",
+  "marketComparableSoldAt": "{place} · vendue en {year} · à {distance}",
   "@marketComparableSoldAt": {
-    "description": "Lieu, mois et distance d’une vente comparable",
+    "description": "Lieu, année et distance d’une vente comparable",
     "placeholders": {
       "place": {
         "type": "String"
       },
-      "month": {
+      "year": {
         "type": "String"
       },
       "distance": {
@@ -3178,5 +3178,9 @@
   "marketAllSalesTitle": "Ventes comparables",
   "@marketAllSalesTitle": {
     "description": "Titre de la feuille listant toutes les ventes (V8b)"
+  },
+  "submittedAiRateLimited": "Trop de demandes de calcul aujourd’hui : réessayez demain.",
+  "@submittedAiRateLimited": {
+    "description": "Carte Tendance IA quand la limite de 3 calculs par 24 h est atteinte"
   }
 }

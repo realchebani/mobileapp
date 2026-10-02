@@ -17,7 +17,7 @@ ComparableSale _sale(int i, {String? street, int? rooms = 4, int? distance}) =>
       street: street,
       areaM2: 96 + i,
       rooms: rooms,
-      soldOn: DateTime(2025, 4),
+      soldYear: 2025,
       distanceM: distance,
       priceEur: 400000 + i,
       priceM2Eur: 4000 + i,
@@ -47,7 +47,7 @@ final _full = MarketSnapshot(
   sales12m: 62,
   yoyChangePct: 2.1,
   comparables: [
-    _sale(0, street: 'Rue des Platanes', distance: 350),
+    _sale(0, street: 'Rue des Platanes', distance: 400),
     _sale(1, rooms: null, distance: 1200),
     _sale(2, rooms: 0),
     _sale(3, distance: 1000),
@@ -109,7 +109,7 @@ void main() {
     expect(find.text('3${nb}572$nb€/m²'), findsOne);
     expect(find.text('Médiane secteur 4${nb}162$nb€/m²'), findsOne);
     expect(
-      find.text('27 ventes comparables · rayon de 500${nb}m · 3 ans'),
+      find.text('27 ventes comparables · rayon de 500${nb}m · 3${nb}ans'),
       findsOne,
     );
     expect(
@@ -121,15 +121,15 @@ void main() {
     expect(find.text('Ventes comparables récentes'), findsOne);
     expect(find.text('Maison 96${nb}m² · 4${nb}p.'), findsOne);
     expect(
-      find.text('Rue des Platanes · vendue en avr. 2025 · à 350${nb}m'),
+      find.text('Rue des Platanes · vendue en 2025 · à 400${nb}m'),
       findsOne,
     );
     expect(find.text('Appartement 97${nb}m²'), findsOne);
     expect(
-      find.text('Secteur proche · vendue en avr. 2025 · à 1,2${nb}km'),
+      find.text('Secteur proche · vendue en 2025 · à 1,2${nb}km'),
       findsOne,
     );
-    expect(find.text('Secteur proche · vendue en avr. 2025'), findsOne);
+    expect(find.text('Secteur proche · vendue en 2025'), findsOne);
     expect(find.text('400${nb}000$nb€'), findsOne);
     expect(find.text('Ce qui influence votre estimation'), findsOne);
     expect(find.text('Piscine'), findsOne);
@@ -144,10 +144,7 @@ void main() {
     await tester.tap(find.text('Voir les 4 ventes'));
     await tester.pumpAndSettle();
     expect(find.byType(MarketComparablesSheet), findsOne);
-    expect(
-      find.text('Secteur proche · vendue en avr. 2025 · à 1${nb}km'),
-      findsOne,
-    );
+    expect(find.text('Secteur proche · vendue en 2025 · à 1${nb}km'), findsOne);
     await tester.tap(find.bySemanticsLabel('Fermer'));
     await tester.pumpAndSettle();
     expect(find.byType(MarketComparablesSheet), findsNothing);
@@ -182,7 +179,7 @@ void main() {
       ),
       findsOne,
     );
-    expect(find.text('0 ventes comparables ·  · 5 ans'), findsOne);
+    expect(find.text('0 ventes comparables ·  · 5${nb}ans'), findsOne);
     expect(find.text('−0,4$nb%'), findsOne);
     expect(find.text('Ventes sur 12 mois'), findsNothing);
     expect(find.text('Ventes comparables récentes'), findsNothing);

@@ -5,7 +5,7 @@ import 'package:mobileapp/ui/ui.dart';
 import 'package:property_repository/property_repository.dart';
 
 /// One comparable DVF sale: type, area, rooms; street (only when it has at
-/// least 3 sales, else « Secteur proche »), month and distance; price and
+/// least 3 sales, else « Secteur proche »), year and distance; price and
 /// price per m².
 class MarketComparableRow extends StatelessWidget {
   const new({required this.sale, this.showDivider = true, super.key});
@@ -24,13 +24,13 @@ class MarketComparableRow extends StatelessWidget {
         ? l10n.marketComparableTitleNoRooms(type, area)
         : l10n.marketComparableTitle(type, area, rooms);
     final place = sale.street ?? l10n.marketComparableNearby;
-    final month = marketMonth(l10n, sale.soldOn);
+    final year = sale.soldYear.toString();
     final distance = sale.distanceM;
     final subtitle = distance == null
-        ? l10n.marketComparableSold(place, month)
+        ? l10n.marketComparableSold(place, year)
         : l10n.marketComparableSoldAt(
             place,
-            month,
+            year,
             marketDistance(l10n, distance),
           );
     return MergeSemantics(

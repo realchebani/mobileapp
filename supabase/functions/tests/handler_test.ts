@@ -10,6 +10,7 @@ const ID = "bffa2b67-636b-4899-ac67-9edc7576a867";
 function property(overrides: Partial<PropertyRow> = {}): PropertyRow {
   return {
     id: ID,
+    owner_id: "owner-1",
     status: "submitted",
     property_type: "maison",
     lat: 45.7104,
@@ -34,6 +35,10 @@ function dossier(overrides: Partial<PropertyRow> = {}): Dossier {
     property: property(overrides),
     parcelAreas: [300, null, 240],
     lifestyle: [{ kind: "asset", label: "Parc" }, { kind: "watch_point", label: "Route" }],
+    documents: [
+      { kind: "titre_propriete", status: "received" },
+      { kind: "piece_identite", status: "analyzed" },
+    ],
   };
 }
 
@@ -43,11 +48,21 @@ function fakeDeps(overrides: Partial<Deps> = {}) {
   const updates: [string, SnapshotRow][] = [];
   const saved: SnapshotRow[] = [];
   const logs: string[] = [];
+  const stale: string[] = [];
+  const counted: [string, string][] = [];
   const work: Promise<void>[] = [];
   const deps: Deps = {
     loadDossier: () => Promise.resolve(dossier()),
     findFinal: () => Promise.resolve(null),
     findRunning: () => Promise.resolve(null),
+    countRecentAttempts: (ownerId, since) => {
+      counted.push([ownerId, since]);
+      return Promise.resolve(0);
+    },
+    markStale: (id) => {
+      stale.push(id);
+      return Promise.resolve();
+    },
     startSnapshot: () => Promise.resolve("snap-1"),
     updateSnapshot: (id, row) => {
       updates.push([id, row]);
@@ -71,7 +86,7 @@ function fakeDeps(overrides: Partial<Deps> = {}) {
     log: (message) => logs.push(message),
     ...overrides,
   };
-  return { deps, updates, saved, logs, work };
+  return { deps, updates, saved, logs, work, stale, counted };
 }
 
 const post = (body: unknown, method = "POST") =>
@@ -125,12 +140,40 @@ Deno.test("202 while another computation runs; a stale one is closed", async () 
     findRunning: () => Promise.resolve({ id: "r", created_at: "2026-10-01T09:50:00Z" }),
   });
   assertEquals((await handle(post({ property_id: ID }), stale.deps)).status, 202);
-  assertEquals(stale.updates[0], ["r", { status: "error", error: "stale" }]);
+  assertEquals(stale.stale, ["r"]);
   assertEquals(stale.work.length, 1);
 
   const raced = fakeDeps({ startSnapshot: () => Promise.resolve(null) });
   assertEquals((await handle(post({ property_id: ID }), raced.deps)).status, 202);
   assertEquals(raced.work.length, 0);
+});
+
+Deno.test("409 without a title deed and an identity document", async () => {
+  const missing = fakeDeps({
+    loadDossier: () =>
+      Promise.resolve({
+        ...dossier(),
+        documents: [
+          { kind: "titre_propriete", status: "received" },
+          { kind: "piece_identite", status: "rejected" },
+        ],
+      }),
+  });
+  const response = await handle(post({ property_id: ID }), missing.deps);
+  assertEquals(response.status, 409);
+  assertEquals(await response.json(), { error: "missing_documents" });
+  assertEquals(missing.work.length, 0);
+});
+
+Deno.test("429 after 3 attempts in 24 h for the same user", async () => {
+  const capped = fakeDeps({ countRecentAttempts: () => Promise.resolve(3) });
+  const response = await handle(post({ property_id: ID }), capped.deps);
+  assertEquals(response.status, 429);
+  assertEquals(await response.json(), { error: "too_many_attempts" });
+  assertEquals(capped.work.length, 0);
+  const { deps, counted } = fakeDeps();
+  await handle(post({ property_id: ID }), deps);
+  assertEquals(counted, [["owner-1", "2026-09-30T10:00:00.000Z"]]);
 });
 
 Deno.test("computes in the background and stores the result once", async () => {
