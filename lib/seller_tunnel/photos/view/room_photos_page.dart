@@ -241,6 +241,8 @@ class _RoomPhotosViewState extends State<RoomPhotosView> {
         RoomPhotosNotice.accessDenied => l10n.photosNoticeAccessDenied,
         RoomPhotosNotice.pickFailed => l10n.photosNoticePickFailed,
         RoomPhotosNotice.deleteFailed => l10n.photosNoticeDeleteFailed,
+        RoomPhotosNotice.lastPhotoRequired =>
+          l10n.photosNoticeLastPhotoRequired,
         RoomPhotosNotice.reorderFailed => l10n.photosNoticeReorderFailed,
         RoomPhotosNotice.analysisQuota => l10n.photosNoticeQuota,
       };

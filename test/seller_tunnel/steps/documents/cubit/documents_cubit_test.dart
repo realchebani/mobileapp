@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobileapp/seller_tunnel/photos/data/photo_processor.dart';
 import 'package:mobileapp/seller_tunnel/steps/documents/cubit/documents_cubit.dart';
 import 'package:mobileapp/seller_tunnel/steps/documents/data/document_picker.dart';
 import 'package:mocktail/mocktail.dart';
@@ -11,6 +12,28 @@ import 'package:property_repository/property_repository.dart';
 import '../../../../helpers/helpers.dart';
 
 class _MockDocumentPicker extends Mock implements DocumentPicker;
+
+/// Records the files it cleans; fails with [error] when given.
+class _FakeProcessor extends Mock implements PhotoProcessor {
+  new([this.error]);
+
+  final Exception? error;
+  final List<Uint8List> cleaned = [];
+
+  @override
+  Future<Uint8List> stripMetadata(Uint8List bytes) async {
+    cleaned.add(bytes);
+    if (error case final error?) throw error;
+    return Uint8List.fromList([9, ...bytes]);
+  }
+}
+
+/// A minimal JPEG with an EXIF segment holding "GPS".
+final _jpegWithExif = Uint8List.fromList([
+  0xFF, 0xD8, //
+  0xFF, 0xE1, 0, 10, 0x45, 0x78, 0x69, 0x66, 0, 0, 0x47, 0x50, //
+  0xFF, 0xDA, 0, 2, 1, 2, 0xFF, 0xD9,
+]);
 
 const _titleDeed = PropertyDocument(
   id: 'd1',
@@ -88,17 +111,20 @@ void main() {
     ).thenAnswer((_) async => 'https://storage.example/signed');
   });
 
-  DocumentsCubit build({List<PropertyDocument> documents = const []}) =>
-      DocumentsCubit(
-        propertyRepository: repository,
-        documentPicker: picker,
-        openUrl: (uri) async {
-          opened.add(uri);
-          return openResult;
-        },
-        property: testProperty,
-        documents: documents,
-      );
+  DocumentsCubit build({
+    List<PropertyDocument> documents = const [],
+    PhotoProcessor? processor,
+  }) => DocumentsCubit(
+    propertyRepository: repository,
+    documentPicker: picker,
+    photoProcessor: processor,
+    openUrl: (uri) async {
+      opened.add(uri);
+      return openResult;
+    },
+    property: testProperty,
+    documents: documents,
+  );
 
   const initial = DocumentsState(property: testProperty, documents: []);
 
@@ -207,6 +233,64 @@ void main() {
           ),
         ).called(1),
       );
+
+      group('removes the metadata of an image before the upload', () {
+        Uint8List uploaded() =>
+            verify(
+                  () => repository.uploadDocument(
+                    ownerId: any(named: 'ownerId'),
+                    propertyId: any(named: 'propertyId'),
+                    kind: any(named: 'kind'),
+                    fileName: any(named: 'fileName'),
+                    bytes: captureAny(named: 'bytes'),
+                    mimeType: any(named: 'mimeType'),
+                  ),
+                ).captured.single
+                as Uint8List;
+
+        test('with the photo processor of the app by default', () async {
+          when(() => picker.pick(any())).thenAnswer(
+            (_) async => XFile.fromData(_jpegWithExif, path: 'id.jpg'),
+          );
+          final cubit = build();
+          await cubit.pick(
+            DocumentSource.photos,
+            kind: DocumentKind.identityDocument,
+          );
+          expect(uploaded(), [0xFF, 0xD8, 0xFF, 0xDA, 0, 2, 1, 2, 0xFF, 0xD9]);
+        });
+
+        test('never changes a PDF', () async {
+          final processor = _FakeProcessor();
+          when(
+            () => picker.pick(any()),
+          ).thenAnswer((_) async => XFile.fromData(_bytes, path: 'titre.pdf'));
+          await build(processor: processor)
+              .pick(DocumentSource.files, kind: DocumentKind.titleDeed);
+          expect(processor.cleaned, isEmpty);
+          expect(uploaded(), _bytes);
+        });
+
+        test('uploads the cleaned image', () async {
+          final processor = _FakeProcessor();
+          await build(processor: processor)
+              .pick(DocumentSource.photos, kind: DocumentKind.identityDocument);
+          expect(processor.cleaned, [_bytes]);
+          expect(uploaded(), [9, ..._bytes]);
+        });
+
+        blocTest<DocumentsCubit, DocumentsState>(
+          'keeps an image that cannot be parsed, and reports it',
+          build: () =>
+              build(processor: _FakeProcessor(const FormatException())),
+          act: (cubit) => cubit.pick(
+            DocumentSource.photos,
+            kind: DocumentKind.identityDocument,
+          ),
+          errors: () => [isA<FormatException>()],
+          verify: (_) => expect(uploaded(), _bytes),
+        );
+      });
 
       blocTest<DocumentsCubit, DocumentsState>(
         'rejects an unsupported type',

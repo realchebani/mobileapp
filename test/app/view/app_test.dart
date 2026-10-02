@@ -53,6 +53,9 @@ class _FakePhotoProcessor implements PhotoProcessor {
     height: 3,
     quality: const PhotoQuality(),
   );
+
+  @override
+  Future<Uint8List> stripMetadata(Uint8List bytes) async => bytes;
 }
 
 /// Encodes a patch value as the database would store it.

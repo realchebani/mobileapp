@@ -4,7 +4,10 @@ import 'dart:typed_data';
 
 import 'package:equatable/equatable.dart';
 import 'package:image/image.dart' as img;
+import 'package:mobileapp/seller_tunnel/photos/data/image_metadata.dart';
 import 'package:property_repository/property_repository.dart';
+
+export 'package:mobileapp/seller_tunnel/photos/data/image_metadata.dart';
 
 /// A photo ready to upload: upright JPEG, its size and the checks made on
 /// the device.
@@ -33,6 +36,13 @@ abstract interface class PhotoProcessor {
   ///
   /// Throws a [FormatException] when the image cannot be read.
   Future<ProcessedPhoto> process(Uint8List bytes, {double? tiltDegrees});
+
+  /// [bytes] (a document file) without the metadata of an image (GPS
+  /// position, device…), losslessly: see [stripImageMetadata]. Anything
+  /// that is not a JPEG, PNG or HEIF image (a PDF…) is returned as is.
+  ///
+  /// Throws a [FormatException] when an image cannot be parsed safely.
+  Future<Uint8List> stripMetadata(Uint8List bytes);
 }
 
 /// [PhotoProcessor] running [processPhoto] in a background isolate.
@@ -42,6 +52,12 @@ final class IsolatePhotoProcessor implements PhotoProcessor {
   @override
   Future<ProcessedPhoto> process(Uint8List bytes, {double? tiltDegrees}) =>
       Isolate.run(() => processPhoto(bytes, tiltDegrees: tiltDegrees));
+
+  @override
+  Future<Uint8List> stripMetadata(Uint8List bytes) async =>
+      isMetadataImage(bytes)
+      ? await Isolate.run(() => stripImageMetadata(bytes))
+      : bytes;
 }
 
 /// Thresholds of the on-device checks (v1, to calibrate on real photos:

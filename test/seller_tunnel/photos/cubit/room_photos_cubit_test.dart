@@ -297,6 +297,12 @@ void main() {
       await cubit.delete(b);
       expect(cubit.state.photos, [b]);
       expect(cubit.state.notice, RoomPhotosNotice.deleteFailed);
+
+      when(() => repository.deleteRoomPhoto(any()))
+          .thenThrow(const RoomPhotoRequiredFailure('x'));
+      await cubit.delete(b);
+      expect(cubit.state.photos, [b]);
+      expect(cubit.state.notice, RoomPhotosNotice.lastPhotoRequired);
     });
 
     test('puts a photo first, or tells it failed', () async {

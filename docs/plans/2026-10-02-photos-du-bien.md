@@ -132,13 +132,28 @@ Code commun `supabase/functions/_shared/vision/` (config, client base de donnée
 | 9 | Tests 100 %, analyse, licences, build iOS, rendus | ✅ |
 
 ## 6. Hors périmètre / backlog
-- Changer l’ordre des photos en une seule requête (RPC) au lieu d’une requête par photo modifiée (≤ 12).
-- Empêcher côté serveur la suppression de la dernière photo d’une pièce principale d’un dossier envoyé (aujourd’hui : l’app ne permet plus de modifier un dossier envoyé).
-- Retirer aussi l’EXIF des documents importés tels quels en V7 (hors photos de pièces et plans).
+- ~~Changer l’ordre des photos en une seule requête (RPC)~~ : fait (durcissement, §7).
+- ~~Empêcher côté serveur la suppression de la dernière photo d’une pièce principale d’un dossier envoyé~~ : fait (§7).
+- ~~Retirer aussi l’EXIF des documents importés tels quels en V7~~ : fait (§7).
 - Floutage automatique des visages (Apple Vision ou ML Kit) — après les tests.
 - Lecture des plans PDF ; plans sur plusieurs pages en une fois.
 - Banc d’essai du modèle de vision sur 30 photos réelles (comme pour la voix), boîtes englobantes des objets personnels.
 - Vidéo par pièce, relevé AR, visite 3D (étude, v2/v3).
+
+## 7. Durcissement (2026-10-02, branche `chore/durcissement`)
+
+Corrections techniques, sans changement de comportement à arbitrer (migration `20261002202107_photos_hardening.sql`, additive) :
+
+| Sujet | Avant | Après |
+|---|---|---|
+| Ordre des photos | une requête par photo déplacée : un échec au milieu laissait un ordre partiel | RPC `reorder_room_photos(room, ids[])` (droits de l’appelant, RLS) : tout ou rien ; id inconnu, en double ou d’un dossier verrouillé ⇒ `room_photos_order_invalid`, rien n’est changé |
+| Dernière photo d’une pièce principale | seule l’app (dossier verrouillé à l’envoi) l’empêchait | déclencheur `room_photos_keep_main_photo` : dossier `submitted`, pièce principale, type avec pièces (non choisi, maison, appartement, autre) ⇒ `room_photo_required` ; pas pour l’équipe (sans JWT) ni pour une photo supprimée avec sa pièce ou son bien ; l’app affiche « Cette pièce principale doit garder au moins une photo… » (`RoomPhotoRequiredFailure`) |
+| EXIF des documents importés en V7 | fichiers « Fichiers » / « Photothèque » envoyés tels quels | `PhotoProcessor.stripMetadata` (isolat, `image_metadata.dart`) **sans réencodage** : JPEG (APP1 EXIF/XMP, APP13 IPTC, commentaires, données après l’image retirés ; profil ICC, JFIF, Adobe gardés ; orientation conservée dans un EXIF minimal), PNG (`eXIf`, `tEXt`, `zTXt`, `iTXt`, `tIME`), HEIC/HEIF (élément EXIF remplacé par un EXIF vide, XMP par des espaces, taille inchangée) ; **un PDF n’est jamais modifié** ; une image impossible à analyser est envoyée telle quelle (erreur remontée). Vérifié sur une vraie photo d’iPhone géolocalisée en JPEG, HEIC et PNG (plus de GPS ni d’appareil, image toujours lisible) |
+| Statut relu à l’écriture (vision) | statut « brouillon » vérifié à la lecture, analyse écrite ensuite par le service role | `vision_save_photo_analysis` / `vision_save_plan_reading` : écriture seulement si le bien est encore brouillon (verrou partagé sur la ligne du bien), sinon 409 `locked` et journal `locked` ; lecture de plan fusionnée dans `extracted` en base (plus d’écrasement d’autres clés) |
+| Deux analyses simultanées de la même photo | deux appels au modèle | `vision_reserve_target` : une réservation `in_progress` de moins de 2 min pour la même cible ⇒ `busy` ; la fonction attend alors le résultat (20 s au plus, sinon 409 `busy`) et le renvoie `cached: true` |
+| Fichiers orphelins | aucun moyen de les voir | `staff_orphan_files(p_min_age)` (service role) : fichiers du bucket sans ligne `property_documents` (plans compris) ni `room_photos` ; ménage manuel par l’API Storage (runbook `certifier-un-dossier.md` §5), jamais automatique |
+
+Non traité (à arbitrer ou hors technique) : supprimer en base l’ancienne fonction `vision_reserve_request` (inutilisée, gardée : migrations additives) ; empêcher la suppression d’une **pièce** principale d’un dossier envoyé (même logique, mais touche à la règle produit des pièces) ; refuser à l’import une image impossible à nettoyer (aujourd’hui envoyée telle quelle).
 
 ## Journal d’exécution
 - 2026-10-02 — Plan rédigé ; dépendances `camera` et `sensors_plus` (BSD-3) ajoutées, contrôle des licences OK.
@@ -146,3 +161,4 @@ Code commun `supabase/functions/_shared/vision/` (config, client base de donnée
 - 2026-10-02 — `_shared/vision`, `vision-room`, `plan-reader` : 25 tests Deno (validation, handlers avec base et OpenRouter factices) ; déployées. Essai de bout en bout avec un utilisateur jetable (`epic15-e2e@realesty.fr`) : photo analysée en ≈ 3,5 s pour 0,00073 $ (réponse en cache au 2ᵉ appel) ; plan de test lu en ≈ 4,5 s pour 0,0013 $ (6 pièces, WC sans surface laissé vide, total 64 m² retrouvé).
 - 2026-10-02 — Dépôt (`PropertyRepository` : photos, URLs signées, analyses, lecture de plan, suppression des photos avec le bien), écrans (Photos de la pièce, Prise de vue, Consentement, Pièces lues sur le plan), V5 / V5c / V7 / V8, runbook ; tests à 100 % (app et paquet), analyse, bloc lint, format, licences OK ; rendus dans `scratchpad/epic15/shots/`.
 - 2026-10-02 — Corrections après vérification : EXIF retiré avant l’envoi (photos, plans, pages scannées ; test sans GPS ni appareil), consentement exigé par les fonctions (403 sans lui) et retirable (écran des photos, Compte), prompts et filtres durcis (texte de l’image = donnée, nombres en lettres et mots de mesure, noms de pièces nettoyés), provenance ligne par ligne du plan, « Remplacer mes pièces », « Relire le dernier plan », envoi perdu vérifié / fichier conservé / « Retirer » par id, retour Android, mise en page en grand texte. Fonctions redéployées ; essai de bout en bout refait (403 sans consentement).
+- 2026-10-02 — Durcissement (§7) : migration `20261002202107_photos_hardening` (sonde annulée : 32 contrôles — ordre tout ou rien, id étranger / en double / dossier verrouillé refusés, dernière photo d’une pièce principale envoyée refusée mais permise pour l’équipe, une pièce non principale, un terrain, un brouillon ou par cascade ; réservation `busy` / `quota` / périmée ; écriture des analyses refusée hors brouillon et pour un autre propriétaire ; plan fusionné ; orphelins listés, fonctions fermées aux clients — puis dry-run et push) ; `vision-room` et `plan-reader` redéployées après 191 tests Deno ; essai de bout en bout avec un utilisateur jetable supprimé ensuite (réordre, refus d’un id inconnu sans effet, deux analyses simultanées ⇒ une seule ligne au journal, plan fusionné, 3ᵉ suppression refusée `room_photo_required`, orphelins listés, 42501 pour un client) ; app : `reorderRoomPhotos` par RPC, `RoomPhotoRequiredFailure` + message, EXIF retiré des imports V7.

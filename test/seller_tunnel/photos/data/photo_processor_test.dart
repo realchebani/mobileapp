@@ -116,6 +116,22 @@ void main() {
     test('a plan or scanned page keeps none either', () {
       expectNoMetadata(compressPage(located(), (maxSide: 2400, quality: 85)));
     });
+
+    test(
+      'an imported document keeps none, losslessly, in the background',
+      () async {
+        const processor = IsolatePhotoProcessor();
+        final source = located();
+        final cleaned = await processor.stripMetadata(source);
+        expectNoMetadata(cleaned);
+        expect(
+          img.decodeJpg(cleaned)!.getPixel(10, 10),
+          img.decodeJpg(source)!.getPixel(10, 10),
+        );
+        final pdf = Uint8List.fromList('%PDF-1.7'.codeUnits);
+        expect(await processor.stripMetadata(pdf), same(pdf));
+      },
+    );
   });
 
   test('IsolatePhotoProcessor processes in the background', () async {

@@ -84,6 +84,10 @@ class FakePhotoProcessor implements PhotoProcessor {
       quality: PhotoQuality(brightness: 120, sharpness: 80, issues: issues),
     );
   }
+
+  @override
+  Future<Uint8List> stripMetadata(Uint8List bytes) async =>
+      stripImageMetadata(bytes);
 }
 
 /// A processed photo of [bytes].

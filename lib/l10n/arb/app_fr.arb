@@ -5265,6 +5265,10 @@
   "@photosNoticeDeleteFailed": {
     "description": "EPIC-15 · échec de suppression"
   },
+  "photosNoticeLastPhotoRequired": "Cette pièce principale doit garder au moins une photo : ajoutez-en une autre avant de supprimer celle-ci.",
+  "@photosNoticeLastPhotoRequired": {
+    "description": "Durcissement · suppression refusée de la dernière photo d’une pièce principale d’un dossier envoyé"
+  },
   "photosNoticeReorderFailed": "L’ordre des photos n’a pas pu être enregistré.",
   "@photosNoticeReorderFailed": {
     "description": "EPIC-15 · échec du changement d’ordre"

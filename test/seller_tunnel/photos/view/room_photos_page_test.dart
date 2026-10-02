@@ -426,6 +426,26 @@ void main() {
       expect(find.byType(PhotoTile), findsOneWidget);
     });
 
+    testWidgets('the last photo of a main room of a sent dossier stays', (
+      tester,
+    ) async {
+      stored = [testRoomPhoto('a')];
+      when(() => repository.deleteRoomPhoto(any()))
+          .thenThrow(const RoomPhotoRequiredFailure('x'));
+      await pump(tester);
+      await tap(tester, find.byType(PhotoTile).first);
+      await tap(tester, find.text('Supprimer la photo'));
+      expect(find.byType(PhotoTile), findsOneWidget);
+      expect(
+        find.text(
+          'Cette pièce principale doit garder au moins une photo : '
+                  'ajoutez-en une autre avant de supprimer celle-ci.'
+              .replaceAll(' :', '$_nbsp:'),
+        ),
+        findsOneWidget,
+      );
+    });
+
     testWidgets('a failed upload can be retried or removed', (tester) async {
       when(() => repository.uploadRoomPhoto(any(), bytes: any(named: 'bytes')))
           .thenThrow(const DocumentUploadFailure('x'));

@@ -1066,6 +1066,7 @@
   "photosNoticeAccessDenied": "Access denied: allow the camera or the photos in the Settings.",
   "photosNoticePickFailed": "The photo library could not open.",
   "photosNoticeDeleteFailed": "The photo could not be deleted.",
+  "photosNoticeLastPhotoRequired": "This main room must keep at least one photo: add another one before deleting this one.",
   "photosNoticeReorderFailed": "The order of the photos could not be saved.",
   "photosNoticeQuota": "Daily analysis limit reached: try again tomorrow.",
   "surfacesPhotosBadge": "{count, plural, =0{No photo} =1{1 photo} other{{count} photos}}",

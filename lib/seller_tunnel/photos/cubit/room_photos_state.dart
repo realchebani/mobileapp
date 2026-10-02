@@ -23,6 +23,9 @@ enum RoomPhotosNotice {
   /// Deleting a photo failed.
   deleteFailed,
 
+  /// The last photo of a main room of a sent dossier cannot be deleted.
+  lastPhotoRequired,
+
   /// Changing the order failed.
   reorderFailed,
 
