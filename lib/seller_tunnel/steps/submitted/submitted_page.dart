@@ -1,8 +1,15 @@
+import 'dart:async';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:mobileapp/app/app.dart';
 import 'package:mobileapp/l10n/l10n.dart';
 import 'package:mobileapp/seller_tunnel/cubit/seller_tunnel_cubit.dart';
+import 'package:mobileapp/seller_tunnel/market/widgets/market_format.dart';
+import 'package:mobileapp/seller_tunnel/steps/submitted/cubit/ai_estimate_cubit.dart';
 import 'package:mobileapp/seller_tunnel/steps/submitted/widgets/ai_estimate_card.dart';
+import 'package:mobileapp/seller_tunnel/steps/submitted/widgets/ai_estimate_status_card.dart';
 import 'package:mobileapp/seller_tunnel/steps/submitted/widgets/dossier_summary_sheet.dart';
 import 'package:mobileapp/seller_tunnel/steps/submitted/widgets/submitted_format.dart';
 import 'package:mobileapp/seller_tunnel/steps/submitted/widgets/submitted_timeline.dart';
@@ -12,14 +19,32 @@ import 'package:mobileapp/ui/ui.dart';
 import 'package:property_repository/property_repository.dart';
 
 /// V8 · Attente de validation expert: confirmation once the dossier is
-/// sent, AI trend (when computed), expert review timeline (from `status`
-/// and `submitted_at`) and a note that the seller is notified in the app.
-/// Read-only: works for submitted, in_review and certified dossiers.
+/// sent, AI trend (non-certified estimate, EPIC-05), expert review
+/// timeline (from `status` and `submitted_at`) and a note that the seller
+/// is notified in the app. Read-only: works for submitted, in_review and
+/// certified dossiers.
 class SubmittedPage extends StatelessWidget {
   const new({super.key});
 
   @override
-  Widget build(BuildContext context) => const SubmittedView();
+  Widget build(BuildContext context) {
+    final property = context.read<SellerTunnelCubit>().state.property!;
+    return BlocProvider(
+      create: (context) {
+        final cubit = AiEstimateCubit(
+          propertyRepository: context.read<PropertyRepository>(),
+          propertyId: property.id,
+          // No trend once certified (the expert's value replaces it).
+          enabled:
+              property.status == PropertyStatus.submitted ||
+              property.status == PropertyStatus.inReview,
+        );
+        unawaited(cubit.load());
+        return cubit;
+      },
+      child: const SubmittedView(),
+    );
+  }
 }
 
 class SubmittedView extends StatelessWidget {
@@ -31,9 +56,6 @@ class SubmittedView extends StatelessWidget {
     final state = context.watch<SellerTunnelCubit>().state;
     final property = state.property!;
     final status = property.status;
-    final low = property.aiEstimateLowEur;
-    final median = property.aiEstimateMedianEur;
-    final high = property.aiEstimateHighEur;
     return TunnelScaffold(
       spacing: 14,
       actionBar: _ActionBar(
@@ -41,16 +63,7 @@ class SubmittedView extends StatelessWidget {
       ),
       children: [
         _Hero(state: state),
-        if (status != PropertyStatus.certified &&
-            low != null &&
-            median != null &&
-            high != null)
-          AiEstimateCard(
-            low: low,
-            median: median,
-            high: high,
-            computedAt: property.aiEstimateComputedAt,
-          ),
+        const _AiEstimate(),
         _Card(child: SubmittedTimeline(entries: _timeline(l10n, property))),
         if (status == PropertyStatus.submitted ||
             status == PropertyStatus.inReview)
@@ -195,6 +208,60 @@ class _Hero extends StatelessWidget {
       ),
     );
   }
+}
+
+/// "Tendance IA": the non-certified estimate, its computation or why
+/// there is none.
+class _AiEstimate extends StatelessWidget {
+  const new();
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final state = context.watch<AiEstimateCubit>().state;
+    final snapshot = state.snapshot;
+    final low = snapshot?.lowEur;
+    final median = snapshot?.medianEur;
+    final high = snapshot?.highEur;
+    return switch (state.status) {
+      AiEstimateStatus.hidden => const SizedBox.shrink(),
+      AiEstimateStatus.ready
+          when low != null && median != null && high != null =>
+        AiEstimateCard(
+          low: low,
+          median: median,
+          high: high,
+          computedAt: snapshot!.computedAt,
+          confidence: snapshot.confidenceLevel,
+          widenedNote: _widenedNote(l10n, snapshot),
+          onSynthesis: () => context.push(AppRoutes.sellerMarket),
+        ),
+      AiEstimateStatus.computing => AiEstimateStatusCard(
+        message: l10n.submittedAiComputing,
+        isLoading: true,
+      ),
+      AiEstimateStatus.rateLimited => AiEstimateStatusCard(
+        message: l10n.submittedAiRateLimited,
+      ),
+      AiEstimateStatus.failed => AiEstimateStatusCard(
+        message: l10n.submittedAiFailed,
+        onRetry: () => context.read<AiEstimateCubit>().retry(),
+      ),
+      AiEstimateStatus.ready ||
+      AiEstimateStatus.unavailable => AiEstimateStatusCard(
+        message: snapshot?.reason == 'too_few_sales'
+            ? l10n.submittedAiTooFewSales
+            : l10n.submittedAiUnavailable,
+      ),
+    };
+  }
+}
+
+String? _widenedNote(AppLocalizations l10n, MarketSnapshot snapshot) {
+  final radius = snapshot.radiusM;
+  final years = snapshot.years;
+  if (!snapshot.isSearchWidened || radius == null || years == null) return null;
+  return l10n.submittedAiWidened(marketDistance(l10n, radius), years);
 }
 
 class _Card extends StatelessWidget {

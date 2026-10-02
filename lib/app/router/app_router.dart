@@ -86,9 +86,14 @@ GoRouter createAppRouter({
                         path: _child(AppRoutes.sellerReport),
                         builder: (context, state) => const ReportPage(),
                       ),
-                      // TODO(EPIC-05): V8b (/vendeur/marche) goes here, with
-                      // parentNavigatorKey: sellerNavigatorKey. The dashboard
-                      // shows its link once the route exists.
+                      // V8b · Synthèse du marché (EPIC-05), full screen above
+                      // the tabs, opened from V8 and V9.
+                      GoRoute(
+                        parentNavigatorKey: sellerNavigatorKey,
+                        path: _child(AppRoutes.sellerMarket),
+                        builder: (context, state) =>
+                            const MarketSynthesisPage(),
+                      ),
                       for (final (path, page) in _sellerTunnelPages)
                         GoRoute(
                           parentNavigatorKey: sellerNavigatorKey,

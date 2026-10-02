@@ -1,7 +1,7 @@
 # EPIC-07 · Espace vendeur : tableau de bord & avis de valeur
 
 **Objectif** : après l’envoi du dossier, le vendeur retrouve son bien dans un espace à onglets, suit la certification et consulte son avis de valeur certifié.
-**Statut** : 🚧 En cours (socle livré ; V8b et la courbe du secteur attendent EPIC-05, la mise en vente EPIC-08)
+**Statut** : 🚧 En cours (socle et V8b branchés ; restent la courbe du secteur dans V9b et la mise en vente d’EPIC-08)
 
 Plan : [Parcours vendeur V8b → V19](../plans/2026-10-01-parcours-vendeur-v8b-v19.md) (§1, §3 V9 / V9b, §4.1, §6 EPIC-07, §9 arbitrages).
 
@@ -24,7 +24,7 @@ Arbitrages appliqués (2026-10-01) :
 *En tant que vendeur dont le dossier est en analyse, je veux voir où en est l’expert et ma tendance IA.*
 - ✅ Carte du bien (type, surface, pièces, adresse) + badge « Analyse en cours ».
 - ✅ Tendance IA indicative (colonnes `ai_estimate_*`) ou message « l’expert vous donnera directement son avis de valeur ».
-- 📋 Lien « Voir la synthèse du marché » : affiché automatiquement dès que la route V8b (`/vendeur/marche`, EPIC-05) existe.
+- ✅ Lien « Voir la synthèse du marché » → V8b (`/vendeur/marche`, EPIC-05), affiché dès que la route existe.
 - ✅ Ligne « Suivi de mon dossier » → V8 ; V8 propose « Aller au tableau de bord ».
 - ✅ Carte « Mon dossier » : score de transparence, documents (« Action requise » si un document est refusé), surfaces & pièces, cadre de vie, ouvrant l’aperçu des données.
 - ✅ Tirer pour actualiser recharge le dossier, l’avis de valeur et les notifications.
@@ -44,9 +44,10 @@ Arbitrages appliqués (2026-10-01) :
 - 📋 Onglet Secteur : courbe du prix au m² et chiffres du secteur depuis l’instantané de marché d’EPIC-05.
 - 📋 « Mettre en vente à {valeur} » ouvre le choix de la formule (EPIC-08) ; « À proximité, à pied » et « Partager » plus tard.
 
-## US-07.5 · Synthèse du marché dans le parcours 📋
+## US-07.5 · Synthèse du marché dans le parcours ✅
 *En tant que vendeur, je veux passer de la synthèse du marché à mon suivi ou à mon rapport.*
-- 📋 V8b (EPIC-05) se branche sur `/vendeur/marche` au-dessus des onglets ; lien depuis V9 déjà prêt (affiché dès que la route existe), lien depuis V8 et pied de V8b à faire avec EPIC-05.
+- ✅ V8b (EPIC-05) s’ouvre en plein écran au-dessus des onglets depuis V8 et V9 ; « Retour » et « Retour au suivi de mon dossier » reviennent à l’écran d’origine (V8 ou V9).
+- 📋 « Consulter le rapport complet » en pied de V8b une fois le dossier certifié.
 
 ## US-07.6 · Certification par l’expert (back-office v1) ✅
 *En tant qu’expert Realesty, je veux passer un dossier en examen puis le certifier avec mon rapport.*

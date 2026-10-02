@@ -25,9 +25,6 @@ abstract final class AppRoutes {
   /// V9b · Rapport d’avis de valeur (tab "Mon bien").
   static const sellerReport = '/vendeur/rapport';
 
-  /// V8b · Synthèse du marché (EPIC-05, pushed above the tabs).
-  static const sellerMarket = '/vendeur/marche';
-
   /// Tab "Visites" (V13, EPIC-09).
   static const sellerVisits = '/vendeur/visites';
 
@@ -66,6 +63,10 @@ abstract final class AppRoutes {
 
   /// V8 · Dossier envoyé, attente de l’expert.
   static const sellerSubmitted = '/vendeur/audit/envoye';
+
+  /// V8b · Synthèse du marché (non-certified estimate, EPIC-05), pushed
+  /// above the tabs.
+  static const sellerMarket = '/vendeur/marche';
 
   /// Buyer space (placeholder).
   static const buyer = '/acheteur';

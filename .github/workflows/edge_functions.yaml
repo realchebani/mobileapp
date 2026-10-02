@@ -1,0 +1,37 @@
+name: edge_functions
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "supabase/functions/**"
+      - ".github/workflows/edge_functions.yaml"
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "supabase/functions/**"
+      - ".github/workflows/edge_functions.yaml"
+
+jobs:
+  deno:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: supabase/functions
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Format
+        run: deno fmt --check --line-width 100 .
+      - name: Lint
+        run: deno lint .
+      - name: Test
+        run: deno test --allow-read tests/

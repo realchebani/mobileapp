@@ -111,6 +111,27 @@ void main() {
         .thenAnswer((_) async => []);
     when(() => propertyRepository.getDocuments(any()))
         .thenAnswer((_) async => []);
+    when(() => propertyRepository.getMarketSnapshot(any())).thenAnswer(
+      (_) async => MarketSnapshot(
+        id: 'snapshot-id',
+        propertyId: 'property-id',
+        status: MarketSnapshotStatus.ok,
+        createdAt: DateTime(2026, 10),
+        computedAt: DateTime(2026, 10),
+        propertyType: PropertyType.house,
+        livingAreaM2: 115,
+        city: 'Chaponost',
+        lowEur: 420000,
+        medianEur: 479000,
+        highEur: 546000,
+        priceM2Low: 3572,
+        priceM2Median: 4162,
+        priceM2High: 4648,
+        confidence: 79,
+      ),
+    );
+    when(() => propertyRepository.requestEstimate(any()))
+        .thenAnswer((_) async {});
     userController = StreamController<AuthUser?>.broadcast();
     when(() => authRepository.user).thenAnswer((_) => userController.stream);
     when(() => authRepository.linkFailures)
@@ -301,6 +322,17 @@ void main() {
               as Map<String, Object?>;
       expect(patch['current_step'], 8);
       expect(patch['status'], PropertyStatus.submitted);
+      // The non-certified estimate is requested once the dossier is sent.
+      verify(() => propertyRepository.requestEstimate('property-id')).called(1);
+
+      // V8 → V8b « Synthèse du marché » → back to V8.
+      await tester.ensureVisible(find.text('Voir la synthèse du marché'));
+      await tester.tap(find.text('Voir la synthèse du marché'));
+      await tester.pumpAndSettle();
+      expect(find.byType(MarketSynthesisPage), findsOneWidget);
+      await tester.tap(find.text('Retour au suivi de mon dossier'));
+      await tester.pumpAndSettle();
+      expect(find.byType(SubmittedPage), findsOneWidget);
 
       // V8 → V9 (the tab bar is back), and V9 → V8 to follow the review.
       expect(find.byType(RealestyTabBar), findsNothing);
@@ -310,6 +342,17 @@ void main() {
       expect(find.byType(RealestyTabBar), findsOneWidget);
       expect(find.text('Analyse en cours'), findsOneWidget);
 
+      // V9 → V8b (its route exists now) → back to V9.
+      await tester.ensureVisible(find.text('Voir la synthèse du marché'));
+      await tester.tap(find.text('Voir la synthèse du marché'));
+      await tester.pumpAndSettle();
+      expect(find.byType(MarketSynthesisPage), findsOneWidget);
+      expect(find.byType(RealestyTabBar), findsNothing);
+      await tester.tap(find.text('Retour au suivi de mon dossier'));
+      await tester.pumpAndSettle();
+      expect(find.byType(DashboardPage), findsOneWidget);
+
+      await tester.ensureVisible(find.text('Suivi de mon dossier'));
       await tester.tap(find.text('Suivi de mon dossier'));
       await tester.pumpAndSettle();
       expect(find.byType(SubmittedPage), findsOneWidget);
