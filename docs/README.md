@@ -25,6 +25,7 @@ Chaque chantier commence par un plan, versionné dans [`plans/`](plans/) (`AAAA-
 | 2026-10-01 | [Estimation non certifiée](plans/2026-10-01-estimation-non-certifiee.md) (validé) | EPIC-05 |
 | 2026-10-01 | [Voix et agent IA](plans/2026-10-01-voix-et-agent-ia.md) (validé) | EPIC-06 |
 | 2026-10-01 | [Parcours vendeur V8b → V19](plans/2026-10-01-parcours-vendeur-v8b-v19.md) (questions ouvertes) | EPIC-07 à EPIC-11 |
+| 2026-10-02 | [Étude : capture visuelle du bien](plans/2026-10-02-capture-visuelle-etude.md) (questions ouvertes) | — |
 
 ## Décisions et backlog
 
