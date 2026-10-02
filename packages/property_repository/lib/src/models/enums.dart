@@ -68,7 +68,91 @@ enum PropertyType implements DbEnum {
   house('maison'),
   apartment('appartement'),
   land('terrain'),
+
+  /// Garage, parking ou box.
+  parking('stationnement'),
+
+  /// Cave, cellier ou dépendance (grange, atelier…).
+  outbuilding('dependance'),
+
+  /// Local commercial ou professionnel.
+  commercial('local_commercial'),
+
+  /// Immeuble entier.
+  building('immeuble'),
   other('autre');
+
+  new(this.value);
+
+  @override
+  final String value;
+}
+
+/// V3 · kind of land (terrain).
+enum LandKind implements DbEnum {
+  buildable('constructible'),
+  notBuildable('non_constructible'),
+  unknown('inconnu');
+
+  new(this.value);
+
+  @override
+  final String value;
+}
+
+/// V3 · kind of parking space (stationnement).
+enum ParkingKind implements DbEnum {
+  /// Box fermé.
+  box('box'),
+  garage('garage'),
+
+  /// Place couverte.
+  coveredSpace('place_couverte'),
+
+  /// Place extérieure.
+  outdoorSpace('place_exterieure');
+
+  new(this.value);
+
+  @override
+  final String value;
+}
+
+/// V4b · level of a parking space.
+enum ParkingLevel implements DbEnum {
+  basement('sous_sol'),
+  groundFloor('rdc'),
+  upperFloor('etage'),
+  outdoor('exterieur');
+
+  new(this.value);
+
+  @override
+  final String value;
+}
+
+/// V4b · equipment of a parking space (all) or an outbuilding
+/// ([electricity] and [water]); multiple choice.
+enum ParkingFeature implements DbEnum {
+  motorizedDoor('porte_motorisee'),
+  electricity('electricite'),
+  chargingPoint('borne_recharge'),
+  water('eau'),
+  securedAccess('acces_securise');
+
+  new(this.value);
+
+  @override
+  final String value;
+}
+
+/// How the properties of a sale lot are sold.
+enum LotSaleMode implements DbEnum {
+  /// Only together.
+  together('ensemble'),
+
+  /// Together, or each property on its own.
+  togetherOrSeparately('ensemble_ou_separe');
 
   new(this.value);
 

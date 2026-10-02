@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:mobileapp/l10n/l10n.dart';
+import 'package:mobileapp/seller_tunnel/cubit/seller_properties_cubit.dart';
 import 'package:mobileapp/seller_tunnel/cubit/seller_tunnel_cubit.dart';
 import 'package:mobileapp/seller_tunnel/models/seller_tunnel_step.dart';
 import 'package:mobileapp/seller_tunnel/steps/documents/cubit/documents_cubit.dart';
@@ -13,6 +14,7 @@ import 'package:mobileapp/seller_tunnel/steps/documents/scan/document_scan_page.
 import 'package:mobileapp/seller_tunnel/steps/documents/widgets/document_files_sheet.dart';
 import 'package:mobileapp/seller_tunnel/steps/documents/widgets/document_labels.dart';
 import 'package:mobileapp/seller_tunnel/steps/documents/widgets/document_option_sheets.dart';
+import 'package:mobileapp/seller_tunnel/steps/documents/widgets/reuse_document_sheet.dart';
 import 'package:mobileapp/seller_tunnel/steps/documents/widgets/transparency_score_card.dart';
 import 'package:mobileapp/seller_tunnel/view/seller_tunnel_navigation.dart';
 import 'package:mobileapp/seller_tunnel/widgets/widgets.dart';
@@ -88,11 +90,27 @@ class _DocumentsViewState extends State<DocumentsView> {
     if (scan != null) await cubit.addScan(scan, kind: kind);
   }
 
-  /// "Importer": a file or a photo of the library, as a document of [kind].
+  /// "Importer": a file or a photo of the library, or a document of the
+  /// same kind of another property of the seller, as a document of [kind].
   static Future<void> _import(BuildContext context, DocumentKind kind) async {
-    final source = await showDocumentSourceSheet(context);
+    final others =
+        (context.read<SellerPropertiesCubit?>()?.state.properties.length ?? 0) >
+        1;
+    final source = await showDocumentSourceSheet(
+      context,
+      otherProperties: others,
+    );
     if (source == null || !context.mounted) return;
-    await context.read<DocumentsCubit>().pick(source, kind: kind);
+    final cubit = context.read<DocumentsCubit>();
+    switch (source) {
+      case DocumentImportSource.files:
+        await cubit.pick(DocumentSource.files, kind: kind);
+      case DocumentImportSource.photos:
+        await cubit.pick(DocumentSource.photos, kind: kind);
+      case DocumentImportSource.otherProperty:
+        final document = await showReuseDocumentSheet(context, kind: kind);
+        if (document != null) await cubit.reuse(document);
+    }
   }
 
   /// Rows of the documents needed to send the dossier, to reveal them.
@@ -149,7 +167,11 @@ class _DocumentsViewState extends State<DocumentsView> {
     DocumentChecklist checklist,
   ) async {
     final repository = context.read<PropertyRepository>();
+    final profile = tunnel.state.profile;
     await tunnel.saveAndContinue(_step, {
+      // Answers hidden by a change of type are cleared now (owner decision
+      // Q9: kept while the dossier is a draft).
+      ...profile.clearedFrom(property),
       PropertyColumns.status: PropertyStatus.submitted,
       // A dossier sent again keeps its first submission date.
       if (property.submittedAt == null)
@@ -157,6 +179,8 @@ class _DocumentsViewState extends State<DocumentsView> {
       PropertyColumns.transparencyScore: checklist.score,
     });
     if (tunnel.state.saveStatus != SellerTunnelSaveStatus.success) return;
+    // Types the estimate does not cover: the expert values them directly.
+    if (!profile.estimate) return;
     unawaited(
       repository
           .requestEstimate(property.id)
@@ -179,6 +203,7 @@ class _DocumentsViewState extends State<DocumentsView> {
     DocumentsNotice.accessDenied => l10n.documentsNoticeAccessDenied,
     DocumentsNotice.pickFailed => l10n.documentsNoticePickFailed,
     DocumentsNotice.uploadFailed => l10n.documentsNoticeUploadFailed,
+    DocumentsNotice.reuseFailed => l10n.documentsNoticeReuseFailed,
     DocumentsNotice.uploaded => l10n.documentsNoticeUploaded,
     DocumentsNotice.deleted => l10n.documentsNoticeDeleted,
     DocumentsNotice.deleteFailed || DocumentsNotice.openFailed => null,

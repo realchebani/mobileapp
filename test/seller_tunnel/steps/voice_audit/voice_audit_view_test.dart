@@ -6,7 +6,6 @@ import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:mobileapp/app/app.dart';
 import 'package:mobileapp/seller_tunnel/seller_tunnel.dart';
 import 'package:mobileapp/seller_tunnel/steps/documents/data/document_picker.dart';
 import 'package:mocktail/mocktail.dart';
@@ -120,9 +119,9 @@ void main() {
     await tester.tap(find.text('Couper la voix de l’agent'));
     verify(conversation.toggleMute).called(1);
     await tester.tap(find.text('Construction 1998'));
-    verify(() => goRouter.go(AppRoutes.sellerTechnical)).called(1);
+    verify(() => goRouter.go(auditRoute(SellerTunnelStep.technical))).called(1);
     await tester.tap(find.text('Assainissement ?'));
-    verify(() => goRouter.go(AppRoutes.sellerTechnical)).called(1);
+    verify(() => goRouter.go(auditRoute(SellerTunnelStep.technical))).called(1);
   });
 
   testWidgets('declined consent opens the screen mode', (tester) async {
@@ -130,17 +129,17 @@ void main() {
     await tester.tap(find.text('Continuer à l’écran'));
     await tester.pumpAndSettle();
     verifyNever(conversation.start);
-    verify(() => goRouter.go(AppRoutes.sellerTechnical)).called(1);
+    verify(() => goRouter.go(auditRoute(SellerTunnelStep.technical))).called(1);
   });
 
   testWidgets('close, keyboard and skip', (tester) async {
     await pump(tester, const VoiceConversationState(muted: true));
     expect(find.text('Réactiver la voix de l’agent'), findsOneWidget);
     await tester.tap(find.bySemanticsLabel('Fermer'));
-    verify(() => goRouter.go(AppRoutes.sellerContext)).called(1);
+    verify(() => goRouter.go(auditRoute(SellerTunnelStep.context))).called(1);
     await tester.tap(find.bySemanticsLabel('Passer en mode écran'));
     await tester.tap(find.text('Passer'));
-    verify(() => goRouter.go(AppRoutes.sellerTechnical)).called(2);
+    verify(() => goRouter.go(auditRoute(SellerTunnelStep.technical))).called(2);
     verify(conversation.stop).called(3);
   });
 
@@ -154,7 +153,7 @@ void main() {
   testWidgets('done: review on V4b', (tester) async {
     await pump(tester, const VoiceConversationState(phase: VoicePhase.done));
     await tester.tap(find.text('Vérifier mes réponses'));
-    verify(() => goRouter.go(AppRoutes.sellerTechnical)).called(1);
+    verify(() => goRouter.go(auditRoute(SellerTunnelStep.technical))).called(1);
   });
 
   testWidgets('errors: retry, or screen mode only', (tester) async {
@@ -164,7 +163,7 @@ void main() {
     await pump(tester, const VoiceConversationState(error: VoiceError.quota));
     expect(find.text('Réessayer'), findsNothing);
     await tester.tap(find.text('Passer en mode écran').first);
-    verify(() => goRouter.go(AppRoutes.sellerTechnical)).called(1);
+    verify(() => goRouter.go(auditRoute(SellerTunnelStep.technical))).called(1);
   });
 
   testWidgets('a refused microphone links to the settings', (tester) async {

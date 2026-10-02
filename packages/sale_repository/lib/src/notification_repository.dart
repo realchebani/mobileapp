@@ -39,7 +39,9 @@ class NotificationRepository {
     try {
       final rows = await _client
           .from(_table)
-          .select('id, kind, title, body, route, read_at, created_at')
+          .select(
+            'id, kind, title, body, property_id, route, read_at, created_at',
+          )
           .eq('user_id', userId)
           .order('created_at')
           .limit(limit);

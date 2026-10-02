@@ -231,6 +231,44 @@ class DocumentsCubit extends Cubit<DocumentsState> {
     }
   }
 
+  /// Copies [document], of another property of the seller, into this
+  /// dossier (the file is copied on the server, nothing is uploaded).
+  Future<void> reuse(PropertyDocument document) async {
+    if (state.isBusy || state.isLocked) return;
+    emit(state.copyWith(picking: true));
+    final property = state.property;
+    try {
+      final copy = await _propertyRepository
+          .copyDocument(
+            document,
+            ownerId: property.ownerId,
+            toPropertyId: property.id,
+          )
+          .timeout(_timeout);
+      if (isClosed) return;
+      emit(
+        state.copyWith(
+          picking: false,
+          documents: [...state.documents, copy],
+          notice: DocumentsNotice.uploaded,
+        ),
+      );
+    } on Object catch (error, stackTrace) {
+      if (isClosed) return;
+      addError(error, stackTrace);
+      // The copy may have been recorded: reload before a new try.
+      final documents = await _reload();
+      if (isClosed) return;
+      emit(
+        state.copyWith(
+          picking: false,
+          documents: documents,
+          notice: DocumentsNotice.reuseFailed,
+        ),
+      );
+    }
+  }
+
   /// Deletes [document] (its row and its file).
   Future<void> delete(PropertyDocument document) async {
     if (state.isBusy || state.isLocked) return;

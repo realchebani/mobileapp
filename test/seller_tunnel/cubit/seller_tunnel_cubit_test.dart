@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mobileapp/app/app.dart';
 import 'package:mobileapp/seller_tunnel/seller_tunnel.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:property_repository/property_repository.dart';
@@ -28,8 +27,7 @@ void main() {
 
   setUp(() {
     repository = MockPropertyRepository();
-    when(() => repository.getOrCreateDossier(any()))
-        .thenAnswer((_) async => property);
+    when(() => repository.getProperty(any())).thenAnswer((_) async => property);
     when(() => repository.getOwners(any())).thenAnswer((_) async => [owner]);
     when(() => repository.getParcels(any())).thenAnswer((_) async => []);
     when(() => repository.getPreviousEstimates(any()))
@@ -42,7 +40,7 @@ void main() {
   SellerTunnelCubit build({Duration timeout = const Duration(seconds: 1)}) =>
       SellerTunnelCubit(
         propertyRepository: repository,
-        ownerId: ownerId,
+        propertyId: 'property-id',
         timeout: timeout,
       );
 
@@ -67,7 +65,7 @@ void main() {
         loaded,
       ],
       verify: (_) {
-        verify(() => repository.getOrCreateDossier(ownerId)).called(1);
+        verify(() => repository.getProperty('property-id')).called(1);
         verify(() => repository.getDocuments('property-id')).called(1);
       },
     );
@@ -76,7 +74,7 @@ void main() {
       'fails when the draft cannot be loaded, then retries',
       setUp: () {
         var calls = 0;
-        when(() => repository.getOrCreateDossier(any())).thenAnswer((_) async {
+        when(() => repository.getProperty(any())).thenAnswer((_) async {
           if (calls++ == 0) throw const PropertyLoadFailure();
           return property;
         });
@@ -112,7 +110,7 @@ void main() {
     blocTest<SellerTunnelCubit, SellerTunnelState>(
       'fails after the timeout',
       setUp: () =>
-          when(() => repository.getOrCreateDossier(any()))
+          when(() => repository.getProperty(any()))
               .thenAnswer((_) => Completer<Property>().future),
       build: () => build(timeout: const Duration(milliseconds: 10)),
       act: (cubit) => cubit.load(),
@@ -134,7 +132,7 @@ void main() {
 
     test('ignores results after close', () async {
       final completer = Completer<Property>();
-      when(() => repository.getOrCreateDossier(any()))
+      when(() => repository.getProperty(any()))
           .thenAnswer((_) => completer.future);
       final cubit = build();
       final loading = cubit.load();
@@ -146,7 +144,7 @@ void main() {
 
     test('ignores failures after close', () async {
       final completer = Completer<Property>();
-      when(() => repository.getOrCreateDossier(any()))
+      when(() => repository.getProperty(any()))
           .thenAnswer((_) => completer.future);
       final cubit = build();
       final loading = cubit.load();
@@ -403,11 +401,18 @@ void main() {
 
     test('redirects the editable steps of a sent dossier to V8', () {
       const draft = SellerTunnelState(
-        property: Property(id: 'p', ownerId: 'u', currentStep: 8),
+        property: Property(
+          id: 'p',
+          ownerId: 'u',
+          currentStep: 8,
+          propertyType: PropertyType.house,
+        ),
       );
       for (final step in SellerTunnelStep.values) {
-        expect(draft.lockRedirect(step.path), isNull);
+        expect(draft.redirectFor(step.segment), isNull);
       }
+      expect(draft.redirectFor(SellerTunnelStep.voiceAuditSegment), isNull);
+      expect(const SellerTunnelState().redirectFor('technique'), isNull);
       for (final status in [
         PropertyStatus.submitted,
         PropertyStatus.inReview,
@@ -423,15 +428,51 @@ void main() {
         );
         for (final step in SellerTunnelStep.values) {
           expect(
-            state.lockRedirect(step.path),
+            state.redirectFor(step.segment),
             step == SellerTunnelStep.submitted
                 ? isNull
-                : AppRoutes.sellerSubmitted,
+                : '/vendeur/biens/p/audit/envoye',
             reason: '${status.name} ${step.name}',
           );
         }
-        expect(state.lockRedirect(AppRoutes.seller), isNull);
+        expect(
+          state.redirectFor(SellerTunnelStep.voiceAuditSegment),
+          '/vendeur/biens/p/audit/envoye',
+        );
+        expect(state.redirectFor('inconnu'), isNull);
       }
+    });
+
+    test('redirects the screens a type skips', () {
+      const garage = SellerTunnelState(
+        property: Property(
+          id: 'p',
+          ownerId: 'u',
+          propertyType: PropertyType.parking,
+        ),
+      );
+      expect(garage.redirectFor('methode'), '/vendeur/biens/p/audit/documents');
+      expect(
+        garage.redirectFor('cadre-de-vie'),
+        '/vendeur/biens/p/audit/documents',
+      );
+      expect(
+        garage.redirectFor(SellerTunnelStep.voiceAuditSegment),
+        '/vendeur/biens/p/audit/technique',
+      );
+      expect(garage.redirectFor('technique'), isNull);
+      expect(garage.profile.type, PropertyType.parking);
+      expect(
+        const SellerTunnelState(
+          property: Property(
+            id: 'p',
+            ownerId: 'u',
+            propertyType: PropertyType.parking,
+            currentStep: 5,
+          ),
+        ).resumeStep,
+        SellerTunnelStep.documents,
+      );
     });
 
     test('copyWith keeps values and resets nextStep', () {

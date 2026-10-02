@@ -5,4 +5,6 @@ export 'src/models/children.dart';
 export 'src/models/enums.dart';
 export 'src/models/market_snapshot.dart';
 export 'src/models/property.dart';
+export 'src/models/property_lot.dart';
 export 'src/property_repository.dart';
+export 'src/uuid.dart';

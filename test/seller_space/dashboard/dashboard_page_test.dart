@@ -75,12 +75,15 @@ void main() {
 
       await scrollTo(tester, find.text('Voir la synthèse du marché'));
       await tester.tap(find.text('Voir la synthèse du marché'));
-      verify(() => goRouter.push<Object?>(AppRoutes.sellerMarket)).called(1);
+      verify(
+        () => goRouter.push<Object?>(AppRoutes.sellerMarket('property-id')),
+      ).called(1);
 
       await scrollTo(tester, find.text('Suivi de mon dossier'));
       expect(find.text('Réponse estimée sous 24 h'), findsOneWidget);
       await tester.tap(find.text('Suivi de mon dossier'));
-      verify(() => goRouter.go(AppRoutes.sellerSubmitted)).called(1);
+      verify(() => goRouter.go(auditRoute(SellerTunnelStep.submitted)))
+          .called(1);
     });
 
     testWidgets('in review without estimate nor market route', (tester) async {
@@ -166,7 +169,8 @@ void main() {
       );
 
       await tester.tap(find.text('Voir le rapport complet'));
-      verify(() => goRouter.go(AppRoutes.sellerReport)).called(1);
+      verify(() => goRouter.go(AppRoutes.sellerReport('property-id')))
+          .called(1);
 
       await scrollTo(tester, find.text('Mettre mon bien en vente'));
       await tester.tap(find.text('Mettre mon bien en vente'));

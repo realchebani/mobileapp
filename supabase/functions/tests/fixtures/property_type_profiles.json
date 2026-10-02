@@ -1,0 +1,11 @@
+{
+  "_comment": "EPIC-13 parity fixture: per property type, whether the voice agent serves it and whether the non-certified estimate covers it. Read by the Edge Function tests (tests/property_type_parity_test.ts) and by the app (test/seller_tunnel/models/property_type_profile_test.dart).",
+  "maison": { "voice": true, "estimate": true },
+  "appartement": { "voice": true, "estimate": true },
+  "terrain": { "voice": false, "estimate": false },
+  "stationnement": { "voice": false, "estimate": true },
+  "dependance": { "voice": false, "estimate": true },
+  "local_commercial": { "voice": false, "estimate": false },
+  "immeuble": { "voice": false, "estimate": false },
+  "autre": { "voice": true, "estimate": false }
+}

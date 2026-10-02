@@ -64,10 +64,12 @@ GoRouter createAppRouter({
         path: AppRoutes.role,
         builder: (context, state) => const RolePage(),
       ),
-      // Seller space: the dossier is loaded once for every /vendeur screen
-      // (SellerTunnelShell provides SellerTunnelCubit). Inside, the four
-      // tabs (StatefulShellRoute, one navigation stack per tab); the tunnel
-      // steps V1–V8 are pushed above the tabs, on the seller navigator.
+      // Seller space: the seller's properties are loaded once for every
+      // /vendeur screen (SellerTunnelShell); each screen of a property
+      // (/vendeur/biens/<id>/…) gets the dossier of that property
+      // (PropertyRouteScope). Inside, the four tabs (StatefulShellRoute, one
+      // navigation stack per tab); the tunnel steps V1–V8, V8b and "Ajouter
+      // un bien" are pushed above the tabs, on the seller navigator.
       ShellRoute(
         navigatorKey: sellerNavigatorKey,
         builder: (context, state, child) => SellerTunnelShell(child: child),
@@ -83,23 +85,70 @@ GoRouter createAppRouter({
                     builder: (context, state) => const MyPropertyPage(),
                     routes: [
                       GoRoute(
-                        path: _child(AppRoutes.sellerReport),
-                        builder: (context, state) => const ReportPage(),
-                      ),
-                      // V8b · Synthèse du marché (EPIC-05), full screen above
-                      // the tabs, opened from V8 and V9.
-                      GoRoute(
                         parentNavigatorKey: sellerNavigatorKey,
-                        path: _child(AppRoutes.sellerMarket),
-                        builder: (context, state) =>
-                            const MarketSynthesisPage(),
+                        path: _child(AppRoutes.sellerNewProperty),
+                        builder: (context, state) => const NewPropertyPage(),
                       ),
-                      for (final (path, page) in _sellerTunnelPages)
-                        GoRoute(
-                          parentNavigatorKey: sellerNavigatorKey,
-                          path: _child(path),
-                          builder: (context, state) => page,
+                      GoRoute(
+                        path:
+                            '${_child(AppRoutes.sellerProperties)}/'
+                            ':$_propertyId',
+                        builder: (context, state) => _property(
+                          state,
+                          const PropertyValuationScope(
+                            child: PropertyHomePage(showBack: true),
+                          ),
                         ),
+                        routes: [
+                          GoRoute(
+                            path: 'rapport',
+                            builder: (context, state) => _property(
+                              state,
+                              const PropertyValuationScope(child: ReportPage()),
+                            ),
+                          ),
+                          // V8b · Synthèse du marché (EPIC-05), full screen
+                          // above the tabs, opened from V8 and V9.
+                          GoRoute(
+                            parentNavigatorKey: sellerNavigatorKey,
+                            path: 'marche',
+                            builder: (context, state) =>
+                                _property(state, const MarketSynthesisPage()),
+                          ),
+                          for (final (segment, page) in _sellerTunnelPages)
+                            GoRoute(
+                              parentNavigatorKey: sellerNavigatorKey,
+                              path: '${AppRoutes.auditSegment}/$segment',
+                              builder: (context, state) =>
+                                  _property(state, page, auditSegment: segment),
+                            ),
+                        ],
+                      ),
+                      GoRoute(
+                        path: '${_child(AppRoutes.sellerLots)}/:lotId',
+                        builder: (context, state) =>
+                            LotPage(lotId: state.pathParameters['lotId']!),
+                      ),
+                      // Links from before EPIC-13 (one property per seller).
+                      GoRoute(
+                        path: _child(AppRoutes.legacySellerReport),
+                        builder: (context, state) =>
+                            const LegacySellerRedirect(segments: ['rapport']),
+                      ),
+                      GoRoute(
+                        path: _child(AppRoutes.legacySellerMarket),
+                        builder: (context, state) =>
+                            const LegacySellerRedirect(segments: ['marche']),
+                      ),
+                      GoRoute(
+                        path: '${_child(AppRoutes.legacySellerAudit)}/:step',
+                        builder: (context, state) => LegacySellerRedirect(
+                          segments: [
+                            AppRoutes.auditSegment,
+                            state.pathParameters['step']!,
+                          ],
+                        ),
+                      ),
                     ],
                   ),
                 ],
@@ -124,8 +173,11 @@ GoRouter createAppRouter({
                 routes: [
                   GoRoute(
                     path: AppRoutes.sellerAccount,
-                    builder: (context, state) =>
-                        AccountPage(showDesignSystemLink: enableDesignSystem),
+                    builder: (context, state) => FirstPropertyScope(
+                      child: AccountPage(
+                        showDesignSystemLink: enableDesignSystem,
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -153,17 +205,27 @@ GoRouter createAppRouter({
 String _child(String location) =>
     location.substring(AppRoutes.seller.length + 1);
 
-/// One screen per seller tunnel step; each page lives in its own file under
-/// `lib/seller_tunnel/steps/`.
+const _propertyId = 'propertyId';
+
+/// [page] of the property of the route, under its dossier.
+Widget _property(GoRouterState state, Widget page, {String? auditSegment}) =>
+    PropertyRouteScope(
+      propertyId: state.pathParameters[_propertyId]!,
+      auditSegment: auditSegment,
+      child: page,
+    );
+
+/// One screen per seller tunnel step (by path segment); each page lives in
+/// its own file under `lib/seller_tunnel/steps/`.
 final List<(String, Widget)> _sellerTunnelPages = [
-  (SellerTunnelStep.owners.path, const OwnersPage()),
-  (SellerTunnelStep.location.path, const LocationPage()),
-  (SellerTunnelStep.context.path, const PropertyContextPage()),
-  (SellerTunnelStep.technical.path, const TechnicalPage()),
-  (AppRoutes.sellerVoiceAudit, const VoiceAuditPage()),
-  (SellerTunnelStep.method.path, const MethodPage()),
-  (SellerTunnelStep.surfaces.path, const SurfacesPage()),
-  (SellerTunnelStep.lifestyle.path, const LifestylePage()),
-  (SellerTunnelStep.documents.path, const DocumentsPage()),
-  (SellerTunnelStep.submitted.path, const SubmittedPage()),
+  (SellerTunnelStep.owners.segment, const OwnersPage()),
+  (SellerTunnelStep.location.segment, const LocationPage()),
+  (SellerTunnelStep.context.segment, const PropertyContextPage()),
+  (SellerTunnelStep.technical.segment, const TechnicalPage()),
+  (SellerTunnelStep.voiceAuditSegment, const VoiceAuditPage()),
+  (SellerTunnelStep.method.segment, const MethodPage()),
+  (SellerTunnelStep.surfaces.segment, const SurfacesPage()),
+  (SellerTunnelStep.lifestyle.segment, const LifestylePage()),
+  (SellerTunnelStep.documents.segment, const DocumentsPage()),
+  (SellerTunnelStep.submitted.segment, const SubmittedPage()),
 ];

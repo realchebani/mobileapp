@@ -1,11 +1,17 @@
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:mobileapp/l10n/l10n.dart';
+import 'package:mobileapp/seller_tunnel/cubit/seller_tunnel_cubit.dart';
+import 'package:mobileapp/seller_tunnel/models/property_type_profile.dart';
 import 'package:mobileapp/seller_tunnel/models/seller_tunnel_step.dart';
 import 'package:mobileapp/ui/ui.dart';
+import 'package:property_repository/property_repository.dart';
 
 /// Header of a seller tunnel step (spec 0.1): back button,
 /// `Étape N · <name>` caption over the title, mode pill or step counter,
-/// and the 7-segment progress below.
+/// and the progress below — N and the number of segments follow the type
+/// of the property (`PropertyTypeProfile`: 7 steps for a house, 5 for a
+/// garage…).
 class TunnelHeader extends StatelessWidget {
   const new({
     required this.step,
@@ -38,7 +44,12 @@ class TunnelHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final c = context.realestyColors;
-    final number = step.number.clamp(1, SellerTunnelStep.count);
+    final type = context.select<SellerTunnelCubit?, PropertyType?>(
+      (cubit) => cubit?.state.property?.propertyType,
+    );
+    final profile = PropertyTypeProfile.of(type);
+    final total = profile.stepCount;
+    final number = profile.positionOf(step);
     return SafeArea(
       bottom: false,
       child: Padding(
@@ -88,17 +99,14 @@ class TunnelHeader extends StatelessWidget {
                     ),
                   ),
                 ),
-                _trailing(context, number),
+                _trailing(context, number, total),
               ],
             ),
             const SizedBox(height: 10),
             SegmentedProgress(
-              total: SellerTunnelStep.count,
+              total: total,
               completed: number,
-              semanticLabel: l10n.tunnelProgressLabel(
-                number,
-                SellerTunnelStep.count,
-              ),
+              semanticLabel: l10n.tunnelProgressLabel(number, total),
             ),
           ],
         ),
@@ -106,7 +114,7 @@ class TunnelHeader extends StatelessWidget {
     );
   }
 
-  Widget _trailing(BuildContext context, int number) {
+  Widget _trailing(BuildContext context, int number, int total) {
     final l10n = context.l10n;
     final c = context.realestyColors;
     if (onClose != null) {
@@ -128,7 +136,7 @@ class TunnelHeader extends StatelessWidget {
       TunnelHeaderMode.counter => SizedBox(
         width: _sideWidth,
         child: Text(
-          '$number/${SellerTunnelStep.count}',
+          '$number/$total',
           textAlign: TextAlign.right,
           style: RealestyTextStyles.segment.copyWith(
             fontFamily: RealestyFonts.sora,

@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:mobileapp/l10n/l10n.dart';
 import 'package:mobileapp/seller_tunnel/cubit/seller_tunnel_cubit.dart';
+import 'package:mobileapp/seller_tunnel/models/property_type_profile.dart';
 import 'package:mobileapp/seller_tunnel/models/seller_tunnel_step.dart';
 import 'package:mobileapp/seller_tunnel/steps/lifestyle/cubit/lifestyle_cubit.dart';
 import 'package:mobileapp/seller_tunnel/steps/lifestyle/models/lifestyle_item_draft.dart';
@@ -116,11 +117,12 @@ class _LifestyleViewState extends State<LifestyleView> {
     final propertyType = context.select<SellerTunnelCubit, PropertyType?>(
       (cubit) => cubit.state.property?.propertyType,
     );
+    final profile = PropertyTypeProfile.of(propertyType);
     final isBusy = state.isSubmitting || tunnelSaving;
-    // No voice for land (the agent only serves building dossiers).
+    // Only the types the voice agent serves (not land, commercial premises,
+    // whole buildings…).
     final voiceAvailable =
-        VoiceServices.of(context).isAvailable &&
-        propertyType != PropertyType.land;
+        VoiceServices.of(context).isAvailable && profile.voice;
     final suggestion = state.secretNoteSuggestion;
     final noise = state.noiseLevel;
     final noiseText = noise == null
@@ -175,61 +177,64 @@ class _LifestyleViewState extends State<LifestyleView> {
               onAdd: isBusy ? null : () => _add(kind),
               onEdit: isBusy ? null : _edit,
             ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            spacing: 10,
-            children: [
-              Row(
-                spacing: RealestySpacing.xs,
-                children: [
-                  Expanded(child: _FieldLabel(l10n.lifestyleNoiseLabel)),
-                  // The slider announces the value.
-                  ExcludeSemantics(
-                    child: RealestyBadge(
-                      label: noiseText,
-                      variant: noiseBadgeVariant(noise),
-                      showIcon: false,
+          // Noise and overlooking: not for commercial premises.
+          if (profile.asksNeighbourhood) ...[
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              spacing: 10,
+              children: [
+                Row(
+                  spacing: RealestySpacing.xs,
+                  children: [
+                    Expanded(child: _FieldLabel(l10n.lifestyleNoiseLabel)),
+                    // The slider announces the value.
+                    ExcludeSemantics(
+                      child: RealestyBadge(
+                        label: noiseText,
+                        variant: noiseBadgeVariant(noise),
+                        showIcon: false,
+                      ),
                     ),
-                  ),
-                ],
-              ),
-              NoiseSlider(
-                value: noise,
-                onChanged: isBusy ? null : cubit.noiseLevelChanged,
-                semanticLabel: l10n.lifestyleNoiseLabel,
-                semanticValue: noiseText,
-                minLabel: l10n.lifestyleNoiseVeryQuiet,
-                maxLabel: l10n.lifestyleNoiseVeryNoisy,
-              ),
-            ],
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            spacing: 6,
-            children: [
-              _FieldLabel(l10n.lifestyleOverlookingLabel),
-              RealestySegmentedControl<Overlooking?>(
-                segments: [
-                  RealestySegment(
-                    value: Overlooking.none,
-                    label: l10n.lifestyleOverlookingNone,
-                  ),
-                  RealestySegment(
-                    value: Overlooking.slight,
-                    label: l10n.lifestyleOverlookingSlight,
-                  ),
-                  RealestySegment(
-                    value: Overlooking.significant,
-                    label: l10n.lifestyleOverlookingSignificant,
-                  ),
-                ],
-                selected: state.overlooking,
-                onChanged: isBusy
-                    ? null
-                    : (value) => cubit.overlookingChanged(value!),
-              ),
-            ],
-          ),
+                  ],
+                ),
+                NoiseSlider(
+                  value: noise,
+                  onChanged: isBusy ? null : cubit.noiseLevelChanged,
+                  semanticLabel: l10n.lifestyleNoiseLabel,
+                  semanticValue: noiseText,
+                  minLabel: l10n.lifestyleNoiseVeryQuiet,
+                  maxLabel: l10n.lifestyleNoiseVeryNoisy,
+                ),
+              ],
+            ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              spacing: 6,
+              children: [
+                _FieldLabel(l10n.lifestyleOverlookingLabel),
+                RealestySegmentedControl<Overlooking?>(
+                  segments: [
+                    RealestySegment(
+                      value: Overlooking.none,
+                      label: l10n.lifestyleOverlookingNone,
+                    ),
+                    RealestySegment(
+                      value: Overlooking.slight,
+                      label: l10n.lifestyleOverlookingSlight,
+                    ),
+                    RealestySegment(
+                      value: Overlooking.significant,
+                      label: l10n.lifestyleOverlookingSignificant,
+                    ),
+                  ],
+                  selected: state.overlooking,
+                  onChanged: isBusy
+                      ? null
+                      : (value) => cubit.overlookingChanged(value!),
+                ),
+              ],
+            ),
+          ],
           const _NeighbourhoodCard(),
           if (suggestion != null)
             _SecretNoteSuggestion(

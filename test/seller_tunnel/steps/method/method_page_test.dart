@@ -90,7 +90,45 @@ void main() {
 
       await tester.tap(find.byType(RealestyIconButton).first);
 
-      verify(() => router.go(SellerTunnelStep.technical.path)).called(1);
+      verify(() => router.go(auditRoute(SellerTunnelStep.technical))).called(1);
+    });
+
+    testWidgets('"Autre" can skip the rooms', (tester) async {
+      usePhoneSurface();
+      final router = MockGoRouter();
+      when(() => router.go(any())).thenReturn(null);
+      const other = SellerTunnelState(
+        status: SellerTunnelStatus.success,
+        property: Property(
+          id: 'p',
+          ownerId: 'u',
+          propertyType: PropertyType.other,
+        ),
+      );
+      final cubit = mockSellerTunnelCubit(other);
+      when(() => cubit.saveAndContinue(SellerTunnelStep.surfaces))
+          .thenAnswer((_) async {
+            when(() => cubit.state).thenReturn(
+              other.copyWith(
+                saveStatus: SellerTunnelSaveStatus.success,
+                nextStep: SellerTunnelStep.lifestyle,
+              ),
+            );
+          });
+      await tester.pumpTunnelPage(
+        const MethodPage(),
+        sellerTunnelCubit: cubit,
+        goRouter: router,
+      );
+      await tester.ensureVisible(find.text('Passer cette étape'));
+      await tester.tap(find.text('Passer cette étape'));
+      await tester.pump();
+      verify(() => router.go('/vendeur/biens/p/audit/cadre-de-vie')).called(1);
+    });
+
+    testWidgets('a house cannot skip the rooms', (tester) async {
+      await tester.pumpTunnelPage(const MethodPage());
+      expect(find.text('Passer cette étape'), findsNothing);
     });
   });
 }

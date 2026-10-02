@@ -2,12 +2,12 @@ import 'dart:async';
 
 import 'package:agent_repository/agent_repository.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:mobileapp/l10n/l10n.dart';
 import 'package:mobileapp/seller_tunnel/cubit/seller_tunnel_cubit.dart';
 import 'package:mobileapp/seller_tunnel/models/seller_tunnel_step.dart';
 import 'package:mobileapp/seller_tunnel/steps/documents/data/document_picker.dart';
+import 'package:mobileapp/seller_tunnel/view/seller_tunnel_navigation.dart';
 import 'package:mobileapp/seller_tunnel/voice/voice.dart';
 import 'package:mobileapp/ui/ui.dart';
 import 'package:property_repository/property_repository.dart';
@@ -48,8 +48,9 @@ class VoiceAuditPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final services = VoiceServices.of(context);
     final property = context.read<SellerTunnelCubit>().state.property!;
-    // Land has no building: V4b asks its two questions on screen.
-    if (!services.isAvailable || property.propertyType == PropertyType.land) {
+    // Types without voice (land, garage…): V4b asks on screen.
+    final profile = context.read<SellerTunnelCubit>().state.profile;
+    if (!services.isAvailable || !profile.voice) {
       return const _ScreenModeRedirect();
     }
     final intro = context.l10n.voiceAuditIntro;
@@ -86,7 +87,7 @@ class _ScreenModeRedirectState extends State<_ScreenModeRedirect> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) context.go(SellerTunnelStep.technical.path);
+      if (mounted) context.goToTunnelStep(SellerTunnelStep.technical);
     });
   }
 
@@ -127,12 +128,12 @@ class _VoiceAuditViewState extends State<VoiceAuditView> {
   /// V4b, pre-filled with what the agent saved.
   void _screenMode() {
     unawaited(context.read<VoiceConversationCubit>().stop());
-    context.go(SellerTunnelStep.technical.path);
+    context.goToTunnelStep(SellerTunnelStep.technical);
   }
 
   void _close() {
     unawaited(context.read<VoiceConversationCubit>().stop());
-    context.go(SellerTunnelStep.context.path);
+    context.goToTunnelStep(SellerTunnelStep.context);
   }
 
   Future<void> _importPlan() async {

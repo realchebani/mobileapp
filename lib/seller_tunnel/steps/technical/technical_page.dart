@@ -8,6 +8,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:mobileapp/app/router/app_routes.dart';
 import 'package:mobileapp/l10n/l10n.dart';
 import 'package:mobileapp/seller_tunnel/cubit/seller_tunnel_cubit.dart';
+import 'package:mobileapp/seller_tunnel/models/property_type_profile.dart';
 import 'package:mobileapp/seller_tunnel/models/seller_tunnel_step.dart';
 import 'package:mobileapp/seller_tunnel/steps/technical/cubit/technical_cubit.dart';
 import 'package:mobileapp/seller_tunnel/steps/technical/models/heating_system_label.dart';
@@ -60,7 +61,14 @@ class _TechnicalViewState extends State<TechnicalView> {
       await tunnel.save(state.patch);
       if (tunnel.state.saveStatus == SellerTunnelSaveStatus.failure) return;
     }
-    if (mounted) context.go(AppRoutes.sellerVoiceAudit);
+    if (mounted) {
+      context.go(
+        AppRoutes.sellerPropertyAudit(
+          tunnel.state.property!.id,
+          SellerTunnelStep.voiceAuditSegment,
+        ),
+      );
+    }
   }
 
   late final TextEditingController _constructionYear;
@@ -69,9 +77,11 @@ class _TechnicalViewState extends State<TechnicalView> {
   late final TextEditingController _roofYear;
   late final TextEditingController _heatPumpYear;
   late final TextEditingController _poolDimensions;
+  late final TextEditingController _usableArea;
 
   final GlobalKey _yearRowKey = GlobalKey();
   final GlobalKey _areaRowKey = GlobalKey();
+  final GlobalKey _usableAreaKey = GlobalKey();
   final GlobalKey _levelsKey = GlobalKey();
   final GlobalKey _roofRowKey = GlobalKey();
   final GlobalKey _heatingKey = GlobalKey();
@@ -93,6 +103,7 @@ class _TechnicalViewState extends State<TechnicalView> {
     _roofYear = TextEditingController(text: initial.roofYear);
     _heatPumpYear = TextEditingController(text: initial.heatPumpYear);
     _poolDimensions = TextEditingController(text: initial.poolDimensions);
+    _usableArea = TextEditingController(text: initial.usableArea);
   }
 
   @override
@@ -103,6 +114,7 @@ class _TechnicalViewState extends State<TechnicalView> {
     _roofYear.dispose();
     _heatPumpYear.dispose();
     _poolDimensions.dispose();
+    _usableArea.dispose();
     super.dispose();
   }
 
@@ -112,6 +124,8 @@ class _TechnicalViewState extends State<TechnicalView> {
         ? _yearRowKey
         : state.livingAreaError != null || state.livingRoomAreaError != null
         ? _areaRowKey
+        : state.usableAreaError != null
+        ? _usableAreaKey
         : state.levelsError != null
         ? _levelsKey
         : state.roofYearError != null
@@ -174,19 +188,31 @@ class _TechnicalViewState extends State<TechnicalView> {
           label: l10n.technicalSaveAndContinue,
           isLoading: saving,
           onPressed: cubit.submit,
-          // V4 · audit vocal (not for land: nothing to ask by voice).
-          onMicPressed: saving || !state.asksBuilding ? null : _openVoiceAudit,
+          // V4 · audit vocal (only for the types the agent serves).
+          onMicPressed: saving || !state.profile.voice ? null : _openVoiceAudit,
         ),
         children: [
-          if (state.asksBuilding) ...[
+          if (state.asks(TechnicalField.livingArea)) ...[
             _identity(context, state, enabled: enabled),
             _structure(context, state, enabled: enabled),
             _heating(context, state, enabled: enabled),
-          ] else
-            _section(l10n.technicalSanitation, [
-              _sanitationChips(context, state, enabled: enabled),
-            ]),
-          _outdoor(context, state, enabled: enabled),
+          ] else ...[
+            if (state.asks(TechnicalField.usableArea) ||
+                state.asks(TechnicalField.constructionYear))
+              _premises(context, state, enabled: enabled),
+            if (state.asks(TechnicalField.wallMaterial))
+              _structure(context, state, enabled: enabled),
+            if (state.asks(TechnicalField.heating))
+              _heating(context, state, enabled: enabled)
+            else if (state.asks(TechnicalField.sanitation))
+              _section(l10n.technicalSanitation, [
+                _sanitationChips(context, state, enabled: enabled),
+              ]),
+            if (state.asks(TechnicalField.parkingFeatures))
+              _features(context, state, enabled: enabled),
+          ],
+          if (state.asks(TechnicalField.outdoorEquipment))
+            _outdoor(context, state, enabled: enabled),
           InlineBanner(
             message: l10n.technicalProvenanceNote,
             variant: InlineBannerVariant.info,
@@ -429,7 +455,7 @@ class _TechnicalViewState extends State<TechnicalView> {
           ],
         ),
       ),
-      if (state.asksWholeBuilding)
+      if (state.asks(TechnicalField.levels))
         TechnicalQuestion(
           key: _levelsKey,
           label: l10n.technicalLevels,
@@ -476,7 +502,7 @@ class _TechnicalViewState extends State<TechnicalView> {
           onTap: enabled ? cubit.wallMaterialToggled : null,
         ),
       ),
-      if (state.asksWholeBuilding) ...[
+      if (state.asks(TechnicalField.adjacency))
         TechnicalQuestion(
           label: l10n.technicalAdjacency,
           footer: _provenance(
@@ -491,6 +517,7 @@ class _TechnicalViewState extends State<TechnicalView> {
             onTap: enabled ? cubit.adjacencyToggled : null,
           ),
         ),
+      if (state.asks(TechnicalField.roof))
         _pair(
           key: _roofRowKey,
           labels: (l10n.technicalRoof, l10n.technicalRoofYear),
@@ -527,7 +554,6 @@ class _TechnicalViewState extends State<TechnicalView> {
             ),
           ),
         ),
-      ],
     ]);
   }
 
@@ -538,73 +564,185 @@ class _TechnicalViewState extends State<TechnicalView> {
   }) {
     final l10n = context.l10n;
     final cubit = context.read<TechnicalCubit>();
-    return _section(l10n.technicalSectionHeating, [
-      TechnicalQuestion(
-        key: _heatingKey,
-        label: l10n.technicalHeatingSystems,
-        errorText: _error(
-          context,
-          state,
-          state.heatingSystemsError,
-          required: () => l10n.technicalErrorHeatingSystems,
-        ),
-        footer: _provenance(
-          state,
-          PropertyColumns.heatingSystems,
-          hasValue: state.heatingSystems.isNotEmpty,
-        ),
-        child: _chips(
-          values: HeatingSystem.values,
-          label: (value) => heatingSystemLabel(l10n, value),
-          selected: state.heatingSystems.contains,
-          onTap: enabled ? cubit.heatingSystemToggled : null,
-        ),
-      ),
-      if (state.asksHeatPump)
-        _pair(
-          key: _heatPumpRowKey,
-          labels: (l10n.technicalHeatPumpType, l10n.technicalHeatPumpYear),
-          _select(
-            state: state,
-            label: l10n.technicalHeatPumpType,
-            column: PropertyColumns.heatPumpType,
-            value: state.heatPumpType,
-            options: {
-              for (final value in HeatPumpType.values)
-                value: _heatPumpLabel(l10n, value),
-            },
-            onChanged: enabled ? cubit.heatPumpTypeChanged : null,
+    final sanitation = state.asks(TechnicalField.sanitation);
+    return _section(
+      sanitation ? l10n.technicalSectionHeating : l10n.technicalHeating,
+      [
+        TechnicalQuestion(
+          key: _heatingKey,
+          label: l10n.technicalHeatingSystems,
+          errorText: _error(
+            context,
+            state,
+            state.heatingSystemsError,
+            required: () => l10n.technicalErrorHeatingSystems,
           ),
-          RealestyTextField(
-            label: l10n.technicalHeatPumpYear,
-            controller: _heatPumpYear,
-            enabled: enabled,
-            errorText: _error(
-              context,
-              state,
-              state.heatPumpYearError,
-              min: TechnicalState.minHeatPumpYear,
+          footer: _provenance(
+            state,
+            PropertyColumns.heatingSystems,
+            hasValue: state.heatingSystems.isNotEmpty,
+          ),
+          child: _chips(
+            values: HeatingSystem.values,
+            label: (value) => heatingSystemLabel(l10n, value),
+            selected: state.heatingSystems.contains,
+            onTap: enabled ? cubit.heatingSystemToggled : null,
+          ),
+        ),
+        if (state.asksHeatPump)
+          _pair(
+            key: _heatPumpRowKey,
+            labels: (l10n.technicalHeatPumpType, l10n.technicalHeatPumpYear),
+            _select(
+              state: state,
+              label: l10n.technicalHeatPumpType,
+              column: PropertyColumns.heatPumpType,
+              value: state.heatPumpType,
+              options: {
+                for (final value in HeatPumpType.values)
+                  value: _heatPumpLabel(l10n, value),
+              },
+              onChanged: enabled ? cubit.heatPumpTypeChanged : null,
             ),
-            keyboardType: TextInputType.number,
-            textInputAction: TextInputAction.done,
-            inputFormatters: _yearFormatters,
-            onChanged: cubit.heatPumpYearChanged,
+            RealestyTextField(
+              label: l10n.technicalHeatPumpYear,
+              controller: _heatPumpYear,
+              enabled: enabled,
+              errorText: _error(
+                context,
+                state,
+                state.heatPumpYearError,
+                min: TechnicalState.minHeatPumpYear,
+              ),
+              keyboardType: TextInputType.number,
+              textInputAction: TextInputAction.done,
+              inputFormatters: _yearFormatters,
+              onChanged: cubit.heatPumpYearChanged,
+              footer: _provenance(
+                state,
+                PropertyColumns.heatPumpYear,
+                hasValue: state.heatPumpYear.isNotEmpty,
+                always: true,
+              ),
+            ),
+          ),
+        if (sanitation)
+          TechnicalQuestion(
+            label: l10n.technicalSanitation,
             footer: _provenance(
               state,
-              PropertyColumns.heatPumpYear,
-              hasValue: state.heatPumpYear.isNotEmpty,
-              always: true,
+              PropertyColumns.sanitation,
+              hasValue: state.sanitation != null,
             ),
+            child: _sanitationChips(context, state, enabled: enabled),
+          ),
+      ],
+    );
+  }
+
+  /// Surface utile, construction year and level of a parking space, an
+  /// outbuilding, a commercial premises or a whole building.
+  Widget _premises(
+    BuildContext context,
+    TechnicalState state, {
+    required bool enabled,
+  }) {
+    final l10n = context.l10n;
+    final cubit = context.read<TechnicalCubit>();
+    final title = switch (state.propertyType) {
+      PropertyType.parking => l10n.technicalSectionPlace,
+      PropertyType.building => l10n.technicalSectionBuilding,
+      _ => l10n.technicalSectionPremises,
+    };
+    return _section(title, [
+      if (state.asks(TechnicalField.usableArea))
+        RealestyTextField(
+          key: _usableAreaKey,
+          label: l10n.technicalUsableArea,
+          controller: _usableArea,
+          suffixText: 'm²',
+          enabled: enabled,
+          errorText: _error(
+            context,
+            state,
+            state.usableAreaError,
+            required: () => l10n.technicalErrorUsableArea,
+            min: TechnicalState.minUsableArea,
+          ),
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          textInputAction: TextInputAction.next,
+          inputFormatters: const [DecimalInputFormatter()],
+          onChanged: cubit.usableAreaChanged,
+          footer: _provenance(
+            state,
+            PropertyColumns.usableAreaM2,
+            hasValue: state.usableArea.isNotEmpty,
           ),
         ),
-      TechnicalQuestion(
-        label: l10n.technicalSanitation,
-        footer: _provenance(
-          state,
-          PropertyColumns.sanitation,
-          hasValue: state.sanitation != null,
+      if (state.asks(TechnicalField.constructionYear))
+        RealestyTextField(
+          key: _yearRowKey,
+          label: l10n.technicalConstructionYear,
+          controller: _constructionYear,
+          enabled: enabled,
+          errorText: _error(
+            context,
+            state,
+            state.constructionYearError,
+            required: () => l10n.technicalErrorConstructionYear,
+            min: TechnicalState.minConstructionYear,
+          ),
+          keyboardType: TextInputType.number,
+          textInputAction: TextInputAction.done,
+          inputFormatters: _yearFormatters,
+          onChanged: cubit.constructionYearChanged,
+          footer: _provenance(
+            state,
+            PropertyColumns.constructionYear,
+            hasValue: state.constructionYear.isNotEmpty,
+          ),
         ),
-        child: _sanitationChips(context, state, enabled: enabled),
+      if (state.asks(TechnicalField.parkingLevel))
+        TechnicalQuestion(
+          label: l10n.technicalParkingLevel,
+          child: _chips(
+            values: ParkingLevel.values,
+            label: (value) => switch (value) {
+              ParkingLevel.basement => l10n.technicalParkingLevelBasement,
+              ParkingLevel.groundFloor => l10n.technicalParkingLevelGround,
+              ParkingLevel.upperFloor => l10n.technicalParkingLevelUpper,
+              ParkingLevel.outdoor => l10n.technicalParkingLevelOutdoor,
+            },
+            selected: (value) => state.parkingLevel == value,
+            onTap: enabled ? cubit.parkingLevelToggled : null,
+          ),
+        ),
+    ]);
+  }
+
+  /// Equipment of a parking space or an outbuilding.
+  Widget _features(
+    BuildContext context,
+    TechnicalState state, {
+    required bool enabled,
+  }) {
+    final l10n = context.l10n;
+    final cubit = context.read<TechnicalCubit>();
+    return _section(l10n.technicalSectionEquipment, [
+      TechnicalQuestion(
+        label: l10n.technicalParkingFeatures,
+        child: _chips(
+          values: state.profile.parkingFeatureChoices,
+          label: (value) => switch (value) {
+            ParkingFeature.motorizedDoor => l10n.technicalFeatureMotorizedDoor,
+            ParkingFeature.electricity => l10n.technicalFeatureElectricity,
+            ParkingFeature.chargingPoint => l10n.technicalFeatureChargingPoint,
+            ParkingFeature.water => l10n.technicalFeatureWater,
+            ParkingFeature.securedAccess => l10n.technicalFeatureSecuredAccess,
+          },
+          selected: state.parkingFeatures.contains,
+          onTap: enabled ? cubit.parkingFeatureToggled : null,
+        ),
       ),
     ]);
   }

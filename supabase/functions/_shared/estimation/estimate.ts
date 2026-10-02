@@ -33,7 +33,7 @@ export const RADII_M = [500, 1000, 2000, 5000, 10000, 20000];
 export const WINDOWS_MONTHS = [24, 36, 60];
 
 /** Confidence factor of each radius (proximity of the comparables). */
-const RADIUS_FACTOR: Record<number, number> = {
+export const RADIUS_FACTOR: Record<number, number> = {
   500: 1,
   1000: 0.85,
   2000: 0.7,
@@ -42,7 +42,7 @@ const RADIUS_FACTOR: Record<number, number> = {
   20000: 0.2,
 };
 /** Confidence factor of each time window (freshness first). */
-const WINDOW_FACTOR: Record<number, number> = { 24: 1, 36: 0.8, 60: 0.5 };
+export const WINDOW_FACTOR: Record<number, number> = { 24: 1, 36: 0.8, 60: 0.5 };
 
 interface Tier {
   radiusM: number;

@@ -1,5 +1,6 @@
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobileapp/seller_tunnel/models/property_type_profile.dart';
 import 'package:mobileapp/seller_tunnel/steps/technical/cubit/technical_cubit.dart';
 import 'package:mobileapp/seller_tunnel/steps/technical/models/technical_options.dart';
 import 'package:property_repository/property_repository.dart';
@@ -91,8 +92,8 @@ void main() {
 
     test('adapts the questions to the property type', () {
       final house = _state(_house);
-      expect(house.asksBuilding, isTrue);
-      expect(house.asksWholeBuilding, isTrue);
+      expect(house.asks(TechnicalField.livingArea), isTrue);
+      expect(house.asks(TechnicalField.levels), isTrue);
       expect(house.requiresLevels, isTrue);
 
       final apartment = _state(
@@ -102,13 +103,13 @@ void main() {
           propertyType: PropertyType.apartment,
         ),
       );
-      expect(apartment.asksBuilding, isTrue);
-      expect(apartment.asksWholeBuilding, isFalse);
+      expect(apartment.asks(TechnicalField.livingArea), isTrue);
+      expect(apartment.asks(TechnicalField.levels), isFalse);
       expect(apartment.levelsError, isNull);
       expect(apartment.heatingSystemsError, TechnicalError.required);
 
       final other = _state(const Property(id: 'p', ownerId: 'u'));
-      expect(other.asksWholeBuilding, isTrue);
+      expect(other.asks(TechnicalField.levels), isTrue);
       expect(other.levelsError, isNull);
       // Heating is optional for "Autre".
       expect(other.requiresHeating, isFalse);
@@ -117,7 +118,7 @@ void main() {
       final land = _state(
         const Property(id: 'p', ownerId: 'u', propertyType: PropertyType.land),
       );
-      expect(land.asksBuilding, isFalse);
+      expect(land.asks(TechnicalField.livingArea), isFalse);
       expect(land.isValid, isTrue);
       expect(land.values[PropertyColumns.constructionYear], isNull);
       expect(land.values[PropertyColumns.roomsCount], isNull);
@@ -131,7 +132,11 @@ void main() {
         ),
       );
       expect(landWithHeating.asksHeatPump, isFalse);
-      expect(landWithHeating.values[PropertyColumns.heatingSystems], isEmpty);
+      // Not asked: kept as it is (hidden), cleared when the dossier is sent.
+      expect(
+        landWithHeating.values.containsKey(PropertyColumns.heatingSystems),
+        isFalse,
+      );
     });
 
     test('requires the year, the area, the levels and the heating', () {

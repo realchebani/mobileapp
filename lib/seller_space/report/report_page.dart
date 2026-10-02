@@ -1,7 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:mobileapp/app/app.dart';
 import 'package:mobileapp/l10n/l10n.dart';
 import 'package:mobileapp/seller_space/cubit/valuation_cubit.dart';
 import 'package:mobileapp/seller_space/report/tabs/price_tab.dart';
@@ -10,6 +9,7 @@ import 'package:mobileapp/seller_space/report/tabs/sector_tab.dart';
 import 'package:mobileapp/seller_space/report/tabs/synthesis_tab.dart';
 import 'package:mobileapp/seller_space/widgets/seller_space_format.dart';
 import 'package:mobileapp/seller_tunnel/cubit/seller_tunnel_cubit.dart';
+import 'package:mobileapp/seller_tunnel/view/seller_tunnel_navigation.dart';
 import 'package:mobileapp/ui/ui.dart';
 import 'package:property_repository/property_repository.dart';
 import 'package:sale_repository/sale_repository.dart';
@@ -140,7 +140,7 @@ class _ReportPageState extends State<ReportPage> {
                   semanticLabel: l10n.reportBack,
                   onPressed: () => context.canPop()
                       ? context.pop()
-                      : context.go(AppRoutes.seller),
+                      : context.go(context.propertyHomeLocation(property.id)),
                 ),
                 Expanded(
                   child: Semantics(

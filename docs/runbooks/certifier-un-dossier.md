@@ -19,11 +19,13 @@ order by p.submitted_at;
 select public.staff_start_review('<property id>');
 ```
 
-Le dossier passe à `in_review` (il n’est plus modifiable par le vendeur) et le vendeur reçoit la notification « Un expert analyse votre dossier ».
+Le dossier passe à `in_review` (il n’est plus modifiable par le vendeur) et le vendeur reçoit la notification « Un expert analyse votre dossier », qui ouvre ce bien (`/vendeur/biens/<property id>`).
+
+Lots de vente (EPIC-13) : dès qu’un bien d’un lot est `in_review` ou `certified`, le lot est figé (plus d’ajout / retrait de bien, ni de changement de mode de vente). Chaque bien du lot est certifié séparément ; pour voir les lots d’un vendeur : `select * from public.property_lots where owner_id = '<user id>';` et `select id, property_type, status, lot_id from public.properties where owner_id = '<user id>';`.
 
 ## 3. Certifier avec le rapport structuré
 
-`staff_certify_property(property_id, valuation)` accepte un dossier `submitted` ou `in_review`, enregistre l’avis de valeur, passe le dossier à `certified` et envoie la notification « Votre avis de valeur certifié est disponible » (qui ouvre le rapport V9b).
+`staff_certify_property(property_id, valuation)` accepte un dossier `submitted` ou `in_review`, enregistre l’avis de valeur, passe le dossier à `certified` et envoie la notification « Votre avis de valeur certifié est disponible » (qui ouvre le rapport V9b du bien : `/vendeur/biens/<property id>/rapport`). Pour un garage, une dépendance ou un local, `price_m2_eur` n’est calculé que si une surface habitable existe : le renseigner à la main au besoin.
 
 Champs obligatoires : `value_eur`, `low_eur`, `high_eur` (avec `low ≤ value ≤ high`) et `expert_display_name`. Tout le reste est facultatif : une section vide est masquée dans l’application.
 

@@ -62,7 +62,10 @@ void main() {
         expect(redirect(AppRoutes.onboarding), AppRoutes.login);
         expect(redirect(AppRoutes.role), AppRoutes.login);
         expect(redirect(AppRoutes.seller), AppRoutes.login);
-        expect(redirect(AppRoutes.sellerOwners), AppRoutes.login);
+        expect(
+          redirect(AppRoutes.sellerPropertyAudit('p', 'proprietaires')),
+          AppRoutes.login,
+        );
         expect(redirect(AppRoutes.designSystem), AppRoutes.login);
         expect(redirect('/connexionx'), AppRoutes.login);
       });
@@ -107,13 +110,28 @@ void main() {
 
       test('allows the screens of the seller space to a seller', () {
         final seller = loaded(UserRole.seller);
-        expect(signedIn(AppRoutes.sellerOwners, seller), isNull);
-        expect(signedIn(AppRoutes.sellerSubmitted, seller), isNull);
+        expect(
+          signedIn(AppRoutes.sellerPropertyAudit('p', 'proprietaires'), seller),
+          isNull,
+        );
+        expect(
+          signedIn(AppRoutes.sellerPropertyAudit('p', 'envoye'), seller),
+          isNull,
+        );
         expect(signedIn('/vendeurx', seller), AppRoutes.seller);
-        expect(signedIn(AppRoutes.sellerOwners, loaded()), AppRoutes.role);
+        expect(
+          signedIn(
+            AppRoutes.sellerPropertyAudit('p', 'proprietaires'),
+            loaded(),
+          ),
+          AppRoutes.role,
+        );
         expect(signedIn('/role/x', loaded()), AppRoutes.role);
         expect(
-          signedIn(AppRoutes.sellerOwners, loaded(UserRole.buyer)),
+          signedIn(
+            AppRoutes.sellerPropertyAudit('p', 'proprietaires'),
+            loaded(UserRole.buyer),
+          ),
           AppRoutes.buyer,
         );
       });

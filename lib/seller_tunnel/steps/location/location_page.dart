@@ -11,6 +11,7 @@ import 'package:mobileapp/seller_tunnel/steps/location/cubit/location_cubit.dart
 import 'package:mobileapp/seller_tunnel/steps/location/data/device_locator.dart';
 import 'package:mobileapp/seller_tunnel/steps/location/widgets/parcel_card.dart';
 import 'package:mobileapp/seller_tunnel/steps/location/widgets/parcel_map.dart';
+import 'package:mobileapp/seller_tunnel/steps/location/widgets/same_address_card.dart';
 import 'package:mobileapp/seller_tunnel/view/seller_tunnel_navigation.dart';
 import 'package:mobileapp/seller_tunnel/widgets/widgets.dart';
 import 'package:mobileapp/ui/ui.dart';
@@ -221,6 +222,12 @@ class _LocationViewState extends State<LocationView> {
         ),
         children: [
           AgentIntro(message: _intro(l10n, state)),
+          if (state.address == null)
+            ?SameAddressCard.of(
+              context,
+              current: context.read<SellerTunnelCubit>().state.property!,
+              onUse: isBusy ? null : cubit.suggestionSelected,
+            ),
           RealestyTextField(
             key: _addressKey,
             label: l10n.locationAddressLabel,
