@@ -191,7 +191,8 @@ void main() {
   });
 
   group('deleteProperty', () {
-    bool isRead(http.Request r) => r.method == 'GET';
+    bool isPhotos(http.Request r) => r.url.path == '/rest/v1/room_photos';
+    bool isRead(http.Request r) => r.method == 'GET' && !isPhotos(r);
 
     test('refuses a property that is no longer a draft', () async {
       respond = (_) => json([
@@ -208,6 +209,11 @@ void main() {
       var pages = 0;
       respond = (request) {
         if (isRead(request)) return json([propertyRow]);
+        if (isPhotos(request)) {
+          return json([
+            {'storage_path': 'user-id/$propertyId/photos/r/p.jpg'},
+          ]);
+        }
         if (isStorage(request)) {
           if (request.method == 'DELETE') return json(<Object>[]);
           final page = pages++;
@@ -230,10 +236,14 @@ void main() {
         containsPair('prefix', 'user-id/$propertyId'),
       );
       expect(jsonDecode(lists.last.body), containsPair('offset', 100));
-      final remove = requests.firstWhere(
-        (r) => isStorage(r) && r.method == 'DELETE',
-      );
-      expect((jsonDecode(remove.body) as Map)['prefixes'], hasLength(102));
+      final removes = [
+        for (final r in requests)
+          if (isStorage(r) && r.method == 'DELETE')
+            (jsonDecode(r.body) as Map)['prefixes'] as List,
+      ];
+      // 102 documents and 1 photo, by pages of 100.
+      expect([for (final r in removes) r.length], [100, 3]);
+      expect(removes.last.last, 'user-id/$propertyId/photos/r/p.jpg');
       final delete = requests.last;
       expect(delete.method, 'DELETE');
       expect(delete.url.path, '/rest/v1/properties');
@@ -243,13 +253,13 @@ void main() {
     test('skips the removal when there is no file', () async {
       respond = (request) {
         if (isRead(request)) return json([propertyRow]);
-        if (isStorage(request)) return json(<Object>[]);
+        if (isStorage(request) || isPhotos(request)) return json(<Object>[]);
         return json([
           {'id': propertyId},
         ]);
       };
       await repository.deleteProperty(property);
-      expect(requests, hasLength(3));
+      expect(requests, hasLength(4));
     });
 
     test('throws PropertyDeleteFailure when nothing was deleted', () async {

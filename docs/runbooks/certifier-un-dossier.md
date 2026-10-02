@@ -13,6 +13,35 @@ where p.status in ('submitted', 'in_review')
 order by p.submitted_at;
 ```
 
+## 1 bis. Voir les photos des pièces et le plan (EPIC-15)
+
+Chaque pièce principale d’une maison, d’un appartement ou d’un bien « Autre » a au moins une photo (règle d’envoi). Les photos sont dans `room_photos`, rangées par pièce (`sort_order` : la première est la photo principale), avec les contrôles faits sur le téléphone (`quality` : luminosité, netteté, inclinaison, défauts) et, si le vendeur a accepté l’IA de vision, ce que le modèle a vu (`analysis` : type de pièce, revêtement, vitrage, constats sans chiffre, objets personnels, personne visible). **L’analyse IA n’est qu’une aide : rien n’est vérifié.**
+
+```sql
+select r.name as piece, r.is_main, ph.sort_order, ph.storage_path,
+       ph.quality -> 'issues' as defauts,
+       ph.analysis -> 'condition_notes' as constats_ia,
+       ph.analysis -> 'people_visible' as personne_visible
+from public.room_photos ph
+join public.rooms r on r.id = ph.room_id
+where ph.property_id = '<property id>'
+order by r.sort_order, ph.sort_order;
+```
+
+Les fichiers sont dans le bucket privé `property-documents` (Storage du tableau de bord) sous `<owner id>/<property id>/photos/<room id>/<photo id>.jpg` : les ouvrir depuis le navigateur de fichiers, ou générer une URL signée (bouton « Get URL »). Un plan lu en V5 est un document `plan` ; ce que l’IA y a lu est dans `property_documents.extracted -> 'plan_reading'` (pièces imprimées, `printed_total_m2`, `total_matches`) et les pièces gardées par le vendeur ont `rooms.source = 'plan'`.
+
+Coût et qualité de l’IA de vision (service role) :
+
+```sql
+select kind, model, date_trunc('week', created_at) as semaine, count(*) as appels,
+       round(sum(cost_usd), 4) as cout_usd, round(avg(ms)) as ms_moyen,
+       count(*) filter (where error is not null) as erreurs
+from public.vision_requests
+group by 1, 2, 3 order by 3 desc;
+```
+
+Changer de modèle sans nouvelle version de l’app : `supabase secrets set OPENROUTER_MODEL_VISION=<modèle>` (photos) et, au besoin, `OPENROUTER_MODEL_PLAN=<modèle>` (plans).
+
 ## 2. Le passer en examen (facultatif)
 
 ```sql

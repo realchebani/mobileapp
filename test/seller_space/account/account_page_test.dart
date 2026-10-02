@@ -112,5 +112,42 @@ void main() {
       expect(find.text('Mon profil'), findsOneWidget);
       expect(find.text('?'), findsOneWidget);
     });
+
+    testWidgets('turns the AI suggestions on the photos off and on', (
+      tester,
+    ) async {
+      usePhoneSurface();
+      final services = await testPhotoServices(
+        consent: PhotoAnalysisConsent.given,
+      );
+      await tester.pumpApp(
+        const AccountPage(),
+        appBloc: appBloc,
+        profileCubit: profileCubit,
+        photoServices: services,
+      );
+      expect(find.text('Suggestions de l’IA sur les photos'), findsOneWidget);
+      await tester.tap(find.text('Activées · touchez pour les désactiver'));
+      await tester.pumpAndSettle();
+      expect(services.preferences!.consent, PhotoAnalysisConsent.declined);
+      await tester.tap(find.text('Désactivées · touchez pour les activer'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('J’accepte l’analyse'));
+      await tester.pumpAndSettle();
+      expect(services.preferences!.consent, PhotoAnalysisConsent.given);
+      expect(
+        find.text('Activées · touchez pour les désactiver'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('no AI item without the vision AI', (tester) async {
+      await tester.pumpApp(
+        const AccountPage(),
+        appBloc: appBloc,
+        profileCubit: profileCubit,
+      );
+      expect(find.text('Suggestions de l’IA sur les photos'), findsNothing);
+    });
   });
 }

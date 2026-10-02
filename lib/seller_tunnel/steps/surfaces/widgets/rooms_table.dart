@@ -7,17 +7,26 @@ import 'package:mobileapp/ui/ui.dart';
 import 'package:property_repository/property_repository.dart';
 
 /// The V5c rooms card: rooms grouped by level (name, surface, floor
-/// covering, edit button; annexes tagged) and the total bar (living area,
-/// then the annexes).
+/// covering, photos and edit buttons; annexes, rooms read on a plan and
+/// main rooms still without a photo tagged) and the total bar (living
+/// area, then the annexes).
 class RoomsTable extends StatelessWidget {
   const new({
     required this.groups,
     required this.livingArea,
     required this.onEdit,
+    this.onPhotos,
+    this.requirePhotos = false,
     this.annexArea,
     this.dictated = const {},
     super.key,
   });
+
+  /// Opens the photos of a room (EPIC-15); null disables the buttons.
+  final ValueChanged<Room>? onPhotos;
+
+  /// Whether a main room needs a photo (types with rooms, EPIC-15).
+  final bool requirePhotos;
 
   /// Rooms by level (null: no level), as `SurfacesState.roomsByLevel`.
   final List<(RoomLevel?, List<Room>)> groups;
@@ -79,7 +88,10 @@ class RoomsTable extends StatelessWidget {
                 room: room,
                 border: border,
                 dictated: dictated.contains(room.id),
+                photoRequired:
+                    requirePhotos && room.isMain && room.photosCount == 0,
                 onEdit: onEdit == null ? null : () => onEdit!(room),
+                onPhotos: onPhotos == null ? null : () => onPhotos!(room),
               ),
           ],
           ColoredBox(
@@ -136,20 +148,27 @@ class _RoomRow extends StatelessWidget {
     required this.room,
     required this.border,
     required this.onEdit,
+    this.onPhotos,
     this.dictated = false,
+    this.photoRequired = false,
     super.key,
   });
 
   final Room room;
   final BorderSide border;
   final VoidCallback? onEdit;
+  final VoidCallback? onPhotos;
   final bool dictated;
+
+  /// A main room without a photo (needed to send the dossier).
+  final bool photoRequired;
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final c = context.realestyColors;
     final textStyle = RealestyTextStyles.listTitle.copyWith(color: c.encre);
+    final fromPlan = room.source == RoomSource.plan;
     return Container(
       constraints: const BoxConstraints(minHeight: 48),
       padding: const EdgeInsets.only(left: 14, right: 2),
@@ -165,7 +184,7 @@ class _RoomRow extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 spacing: 2,
                 children: [
-                  if (room.isAnnex || dictated)
+                  if (room.isAnnex || dictated || fromPlan)
                     Wrap(
                       spacing: 6,
                       runSpacing: 4,
@@ -175,10 +194,22 @@ class _RoomRow extends StatelessWidget {
                         if (room.isAnnex)
                           RealestyBadge(label: l10n.surfacesAnnexTag),
                         if (dictated) const DictatedTag(),
+                        if (fromPlan)
+                          ProvenanceTag(
+                            ProvenanceKind.document,
+                            label: l10n.surfacesPlanTag,
+                          ),
                       ],
                     )
                   else
                     Text(room.name, style: textStyle),
+                  if (photoRequired)
+                    Text(
+                      l10n.surfacesPhotoRequired,
+                      style: RealestyTextStyles.caption.copyWith(
+                        color: c.attention,
+                      ),
+                    ),
                   if (room.description case final description?)
                     Text(
                       description,
@@ -193,7 +224,7 @@ class _RoomRow extends StatelessWidget {
             ),
           ),
           SizedBox(
-            width: 64,
+            width: 56,
             child: FittedBox(
               fit: BoxFit.scaleDown,
               alignment: Alignment.centerRight,
@@ -214,10 +245,52 @@ class _RoomRow extends StatelessWidget {
             ),
           ),
           RealestyPressable(
+            semanticLabel: l10n.surfacesRoomPhotos(room.name, room.photosCount),
+            onPressed: onPhotos,
+            child: SizedBox(
+              width: 40,
+              height: 48,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  RealestyIcon(
+                    RealestyIcons.camera,
+                    size: 18,
+                    color: photoRequired ? c.attention : c.texteDiscret,
+                  ),
+                  if (room.photosCount > 0)
+                    Positioned(
+                      right: 2,
+                      top: 8,
+                      child: Container(
+                        constraints: const BoxConstraints(minWidth: 16),
+                        height: 16,
+                        padding: const EdgeInsets.symmetric(horizontal: 4),
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: c.vertTexte,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          '${room.photosCount}',
+                          style: RealestyTextStyles.caption.copyWith(
+                            fontSize: 10,
+                            height: 1,
+                            color: c.surface,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+          RealestyPressable(
             semanticLabel: l10n.surfacesEditRoom(room.name),
             onPressed: onEdit,
-            child: SizedBox.square(
-              dimension: 48,
+            child: SizedBox(
+              width: 40,
+              height: 48,
               child: Center(
                 child: RealestyIcon(
                   RealestyIcons.pen,

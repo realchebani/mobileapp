@@ -110,6 +110,8 @@ class SurfacesCubit extends Cubit<SurfacesState>
       final storedIds = {for (final row in _saved) row.id!, ..._uncertain};
       for (final id in storedIds) {
         if (wantedIds.contains(id)) continue;
+        // Its photos first (EPIC-15): their files would stay otherwise.
+        await _propertyRepository.deleteRoomPhotos(id).timeout(_timeout);
         await _propertyRepository.deleteRoom(id).timeout(_timeout);
         _uncertain.remove(id);
         if (isClosed) return;
@@ -159,7 +161,72 @@ class SurfacesCubit extends Cubit<SurfacesState>
     }
   }
 
-  /// [room] with the answers of [input].
+  /// Writes the room [id] now (before its photos are taken, EPIC-15): a
+  /// photo needs its room row. Then [SurfacesState.photosRoom] is the
+  /// stored row, or null when it could not be written (retried on
+  /// "Continuer" as usual).
+  Future<void> preparePhotos(String id) async {
+    if (state.isSubmitting) return;
+    final index = state.rooms.indexWhere((room) => room.id == id);
+    if (index < 0) return;
+    final room = _withSortOrder(state.rooms[index], index);
+    final stored = _saved.where((saved) => saved.id == id).firstOrNull;
+    if (stored != null && stored == room) {
+      emit(state.copyWith(photosRoom: () => stored));
+      return;
+    }
+    emit(state.copyWith(savingRoomId: () => id, photosRoom: () => null));
+    try {
+      _uncertain.add(id);
+      final saved = await _propertyRepository.saveRoom(room).timeout(_timeout);
+      _uncertain.remove(id);
+      _saved = [
+        for (final other in _saved)
+          if (other.id != id) other,
+        saved,
+      ];
+      if (isClosed) return;
+      emit(state.copyWith(savingRoomId: () => null, photosRoom: () => saved));
+    } on Object catch (error, stackTrace) {
+      if (isClosed) return;
+      addError(error, stackTrace);
+      emit(state.copyWith(savingRoomId: () => null));
+    }
+  }
+
+  /// The room [id] now has [count] photos (kept by the database; recorded
+  /// here so that the row is not written again for it).
+  void photosChanged(String id, int count) {
+    Room counted(Room room) =>
+        room.id == id ? _withPhotosCount(room, count) : room;
+    _saved = [for (final room in _saved) counted(room)];
+    if (isClosed) return;
+    emit(
+      state.copyWith(rooms: [for (final room in state.rooms) counted(room)]),
+    );
+  }
+
+  static Room _withPhotosCount(Room room, int count) => Room(
+    id: room.id,
+    propertyId: room.propertyId,
+    name: room.name,
+    level: room.level,
+    sortOrder: room.sortOrder,
+    areaM2: room.areaM2,
+    ceilingHeightM: room.ceilingHeightM,
+    floorCovering: room.floorCovering,
+    glazing: room.glazing,
+    isMain: room.isMain,
+    isAnnex: room.isAnnex,
+    source: room.source,
+    photosCount: count,
+    scanData: room.scanData,
+    description: room.description,
+  );
+
+  /// [room] with the answers of [input]. A room read on a plan whose name
+  /// or area is corrected becomes a typed one (its values are no longer
+  /// those of the document).
   static Room _apply(Room room, RoomInput input) => Room(
     id: room.id,
     propertyId: room.propertyId,
@@ -172,7 +239,12 @@ class SurfacesCubit extends Cubit<SurfacesState>
     glazing: input.glazing,
     isMain: input.isMain && !input.isAnnex,
     isAnnex: input.isAnnex,
-    source: room.source,
+    source:
+        room.source == RoomSource.plan &&
+            (input.name != room.name ||
+                RoomArea.round(input.areaM2) != room.areaM2)
+        ? RoomSource.manual
+        : room.source,
     photosCount: room.photosCount,
     scanData: room.scanData,
     description: input.description,

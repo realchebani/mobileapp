@@ -217,6 +217,25 @@ void main() {
     }
   });
 
+  testWidgets('counts the photos, in total and by room (EPIC-15)', (
+    tester,
+  ) async {
+    await pump(
+      tester,
+      const SellerTunnelState(
+        status: SellerTunnelStatus.success,
+        property: Property(id: _id, ownerId: 'user-id'),
+        rooms: [
+          Room(propertyId: _id, name: 'Séjour', areaM2: 30, photosCount: 3),
+          Room(propertyId: _id, name: 'WC', areaM2: 2),
+        ],
+      ),
+    );
+    await tester.scrollUntilVisible(find.text('Photos · Séjour'), 200);
+    expect(find.text('3 photos'), findsNWidgets(2));
+    expect(find.text('Photos · WC'), findsNothing);
+  });
+
   testWidgets('blank owner names are not given', (tester) async {
     await pump(
       tester,

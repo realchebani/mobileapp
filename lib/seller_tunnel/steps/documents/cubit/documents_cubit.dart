@@ -24,8 +24,11 @@ class DocumentsCubit extends Cubit<DocumentsState> {
     required this._openUrl,
     required Property property,
     List<PropertyDocument> documents = const [],
+    List<Room> rooms = const [],
     this._timeout = defaultTimeout,
-  }) : super(DocumentsState(property: property, documents: documents));
+  }) : super(
+         DocumentsState(property: property, documents: documents, rooms: rooms),
+       );
 
   /// Delay after which a write is considered failed.
   static const defaultTimeout = Duration(seconds: 15);
