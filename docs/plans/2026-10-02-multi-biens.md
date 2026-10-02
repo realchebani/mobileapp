@@ -369,3 +369,17 @@ Contrôle : chaque tranche vérifiée par un agent indépendant (tests, revue, r
 ## Journal d’exécution
 
 - 2026-10-02 : plan rédigé (aucun code), EPIC-13 créé, arbitrages consignés dans `decisions.md`.
+
+## Arbitrages du porteur de projet (2026-10-02) — prévalent sur le reste du plan
+- Q1 Pièce d'identité : **copie côté serveur dans le nouveau dossier** ; le titre de propriété peut aussi être repris « Depuis un autre bien », jamais automatiquement.
+- Q2 Propriétaires : **copie modifiable**.
+- Q3 Lot : **« uniquement ensemble » ou « ensemble ou séparément »** au choix du vendeur.
+- Q4 Estimation du lot : **somme des biens** quand tous les biens estimables en ont une (pas de double compte d'un garage sur la parcelle de la maison).
+- Q5 Estimation automatique : **garages / dépendances aussi**, via la médiane DVF des ventes de dépendances seules (en plus des maisons et appartements) ; terrains non.
+- Q6 **Local commercial ET immeuble entier**, chacun avec un audit adapté (valeur par l'expert).
+- Q7 « Ajouter un bien » : **carte en bas de Mon bien** quand il n'y a qu'un bien.
+- Q8 Certification : **chaque bien**, valeur de lot éventuelle plus tard.
+- Q9 Changement de type d'un brouillon : **réponses hors sujet masquées mais conservées** (vidées à l'envoi).
+- Q10 V2 : suggestion **« Même adresse que… »**, parcelles à confirmer.
+- Q11 Limite : **5 biens au total par vendeur pendant la phase de test**.
+- Q12 Lot à des adresses différentes : **aucun contrôle**.
