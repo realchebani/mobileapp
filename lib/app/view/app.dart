@@ -14,6 +14,7 @@ import 'package:mobileapp/profile/profile.dart';
 import 'package:mobileapp/ui/ui.dart';
 import 'package:profile_repository/profile_repository.dart';
 import 'package:property_repository/property_repository.dart';
+import 'package:sale_repository/sale_repository.dart';
 
 /// Root of the app: provides the repositories and the app-wide blocs.
 ///
@@ -25,6 +26,8 @@ class App extends StatelessWidget {
     required this.profileRepository,
     required this.propertyRepository,
     required this.onboardingRepository,
+    required this.valuationRepository,
+    required this.notificationRepository,
     this.geoRepository,
     this.enableDesignSystem,
     super.key,
@@ -34,6 +37,8 @@ class App extends StatelessWidget {
   final ProfileRepository profileRepository;
   final PropertyRepository propertyRepository;
   final OnboardingRepository onboardingRepository;
+  final ValuationRepository valuationRepository;
+  final NotificationRepository notificationRepository;
 
   /// Addresses and cadastre (seller tunnel V2); a default one when null.
   final GeoRepository? geoRepository;
@@ -50,6 +55,8 @@ class App extends StatelessWidget {
         RepositoryProvider.value(value: profileRepository),
         RepositoryProvider.value(value: propertyRepository),
         RepositoryProvider.value(value: onboardingRepository),
+        RepositoryProvider.value(value: valuationRepository),
+        RepositoryProvider.value(value: notificationRepository),
         RepositoryProvider<GeoRepository>(
           lazy: false,
           create: (_) => geoRepository ?? GeoRepository(),

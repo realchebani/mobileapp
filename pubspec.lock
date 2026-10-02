@@ -945,6 +945,13 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.13.0"
+  sale_repository:
+    dependency: "direct main"
+    description:
+      path: "packages/sale_repository"
+      relative: true
+    source: path
+    version: "0.1.0+1"
   shared_preferences:
     dependency: "direct main"
     description:

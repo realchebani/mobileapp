@@ -236,14 +236,27 @@ void main() {
     expect(find.text('Votre bien face au marché'), findsOne);
   });
 
-  testWidgets('back buttons return to V8', (tester) async {
+  testWidgets('back buttons return to V8 when opened directly', (tester) async {
     final goRouter = MockGoRouter();
     when(() => goRouter.go(any())).thenReturn(null);
+    when(goRouter.canPop).thenReturn(false);
     await pump(tester, snapshot: _full, goRouter: goRouter);
     await tester.pump();
     await tester.tap(find.text('Retour au suivi de mon dossier'));
     await tester.tap(find.bySemanticsLabel('Retour'));
     verify(() => goRouter.go(AppRoutes.sellerSubmitted)).called(2);
+  });
+
+  testWidgets('back buttons pop to the screen that opened V8b', (tester) async {
+    final goRouter = MockGoRouter();
+    when(goRouter.canPop).thenReturn(true);
+    when(goRouter.pop).thenReturn(null);
+    await pump(tester, snapshot: _full, goRouter: goRouter);
+    await tester.pump();
+    await tester.tap(find.text('Retour au suivi de mon dossier'));
+    await tester.tap(find.bySemanticsLabel('Retour'));
+    verify(goRouter.pop).called(2);
+    verifyNever(() => goRouter.go(any()));
   });
 
   test('range bar positions', () {

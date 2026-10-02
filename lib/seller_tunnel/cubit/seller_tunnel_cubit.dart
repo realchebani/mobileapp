@@ -71,6 +71,38 @@ class SellerTunnelCubit extends Cubit<SellerTunnelState> {
   /// Loads the dossier again, after a failure.
   Future<void> retry() => load();
 
+  /// Reloads the dossier in the background (pull to refresh on the seller
+  /// space): unlike [load], the current state stays shown while it loads
+  /// and is kept on failure, which is rethrown (the caller tells the user).
+  Future<void> refresh() async {
+    final current = state.property;
+    if (current == null || state.status != SellerTunnelStatus.success) return;
+    try {
+      final repository = _propertyRepository;
+      final id = current.id;
+      final (property, owners, rooms, items, documents) = await (
+        repository.getProperty(id),
+        repository.getOwners(id),
+        repository.getRooms(id),
+        repository.getLifestyleItems(id),
+        repository.getDocuments(id),
+      ).wait.timeout(_timeout);
+      if (isClosed) return;
+      emit(
+        state.copyWith(
+          property: property,
+          owners: owners,
+          rooms: rooms,
+          lifestyleItems: items,
+          documents: documents,
+        ),
+      );
+    } on Object catch (error, stackTrace) {
+      if (!isClosed) addError(error, stackTrace);
+      rethrow;
+    }
+  }
+
   /// Saves the columns of [patch] (keys from `PropertyColumns`).
   ///
   /// `saveStatus` goes through [SellerTunnelSaveStatus.inProgress] to

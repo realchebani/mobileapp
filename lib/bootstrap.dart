@@ -9,6 +9,7 @@ import 'package:mobileapp/app/app.dart';
 import 'package:mobileapp/ui/ui.dart';
 import 'package:profile_repository/profile_repository.dart';
 import 'package:property_repository/property_repository.dart';
+import 'package:sale_repository/sale_repository.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -19,6 +20,8 @@ typedef AppBuilder = FutureOr<Widget> Function({
   required PropertyRepository propertyRepository,
   required GeoRepository geoRepository,
   required OnboardingRepository onboardingRepository,
+  required ValuationRepository valuationRepository,
+  required NotificationRepository notificationRepository,
 });
 
 Future<void> bootstrap(AppBuilder builder) async {
@@ -60,6 +63,8 @@ Future<void> bootstrap(AppBuilder builder) async {
       propertyRepository: PropertyRepository(client: client),
       geoRepository: GeoRepository(),
       onboardingRepository: OnboardingRepository(preferences: preferences),
+      valuationRepository: ValuationRepository(client: client),
+      notificationRepository: NotificationRepository(client: client),
     ),
   );
 }

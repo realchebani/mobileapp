@@ -51,7 +51,10 @@ class MarketSynthesisView extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final state = context.watch<MarketSynthesisCubit>().state;
-    void back() => context.go(SellerTunnelStep.submitted.path);
+    // Back to where V8b was opened from (V8 or V9), else to V8.
+    void back() => context.canPop()
+        ? context.pop()
+        : context.go(SellerTunnelStep.submitted.path);
     final snapshot = state.snapshot;
     return TunnelScaffold(
       header: _Header(onBack: back),
