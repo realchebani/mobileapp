@@ -13,6 +13,7 @@ Statuts : ✅ Terminé · 🚧 En cours · 📋 À faire
 | [EPIC-05](epics/EPIC-05-estimation-non-certifiee.md) | Estimation non certifiée (tendance de prix) | 📋 |
 | [EPIC-06](epics/EPIC-06-voix-et-agent-ia.md) | Voix et agent IA | 📋 |
 | [EPIC-07](epics/EPIC-07-tableau-de-bord-vendeur.md) | Espace vendeur : tableau de bord & avis de valeur | 🚧 |
+| [EPIC-13](epics/EPIC-13-multi-biens.md) | Plusieurs biens & lots de vente | 📋 |
 
 ## Plans d'implémentation
 
@@ -25,6 +26,7 @@ Chaque chantier commence par un plan, versionné dans [`plans/`](plans/) (`AAAA-
 | 2026-10-01 | [Estimation non certifiée](plans/2026-10-01-estimation-non-certifiee.md) (validé) | EPIC-05 |
 | 2026-10-01 | [Voix et agent IA](plans/2026-10-01-voix-et-agent-ia.md) (validé) | EPIC-06 |
 | 2026-10-01 | [Parcours vendeur V8b → V19](plans/2026-10-01-parcours-vendeur-v8b-v19.md) (questions ouvertes) | EPIC-07 à EPIC-11 |
+| 2026-10-02 | [Plusieurs biens & lots de vente](plans/2026-10-02-multi-biens.md) (questions ouvertes) | EPIC-13 |
 
 ## Décisions et backlog
 
