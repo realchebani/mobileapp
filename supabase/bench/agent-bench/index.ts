@@ -2,16 +2,19 @@
 // agent turn with the production prompt and validation) and returns its
 // output, latency and cost. The OpenRouter key stays server-side. Access
 // requires the `AGENT_BENCH_TOKEN` secret in the `x-bench-token` header.
-// Deploy only for a benchmark run (`--no-verify-jwt`), delete afterwards.
-// Driver: supabase/functions/_bench/run.ts.
+// Kept out of supabase/functions/ so that it is never deployed by mistake.
+// For a benchmark run only: copy it to supabase/functions/agent-bench/,
+// replace "../../functions/_shared/" by "../_shared/" in the imports, set the
+// AGENT_BENCH_TOKEN secret, deploy, run supabase/bench/run.ts, then delete
+// the function, the copy and the secret.
 
-import { OpenRouterClient } from "../_shared/openrouter/client.ts";
-import { agentProvider } from "../_shared/agent/config.ts";
-import { buildMessages } from "../_shared/agent/prompt.ts";
-import { type AgentStep, outputSchema } from "../_shared/agent/schema.ts";
-import { parseModelOutput, validateTurn } from "../_shared/agent/validate.ts";
-import { toBase64 } from "../_shared/openrouter/client.ts";
-import { pcmToWav, speechFormatFor } from "../_shared/openrouter/audio.ts";
+import { OpenRouterClient } from "../../functions/_shared/openrouter/client.ts";
+import { agentProvider } from "../../functions/_shared/agent/config.ts";
+import { buildMessages } from "../../functions/_shared/agent/prompt.ts";
+import { type AgentStep, outputSchema } from "../../functions/_shared/agent/schema.ts";
+import { parseModelOutput, validateTurn } from "../../functions/_shared/agent/validate.ts";
+import { toBase64 } from "../../functions/_shared/openrouter/client.ts";
+import { pcmToWav, speechFormatFor } from "../../functions/_shared/openrouter/audio.ts";
 
 function json(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {

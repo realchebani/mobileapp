@@ -141,3 +141,35 @@ export function audioSeconds(
 export function isSpeechTooShort(seconds: number, chars: number): boolean {
   return chars >= 20 && seconds < chars / 45;
 }
+
+/** Duration declared by the `mvhd` box of an MP4 / m4a file, or null. */
+export function m4aSeconds(bytes: Uint8Array): number | null {
+  for (let i = 4; i + 32 <= bytes.length; i++) {
+    if (
+      bytes[i] !== 0x6d || bytes[i + 1] !== 0x76 || bytes[i + 2] !== 0x68 ||
+      bytes[i + 3] !== 0x64
+    ) continue; // "mvhd"
+    const view = new DataView(bytes.buffer, bytes.byteOffset + i + 4);
+    const version = view.getUint8(0);
+    const timescale = view.getUint32(version === 1 ? 20 : 12);
+    const duration = version === 1 ? Number(view.getBigUint64(24)) : view.getUint32(16);
+    return timescale > 0 ? duration / timescale : null;
+  }
+  return null;
+}
+
+/** Highest bit rate expected from a voice recording (16 KB/s = 128 kbit/s,
+ * four times the app's AAC 32 kbit/s): its size then bounds its duration
+ * from below. */
+export const MAX_AUDIO_BYTES_PER_SECOND = 16_000;
+
+/**
+ * Server-measured duration of an uploaded recording, for the quotas and
+ * the 60 s limit: the larger of the m4a header and the size-based lower
+ * bound, so a forged header can only make it longer. The client's own
+ * figure is never trusted; the STT provider's measure is added later.
+ */
+export function recordingSeconds(bytes: Uint8Array): number {
+  const bound = bytes.length / MAX_AUDIO_BYTES_PER_SECOND;
+  return Math.max(m4aSeconds(bytes) ?? 0, bound);
+}

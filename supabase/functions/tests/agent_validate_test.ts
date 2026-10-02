@@ -6,17 +6,16 @@ import {
   parseModelOutput,
   quoteFound,
   validateTurn,
-} from "./validate.ts";
+} from "../_shared/agent/validate.ts";
 import {
   fieldByColumn,
   isAsked,
   missingFields,
   outputSchema,
   promptFields,
-} from "./schema.ts";
+} from "../_shared/agent/schema.ts";
 
-const transcript =
-  "Alors la maison date de 1998, elle est construite en parpaing, avec une " +
+const transcript = "Alors la maison date de 1998, elle est construite en parpaing, avec une " +
   "toiture en tuiles qu’on a refaite en 2016.";
 
 function output(partial: Partial<ModelOutput>): ModelOutput {
@@ -149,8 +148,7 @@ Deno.test("rejects invented, unknown, invalid and low-confidence answers", () =>
 });
 
 Deno.test("cross-field rules and conditional fields", () => {
-  const text =
-    "pompe à chaleur air eau, piscine de 8 sur 4, séjour de 300 m², " +
+  const text = "pompe à chaleur air eau, piscine de 8 sur 4, séjour de 300 m², " +
     "toiture refaite en 1950, 2 pièces et 3 chambres";
   const result = validateTurn(
     output({
@@ -214,7 +212,6 @@ Deno.test("cross-field rules and conditional fields", () => {
   assertEquals(result.patch, {
     heating_systems: ["pac", "bois"],
     heat_pump_type: "air_eau",
-    rooms_count: 2,
   });
   assertEquals(
     result.rejected.map((r) => [r.field, r.reason]),
@@ -222,6 +219,7 @@ Deno.test("cross-field rules and conditional fields", () => {
       ["pool_length_m", "not_asked"],
       ["living_room_area_m2", "inconsistent"],
       ["roof_year", "inconsistent"],
+      ["rooms_count", "inconsistent"],
       ["bedrooms_count", "inconsistent"],
     ],
   );
@@ -442,4 +440,34 @@ Deno.test("schema helpers", () => {
     factLabel(fieldByColumn("technical", "rooms_count")!, 4),
     "4 pièces",
   );
+});
+
+Deno.test("consistency rules work both ways", () => {
+  const text = "construite en 2000, 50 m² habitables, 2 pièces";
+  const result = validateTurn(
+    output({
+      answers: [
+        { field: "construction_year", value: "2000", confidence: 0.9, quote: "construite en 2000" },
+        { field: "living_area_m2", value: "50", confidence: 0.9, quote: "50 m² habitables" },
+        { field: "rooms_count", value: "2", confidence: 0.9, quote: "2 pièces" },
+      ],
+    }),
+    {
+      step: "technical",
+      values: {
+        property_type: "maison",
+        roof_year: 1990,
+        living_room_area_m2: 60,
+        bedrooms_count: 3,
+      },
+      transcript: text,
+      currentYear: 2026,
+    },
+  );
+  assertEquals(result.patch, {});
+  assertEquals(result.rejected.map((r) => r.reason), [
+    "inconsistent",
+    "inconsistent",
+    "inconsistent",
+  ]);
 });

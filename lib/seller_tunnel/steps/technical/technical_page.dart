@@ -46,6 +46,23 @@ class TechnicalView extends StatefulWidget {
 class _TechnicalViewState extends State<TechnicalView> {
   static const SellerTunnelStep _step = SellerTunnelStep.technical;
 
+  /// The microphone: saves what was typed (without moving on), then opens
+  /// V4, which reads the dossier. Invalid answers are shown instead.
+  Future<void> _openVoiceAudit() async {
+    final technical = context.read<TechnicalCubit>();
+    final tunnel = context.read<SellerTunnelCubit>();
+    final state = technical.state;
+    if (!state.isValid) {
+      technical.submit();
+      return;
+    }
+    if (state.values.keys.any(state.isChanged)) {
+      await tunnel.save(state.patch);
+      if (tunnel.state.saveStatus == SellerTunnelSaveStatus.failure) return;
+    }
+    if (mounted) context.go(AppRoutes.sellerVoiceAudit);
+  }
+
   late final TextEditingController _constructionYear;
   late final TextEditingController _livingArea;
   late final TextEditingController _livingRoomArea;
@@ -158,9 +175,7 @@ class _TechnicalViewState extends State<TechnicalView> {
           isLoading: saving,
           onPressed: cubit.submit,
           // V4 · audit vocal (not for land: nothing to ask by voice).
-          onMicPressed: saving || !state.asksBuilding
-              ? null
-              : () => context.go(AppRoutes.sellerVoiceAudit),
+          onMicPressed: saving || !state.asksBuilding ? null : _openVoiceAudit,
         ),
         children: [
           if (state.asksBuilding) ...[

@@ -60,6 +60,15 @@ class VoiceConversationCubit extends Cubit<VoiceConversationState> {
   DateTime? _startedAt;
   bool _paused = false;
 
+  /// Set by [stop] (the screen was left): late results are ignored.
+  bool _stopped = false;
+
+  /// Consecutive turns from which nothing was understood.
+  int _misses = 0;
+
+  /// After this many [_misses], the screen mode is offered.
+  static const missesBeforeScreenMode = 3;
+
   /// A turn recorded before a failure of the agent call (retry with it).
   String? _retryTurnId;
 
@@ -68,6 +77,7 @@ class VoiceConversationCubit extends Cubit<VoiceConversationState> {
 
   /// Asks for the microphone, then listens.
   Future<void> start() async {
+    _stopped = false;
     if (!await _recorder.requestPermission()) {
       _fail(VoiceError.permissionDenied);
       return;
@@ -140,7 +150,7 @@ class VoiceConversationCubit extends Cubit<VoiceConversationState> {
       _failWith(error);
       return;
     }
-    if (isClosed) return;
+    if (isClosed || _stopped) return;
     emit(
       state.copyWith(
         phase: VoicePhase.thinking,
@@ -172,6 +182,8 @@ class VoiceConversationCubit extends Cubit<VoiceConversationState> {
       return;
     }
     _retryTurnId = null;
+    // The screen was left meanwhile: nothing is applied any more.
+    if (isClosed || _stopped) return;
     await _apply(turn);
   }
 
@@ -187,6 +199,11 @@ class VoiceConversationCubit extends Cubit<VoiceConversationState> {
     }
     _unapplied = null;
     if (isClosed) return;
+    final understood =
+        turn.patch.isNotEmpty ||
+        turn.lifestyleItems.isNotEmpty ||
+        turn.suggestions.isNotEmpty;
+    _misses = understood ? 0 : _misses + 1;
     final facts = {
       for (final fact in state.facts) fact.field: fact,
       for (final fact in turn.facts) fact.field: fact,
@@ -203,6 +220,7 @@ class VoiceConversationCubit extends Cubit<VoiceConversationState> {
           for (final pill in turn.pending)
             if (!facts.containsKey(pill.field)) pill,
         ],
+        suggestScreenMode: _misses >= missesBeforeScreenMode,
       ),
     );
     await _speak(turn.turnId);
@@ -226,13 +244,18 @@ class VoiceConversationCubit extends Cubit<VoiceConversationState> {
     }
   }
 
-  void _failWith(Object error) => _fail(switch (error) {
+  void _failWith(Object error) {
+    if (_stopped) return;
+    _fail(_errorOf(error));
+  }
+
+  static VoiceError _errorOf(Object error) => switch (error) {
     AgentLockedFailure() => VoiceError.locked,
     AgentQuotaFailure() => VoiceError.quota,
     AgentEmptyFailure() => VoiceError.empty,
     AgentTooLongFailure() => VoiceError.tooLong,
     _ => VoiceError.network,
-  });
+  };
 
   void _fail(VoiceError error) {
     if (isClosed) return;
@@ -285,6 +308,7 @@ class VoiceConversationCubit extends Cubit<VoiceConversationState> {
   /// Stops listening and speaking (leaving the screen).
   Future<void> stop() async {
     _paused = true;
+    _stopped = true;
     await _levels?.cancel();
     _levels = null;
     await _recorder.cancel();

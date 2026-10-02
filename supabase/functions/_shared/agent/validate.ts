@@ -152,9 +152,7 @@ function parseValue(field: FieldDef, raw: string, year: number): Parsed {
     }
     case "text": {
       const value = text.slice(0, kind.max);
-      return value.length === 0
-        ? { ok: false, reason: "invalid_value" }
-        : { ok: true, value };
+      return value.length === 0 ? { ok: false, reason: "invalid_value" } : { ok: true, value };
     }
   }
 }
@@ -175,9 +173,7 @@ export function factLabel(field: FieldDef, value: unknown): string {
         : `${value} ${lowerFirst(field.label)}`;
     case "enum": {
       const label = kind.codes[value as string];
-      return field.column === "wall_material"
-        ? label
-        : `${field.label} ${lowerFirst(label)}`;
+      return field.column === "wall_material" ? label : `${field.label} ${lowerFirst(label)}`;
     }
     case "list":
       return (value as string[]).map((code) => kind.codes[code]).join(", ");
@@ -242,9 +238,7 @@ export function validateTurn(
     }
     let value = parsed.value;
     if (field.kind.type === "list") {
-      const existing = Array.isArray(merged[field.column])
-        ? merged[field.column] as string[]
-        : [];
+      const existing = Array.isArray(merged[field.column]) ? merged[field.column] as string[] : [];
       const union = new Set([...existing, ...(value as string[])]);
       value = Object.keys(field.kind.codes).filter((code) => union.has(code));
     }
@@ -256,18 +250,31 @@ export function validateTurn(
   const consistent = (field: FieldDef, value: unknown): boolean => {
     const num = (column: string) =>
       typeof merged[column] === "number" ? merged[column] as number : null;
+    const value_ = value as number;
     switch (field.column) {
       case "roof_year": {
         const built = num("construction_year");
-        return built === null || (value as number) >= built;
+        return built === null || value_ >= built;
+      }
+      case "construction_year": {
+        const roof = num("roof_year");
+        return roof === null || roof >= value_;
       }
       case "living_room_area_m2": {
         const living = num("living_area_m2");
-        return living === null || (value as number) <= living;
+        return living === null || value_ <= living;
+      }
+      case "living_area_m2": {
+        const room = num("living_room_area_m2");
+        return room === null || room <= value_;
       }
       case "bedrooms_count": {
         const rooms = num("rooms_count");
-        return rooms === null || (value as number) <= rooms;
+        return rooms === null || value_ <= rooms;
+      }
+      case "rooms_count": {
+        const bedrooms = num("bedrooms_count");
+        return bedrooms === null || bedrooms <= value_;
       }
       default:
         return true;

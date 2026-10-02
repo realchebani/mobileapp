@@ -40,6 +40,6 @@ export function agentModels(env: Env): AgentModels {
  * vendor's own endpoint for Claude. */
 export function agentProvider(model: string): Record<string, unknown> {
   return model.startsWith("anthropic/")
-    ? { order: ["anthropic"], allow_fallbacks: true, data_collection: "deny" }
+    ? { order: ["anthropic"], allow_fallbacks: false, data_collection: "deny" }
     : { data_collection: "deny" };
 }

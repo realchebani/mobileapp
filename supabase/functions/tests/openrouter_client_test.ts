@@ -1,5 +1,5 @@
 import { assert, assertEquals, assertRejects } from "jsr:@std/assert@1";
-import { OpenRouterClient, OpenRouterError, toBase64 } from "./client.ts";
+import { OpenRouterClient, OpenRouterError, toBase64 } from "../_shared/openrouter/client.ts";
 import {
   audioSeconds,
   isSpeechTooShort,
@@ -7,7 +7,7 @@ import {
   pcmToWav,
   repairXingHeader,
   speechFormatFor,
-} from "./audio.ts";
+} from "../_shared/openrouter/audio.ts";
 
 type Call = { url: string; init?: RequestInit };
 

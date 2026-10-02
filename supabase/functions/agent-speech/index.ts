@@ -6,9 +6,9 @@ import { agentModels } from "../_shared/agent/config.ts";
 import { handleSpeech } from "../_shared/agent/handlers.ts";
 import { callerDb } from "../_shared/agent/supabase_db.ts";
 
-Deno.serve((request) =>
+Deno.serve(async (request) =>
   handleSpeech(request, {
-    db: callerDb(request),
+    db: await callerDb(request),
     openrouter: new OpenRouterClient({
       apiKey: Deno.env.get("OPENROUTER_API_KEY") ?? "",
       timeoutMs: 45_000,

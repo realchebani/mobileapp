@@ -70,13 +70,14 @@ class VoiceRecorder {
   /// The temporary file is deleted.
   Future<RecordedAudio?> stop() async {
     final startedAt = _startedAt;
+    final expected = _path;
     _startedAt = null;
     _path = null;
-    final path = await _recorder.stop();
-    if (path == null || startedAt == null) return null;
+    final path = await _recorder.stop() ?? expected;
+    if (path == null) return null;
     final file = File(path);
     try {
-      if (!file.existsSync()) return null;
+      if (startedAt == null || !file.existsSync()) return null;
       final bytes = await file.readAsBytes();
       if (bytes.isEmpty) return null;
       return RecordedAudio(
@@ -84,6 +85,7 @@ class VoiceRecorder {
         duration: _clock().difference(startedAt),
       );
     } finally {
+      // Never left on the device, whatever happened.
       if (file.existsSync()) file.deleteSync();
     }
   }

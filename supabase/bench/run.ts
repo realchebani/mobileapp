@@ -2,7 +2,7 @@
 //
 //   BENCH_URL=https://<ref>.supabase.co/functions/v1/agent-bench \
 //   BENCH_TOKEN=<AGENT_BENCH_TOKEN> BENCH_AUTH=<anon key> BENCH_OUT=<dir> \
-//   deno run -A supabase/functions/_bench/run.ts [--only=stt,agent,tts]
+//   deno run -A supabase/bench/run.ts [--only=stt,agent,e2e,tts]
 //
 // Every OpenRouter call goes through the `agent-bench` Edge Function (the
 // key never leaves Supabase). Test audio: recordings in <BENCH_OUT>/audio/
@@ -11,7 +11,7 @@
 // mono, `afconvert`). Synthetic audio is cleaner than a real phone
 // recording: STT results are optimistic.
 
-import { normalize } from "../_shared/agent/validate.ts";
+import { normalize } from "../functions/_shared/agent/validate.ts";
 
 const url = Deno.env.get("BENCH_URL")!;
 const token = Deno.env.get("BENCH_TOKEN")!;
@@ -181,9 +181,8 @@ for (const [i, u] of utterances.entries()) {
     sources[u.id] = `${model} (${voice})`;
     if (tts.generation_id) {
       await new Promise((r) => setTimeout(r, 1500));
-      audioCost +=
-        (await call({ op: "cost", generation_id: tts.generation_id })).cost ??
-          0;
+      audioCost += (await call({ op: "cost", generation_id: tts.generation_id })).cost ??
+        0;
     }
   } else {
     const voice = SAY_VOICES[((i - 1) / 2) % SAY_VOICES.length];
@@ -269,13 +268,9 @@ async function agentRow(
     for (const [field, value] of Object.entries(u.expected)) {
       expectedN++;
       if (value === "low") {
-        correct += typeof patch[field] === "number" && patch[field] <= 4
-          ? 1
-          : 0;
+        correct += typeof patch[field] === "number" && patch[field] <= 4 ? 1 : 0;
       } else if (value === "high") {
-        correct += typeof patch[field] === "number" && patch[field] >= 6
-          ? 1
-          : 0;
+        correct += typeof patch[field] === "number" && patch[field] >= 6 ? 1 : 0;
       } else if (value === "suggested") correct += field in suggestions ? 1 : 0;
       else correct += sameValue(patch[field], value) ? 1 : 0;
     }
@@ -335,8 +330,7 @@ if (only.includes("agent")) {
 // (from a previous `--only=stt` run).
 if (only.includes("e2e")) {
   const model = Deno.env.get("E2E_AGENT") ?? AGENT_MODELS[0];
-  const stt =
-    JSON.parse(await Deno.readTextFile(`${out}/results-stt.json`)).stt;
+  const stt = JSON.parse(await Deno.readTextFile(`${out}/results-stt.json`)).stt;
   report.e2e = { agent: model, byStt: {} };
   const sttModels = Deno.env.get("E2E_STT")?.split(",") ?? STT_MODELS;
   for (const sttModel of sttModels) {

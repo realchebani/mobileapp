@@ -2,7 +2,8 @@
 // injected dependencies (tested with fakes in handlers_test.ts).
 //
 // - agent-transcribe: POST audio bytes (application/octet-stream) with
-//   ?property_id=&step=&format=m4a&duration=<s> → {turn_id, transcript}.
+//   ?property_id=&step=&format=m4a → {turn_id, transcript}; the duration is
+//   measured server-side (m4a header, size bound, STT usage).
 // - agent-turn: POST {property_id, step, turn_id? | transcript?,
 //   lifestyle_labels?} → {turn_id, reply_fr, patch, facts, pending,
 //   lifestyle_items, suggestions, next_field, done}. Never writes the
@@ -10,15 +11,12 @@
 // - agent-speech: POST {turn_id} → the turn's reply as audio
 //   (application/octet-stream, header x-audio-format: mp3 | wav), once.
 
-import {
-  type OpenRouterClient,
-  OpenRouterError,
-  toBase64,
-} from "../openrouter/client.ts";
+import { type OpenRouterClient, OpenRouterError, toBase64 } from "../openrouter/client.ts";
 import {
   audioSeconds,
   isSpeechTooShort,
   pcmToWav,
+  recordingSeconds,
   repairXingHeader,
   speechFormatFor,
 } from "../openrouter/audio.ts";
@@ -26,11 +24,7 @@ import { type AgentModels, agentProvider } from "./config.ts";
 import { type AgentDb, LIMITS, type PropertyRow, startOfDay } from "./db.ts";
 import { buildMessages } from "./prompt.ts";
 import { type AgentStep, outputSchema } from "./schema.ts";
-import {
-  type ModelOutput,
-  parseModelOutput,
-  validateTurn,
-} from "./validate.ts";
+import { type ModelOutput, parseModelOutput, validateTurn } from "./validate.ts";
 
 /** Reply when the agent's answer stays unreadable after a retry. */
 export const ASK_TO_REPEAT =
@@ -78,14 +72,16 @@ async function draftProperty(
   return property;
 }
 
+/** 429 when the caller's daily quota is used up: [audioSeconds] more of
+ * audio, and a new turn when [newTurn] (otherwise an existing one). */
 async function quotaError(
   db: AgentDb,
   now: Date,
-  audioSeconds = 0,
+  { audioSeconds = 0, newTurn = true } = {},
 ): Promise<Response | null> {
   const usage = await db.usageSince(startOfDay(now));
   if (
-    usage.turns >= LIMITS.turnsPerDay ||
+    usage.turns + (newTurn ? 1 : 0) > LIMITS.turnsPerDay ||
     usage.audioSeconds + audioSeconds > LIMITS.audioSecondsPerDay
   ) {
     return failure("quota", 429);
@@ -110,21 +106,17 @@ export async function handleTranscribe(
   const url = new URL(request.url);
   const step = url.searchParams.get("step");
   const format = url.searchParams.get("format") ?? "m4a";
-  const duration = Number(url.searchParams.get("duration") ?? "0");
+  // The client's `duration` parameter is ignored: never trusted.
   if (!isStep(step) || !AUDIO_FORMATS.includes(format)) {
     return failure("bad_request", 400);
-  }
-  if (
-    !Number.isFinite(duration) || duration < 0 ||
-    duration > LIMITS.audioSecondsPerTurn + 1
-  ) {
-    return failure("too_long", 413);
   }
   const length = Number(request.headers.get("content-length") ?? "0");
   if (length > LIMITS.audioBytes) return failure("too_long", 413);
   const audio = new Uint8Array(await request.arrayBuffer());
   if (audio.length === 0) return failure("bad_request", 400);
   if (audio.length > LIMITS.audioBytes) return failure("too_long", 413);
+  const measured = recordingSeconds(audio);
+  if (measured > LIMITS.audioSecondsPerTurn + 1) return failure("too_long", 413);
 
   try {
     const property = await draftProperty(
@@ -132,7 +124,7 @@ export async function handleTranscribe(
       url.searchParams.get("property_id"),
     );
     if (property instanceof Response) return property;
-    const quota = await quotaError(db, now, duration);
+    const quota = await quotaError(db, now, { audioSeconds: measured });
     if (quota) return quota;
 
     let result;
@@ -147,16 +139,20 @@ export async function handleTranscribe(
       return upstreamError(error);
     }
     const transcript = result.text.slice(0, LIMITS.transcriptChars);
-    if (!transcript) return failure("empty", 422);
     const session = await db.session(property.id, step);
+    // Journaled even when empty: the audio and its cost count in the quotas.
     const turn = await db.insertTurn({
       session_id: session.id,
       transcript,
-      audio_seconds: Math.min(result.seconds ?? duration, 9999),
+      audio_seconds: Math.min(Math.max(result.seconds ?? 0, measured), 9999),
       stt_model: deps.models.stt,
       stt_ms: result.ms,
       cost_usd: result.cost,
     });
+    if (!transcript) {
+      await db.updateTurn(turn.id, { error: "empty" });
+      return failure("empty", 422);
+    }
     return json({ turn_id: turn.id, transcript });
   } catch (error) {
     return upstreamError(error);
@@ -201,16 +197,23 @@ export async function handleTurn(
     const session = await db.session(property.id, step);
 
     let turn;
-    if (typeof body.turn_id === "string") {
+    if (body.turn_id !== undefined) {
+      if (typeof body.turn_id !== "string" || !UUID.test(body.turn_id)) {
+        return failure("bad_request", 400);
+      }
       const found = await db.turn(body.turn_id);
       if (!found || found.session.id !== session.id) {
         return failure("not_found", 404);
       }
+      // Exactly one agent answer per turn (a failed call may be retried).
+      if (found.reply_fr !== null || found.extracted != null) {
+        return failure("already_answered", 409);
+      }
+      const quota = await quotaError(db, now, { newTurn: false });
+      if (quota) return quota;
       turn = found;
     } else {
-      const transcript = typeof body.transcript === "string"
-        ? body.transcript.trim()
-        : "";
+      const transcript = typeof body.transcript === "string" ? body.transcript.trim() : "";
       if (!transcript) return failure("bad_request", 400);
       if (transcript.length > LIMITS.transcriptChars) {
         return failure("too_long", 413);
@@ -364,6 +367,10 @@ export async function handleSpeech(
     if (turn.tts_ms !== null) return failure("already_spoken", 409);
     const property = await draftProperty(db, turn.session.property_id);
     if (property instanceof Response) return property;
+    const quota = await quotaError(db, deps.now?.() ?? new Date(), {
+      newTurn: false,
+    });
+    if (quota) return quota;
 
     const model = deps.models.tts;
     const format = speechFormatFor(model);
@@ -379,9 +386,7 @@ export async function handleSpeech(
       return upstreamError(error);
     }
     await db.updateTurn(turn.id, { tts_model: model, tts_ms: speech.ms });
-    const audio = format === "pcm"
-      ? pcmToWav(speech.audio)
-      : repairXingHeader(speech.audio);
+    const audio = format === "pcm" ? pcmToWav(speech.audio) : repairXingHeader(speech.audio);
     const seconds = audioSeconds(audio, format === "pcm" ? "wav" : "mp3");
     // Truncated speech: the app shows the reply as text only.
     if (isSpeechTooShort(seconds, turn.reply_fr.length)) {

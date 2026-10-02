@@ -79,9 +79,11 @@ class SellerTunnelGate extends StatelessWidget {
             if (next != null &&
                 GoRouter.of(context).state.matchedLocation ==
                     state.continuedFrom?.path) {
-              // V3 → V4 (voice audit) when voice is available; V4 falls
-              // back to V4b (screen mode) without consent.
+              // V3 → V4 (voice audit) when voice is available, except for
+              // land (nothing to ask by voice); V4 falls back to V4b
+              // (screen mode) without consent.
               if (next == SellerTunnelStep.technical &&
+                  state.property?.propertyType != PropertyType.land &&
                   VoiceServices.of(context).isAvailable) {
                 context.go(AppRoutes.sellerVoiceAudit);
               } else {

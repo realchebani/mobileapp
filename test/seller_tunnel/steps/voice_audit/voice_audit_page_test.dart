@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:agent_repository/agent_repository.dart';
@@ -118,5 +119,55 @@ void main() {
     expect(find.text('Audit technique'), findsOneWidget);
     expect(find.textContaining('L’accès au micro est refusé'), findsOneWidget);
     expect(find.text('Réglages'), findsOneWidget);
+  });
+
+  testWidgets('land goes to V4b even with voice', (tester) async {
+    await tester.pumpTunnelPage(
+      RepositoryProvider.value(
+        value: await testVoiceServices(),
+        child: const VoiceAuditPage(),
+      ),
+      sellerTunnelCubit: mockSellerTunnelCubit(
+        const SellerTunnelState(
+          status: SellerTunnelStatus.success,
+          property: Property(
+            id: 'p',
+            ownerId: 'u',
+            propertyType: PropertyType.land,
+          ),
+        ),
+      ),
+      goRouter: goRouter,
+    );
+    await tester.pump();
+    verify(() => goRouter.go(AppRoutes.sellerTechnical)).called(1);
+  });
+
+  test('waits for a save in progress before saving a turn', () async {
+    const saving = SellerTunnelState(
+      status: SellerTunnelStatus.success,
+      property: _house,
+      saveStatus: SellerTunnelSaveStatus.inProgress,
+    );
+    final tunnel = mockSellerTunnelCubit(saving);
+    final states = StreamController<SellerTunnelState>();
+    when(() => tunnel.stream).thenAnswer((_) => states.stream);
+    final done = technicalTurnHandler(tunnel)(
+      const AgentTurn(
+        turnId: 't',
+        transcript: '',
+        reply: '',
+        patch: {'levels': 'r1'},
+      ),
+    );
+    await Future<void>.delayed(Duration.zero);
+    verifyNever(() => tunnel.save(any()));
+    when(
+      () => tunnel.state,
+    ).thenReturn(saving.copyWith(saveStatus: SellerTunnelSaveStatus.success));
+    states.add(saving.copyWith(saveStatus: SellerTunnelSaveStatus.success));
+    await done;
+    verify(() => tunnel.save(any())).called(1);
+    await states.close();
   });
 }

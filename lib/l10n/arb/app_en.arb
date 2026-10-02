@@ -601,7 +601,7 @@
   "voiceConsentTitle": "Answer by voice",
   "voiceConsentIntro": "Before turning on the microphone, here is what happens to your voice.",
   "voiceConsentProvidersTitle": "Who processes your voice?",
-  "voiceConsentProviders": "Your voice is sent to OpenRouter, which passes it to AI model providers (currently OpenAI Whisper for transcription, Google Gemini to understand your answers, Kokoro for the agent’s voice). This processing may take place outside the European Union, notably in the United States.",
+  "voiceConsentProviders": "Your voice is sent to OpenRouter (United States), which passes it to the AI model providers it uses and to their hosts. Currently: an OpenAI Whisper model for transcription, a Google Gemini model to understand your answers and the Kokoro model for the agent’s voice; they may change. This processing may take place outside the European Union.",
   "voiceConsentRetentionTitle": "What is kept",
   "voiceConsentRetention": "The audio recording is never kept, neither on your phone nor on our servers. The transcribed text and the answers kept are stored with your dossier.",
   "voiceConsentIdentity": "No identity data (name, phone, e-mail, address) is sent to these providers.",
@@ -647,5 +647,6 @@
   "lifestyleVoiceAdded": "Added by voice",
   "lifestyleVoiceSecretSuggestion": "Suggestion for the secret note:",
   "lifestyleVoiceSecretUse": "Use",
-  "lifestyleVoiceClose": "Finish"
+  "lifestyleVoiceClose": "Finish",
+  "voiceSuggestScreenMode": "I can’t pick up your answers. Would you rather continue on screen?"
 }

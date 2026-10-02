@@ -1,8 +1,10 @@
 -- EPIC-06 · Voice agent: conversation sessions and turns (journal, quotas).
--- Written by the Edge Functions agent-transcribe / agent-turn / agent-speech
--- with the CALLER's JWT (never the service key): RLS applies. Rows can only
--- be added or changed while the property is a draft; the audio itself is
--- never stored. Nothing here changes `properties`.
+-- Clients can only READ their own rows. Every write is made by the Edge
+-- Functions agent-transcribe / agent-turn / agent-speech with the service
+-- role, after checking with the CALLER's JWT (RLS) that the property is
+-- theirs and still a draft: the journal backs the quotas and the costs, so
+-- the app cannot alter it. The audio itself is never stored. Nothing here
+-- changes `properties`.
 
 create table public.agent_sessions (
   id uuid primary key default gen_random_uuid(),
@@ -65,80 +67,15 @@ create policy "Owners can view their agent sessions"
   to authenticated
   using (owner_id = (select auth.uid()));
 
-create policy "Owners can start agent sessions on their drafts"
-  on public.agent_sessions for insert
-  to authenticated
-  with check (
-    owner_id = (select auth.uid())
-    and exists (
-      select 1 from public.properties p
-      where p.id = property_id
-        and p.owner_id = (select auth.uid())
-        and p.status = 'draft'
-    )
-  );
-
-create policy "Owners can update agent sessions of their drafts"
-  on public.agent_sessions for update
-  to authenticated
-  using (
-    owner_id = (select auth.uid())
-    and exists (
-      select 1 from public.properties p
-      where p.id = property_id and p.status = 'draft'
-    )
-  )
-  with check (owner_id = (select auth.uid()));
-
 create policy "Owners can view their agent turns"
   on public.agent_turns for select
   to authenticated
   using (owner_id = (select auth.uid()));
 
-create policy "Owners can add agent turns on their drafts"
-  on public.agent_turns for insert
-  to authenticated
-  with check (
-    owner_id = (select auth.uid())
-    and exists (
-      select 1
-      from public.agent_sessions s
-      join public.properties p on p.id = s.property_id
-      where s.id = session_id
-        and s.owner_id = (select auth.uid())
-        and p.status = 'draft'
-    )
-  );
+-- No insert / update / delete policy: writes go through the service role.
 
-create policy "Owners can complete agent turns on their drafts"
-  on public.agent_turns for update
-  to authenticated
-  using (
-    owner_id = (select auth.uid())
-    and exists (
-      select 1
-      from public.agent_sessions s
-      join public.properties p on p.id = s.property_id
-      where s.id = session_id and p.status = 'draft'
-    )
-  )
-  with check (owner_id = (select auth.uid()));
-
--- Grants: no delete (the journal backs the daily quotas); the transcript,
--- audio duration and STT fields are written once, at insert.
+-- Grants: read only for the signed-in users.
 revoke all on table public.agent_sessions, public.agent_turns
   from anon, authenticated;
 grant select on table public.agent_sessions, public.agent_turns
   to authenticated;
-grant insert (property_id, step, next_field)
-  on table public.agent_sessions to authenticated;
-grant update (status, next_field)
-  on table public.agent_sessions to authenticated;
-grant insert (
-  session_id, transcript, audio_seconds, reply_fr, extracted, stt_model,
-  agent_model, tokens_in, tokens_out, stt_ms, agent_ms, cost_usd, error
-) on table public.agent_turns to authenticated;
-grant update (
-  reply_fr, extracted, agent_model, tts_model, tokens_in, tokens_out,
-  agent_ms, tts_ms, cost_usd, error
-) on table public.agent_turns to authenticated;

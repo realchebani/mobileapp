@@ -15,6 +15,8 @@ export interface TurnRow {
   session_id: string;
   transcript: string;
   reply_fr: string | null;
+  /** Validated answers, once the agent answered. */
+  extracted?: unknown;
   tts_ms: number | null;
   cost_usd: number | null;
 }

@@ -1,6 +1,6 @@
 import { assert, assertEquals } from "jsr:@std/assert@1";
-import { OpenRouterClient } from "../openrouter/client.ts";
-import { agentModels, agentProvider, DEFAULT_MODELS } from "./config.ts";
+import { OpenRouterClient } from "../_shared/openrouter/client.ts";
+import { agentModels, agentProvider, DEFAULT_MODELS } from "../_shared/agent/config.ts";
 import type {
   AgentDb,
   PropertyRow,
@@ -8,7 +8,8 @@ import type {
   TurnInsert,
   TurnRow,
   TurnUpdate,
-} from "./db.ts";
+} from "../_shared/agent/db.ts";
+import { m4aSeconds, recordingSeconds } from "../_shared/openrouter/audio.ts";
 import {
   ASK_TO_REPEAT,
   defaultVoice,
@@ -16,9 +17,9 @@ import {
   handleSpeech,
   handleTranscribe,
   handleTurn,
-} from "./handlers.ts";
-import { buildMessages } from "./prompt.ts";
-import type { AgentStep } from "./schema.ts";
+} from "../_shared/agent/handlers.ts";
+import { buildMessages } from "../_shared/agent/prompt.ts";
+import type { AgentStep } from "../_shared/agent/schema.ts";
 
 const PROPERTY = "11111111-1111-4111-8111-111111111111";
 const OTHER = "22222222-2222-4222-8222-222222222222";
@@ -27,8 +28,7 @@ class FakeDb implements AgentDb {
   properties = new Map<string, PropertyRow>([
     [PROPERTY, { id: PROPERTY, status: "draft", property_type: "maison" }],
   ]);
-  sessions: (SessionRow & { next_field?: string | null; status?: string })[] =
-    [];
+  sessions: (SessionRow & { next_field?: string | null; status?: string })[] = [];
   // deno-lint-ignore no-explicit-any
   turns: (TurnRow & Record<string, any>)[] = [];
   usage = { turns: 0, audioSeconds: 0 };
@@ -42,9 +42,7 @@ class FakeDb implements AgentDb {
     return Promise.resolve(this.saved);
   }
   session(propertyId: string, step: AgentStep) {
-    let s = this.sessions.find((x) =>
-      x.property_id === propertyId && x.step === step
-    );
+    let s = this.sessions.find((x) => x.property_id === propertyId && x.step === step);
     if (!s) {
       s = { id: `s${this.sessions.length + 1}`, property_id: propertyId, step };
       this.sessions.push(s);
@@ -164,7 +162,8 @@ Deno.test("transcribe: refusals", async () => {
     400,
   );
   assertEquals(await status(audioRequest(`${q}&format=exe`)), 400);
-  assertEquals(await status(audioRequest(`${q}&duration=90`)), 413);
+  // 1 MB is at least 62 s of audio, whatever the client says.
+  assertEquals(await status(audioRequest(`${q}&duration=1`, new Uint8Array(1_000_000))), 413);
   assertEquals(await status(audioRequest(q, new Uint8Array())), 400);
   assertEquals(await status(audioRequest(q, new Uint8Array(1_500_001))), 413);
   assertEquals(
@@ -196,7 +195,8 @@ Deno.test("transcribe: refusals", async () => {
   db.usage = { turns: 120, audioSeconds: 0 };
   assertEquals(await status(audioRequest(q)), 429);
   db.usage = { turns: 0, audioSeconds: 1199 };
-  assertEquals(await status(audioRequest(`${q}&duration=5`)), 429);
+  // 32 KB: at least 2 s (size bound), although the client says 0.
+  assertEquals(await status(audioRequest(`${q}&duration=0`, new Uint8Array(32_000))), 429);
   db.usage = { turns: 0, audioSeconds: 0 };
   assertEquals(
     await status(audioRequest(q), deps(db, () => Response.json({ text: "" }))),
@@ -218,9 +218,7 @@ function agentAnswer(content: unknown): Handler {
     Response.json({
       choices: [{
         message: {
-          content: typeof content === "string"
-            ? content
-            : JSON.stringify(content),
+          content: typeof content === "string" ? content : JSON.stringify(content),
         },
       }],
       usage: { prompt_tokens: 100, completion_tokens: 20, cost: 0.003 },
@@ -303,8 +301,7 @@ Deno.test("turn: refusals and failures", async () => {
   const db = new FakeDb();
   const calls: string[] = [];
   const ok = deps(db, agentAnswer(technicalAnswer));
-  const status = async (request: Request, d = ok) =>
-    (await handleTurn(request, d)).status;
+  const status = async (request: Request, d = ok) => (await handleTurn(request, d)).status;
   assertEquals(await status(jsonRequest(null, "GET")), 405);
   assertEquals(await status(jsonRequest({}), deps(null, sttOk)), 401);
   assertEquals(
@@ -328,6 +325,12 @@ Deno.test("turn: refusals and failures", async () => {
         step: "technical",
         turn_id: "nope",
       }),
+    ),
+    400,
+  );
+  assertEquals(
+    await status(
+      jsonRequest({ property_id: PROPERTY, step: "technical", turn_id: OTHER }),
     ),
     404,
   );
@@ -498,7 +501,7 @@ Deno.test("config, voices and prompt", () => {
   assert(user.includes("déjà renseignée"));
   assert(!user.includes("privé"));
   assert(user.includes("Atouts déjà notés : Calme."));
-  assert(user.includes("Agent : Bonjour !"));
+  assert(user.includes("<agent>Bonjour !</agent>"));
   const technical = buildMessages({
     step: "technical",
     values: { property_type: null, heating_systems: [] },
@@ -572,4 +575,58 @@ Deno.test("speech: Kokoro mp3, repaired header; truncated speech", async () => {
   );
   assertEquals(short.status, 422);
   assertEquals((await short.json()).error, "speech_too_short");
+});
+
+Deno.test("one agent answer per turn; quotas on every path", async () => {
+  const db = new FakeDb();
+  await handleTranscribe(
+    audioRequest(`property_id=${PROPERTY}&step=technical`),
+    deps(db, sttOk),
+  );
+  const turnId = db.turns[0].id;
+  const request = () => jsonRequest({ property_id: PROPERTY, step: "technical", turn_id: turnId });
+  db.usage = { turns: 121, audioSeconds: 0 };
+  assertEquals((await handleTurn(request(), deps(db, agentAnswer(technicalAnswer)))).status, 429);
+  db.usage = { turns: 120, audioSeconds: 0 };
+  assertEquals((await handleTurn(request(), deps(db, agentAnswer(technicalAnswer)))).status, 200);
+  assertEquals((await handleTurn(request(), deps(db, agentAnswer(technicalAnswer)))).status, 409);
+  db.usage = { turns: 121, audioSeconds: 0 };
+  assertEquals(
+    (await handleSpeech(jsonRequest({ turn_id: turnId }), deps(db, sttOk))).status,
+    429,
+  );
+});
+
+Deno.test("transcribe: an empty transcript is journaled", async () => {
+  const db = new FakeDb();
+  const response = await handleTranscribe(
+    audioRequest(`property_id=${PROPERTY}&step=technical`, new Uint8Array(16_000)),
+    deps(db, () => Response.json({ text: "", usage: { seconds: 0.5 } })),
+  );
+  assertEquals(response.status, 422);
+  assertEquals(db.turns[0].audio_seconds, 1);
+  assertEquals(db.turns[0].error, "empty");
+});
+
+Deno.test("recordingSeconds trusts the m4a header only upwards", () => {
+  const m4a = (version: number, timescale: number, duration: number) => {
+    const bytes = new Uint8Array(64);
+    bytes.set([0x6d, 0x76, 0x68, 0x64], 8); // "mvhd"
+    const view = new DataView(bytes.buffer, 12);
+    view.setUint8(0, version);
+    if (version === 1) {
+      view.setUint32(20, timescale);
+      view.setBigUint64(24, BigInt(duration));
+    } else {
+      view.setUint32(12, timescale);
+      view.setUint32(16, duration);
+    }
+    return bytes;
+  };
+  assertEquals(m4aSeconds(m4a(0, 1000, 2500)), 2.5);
+  assertEquals(m4aSeconds(m4a(1, 16000, 32000)), 2);
+  assertEquals(m4aSeconds(m4a(0, 0, 10)), null);
+  assertEquals(m4aSeconds(new Uint8Array(40)), null);
+  assertEquals(recordingSeconds(m4a(0, 1000, 2500)), 2.5);
+  assertEquals(recordingSeconds(new Uint8Array(32_000)), 2);
 });

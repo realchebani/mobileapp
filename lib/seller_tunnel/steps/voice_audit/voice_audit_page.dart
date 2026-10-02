@@ -16,8 +16,13 @@ import 'package:property_repository/property_repository.dart';
 /// tunnel cubit (same columns, RLS and lock as V4b), as "Déclaré".
 VoiceTurnHandler technicalTurnHandler(SellerTunnelCubit tunnel) {
   return (turn) async {
-    final property = tunnel.state.property;
-    if (turn.patch.isEmpty || property == null) return;
+    if (turn.patch.isEmpty || tunnel.state.property == null) return;
+    // A save in progress (e.g. a previous turn) would make this one a
+    // no-op: wait for it first.
+    if (tunnel.state.isSaving) {
+      await tunnel.stream.firstWhere((state) => !state.isSaving);
+    }
+    final property = tunnel.state.property!;
     await tunnel.save({
       ...turn.patch,
       PropertyColumns.provenance: property.mergeProvenance({
@@ -42,7 +47,11 @@ class VoiceAuditPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final services = VoiceServices.of(context);
-    if (!services.isAvailable) return const _ScreenModeRedirect();
+    final property = context.read<SellerTunnelCubit>().state.property!;
+    // Land has no building: V4b asks its two questions on screen.
+    if (!services.isAvailable || property.propertyType == PropertyType.land) {
+      return const _ScreenModeRedirect();
+    }
     final intro = context.l10n.voiceAuditIntro;
     return BlocProvider(
       create: (context) {
@@ -52,7 +61,7 @@ class VoiceAuditPage extends StatelessWidget {
           recorder: services.createRecorder!(),
           player: services.createPlayer!(),
           preferences: services.preferences!,
-          propertyId: tunnel.state.property!.id,
+          propertyId: property.id,
           step: AgentStep.technical,
           intro: intro,
           onTurn: technicalTurnHandler(tunnel),
@@ -331,10 +340,23 @@ class _VoiceAuditViewState extends State<VoiceAuditView> {
                           : null,
                       onScreenMode: _screenMode,
                     ),
+                  if (state.suggestScreenMode)
+                    _ErrorCard(
+                      message: l10n.voiceSuggestScreenMode,
+                      onRetry: null,
+                      onSettings: null,
+                      onScreenMode: _screenMode,
+                    ),
                   const SizedBox(height: RealestySpacing.sm),
-                  for (final message in state.messages) ...[
+                  // The latest exchange only (the dossier keeps the rest).
+                  for (final message in state.messages.skip(
+                    state.messages.length > 2 ? state.messages.length - 2 : 0,
+                  )) ...[
                     if (message.fromAgent)
-                      AgentBubble(message: message.text, onDark: true)
+                      Semantics(
+                        liveRegion: true,
+                        child: AgentBubble(message: message.text, onDark: true),
+                      )
                     else
                       UserBubble(message: message.text, onDark: true),
                     const SizedBox(height: 10),

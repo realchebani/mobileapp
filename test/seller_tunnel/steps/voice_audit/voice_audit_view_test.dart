@@ -274,4 +274,24 @@ void main() {
       }
     });
   });
+
+  testWidgets('shows the latest exchange and offers the screen mode', (
+    tester,
+  ) async {
+    await pump(
+      tester,
+      const VoiceConversationState(
+        suggestScreenMode: true,
+        messages: [
+          VoiceMessage(text: 'Bonjour', fromAgent: true),
+          VoiceMessage(text: 'euh', fromAgent: false),
+          VoiceMessage(text: 'Pardon ?', fromAgent: true),
+        ],
+      ),
+    );
+    expect(find.text('Bonjour'), findsNothing);
+    expect(find.text('euh'), findsOneWidget);
+    expect(find.text('Pardon ?'), findsOneWidget);
+    expect(find.textContaining('Je n’arrive pas à retenir'), findsOneWidget);
+  });
 }

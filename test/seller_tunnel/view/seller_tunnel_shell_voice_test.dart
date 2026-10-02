@@ -13,8 +13,9 @@ import '../../helpers/helpers.dart';
 class _MockGoRouterState extends Mock implements GoRouterState;
 
 void main() {
-  testWidgets('V3 opens the voice audit (V4) when voice is available', (
-    tester,
+  Future<MockGoRouter> continueFromV3(
+    WidgetTester tester,
+    Property property,
   ) async {
     final goRouter = MockGoRouter();
     final routerState = _MockGoRouterState();
@@ -22,9 +23,9 @@ void main() {
     when(() => goRouter.state).thenReturn(routerState);
     when(() => goRouter.go(any())).thenReturn(null);
     final cubit = mockSellerTunnelCubit();
-    const loaded = SellerTunnelState(
+    final loaded = SellerTunnelState(
       status: SellerTunnelStatus.success,
-      property: testProperty,
+      property: property,
     );
     whenListen(
       cubit,
@@ -46,7 +47,22 @@ void main() {
       goRouter: goRouter,
     );
     await tester.pump();
+    return goRouter;
+  }
+
+  testWidgets('V3 opens the voice audit (V4) when voice is available', (
+    tester,
+  ) async {
+    final goRouter = await continueFromV3(tester, testProperty);
     verify(() => goRouter.go(AppRoutes.sellerVoiceAudit)).called(1);
+  });
+
+  testWidgets('V3 opens V4b for land', (tester) async {
+    final goRouter = await continueFromV3(
+      tester,
+      const Property(id: 'p', ownerId: 'u', propertyType: PropertyType.land),
+    );
+    verify(() => goRouter.go(AppRoutes.sellerTechnical)).called(1);
   });
 
   test('a sent dossier sends the voice audit to V8', () {

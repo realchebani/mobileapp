@@ -50,7 +50,7 @@ Légende : ✅ fait · 🚧 partiel · 📋 à faire
 
 ### US-06.6 · Coûts et suivi — 🚧
 *En tant que porteur de projet, je veux maîtriser le coût et la qualité de la voix et de l'agent.*
-- ✅ Banc d'essai reproductible (`supabase/functions/_bench`) : latence, coût, exactitude d'extraction par modèle.
+- ✅ Banc d'essai reproductible (`supabase/bench`) : latence, coût, exactitude d'extraction par modèle.
 - ✅ Journal par tour (`agent_turns`) : modèles, secondes d'audio, jetons, latences, coût `usage.cost` STT + agent (le coût TTS n'est pas renvoyé par OpenRouter).
 - ✅ Quotas : 120 tours et 20 min d'audio par utilisateur et par jour (429).
 - ✅ Modèles et voix changeables par secret Supabase ; voix activée par flavor (`VOICE_ENABLED`, développement seulement).

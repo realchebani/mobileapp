@@ -13,7 +13,7 @@ class VoicePreferences {
   final SharedPreferences _preferences;
 
   /// Bump the version when the consent text changes materially.
-  static const consentKey = 'voice_consent_v1';
+  static const consentKey = 'voice_consent_v2';
   static const mutedKey = 'voice_agent_muted';
 
   bool get consentGiven => _preferences.getBool(consentKey) ?? false;

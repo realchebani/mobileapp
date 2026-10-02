@@ -2883,7 +2883,7 @@
   "@voiceConsentProvidersTitle": {
     "description": "Consentement voix : titre de la section prestataires"
   },
-  "voiceConsentProviders": "Votre voix est envoyée à OpenRouter, qui la confie à des fournisseurs de modèles d’IA (actuellement Whisper d’OpenAI pour la transcription, Gemini de Google pour comprendre vos réponses, Kokoro pour la voix de l’agent). Ces traitements peuvent avoir lieu hors de l’Union européenne, notamment aux États-Unis.",
+  "voiceConsentProviders": "Votre voix est envoyée à OpenRouter (États-Unis), qui la transmet aux fournisseurs de modèles d’IA qu’il sollicite et à leurs hébergeurs. Actuellement : un modèle Whisper d’OpenAI pour la transcription, un modèle Gemini de Google pour comprendre vos réponses et le modèle Kokoro pour la voix de l’agent ; ils peuvent changer. Ces traitements peuvent avoir lieu hors de l’Union européenne.",
   "@voiceConsentProviders": {
     "description": "Consentement voix : prestataires qui traitent l’audio"
   },
@@ -3070,5 +3070,9 @@
   "lifestyleVoiceClose": "Terminer",
   "@lifestyleVoiceClose": {
     "description": "Cadre de vie (V6) : fermer la feuille vocale"
+  },
+  "voiceSuggestScreenMode": "Je n’arrive pas à retenir vos réponses. Préférez-vous continuer à l’écran ?",
+  "@voiceSuggestScreenMode": {
+    "description": "Voix : proposé après 3 tours sans réponse retenue"
   }
 }

@@ -86,6 +86,17 @@ void main() {
       expect(File(recordedPath).existsSync(), isFalse);
     });
 
+    test(
+      'stop deletes the file even when the plugin returns no path',
+      () async {
+        await voice.start();
+        File(recordedPath).writeAsBytesSync([1]);
+        when(() => recorder.stop()).thenAnswer((_) async => null);
+        expect(await voice.stop(), isNotNull);
+        expect(File(recordedPath).existsSync(), isFalse);
+      },
+    );
+
     test('stop without a recording', () async {
       when(() => recorder.stop()).thenAnswer((_) async => null);
       expect(await voice.stop(), isNull);

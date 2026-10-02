@@ -68,6 +68,7 @@ final class VoiceConversationState extends Equatable {
     this.levels = const [],
     this.error,
     this.muted = false,
+    this.suggestScreenMode = false,
   });
 
   /// Bars of the waveform.
@@ -89,6 +90,9 @@ final class VoiceConversationState extends Equatable {
   /// Whether the agent's voice is muted (text only).
   final bool muted;
 
+  /// Nothing was understood for several turns: the screen mode is offered.
+  final bool suggestScreenMode;
+
   /// The current input level (0…1).
   double get level => levels.isEmpty ? 0 : levels.last;
 
@@ -100,6 +104,7 @@ final class VoiceConversationState extends Equatable {
     List<double>? levels,
     VoiceError? Function()? error,
     bool? muted,
+    bool? suggestScreenMode,
   }) {
     return VoiceConversationState(
       phase: phase ?? this.phase,
@@ -109,6 +114,7 @@ final class VoiceConversationState extends Equatable {
       levels: levels ?? this.levels,
       error: error == null ? this.error : error(),
       muted: muted ?? this.muted,
+      suggestScreenMode: suggestScreenMode ?? this.suggestScreenMode,
     );
   }
 
@@ -121,5 +127,6 @@ final class VoiceConversationState extends Equatable {
     levels,
     error,
     muted,
+    suggestScreenMode,
   ];
 }

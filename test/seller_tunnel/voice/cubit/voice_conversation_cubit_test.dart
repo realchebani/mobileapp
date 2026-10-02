@@ -401,4 +401,91 @@ void main() {
       ),
     );
   });
+
+  test('results arriving after stop are ignored', () async {
+    final turn = Completer<AgentTurn>();
+    when(
+      () => agent.turn(
+        propertyId: any(named: 'propertyId'),
+        step: any(named: 'step'),
+        turnId: any(named: 'turnId'),
+        assetLabels: any(named: 'assetLabels'),
+        watchPointLabels: any(named: 'watchPointLabels'),
+      ),
+    ).thenAnswer((_) => turn.future);
+    final cubit = build();
+    await cubit.start();
+    unawaited(speak());
+    for (var i = 0; i < 20 && cubit.state.phase != VoicePhase.thinking; i++) {
+      await Future<void>.delayed(Duration.zero);
+    }
+    await cubit.stop();
+    turn.complete(_turn);
+    await Future<void>.delayed(Duration.zero);
+    expect(applied, isEmpty);
+    await cubit.close();
+  });
+
+  test('a late failure after stop is ignored', () async {
+    final transcription = Completer<Transcription>();
+    when(
+      () => agent.transcribe(
+        propertyId: any(named: 'propertyId'),
+        step: any(named: 'step'),
+        audio: any(named: 'audio'),
+        duration: any(named: 'duration'),
+        format: any(named: 'format'),
+      ),
+    ).thenAnswer((_) => transcription.future);
+    final cubit = build();
+    await cubit.start();
+    unawaited(speak());
+    for (
+      var i = 0;
+      i < 20 && cubit.state.phase != VoicePhase.transcribing;
+      i++
+    ) {
+      await Future<void>.delayed(Duration.zero);
+    }
+    await cubit.stop();
+    transcription.completeError(const AgentQuotaFailure());
+    await Future<void>.delayed(Duration.zero);
+    expect(cubit.state.error, isNull);
+    final done = Completer<Transcription>();
+    when(
+      () => agent.transcribe(
+        propertyId: any(named: 'propertyId'),
+        step: any(named: 'step'),
+        audio: any(named: 'audio'),
+        duration: any(named: 'duration'),
+        format: any(named: 'format'),
+      ),
+    ).thenAnswer((_) => done.future);
+    await cubit.start(); // still paused: nothing listens
+    await cubit.close();
+  });
+
+  test('offers the screen mode after 3 turns without answers', () async {
+    when(
+      () => agent.turn(
+        propertyId: any(named: 'propertyId'),
+        step: any(named: 'step'),
+        turnId: any(named: 'turnId'),
+        assetLabels: any(named: 'assetLabels'),
+        watchPointLabels: any(named: 'watchPointLabels'),
+      ),
+    ).thenAnswer(
+      (_) async =>
+          const AgentTurn(turnId: 't1', transcript: 'euh', reply: 'Pardon ?'),
+    );
+    final cubit = build();
+    await cubit.toggleMute();
+    await cubit.start();
+    for (var i = 0; i < 3; i++) {
+      expect(cubit.state.suggestScreenMode, isFalse);
+      await speak();
+    }
+    expect(cubit.state.suggestScreenMode, isTrue);
+    await cubit.close();
+  });
 }
