@@ -88,6 +88,7 @@ final class PropertyTypeProfile extends Equatable {
     required this.requiredTechnicalFields,
     this.parkingFeatureChoices = const [],
     this.asksNeighbourhood = true,
+    this.roomsOptional = false,
     this.documentKinds = _dwellingDocuments,
   });
 
@@ -133,6 +134,9 @@ final class PropertyTypeProfile extends Equatable {
 
   /// V6 · noise and overlooking are asked (not for commercial premises).
   final bool asksNeighbourhood;
+
+  /// V5 · the rooms can be skipped ("Passer", type "Autre").
+  final bool roomsOptional;
 
   /// V7 · kinds of documents always listed, in this order (others only
   /// once provided).
@@ -513,6 +517,7 @@ final class PropertyTypeProfile extends Equatable {
 
   static const _other = PropertyTypeProfile._(
     type: PropertyType.other,
+    roomsOptional: true,
     steps: _allSteps,
     voice: true,
     estimate: false,

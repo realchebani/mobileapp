@@ -59,6 +59,8 @@ class MyPropertiesPage extends StatelessWidget {
             PropertyRow(
               key: ValueKey(property.id),
               property: property,
+              // A property of a lot the expert is valuing stays.
+              canDelete: !state.isLotFrozen(property.lotId),
               hasUnread: unreadIds.contains(property.id),
               showDivider: index < properties.length - 1,
             ),
@@ -128,7 +130,7 @@ class MyPropertiesPage extends StatelessWidget {
                   ),
                   variant: InlineBannerVariant.info,
                 ),
-              if (standalone.length >= 2) ...[
+              if (state.lotCandidates.length >= 2) ...[
                 const SizedBox(height: RealestySpacing.xs),
                 RealestyButton(
                   label: l10n.myPropertiesCreateLot,

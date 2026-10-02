@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
@@ -29,6 +32,10 @@ class LotPage extends StatefulWidget {
 
 class _LotPageState extends State<LotPage> {
   late final TextEditingController _name;
+  final FocusNode _nameFocus = FocusNode();
+
+  /// Longest lot name (`property_lots.name` check).
+  static const maxNameLength = 80;
 
   bool _busy = false;
   bool _confirmingDissolve = false;
@@ -40,12 +47,25 @@ class _LotPageState extends State<LotPage> {
       widget.lotId,
     );
     _name = TextEditingController(text: lot?.name);
+    // Saved when the field is left, not only with "OK".
+    _nameFocus.addListener(() {
+      if (!_nameFocus.hasFocus) _saveCurrentName();
+    });
   }
 
   @override
   void dispose() {
+    _nameFocus.dispose();
     _name.dispose();
     super.dispose();
+  }
+
+  void _saveCurrentName() {
+    if (!mounted) return;
+    final lot = context.read<SellerPropertiesCubit>().state.lotById(
+      widget.lotId,
+    );
+    if (lot != null) unawaited(_saveName(lot));
   }
 
   /// Runs [change], disabling the page meanwhile; tells the user when it
@@ -67,9 +87,13 @@ class _LotPageState extends State<LotPage> {
     }
   }
 
+  /// The name last sent (the list may not be updated yet).
+  String? _sentName;
+
   Future<void> _saveName(PropertyLot lot) async {
     final name = _name.text.trim();
-    if (name == (lot.name ?? '')) return;
+    if (name == (_sentName ?? lot.name ?? '')) return;
+    _sentName = name;
     await _run(
       (cubit) => cubit.updateLot(lot.id, {
         PropertyLotColumns.name: name.isEmpty ? null : name,
@@ -97,7 +121,10 @@ class _LotPageState extends State<LotPage> {
         RealestyIconButton(
           icon: RealestyIcons.chevronLeft,
           semanticLabel: l10n.lotBack,
-          onPressed: () => context.go(AppRoutes.seller),
+          onPressed: () {
+            _saveCurrentName();
+            context.go(AppRoutes.seller);
+          },
         ),
         Expanded(child: SellerSpaceTitle(l10n.lotTitle)),
       ],
@@ -118,7 +145,7 @@ class _LotPageState extends State<LotPage> {
         parcels: state.parcels,
         mainPropertyId: lot.mainPropertyId,
       );
-      final candidates = state.standaloneProperties;
+      final candidates = state.lotCandidates;
       children = [
         header,
         if (frozen) InlineBanner(message: l10n.lotFrozen),
@@ -126,8 +153,10 @@ class _LotPageState extends State<LotPage> {
           label: l10n.lotNameLabel,
           hint: lotName(l10n, lot, members.length),
           controller: _name,
+          focusNode: _nameFocus,
           enabled: editable,
           textInputAction: TextInputAction.done,
+          inputFormatters: [LengthLimitingTextInputFormatter(maxNameLength)],
           onSubmitted: (_) => _saveName(lot),
         ),
         SectionLabel(l10n.lotMembersLabel),
@@ -170,19 +199,24 @@ class _LotPageState extends State<LotPage> {
                   },
           ),
         SectionLabel(l10n.lotSaleModeLabel),
-        RealestySegmentedControl<LotSaleMode>(
-          segments: [
+        // Chips (not a segmented control): the labels wrap when needed.
+        Wrap(
+          spacing: RealestySpacing.xs,
+          runSpacing: RealestySpacing.xs,
+          children: [
             for (final mode in LotSaleMode.values)
-              RealestySegment(value: mode, label: lotSaleModeLabel(l10n, mode)),
+              RealestyChoiceChip(
+                label: lotSaleModeLabel(l10n, mode),
+                selected: lot.saleMode == mode,
+                onSelected: editable && lot.saleMode != mode
+                    ? (_) => _run(
+                        (cubit) => cubit.updateLot(lot.id, {
+                          PropertyLotColumns.saleMode: mode,
+                        }),
+                      )
+                    : null,
+              ),
           ],
-          selected: lot.saleMode,
-          onChanged: editable
-              ? (mode) => _run(
-                  (cubit) => cubit.updateLot(lot.id, {
-                    PropertyLotColumns.saleMode: mode,
-                  }),
-                )
-              : null,
         ),
         Text(
           l10n.lotSaleModeHelp,
@@ -300,14 +334,14 @@ class _MemberRow extends StatelessWidget {
                 RealestyButton(
                   label: l10n.lotSetMain,
                   variant: RealestyButtonVariant.text,
-                  height: 36,
+                  height: RealestySpacing.minTouchTarget,
                   expand: false,
                   onPressed: onSetMain,
                 ),
               RealestyButton(
                 label: l10n.lotRemoveMember,
                 variant: RealestyButtonVariant.text,
-                height: 36,
+                height: RealestySpacing.minTouchTarget,
                 expand: false,
                 onPressed: onRemove,
               ),
@@ -338,11 +372,25 @@ class _EstimateCard extends StatelessWidget {
         children: [
           if (estimate.isComplete) ...[
             Text(
-              '${euros(l10n, estimate.low!)} – ${euros(l10n, estimate.high!)}',
+              estimate.isPartial
+                  ? l10n.lotEstimatePartial(
+                      euros(l10n, estimate.low!),
+                      euros(l10n, estimate.high!),
+                    )
+                  : '${euros(l10n, estimate.low!)} – '
+                        '${euros(l10n, estimate.high!)}',
               style: RealestyTextStyles.title2.copyWith(color: c.encre),
             ),
             Text(
-              l10n.lotEstimateSum,
+              estimate.isPartial
+                  ? l10n.lotEstimatePartialNote(
+                      [
+                        for (final member in members)
+                          if (estimate.leftOut.contains(member.id))
+                            propertyShortLabel(l10n, member),
+                      ].join(', '),
+                    )
+                  : l10n.lotEstimateSum,
               style: RealestyTextStyles.listSubtitle.copyWith(
                 color: c.texteDiscret,
               ),
@@ -361,6 +409,7 @@ class _EstimateCard extends StatelessWidget {
                       '${euros(l10n, member.aiEstimateHighEur!)}',
                 LotMemberEstimate.includedInMain => l10n.lotEstimateIncluded,
                 LotMemberEstimate.waiting => l10n.lotEstimateWaiting,
+                LotMemberEstimate.notEstimated => l10n.lotEstimateNotEstimated,
                 LotMemberEstimate.byExpert || null => l10n.lotEstimateByExpert,
               },
               divider: index < members.length - 1,

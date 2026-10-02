@@ -4387,9 +4387,9 @@
   "@lotEstimateSum": {
     "description": "Fiche du lot · explication de la somme"
   },
-  "lotEstimatePending": "La tendance du lot s’affichera quand chaque bien estimable aura la sienne.",
+  "lotEstimatePending": "La tendance du lot s’affichera quand chaque bien aura été envoyé.",
   "@lotEstimatePending": {
-    "description": "Fiche du lot · somme pas encore disponible"
+    "description": "Fiche du lot · somme pas encore disponible (un bien en brouillon)"
   },
   "lotEstimateByExpert": "Estimé par l’expert",
   "@lotEstimateByExpert": {
@@ -4643,7 +4643,7 @@
   "@locationSameAsAction": {
     "description": "V2 · bouton de la suggestion d’adresse"
   },
-  "locationSameAsNote": "Vérifiez ensuite la parcelle : un garage peut être sur une autre parcelle.",
+  "locationSameAsNote": "Vérifiez ensuite la parcelle : ce bien peut se trouver sur une autre parcelle.",
   "@locationSameAsNote": {
     "description": "V2 · rappel de confirmer la parcelle après reprise d’adresse"
   },
@@ -4665,5 +4665,38 @@
         "type": "String"
       }
     }
+  },
+  "lotEstimatePartial": "Somme partielle : {low} – {high}",
+  "@lotEstimatePartial": {
+    "description": "Lot · somme qui laisse de côté des biens estimés par l’expert",
+    "placeholders": {
+      "low": {
+        "type": "String"
+      },
+      "high": {
+        "type": "String"
+      }
+    }
+  },
+  "lotEstimatePartialNote": "Sans {names}, estimés par l’expert : ce n’est pas la valeur du lot.",
+  "@lotEstimatePartialNote": {
+    "description": "Fiche du lot · biens laissés de côté par la somme partielle",
+    "placeholders": {
+      "names": {
+        "type": "String"
+      }
+    }
+  },
+  "lotEstimateNotEstimated": "Pas de tendance automatique",
+  "@lotEstimateNotEstimated": {
+    "description": "Fiche du lot · bien envoyé sans estimation automatique (trop peu de ventes ou en cours)"
+  },
+  "newPropertyLotError": "Le bien est créé, mais il n’a pas pu rejoindre le lot. Réessayez.",
+  "@newPropertyLotError": {
+    "description": "Ajouter un bien · le lot n’a pas pu être créé ou rejoint"
+  },
+  "methodSkip": "Passer cette étape",
+  "@methodSkip": {
+    "description": "V5 · passer le relevé des pièces (type « Autre », facultatif)"
   }
 }

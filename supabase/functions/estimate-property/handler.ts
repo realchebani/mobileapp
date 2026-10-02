@@ -209,6 +209,12 @@ export async function handle(request: Request, deps: Deps): Promise<Response> {
   if (!["submitted", "in_review"].includes(dossier.property.status)) {
     return json(409, { error: "not_submitted" });
   }
+  // A type the estimate does not cover (land, commercial premises…): the
+  // expert values it. Answered at once, nothing stored nor counted in the
+  // quota.
+  if (toSubject(dossier) === "unsupported_type") {
+    return json(200, { status: "insufficient", reason: "unsupported_type" });
+  }
   const final = await deps.findFinal(propertyId);
   if (final !== null) return json(200, final);
 

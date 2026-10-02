@@ -60,6 +60,7 @@ void main() {
     Property property = const Property(
       id: 'property-id',
       ownerId: 'user-id',
+      propertyType: PropertyType.house,
       status: PropertyStatus.submitted,
     ),
     List<PropertyOwner> owners = const [_owner],
@@ -100,6 +101,7 @@ void main() {
       property: Property(
         id: 'property-id',
         ownerId: 'user-id',
+        propertyType: PropertyType.house,
         status: PropertyStatus.submitted,
         submittedAt: DateTime(2026, 9, 24, 18, 42),
       ),
@@ -139,6 +141,7 @@ void main() {
       property: const Property(
         id: 'property-id',
         ownerId: 'user-id',
+        propertyType: PropertyType.house,
         status: PropertyStatus.inReview,
       ),
     );
@@ -161,6 +164,7 @@ void main() {
       property: const Property(
         id: 'property-id',
         ownerId: 'user-id',
+        propertyType: PropertyType.house,
         status: PropertyStatus.certified,
       ),
     );
@@ -209,6 +213,7 @@ void main() {
       property: Property(
         id: 'property-id',
         ownerId: 'user-id',
+        propertyType: PropertyType.house,
         status: PropertyStatus.submitted,
         submittedAt: submittedAt,
       ),
@@ -459,5 +464,29 @@ void main() {
     final paragraph = tester.renderObject<RenderParagraph>(finder);
     expect(paragraph.didExceedMaxLines, isFalse);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('a type the estimate does not cover: the expert, no request', (
+    tester,
+  ) async {
+    final repository = MockPropertyRepository();
+    await tester.pumpTunnelPage(
+      const SubmittedPage(),
+      sellerTunnelCubit: mockSellerTunnelCubit(
+        const SellerTunnelState(
+          status: SellerTunnelStatus.success,
+          property: Property(
+            id: 'property-id',
+            ownerId: 'user-id',
+            propertyType: PropertyType.commercial,
+            status: PropertyStatus.submitted,
+          ),
+        ),
+      ),
+      propertyRepository: repository,
+    );
+    await tester.pump();
+    verifyNever(() => repository.getMarketSnapshot(any()));
+    verifyNever(() => repository.requestEstimate(any()));
   });
 }

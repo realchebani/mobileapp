@@ -25,6 +25,7 @@ void main() {
   setUpAll(() {
     registerFallbackValue(house);
     registerFallbackValue(<String, Object?>{});
+    registerFallbackValue(LotSaleMode.together);
   });
 
   setUp(() {
@@ -329,18 +330,15 @@ void main() {
     );
 
     blocTest<SellerPropertiesCubit, SellerPropertiesState>(
-      'createLot groups the properties, the first one as main',
+      'createLot groups the properties at once, the first one as main',
       setUp: () {
         when(
-          () => repository.createLot(
+          () => repository.createLotWith(
             id: 'lot',
-            ownerId: ownerId,
+            propertyIds: ['house', 'garage'],
             saleMode: LotSaleMode.togetherOrSeparately,
           ),
-        ).thenAnswer((_) async => lot);
-        when(() => repository.setPropertyLot('house', 'lot'))
-            .thenAnswer((_) async => houseInLot);
-        when(() => repository.updateLot('lot', any())).thenAnswer(
+        ).thenAnswer(
           (_) async => const PropertyLot(
             id: 'lot',
             ownerId: ownerId,
@@ -352,13 +350,21 @@ void main() {
       seed: () => loaded,
       act: (cubit) => cubit.createLot(
         lotId: 'lot',
-        members: const [house, inLot],
+        members: const [house, garage],
         saleMode: LotSaleMode.togetherOrSeparately,
       ),
       expect: () => const [
         SellerPropertiesState(
           status: SellerPropertiesStatus.success,
-          properties: [houseInLot, inLot],
+          properties: [
+            houseInLot,
+            Property(
+              id: 'garage',
+              ownerId: ownerId,
+              propertyType: PropertyType.parking,
+              lotId: 'lot',
+            ),
+          ],
           lots: [
             PropertyLot(id: 'lot', ownerId: ownerId, mainPropertyId: 'house'),
           ],
@@ -368,26 +374,26 @@ void main() {
           },
         ),
       ],
-      verify: (_) =>
-          verifyNever(() => repository.setPropertyLot('garage', any())),
     );
 
     blocTest<SellerPropertiesCubit, SellerPropertiesState>(
-      'createLot keeps the main property of an existing lot',
-      setUp: () {
-        when(() => repository.createLot(id: 'lot', ownerId: ownerId))
-            .thenAnswer(
-              (_) async => const PropertyLot(
-                id: 'lot',
-                ownerId: ownerId,
-                mainPropertyId: 'garage',
-              ),
-            );
-      },
+      'createLot changes nothing when it fails',
+      setUp: () => when(
+        () => repository.createLotWith(
+          id: any(named: 'id'),
+          propertyIds: any(named: 'propertyIds'),
+          saleMode: any(named: 'saleMode'),
+        ),
+      ).thenAnswer((_) async => throw const LotFrozenFailure()),
       build: build,
       seed: () => loaded,
-      act: (cubit) => cubit.createLot(lotId: 'lot', members: const [inLot]),
-      verify: (_) => verifyNever(() => repository.updateLot(any(), any())),
+      act: (cubit) async {
+        await expectLater(
+          cubit.createLot(lotId: 'lot', members: const [house, garage]),
+          throwsA(isA<LotFrozenFailure>()),
+        );
+      },
+      expect: () => const <SellerPropertiesState>[],
     );
 
     blocTest<SellerPropertiesCubit, SellerPropertiesState>(
@@ -516,6 +522,24 @@ void main() {
       expect(state.lotById(null), isNull);
       expect(state.membersOf('lot'), [inLot]);
       expect(state.standaloneProperties, [house]);
+      expect(state.lotCandidates, [house]);
+      expect(state.isLotFrozen('lot'), isFalse);
+      expect(state.isLotFrozen(null), isFalse);
+      const frozen = SellerPropertiesState(
+        properties: [
+          inLot,
+          Property(
+            id: 'h',
+            ownerId: ownerId,
+            lotId: 'lot',
+            status: PropertyStatus.certified,
+          ),
+          Property(id: 's', ownerId: ownerId, status: PropertyStatus.inReview),
+        ],
+        lots: [lot],
+      );
+      expect(frozen.isLotFrozen('lot'), isTrue);
+      expect(frozen.lotCandidates, isEmpty);
       expect(state.canAddProperty, isTrue);
       expect(
         SellerPropertiesState(

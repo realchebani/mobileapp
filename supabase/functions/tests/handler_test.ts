@@ -340,3 +340,15 @@ Deno.test("toSubject maps garages and outbuildings, not the other types", () => 
     assertEquals(toSubject(dossier({ property_type: type })), "unsupported_type");
   }
 });
+
+Deno.test("a type never estimated is answered at once, without quota", async () => {
+  const { deps, counted, work } = fakeDeps({
+    loadDossier: () => Promise.resolve(dossier({ property_type: "local_commercial" })),
+    startSnapshot: () => Promise.reject(new Error("must not store")),
+  });
+  const response = await handle(post({ property_id: ID }), deps);
+  assertEquals(response.status, 200);
+  assertEquals(await response.json(), { status: "insufficient", reason: "unsupported_type" });
+  assertEquals(counted, []);
+  assertEquals(work, []);
+});

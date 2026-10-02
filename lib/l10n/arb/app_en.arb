@@ -890,7 +890,7 @@
   "lotSaleModeHelp": "“Together or separately”: a buyer may also buy only one of the properties.",
   "lotEstimateLabel": "Estimate of the lot",
   "lotEstimateSum": "Sum of the trends of the properties, indicative and not certified.",
-  "lotEstimatePending": "The trend of the lot will show once every property that can be estimated has its own.",
+  "lotEstimatePending": "The trend of the lot will show once every property has been sent.",
   "lotEstimateByExpert": "Estimated by the expert",
   "lotEstimateIncluded": "Included in the estimate of the main property",
   "lotEstimateWaiting": "Waiting for the dossier to be sent",
@@ -947,7 +947,12 @@
   "documentsNoticeReuseFailed": "The document could not be reused. Try again.",
   "locationSameAsTitle": "Same address as {label}?",
   "locationSameAsAction": "Use this address",
-  "locationSameAsNote": "Then check the parcel: a garage may be on another parcel.",
+  "locationSameAsNote": "Then check the parcel: this property may be on another parcel.",
   "marketTypeOutbuilding": "Garage or outbuilding",
-  "marketSummaryOutbuilding": "{type} · {city} · AI trend {median} €, from the sales of outbuildings sold on their own."
+  "marketSummaryOutbuilding": "{type} · {city} · AI trend {median} €, from the sales of outbuildings sold on their own.",
+  "lotEstimatePartial": "Partial sum: {low} – {high}",
+  "lotEstimatePartialNote": "Without {names}, valued by the expert: this is not the value of the lot.",
+  "lotEstimateNotEstimated": "No automatic trend",
+  "newPropertyLotError": "The property is created, but it could not join the lot. Try again.",
+  "methodSkip": "Skip this step"
 }

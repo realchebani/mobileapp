@@ -61,73 +61,57 @@ class NewPropertyCubit extends Cubit<NewPropertyState> {
     }
     emit(state.copyWith(status: NewPropertyStatus.inProgress));
     var property = state.property;
-    var lot = state.lot;
     try {
-      if (property == null) {
-        final partner = state.partner;
-        if (partner != null) lot = await _lotWith(partner);
-        property = await _propertyRepository
-            .createProperty(
-              id: _propertyId,
-              ownerId: _ownerId,
-              type: type,
-              lotId: lot?.id,
-            )
-            .timeout(_timeout);
-      }
+      property ??= await _propertyRepository
+          .createProperty(id: _propertyId, ownerId: _ownerId, type: type)
+          .timeout(_timeout);
     } on PropertyLimitFailure catch (error, stackTrace) {
       addError(error, stackTrace);
-      emit(state.copyWith(status: NewPropertyStatus.limitReached, lot: lot));
+      emit(state.copyWith(status: NewPropertyStatus.limitReached));
       return;
     } on Object catch (error, stackTrace) {
       addError(error, stackTrace);
-      emit(state.copyWith(status: NewPropertyStatus.failure, lot: lot));
+      emit(state.copyWith(status: NewPropertyStatus.failure));
+      return;
+    }
+    // Known from now on, even if a next step fails.
+    emit(state.copyWith(property: property));
+    try {
+      await _joinLot(property);
+    } on Object catch (error, stackTrace) {
+      addError(error, stackTrace);
+      emit(state.copyWith(status: NewPropertyStatus.lotFailure));
       return;
     }
     try {
       await _copy(property);
     } on Object catch (error, stackTrace) {
       addError(error, stackTrace);
-      emit(
-        state.copyWith(
-          status: NewPropertyStatus.copyFailure,
-          property: property,
-          lot: lot,
-        ),
-      );
+      emit(state.copyWith(status: NewPropertyStatus.copyFailure));
       return;
     }
-    emit(
-      state.copyWith(
-        status: NewPropertyStatus.success,
-        property: property,
-        lot: lot,
-      ),
-    );
+    emit(state.copyWith(status: NewPropertyStatus.success));
   }
 
-  /// The lot of [partner], created with it when it has none.
-  Future<PropertyLot> _lotWith(Property partner) async {
+  bool _lotJoined = false;
+
+  /// Sold with a partner: joins its lot, or creates a lot with both (all
+  /// or nothing).
+  Future<void> _joinLot(Property property) async {
+    final partner = state.partner;
+    if (partner == null || _lotJoined) return;
     final existing = partner.lotId;
     if (existing != null) {
-      final lots = await _propertyRepository
-          .listLots(_ownerId)
+      await _propertyRepository
+          .setPropertyLot(property.id, existing)
           .timeout(_timeout);
-      final lot = lots.where((lot) => lot.id == existing).firstOrNull;
-      if (lot != null) return lot;
-    }
-    var lot = await _propertyRepository
-        .createLot(id: _lotId, ownerId: _ownerId)
-        .timeout(_timeout);
-    await _propertyRepository
-        .setPropertyLot(partner.id, lot.id)
-        .timeout(_timeout);
-    if (lot.mainPropertyId == null) {
-      lot = await _propertyRepository
-          .updateLot(lot.id, {PropertyLotColumns.mainPropertyId: partner.id})
+    } else {
+      final lot = await _propertyRepository
+          .createLotWith(id: _lotId, propertyIds: [partner.id, property.id])
           .timeout(_timeout);
+      emit(state.copyWith(lot: lot));
     }
-    return lot;
+    _lotJoined = true;
   }
 
   /// Copies the owners and the identity document of the source property.
@@ -143,7 +127,9 @@ class NewPropertyCubit extends Cubit<NewPropertyState> {
             .updateProperty(property.id, {
               PropertyColumns.ownershipType: source.ownershipType,
               PropertyColumns.provenance: {
-                ...property.provenance,
+                ...property.mergeProvenance({
+                  PropertyColumns.ownershipType: Provenance.declared,
+                }),
                 Property.ownersCopiedFromKey: source.id,
               },
             })
@@ -152,13 +138,22 @@ class NewPropertyCubit extends Cubit<NewPropertyState> {
       _ownersCopied = true;
     }
     if (state.reuseIdentity) {
-      final documents = await _propertyRepository
-          .getDocuments(source.id)
-          .timeout(_timeout);
+      final (documents, copied) = await (
+        _propertyRepository.getDocuments(source.id),
+        // A copy whose answer was lost is already there: never twice.
+        _propertyRepository.getDocuments(property.id),
+      ).wait.timeout(_timeout);
+      bool alreadyCopied(PropertyDocument document) => copied.any(
+        (copy) =>
+            copy.kind == document.kind &&
+            copy.fileName == document.fileName &&
+            copy.sizeBytes == document.sizeBytes,
+      );
       for (final document in documents) {
         if (document.kind != DocumentKind.identityDocument ||
             document.status == DocumentStatus.rejected ||
-            _copiedDocuments.contains(document.id)) {
+            _copiedDocuments.contains(document.id) ||
+            alreadyCopied(document)) {
           continue;
         }
         await _propertyRepository

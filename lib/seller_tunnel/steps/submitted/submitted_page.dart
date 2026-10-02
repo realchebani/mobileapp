@@ -38,6 +38,7 @@ class SubmittedPage extends StatelessWidget {
           enabled:
               property.status == PropertyStatus.submitted ||
               property.status == PropertyStatus.inReview,
+          estimable: context.read<SellerTunnelCubit>().state.profile.estimate,
         );
         unawaited(cubit.load());
         return cubit;

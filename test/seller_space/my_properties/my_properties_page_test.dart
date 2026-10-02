@@ -62,6 +62,7 @@ void main() {
     List<PropertyLot> lots = const [lot],
     NotificationsCubit? notificationsCubit,
   }) async {
+    usePhoneSurface();
     final cubit = mockSellerPropertiesCubit(properties: properties, lots: lots);
     await tester.pumpSellerSpacePage(
       const MyPropertiesPage(),
@@ -104,13 +105,13 @@ void main() {
       verify(() => goRouter.go('/vendeur/lots/lot')).called(1);
       await tester.tap(find.text('Garage / parking'));
       verify(() => goRouter.go('/vendeur/biens/garage')).called(1);
-      await tester.tap(find.text('Ajouter un bien'));
+      await tester.ensureVisible(find.text('Ajouter un bien'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Ajouter un bien').hitTestable());
       verify(() => goRouter.push<Object?>('/vendeur/biens/nouveau')).called(1);
-      await tester.scrollUntilVisible(
-        find.text('Regrouper des biens en lot'),
-        100,
-      );
-      await tester.tap(find.text('Regrouper des biens en lot'));
+      await tester.ensureVisible(find.text('Regrouper des biens en lot'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Regrouper des biens en lot').hitTestable());
       await tester.pumpAndSettle();
       expect(find.text('Regrouper en lot'), findsOneWidget);
     });

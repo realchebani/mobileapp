@@ -182,36 +182,27 @@ class SellerPropertiesCubit extends Cubit<SellerPropertiesState> {
     );
   }
 
-  /// Groups [members] (at least two properties, in no lot) into the new
-  /// sale lot [lotId] sold with [saleMode], whose main property is the
-  /// first one. Retry-safe ([lotId], chosen by the caller, is reused).
-  /// Throws a `PropertyFailure` on error.
+  /// Groups [members] (at least two open properties, in no lot) into the
+  /// new sale lot [lotId] sold with [saleMode], whose main property is the
+  /// first one: all or nothing (no partial lot on failure). Retry-safe
+  /// ([lotId], chosen by the caller, is reused). Throws a
+  /// `PropertyFailure` on error.
   Future<void> createLot({
     required String lotId,
     required List<Property> members,
     LotSaleMode saleMode = LotSaleMode.together,
   }) async {
-    var lot = await _propertyRepository
-        .createLot(id: lotId, ownerId: _ownerId, saleMode: saleMode)
+    final lot = await _propertyRepository
+        .createLotWith(
+          id: lotId,
+          propertyIds: [for (final member in members) member.id],
+          saleMode: saleMode,
+        )
         .timeout(_timeout);
-    final joined = <Property>[];
-    for (final member in members) {
-      joined.add(
-        member.lotId == lot.id
-            ? member
-            : await _propertyRepository
-                  .setPropertyLot(member.id, lot.id)
-                  .timeout(_timeout),
-      );
-    }
-    if (lot.mainPropertyId == null && joined.isNotEmpty) {
-      lot = await _propertyRepository
-          .updateLot(lot.id, {
-            PropertyLotColumns.mainPropertyId: joined.first.id,
-          })
-          .timeout(_timeout);
-    }
-    await _recordMembership(joined, lot);
+    await _recordMembership([
+      for (final member in members)
+        Property.fromJson({...member.toJson(), PropertyColumns.lotId: lot.id}),
+    ], lot);
   }
 
   /// Puts [property] in the lot [lotId] (null: out of its lot). Throws a

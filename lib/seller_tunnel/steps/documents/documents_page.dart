@@ -167,10 +167,11 @@ class _DocumentsViewState extends State<DocumentsView> {
     DocumentChecklist checklist,
   ) async {
     final repository = context.read<PropertyRepository>();
+    final profile = tunnel.state.profile;
     await tunnel.saveAndContinue(_step, {
       // Answers hidden by a change of type are cleared now (owner decision
       // Q9: kept while the dossier is a draft).
-      ...tunnel.state.profile.clearedFrom(property),
+      ...profile.clearedFrom(property),
       PropertyColumns.status: PropertyStatus.submitted,
       // A dossier sent again keeps its first submission date.
       if (property.submittedAt == null)
@@ -178,6 +179,8 @@ class _DocumentsViewState extends State<DocumentsView> {
       PropertyColumns.transparencyScore: checklist.score,
     });
     if (tunnel.state.saveStatus != SellerTunnelSaveStatus.success) return;
+    // Types the estimate does not cover: the expert values them directly.
+    if (!profile.estimate) return;
     unawaited(
       repository
           .requestEstimate(property.id)

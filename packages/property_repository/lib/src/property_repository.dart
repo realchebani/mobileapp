@@ -203,23 +203,35 @@ class PropertyRepository {
     return PropertySaveFailure(error);
   }
 
+  /// Files listed per page when deleting a property (the storage
+  /// default).
+  static const _filesPage = 100;
+
   /// Deletes the draft [property]: its document files first (the storage
   /// rules need the property to still exist), then the property, whose
-  /// child rows go with it.
+  /// child rows go with it. The status is read again first: the files of a
+  /// dossier sent meanwhile are never deleted.
   ///
-  /// Throws [PropertyDeleteFailure] when the property is not a draft or on
-  /// error.
+  /// Throws [PropertyDeleteFailure] when the property is not a draft (or
+  /// belongs to a frozen lot) or on error.
   Future<void> deleteProperty(Property property) async {
-    if (property.status != PropertyStatus.draft) {
-      throw PropertyDeleteFailure('${property.id} is not a draft');
-    }
     try {
+      final current = await getProperty(property.id);
+      if (current.status != PropertyStatus.draft) {
+        throw PropertyDeleteFailure('${property.id} is not a draft');
+      }
       final folder = '${property.ownerId}/${property.id}';
       final bucket = _client.storage.from(documentsBucket);
-      final files = await bucket.list(path: folder);
-      if (files.isNotEmpty) {
-        await bucket.remove([for (final file in files) '$folder/${file.name}']);
+      final paths = <String>[];
+      for (var offset = 0; ; offset += _filesPage) {
+        final files = await bucket.list(
+          path: folder,
+          searchOptions: SearchOptions(offset: offset),
+        );
+        paths.addAll([for (final file in files) '$folder/${file.name}']);
+        if (files.length < _filesPage) break;
       }
+      if (paths.isNotEmpty) await bucket.remove(paths);
       final deleted = await _client
           .from(_properties)
           .delete()
@@ -623,49 +635,32 @@ class PropertyRepository {
     }
   }
 
-  /// Creates the lot [id] of [ownerId] (id chosen by the app, retry-safe:
-  /// an existing lot [id] is returned as is) and returns it.
+  /// Creates the lot [id] (chosen by the app) with [propertyIds] as its
+  /// properties, the first one as main property, and returns it: all or
+  /// nothing, in one transaction (database function `create_property_lot`).
+  /// Retry-safe: an existing lot [id] is reused.
   ///
-  /// Throws [PropertySaveFailure] on error.
-  Future<PropertyLot> createLot({
+  /// Throws [LotFrozenFailure] when a property is in a frozen lot and
+  /// [PropertySaveFailure] on any other error.
+  Future<PropertyLot> createLotWith({
     required String id,
-    required String ownerId,
-    String? name,
+    required List<String> propertyIds,
     LotSaleMode saleMode = LotSaleMode.together,
+    String? name,
   }) async {
     try {
-      final row = await _client
-          .from(_lots)
-          .insert({
-            PropertyLotColumns.id: id,
-            PropertyLotColumns.ownerId: ownerId,
-            PropertyLotColumns.name: ?name,
-            PropertyLotColumns.saleMode: saleMode.value,
-          })
-          .select()
-          .single();
+      final row = await _client.rpc<Map<String, dynamic>>(
+        'create_property_lot',
+        params: {
+          'p_lot_id': id,
+          'p_property_ids': propertyIds,
+          'p_sale_mode': saleMode.value,
+          'p_name': name,
+        },
+      );
       return PropertyLot.fromJson(row);
-    } on PostgrestException catch (error, stackTrace) {
-      if (error.code == _uniqueViolation) {
-        final existing = await _maybeLot(id);
-        if (existing != null) return existing;
-      }
-      Error.throwWithStackTrace(PropertySaveFailure(error), stackTrace);
     } on Object catch (error, stackTrace) {
-      Error.throwWithStackTrace(PropertySaveFailure(error), stackTrace);
-    }
-  }
-
-  Future<PropertyLot?> _maybeLot(String id) async {
-    try {
-      final row = await _client
-          .from(_lots)
-          .select()
-          .eq(PropertyLotColumns.id, id)
-          .maybeSingle();
-      return row == null ? null : PropertyLot.fromJson(row);
-    } on Object {
-      return null;
+      Error.throwWithStackTrace(_saveFailure(error), stackTrace);
     }
   }
 

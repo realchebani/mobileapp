@@ -130,5 +130,34 @@ void main() {
         LotEstimate.of(members: [house, apartment], parcels: const {}),
       );
     });
+
+    test('a sum leaving out expert-valued properties is partial', () {
+      final estimate = LotEstimate.of(
+        members: [house, property('land', PropertyType.land)],
+        parcels: const {},
+      );
+      expect(estimate.isComplete, isTrue);
+      expect(estimate.isPartial, isTrue);
+      expect(estimate.leftOut, ['land']);
+      final full = LotEstimate.of(members: [house, garage], parcels: const {});
+      expect(full.isPartial, isFalse);
+      expect(full.leftOut, isEmpty);
+    });
+
+    test('a sent property without estimate does not block the sum', () {
+      const sent = Property(
+        id: 'garage',
+        ownerId: 'u',
+        propertyType: PropertyType.parking,
+        status: PropertyStatus.submitted,
+      );
+      final estimate = LotEstimate.of(
+        members: [house, sent],
+        parcels: const {},
+      );
+      expect(estimate.members['garage'], LotMemberEstimate.notEstimated);
+      expect(estimate.isPartial, isTrue);
+      expect(estimate.median, 320000);
+    });
   });
 }

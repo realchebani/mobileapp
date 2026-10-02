@@ -28,6 +28,15 @@ class MethodView extends StatelessWidget {
 
   static const SellerTunnelStep _step = SellerTunnelStep.method;
 
+  /// "Passer cette étape": saves the rooms step (V5 and V5c) as done and
+  /// opens the next step of the type.
+  static Future<void> _skip(BuildContext context) async {
+    final tunnel = context.read<SellerTunnelCubit>();
+    await tunnel.saveAndContinue(SellerTunnelStep.surfaces);
+    final next = tunnel.state.nextStep;
+    if (next != null && context.mounted) context.goToTunnelStep(next);
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
@@ -36,6 +45,9 @@ class MethodView extends StatelessWidget {
       (cubit) => cubit.state.isSaving,
     );
     final soon = RealestyBadge(label: l10n.methodSoonBadge, showIcon: false);
+    final optional = context.select<SellerTunnelCubit, bool>(
+      (cubit) => cubit.state.profile.roomsOptional,
+    );
     return TunnelScaffold(
       spacing: 14,
       header: TunnelHeader(
@@ -104,6 +116,14 @@ class MethodView extends StatelessWidget {
             ),
           ),
         ),
+        // "Autre" (péniche, moulin…): the rooms are optional.
+        if (optional)
+          RealestyButton(
+            label: l10n.methodSkip,
+            variant: RealestyButtonVariant.text,
+            isLoading: saving,
+            onPressed: () => unawaited(_skip(context)),
+          ),
       ],
     );
   }

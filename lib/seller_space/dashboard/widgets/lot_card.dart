@@ -47,7 +47,7 @@ class LotCard extends StatelessWidget {
       l10n.myPropertiesSummary(members.length),
       lotSaleModeLabel(l10n, lot.saleMode),
       if (estimate != null && estimate.isComplete)
-        l10n.lotEstimate(
+        (estimate.isPartial ? l10n.lotEstimatePartial : l10n.lotEstimate)(
           euros(l10n, estimate.low!),
           euros(l10n, estimate.high!),
         ),

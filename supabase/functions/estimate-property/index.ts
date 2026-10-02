@@ -67,7 +67,9 @@ function depsFor(request: Request): Deps {
     async countRecentAttempts(ownerId, since) {
       const { count, error } = await service.from("market_snapshots")
         .select("id, properties!inner(owner_id)", { count: "exact", head: true })
-        .eq("properties.owner_id", ownerId).gte("created_at", since);
+        .eq("properties.owner_id", ownerId).gte("created_at", since)
+        // Snapshots of types never estimated (before EPIC-13) cost nothing.
+        .or("reason.is.null,reason.neq.unsupported_type");
       fail("market_snapshots", error);
       return count ?? 0;
     },

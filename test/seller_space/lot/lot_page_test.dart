@@ -85,8 +85,7 @@ void main() {
       // The garage is not estimated yet: no sum.
       expect(
         find.text(
-          'La tendance du lot s’affichera quand chaque bien estimable aura '
-          'la sienne.',
+          'La tendance du lot s’affichera quand chaque bien aura été envoyé.',
         ),
         findsOneWidget,
       );
@@ -256,12 +255,42 @@ void main() {
         findsOneWidget,
       );
       expect(find.text('Estimé par l’expert'), findsOneWidget);
+      // The commercial premises is valued by the expert: a partial sum.
+      expect(find.textContaining('Somme partielle'), findsOneWidget);
+      expect(
+        find.textContaining('ce n’est pas la valeur du lot'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('the sum of a lot whose properties all have a trend', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(1170, 4000);
+      addTearDown(tester.view.reset);
+      await pump(
+        tester,
+        properties: const [
+          house,
+          Property(
+            id: 'garage',
+            ownerId: ownerId,
+            propertyType: PropertyType.parking,
+            status: PropertyStatus.submitted,
+            lotId: 'lot',
+            aiEstimateLowEur: 15000,
+            aiEstimateMedianEur: 18000,
+            aiEstimateHighEur: 21000,
+          ),
+        ],
+      );
       expect(
         find.text(
           'Somme des tendances des biens, indicative et non certifiée.',
         ),
         findsOneWidget,
       );
+      expect(find.textContaining('Somme partielle'), findsNothing);
     });
 
     testWidgets('a lot that no longer exists', (tester) async {

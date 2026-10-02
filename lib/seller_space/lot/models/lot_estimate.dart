@@ -15,14 +15,19 @@ enum LotMemberEstimate {
   /// include their outbuildings), so it is not added twice.
   includedInMain,
 
-  /// Its estimate is not computed yet (dossier not sent, or computing).
+  /// A sent dossier without automatic estimate (too few comparable sales,
+  /// or still computing): the expert values it.
+  notEstimated,
+
+  /// Its dossier is not sent yet: no estimate before it is.
   waiting,
 }
 
 /// Estimate of a sale lot (EPIC-13, owner decision Q4): the sum of the
-/// non-certified estimates of its properties, only once every property
-/// that can be estimated has one. Computed in the app: no new server
-/// computation, no quota used.
+/// non-certified estimates of its properties, once every property is sent.
+/// A sum that leaves out properties valued by the expert is only ever shown
+/// as a partial sum ([isPartial], plan §12). Computed in the app: no new
+/// server computation, no quota used.
 final class LotEstimate extends Equatable {
   const new _({required this.members, this.low, this.median, this.high});
 
@@ -54,8 +59,10 @@ final class LotEstimate extends Equatable {
         low += member.aiEstimateLowEur!;
         median += member.aiEstimateMedianEur!;
         high += member.aiEstimateHighEur!;
-      } else {
+      } else if (member.status == PropertyStatus.draft) {
         state = LotMemberEstimate.waiting;
+      } else {
+        state = LotMemberEstimate.notEstimated;
       }
       states[member.id] = state;
     }
@@ -98,8 +105,26 @@ final class LotEstimate extends Equatable {
   final int? median;
   final int? high;
 
-  /// Whether the sum can be shown.
+  /// Whether a sum can be shown (complete or partial).
   bool get isComplete => median != null;
+
+  /// Whether the sum leaves out properties valued by the expert: it must
+  /// then be shown as a partial sum, never as the value of the lot.
+  bool get isPartial =>
+      isComplete &&
+      members.values.any(
+        (state) =>
+            state == LotMemberEstimate.byExpert ||
+            state == LotMemberEstimate.notEstimated,
+      );
+
+  /// The properties (ids) left out of the sum and valued by the expert.
+  List<String> get leftOut => [
+    for (final MapEntry(:key, :value) in members.entries)
+      if (value == LotMemberEstimate.byExpert ||
+          value == LotMemberEstimate.notEstimated)
+        key,
+  ];
 
   @override
   List<Object?> get props => [members, low, median, high];

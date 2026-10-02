@@ -278,13 +278,18 @@ void main() {
       );
       when(() => propertyRepository.updateProperty(any(), any())).thenAnswer(
         (invocation) async => _patched(
-          const Property(id: 'property-id', ownerId: 'user-id'),
+          const Property(
+            id: 'property-id',
+            ownerId: 'user-id',
+            propertyType: PropertyType.house,
+          ),
           invocation.positionalArguments[1] as Map<String, Object?>,
         ),
       );
       dossier = const Property(
         id: 'property-id',
         ownerId: 'user-id',
+        propertyType: PropertyType.house,
         currentStep: 7,
       );
       when(() => propertyRepository.getDocuments(any())).thenAnswer(

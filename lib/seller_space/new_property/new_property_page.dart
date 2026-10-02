@@ -57,8 +57,16 @@ class _NewPropertyViewState extends State<NewPropertyView> {
         router.go(SellerTunnelStep.owners.routeFor(property.id));
       case NewPropertyStatus.failure:
         showRealestySnackBar(context, l10n.newPropertyError, isError: true);
-      case NewPropertyStatus.copyFailure:
-        showRealestySnackBar(context, l10n.newPropertyCopyError, isError: true);
+      case NewPropertyStatus.copyFailure || NewPropertyStatus.lotFailure:
+        // Created: "Mes biens" shows it whatever happens next.
+        context.read<SellerPropertiesCubit>().propertyChanged(state.property!);
+        showRealestySnackBar(
+          context,
+          state.status == NewPropertyStatus.lotFailure
+              ? l10n.newPropertyLotError
+              : l10n.newPropertyCopyError,
+          isError: true,
+        );
       case NewPropertyStatus.limitReached:
         showRealestySnackBar(
           context,

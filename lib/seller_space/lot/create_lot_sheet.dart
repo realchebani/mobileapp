@@ -81,7 +81,7 @@ class _CreateLotSheetState extends State<CreateLotSheet> {
     final candidates = context
         .watch<SellerPropertiesCubit>()
         .state
-        .standaloneProperties;
+        .lotCandidates;
     return SafeArea(
       top: false,
       child: SingleChildScrollView(
@@ -121,18 +121,19 @@ class _CreateLotSheetState extends State<CreateLotSheet> {
                         }
                       }),
               ),
-            RealestySegmentedControl<LotSaleMode>(
-              segments: [
+            Wrap(
+              spacing: RealestySpacing.xs,
+              runSpacing: RealestySpacing.xs,
+              children: [
                 for (final mode in LotSaleMode.values)
-                  RealestySegment(
-                    value: mode,
+                  RealestyChoiceChip(
                     label: lotSaleModeLabel(l10n, mode),
+                    selected: _saleMode == mode,
+                    onSelected: _saving
+                        ? null
+                        : (_) => setState(() => _saleMode = mode),
                   ),
               ],
-              selected: _saleMode,
-              onChanged: _saving
-                  ? null
-                  : (mode) => setState(() => _saleMode = mode),
             ),
             const SizedBox(height: RealestySpacing.xs),
             RealestyButton(

@@ -191,61 +191,70 @@ void main() {
   });
 
   group('deleteProperty', () {
-    test('refuses a property that is not a draft', () async {
+    bool isRead(http.Request r) => r.method == 'GET';
+
+    test('refuses a property that is no longer a draft', () async {
+      respond = (_) => json([
+        {...propertyRow, 'status': 'submitted'},
+      ]);
       await expectLater(
-        repository.deleteProperty(
-          const Property(
-            id: propertyId,
-            ownerId: ownerId,
-            status: PropertyStatus.submitted,
-          ),
-        ),
-        failure<PropertyDeleteFailure>(),
+        repository.deleteProperty(property),
+        throwsA(isA<PropertyDeleteFailure>()),
       );
-      expect(requests, isEmpty);
+      expect(requests.single.method, 'GET');
     });
 
-    test('removes the files, then the property', () async {
+    test('removes the files page by page, then the property', () async {
+      var pages = 0;
       respond = (request) {
+        if (isRead(request)) return json([propertyRow]);
         if (isStorage(request)) {
-          return request.method == 'POST'
-              ? json([
-                  {'name': 'a.pdf'},
-                  {'name': 'b.jpg'},
-                ])
-              : json(<Object>[]);
+          if (request.method == 'DELETE') return json(<Object>[]);
+          final page = pages++;
+          return json([
+            for (var i = 0; i < (page == 0 ? 100 : 2); i++)
+              {'name': 'f$page-$i'},
+          ]);
         }
         return json([
           {'id': propertyId},
         ]);
       };
       await repository.deleteProperty(property);
-      final [list, remove, delete] = requests;
-      expect(list.url.path, '/storage/v1/object/list/property-documents');
+      final lists = requests.where(
+        (r) => r.url.path == '/storage/v1/object/list/property-documents',
+      );
+      expect(lists, hasLength(2));
       expect(
-        jsonDecode(list.body),
+        jsonDecode(lists.first.body),
         containsPair('prefix', 'user-id/$propertyId'),
       );
-      expect(jsonDecode(remove.body), {
-        'prefixes': ['user-id/$propertyId/a.pdf', 'user-id/$propertyId/b.jpg'],
-      });
+      expect(jsonDecode(lists.last.body), containsPair('offset', 100));
+      final remove = requests.firstWhere(
+        (r) => isStorage(r) && r.method == 'DELETE',
+      );
+      expect((jsonDecode(remove.body) as Map)['prefixes'], hasLength(102));
+      final delete = requests.last;
       expect(delete.method, 'DELETE');
       expect(delete.url.path, '/rest/v1/properties');
       expect(delete.url.queryParameters['id'], 'eq.$propertyId');
     });
 
     test('skips the removal when there is no file', () async {
-      respond = (request) => isStorage(request)
-          ? json(<Object>[])
-          : json([
-              {'id': propertyId},
-            ]);
+      respond = (request) {
+        if (isRead(request)) return json([propertyRow]);
+        if (isStorage(request)) return json(<Object>[]);
+        return json([
+          {'id': propertyId},
+        ]);
+      };
       await repository.deleteProperty(property);
-      expect(requests, hasLength(2));
+      expect(requests, hasLength(3));
     });
 
     test('throws PropertyDeleteFailure when nothing was deleted', () async {
-      respond = (_) => json(<Object>[]);
+      respond = (request) =>
+          isRead(request) ? json([propertyRow]) : json(<Object>[]);
       await expectLater(
         repository.deleteProperty(property),
         failure<PropertyDeleteFailure>(),
@@ -441,58 +450,36 @@ void main() {
       );
     });
 
-    test('createLot inserts the lot', () async {
-      respond = (_) => json([lotRow]);
+    test('createLotWith creates the lot and its members at once', () async {
+      respond = (_) => json(lotRow);
       expect(
-        await repository.createLot(
+        await repository.createLotWith(
           id: 'lot-id',
-          ownerId: ownerId,
-          name: 'Maison + garage',
+          propertyIds: ['a', 'b'],
           saleMode: LotSaleMode.togetherOrSeparately,
+          name: 'Maison + garage',
         ),
         lot,
       );
-      expect(jsonDecode(requests.single.body), {
-        'id': 'lot-id',
-        'owner_id': ownerId,
-        'name': 'Maison + garage',
-        'sale_mode': 'ensemble_ou_separe',
+      final call = requests.single;
+      expect(call.url.path, '/rest/v1/rpc/create_property_lot');
+      expect(jsonDecode(call.body), {
+        'p_lot_id': 'lot-id',
+        'p_property_ids': ['a', 'b'],
+        'p_sale_mode': 'ensemble_ou_separe',
+        'p_name': 'Maison + garage',
       });
     });
 
-    test('createLot returns the lot created by a lost answer', () async {
-      respond = (request) =>
-          request.method == 'POST' ? conflict() : json([lotRow]);
-      expect(await repository.createLot(id: 'lot-id', ownerId: ownerId), lot);
-    });
-
-    test('createLot fails on a conflict with no lot', () async {
-      respond = (request) =>
-          request.method == 'POST' ? conflict() : json(<Object>[]);
+    test('createLotWith maps the errors', () async {
+      respond = (_) => error('lot_frozen');
       await expectLater(
-        repository.createLot(id: 'lot-id', ownerId: ownerId),
-        failure<PropertySaveFailure>(),
+        repository.createLotWith(id: 'lot-id', propertyIds: ['a']),
+        failure<LotFrozenFailure>(),
       );
-    });
-
-    test('createLot fails when the lookup fails', () async {
-      respond = (request) => request.method == 'POST' ? conflict() : error();
+      respond = (_) => error('lot_member_not_found');
       await expectLater(
-        repository.createLot(id: 'lot-id', ownerId: ownerId),
-        failure<PropertySaveFailure>(),
-      );
-    });
-
-    test('createLot throws PropertySaveFailure on a network error', () async {
-      final failing = SupabaseClient(
-        'https://project.supabase.co',
-        'publishable-key',
-        httpClient: MockClient((_) async => throw http.ClientException('x')),
-      );
-      addTearDown(failing.dispose);
-      await expectLater(
-        PropertyRepository(client: failing)
-            .createLot(id: 'lot-id', ownerId: ownerId),
+        repository.createLotWith(id: 'lot-id', propertyIds: ['a']),
         failure<PropertySaveFailure>(),
       );
     });

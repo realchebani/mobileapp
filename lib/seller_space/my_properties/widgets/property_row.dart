@@ -18,12 +18,16 @@ class PropertyRow extends StatefulWidget {
     required this.property,
     this.hasUnread = false,
     this.showDivider = true,
+    this.canDelete = true,
     super.key,
   });
 
   final Property property;
   final bool hasUnread;
   final bool showDivider;
+
+  /// Whether a draft can be deleted (not in a frozen lot).
+  final bool canDelete;
 
   @override
   State<PropertyRow> createState() => _PropertyRowState();
@@ -57,7 +61,7 @@ class _PropertyRowState extends State<PropertyRow> {
     final l10n = context.l10n;
     final c = context.realestyColors;
     final property = widget.property;
-    final isDraft = property.status == PropertyStatus.draft;
+    final isDraft = property.status == PropertyStatus.draft && widget.canDelete;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [

@@ -890,7 +890,7 @@
   "lotSaleModeHelp": "«Juntos o por separado»: un comprador también puede comprar uno solo de los inmuebles.",
   "lotEstimateLabel": "Estimación del lote",
   "lotEstimateSum": "Suma de las tendencias de los inmuebles, orientativa y no certificada.",
-  "lotEstimatePending": "La tendencia del lote se mostrará cuando cada inmueble estimable tenga la suya.",
+  "lotEstimatePending": "La tendencia del lote se mostrará cuando se hayan enviado todos los inmuebles.",
   "lotEstimateByExpert": "Estimado por el experto",
   "lotEstimateIncluded": "Incluido en la estimación del inmueble principal",
   "lotEstimateWaiting": "Pendiente del envío del expediente",
@@ -947,7 +947,12 @@
   "documentsNoticeReuseFailed": "No se pudo reutilizar el documento. Inténtelo de nuevo.",
   "locationSameAsTitle": "¿La misma dirección que {label}?",
   "locationSameAsAction": "Usar esta dirección",
-  "locationSameAsNote": "Compruebe después la parcela: un garaje puede estar en otra parcela.",
+  "locationSameAsNote": "Compruebe después la parcela: este inmueble puede estar en otra parcela.",
   "marketTypeOutbuilding": "Garaje o dependencia",
-  "marketSummaryOutbuilding": "{type} · {city} · tendencia IA {median} €, según las ventas de dependencias vendidas solas."
+  "marketSummaryOutbuilding": "{type} · {city} · tendencia IA {median} €, según las ventas de dependencias vendidas solas.",
+  "lotEstimatePartial": "Suma parcial: {low} – {high}",
+  "lotEstimatePartialNote": "Sin {names}, valorados por el experto: no es el valor del lote.",
+  "lotEstimateNotEstimated": "Sin tendencia automática",
+  "newPropertyLotError": "El inmueble está creado, pero no se pudo unir al lote. Inténtelo de nuevo.",
+  "methodSkip": "Omitir este paso"
 }

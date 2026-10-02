@@ -50,6 +50,25 @@ final class SellerPropertiesState extends Equatable {
       if (property.lotId == lotId) property,
   ];
 
+  /// Whether the lot [lotId] is frozen: one of its properties is reviewed
+  /// by the expert or certified.
+  bool isLotFrozen(String? lotId) =>
+      lotId != null &&
+      membersOf(lotId).any(
+        (p) =>
+            p.status == PropertyStatus.inReview ||
+            p.status == PropertyStatus.certified,
+      );
+
+  /// The properties that can join a lot: open (draft or submitted) and in
+  /// no lot, oldest first.
+  List<Property> get lotCandidates => [
+    for (final property in standaloneProperties)
+      if (property.status == PropertyStatus.draft ||
+          property.status == PropertyStatus.submitted)
+        property,
+  ];
+
   /// The properties in no lot, oldest first.
   List<Property> get standaloneProperties => [
     for (final property in properties)

@@ -180,5 +180,31 @@ void main() {
         findsOneWidget,
       );
     });
+
+    testWidgets('tells when the property could not join the lot', (
+      tester,
+    ) async {
+      usePhoneSurface();
+      when(
+        () => repository.createLotWith(
+          id: any(named: 'id'),
+          propertyIds: any(named: 'propertyIds'),
+        ),
+      ).thenAnswer((_) async => throw const PropertySaveFailure());
+      await pump(tester, existing: const [house]);
+      await tester.tap(find.text('Garage / parking'));
+      await tester.ensureVisible(find.text('Avec Maison · Chaponost'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Avec Maison · Chaponost'));
+      await tester.tap(find.text('Commencer l’audit'));
+      await tester.pumpAndSettle();
+      expect(
+        find.text(
+          'Le bien est créé, mais il n’a pas pu rejoindre le lot. Réessayez.',
+        ),
+        findsOneWidget,
+      );
+      verify(() => properties.propertyChanged(created)).called(1);
+    });
   });
 }

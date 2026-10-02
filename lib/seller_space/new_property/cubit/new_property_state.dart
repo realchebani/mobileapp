@@ -15,6 +15,9 @@ enum NewPropertyStatus {
   /// new tap retries the copy only).
   copyFailure,
 
+  /// Created, but it could not join the lot (a new tap retries).
+  lotFailure,
+
   /// The seller already has the maximum number of properties.
   limitReached,
 }
@@ -61,14 +64,22 @@ final class NewPropertyState extends Equatable {
   /// The lot created or joined, if any.
   final PropertyLot? lot;
 
-  /// The properties the new one can be sold with: none in a lot already
-  /// taken over by an expert.
+  /// The properties the new one can be sold with: open ones (draft or
+  /// submitted) that are not in a lot taken over by an expert.
   List<Property> get partners => [
     for (final property in properties)
-      if (property.status != PropertyStatus.inReview &&
-          property.status != PropertyStatus.certified)
-        property,
+      if (_isOpen(property) && !_inFrozenLot(property)) property,
   ];
+
+  static bool _isOpen(Property property) =>
+      property.status == PropertyStatus.draft ||
+      property.status == PropertyStatus.submitted;
+
+  bool _inFrozenLot(Property property) {
+    final lot = property.lotId;
+    return lot != null &&
+        properties.any((other) => other.lotId == lot && !_isOpen(other));
+  }
 
   Property? get partner => _byId(partnerId);
 

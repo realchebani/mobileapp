@@ -88,6 +88,7 @@ void main() {
         toPropertyId: any(named: 'toPropertyId'),
       ),
     ).thenAnswer((_) async => identity);
+    when(() => repository.getDocuments('new-id')).thenAnswer((_) async => []);
   });
 
   NewPropertyCubit build({List<Property> properties = const [house]}) =>
@@ -102,6 +103,25 @@ void main() {
     test('partners, source and defaults', () {
       final state = build(properties: const [certified, house]).state;
       expect(state.partners, [house]);
+      expect(
+        const NewPropertyState(
+          properties: [
+            Property(id: 'a', ownerId: ownerId, lotId: 'l'),
+            Property(
+              id: 'b',
+              ownerId: ownerId,
+              lotId: 'l',
+              status: PropertyStatus.inReview,
+            ),
+            Property(
+              id: 'c',
+              ownerId: ownerId,
+              status: PropertyStatus.submitted,
+            ),
+          ],
+        ).partners.map((p) => p.id),
+        ['c'],
+      );
       expect(state.source, house);
       expect(state.partner, isNull);
       expect(state.typeMissing, isTrue);
@@ -163,6 +183,10 @@ void main() {
           'status',
           NewPropertyStatus.inProgress,
         ),
+        // The property is known as soon as it is created.
+        isA<NewPropertyState>()
+            .having((s) => s.status, 'status', NewPropertyStatus.inProgress)
+            .having((s) => s.property, 'property', created),
         isA<NewPropertyState>()
             .having((s) => s.status, 'status', NewPropertyStatus.success)
             .having((s) => s.property, 'property', created)
@@ -185,7 +209,10 @@ void main() {
         verify(
           () => repository.updateProperty('new-id', {
             PropertyColumns.ownershipType: OwnershipType.multiple,
-            PropertyColumns.provenance: {Property.ownersCopiedFromKey: 'house'},
+            PropertyColumns.provenance: {
+              PropertyColumns.ownershipType: 'declared',
+              Property.ownersCopiedFromKey: 'house',
+            },
           }),
         ).called(1);
         verify(
@@ -199,20 +226,20 @@ void main() {
     );
 
     blocTest<NewPropertyCubit, NewPropertyState>(
-      'creates a lot with the partner',
-      setUp: () {
-        when(() => repository.createLot(id: 'new-id', ownerId: ownerId))
-            .thenAnswer((_) async => lot);
-        when(() => repository.setPropertyLot('house', 'new-id'))
-            .thenAnswer((_) async => house);
-        when(() => repository.updateLot('new-id', any())).thenAnswer(
-          (_) async => const PropertyLot(
-            id: 'new-id',
-            ownerId: ownerId,
-            mainPropertyId: 'house',
+      'creates a lot with the partner, all at once',
+      setUp: () =>
+          when(
+            () => repository.createLotWith(
+              id: 'new-id',
+              propertyIds: ['house', 'new-id'],
+            ),
+          ).thenAnswer(
+            (_) async => const PropertyLot(
+              id: 'new-id',
+              ownerId: ownerId,
+              mainPropertyId: 'house',
+            ),
           ),
-        );
-      },
       build: build,
       seed: () => const NewPropertyState(
         properties: [house],
@@ -222,30 +249,17 @@ void main() {
         reuseIdentity: false,
       ),
       act: (cubit) => cubit.submit(),
-      skip: 1,
-      expect: () => [
-        isA<NewPropertyState>()
-            .having((s) => s.status, 'status', NewPropertyStatus.success)
-            .having((s) => s.lot?.mainPropertyId, 'main', 'house'),
-      ],
-      verify: (_) => verify(
-        () => repository.createProperty(
-          id: 'new-id',
-          ownerId: ownerId,
-          type: PropertyType.parking,
-          lotId: 'new-id',
-        ),
-      ).called(1),
+      verify: (cubit) {
+        expect(cubit.state.status, NewPropertyStatus.success);
+        expect(cubit.state.lot?.mainPropertyId, 'house');
+      },
     );
 
     blocTest<NewPropertyCubit, NewPropertyState>(
       'joins the lot of the partner',
-      setUp: () => when(() => repository.listLots(ownerId)).thenAnswer(
-        (_) async => const [
-          PropertyLot(id: 'other', ownerId: ownerId),
-          PropertyLot(id: 'lot', ownerId: ownerId, mainPropertyId: 'house'),
-        ],
-      ),
+      setUp: () =>
+          when(() => repository.setPropertyLot('new-id', 'lot'))
+              .thenAnswer((_) async => created),
       build: () => build(
         properties: const [
           Property(id: 'house', ownerId: ownerId, lotId: 'lot'),
@@ -260,45 +274,68 @@ void main() {
       ),
       act: (cubit) => cubit.submit(),
       verify: (cubit) {
-        expect(cubit.state.lot?.id, 'lot');
-        verifyNever(
-          () => repository.createLot(
-            id: any(named: 'id'),
-            ownerId: any(named: 'ownerId'),
-          ),
-        );
+        expect(cubit.state.status, NewPropertyStatus.success);
+        verify(() => repository.setPropertyLot('new-id', 'lot')).called(1);
       },
     );
 
-    blocTest<NewPropertyCubit, NewPropertyState>(
-      'creates a lot when the lot of the partner is gone',
-      setUp: () {
-        when(() => repository.listLots(ownerId)).thenAnswer((_) async => []);
-        when(() => repository.createLot(id: 'new-id', ownerId: ownerId))
-            .thenAnswer(
-              (_) async => const PropertyLot(
-                id: 'new-id',
-                ownerId: ownerId,
-                mainPropertyId: 'house',
-              ),
-            );
-        when(() => repository.setPropertyLot('house', 'new-id'))
-            .thenAnswer((_) async => house);
-      },
-      build: build,
-      seed: () => const NewPropertyState(
-        properties: [Property(id: 'house', ownerId: ownerId, lotId: 'gone')],
-        type: PropertyType.parking,
-        partnerId: 'house',
-        reuseOwners: false,
-        reuseIdentity: false,
-      ),
-      act: (cubit) => cubit.submit(),
-      verify: (cubit) {
-        expect(cubit.state.status, NewPropertyStatus.success);
-        verifyNever(() => repository.updateLot(any(), any()));
-      },
-    );
+    test('a failed lot keeps the property and retries the lot only', () async {
+      var calls = 0;
+      when(
+        () => repository.createLotWith(
+          id: any(named: 'id'),
+          propertyIds: any(named: 'propertyIds'),
+        ),
+      ).thenAnswer((_) async {
+        if (calls++ == 0) throw const PropertySaveFailure();
+        return lot;
+      });
+      final cubit = build()
+        ..typeSelected(PropertyType.parking)
+        ..partnerSelected('house')
+        ..reuseOwnersChanged(reuse: false)
+        ..reuseIdentityChanged(reuse: false);
+      await cubit.submit();
+      expect(cubit.state.status, NewPropertyStatus.lotFailure);
+      expect(cubit.state.property, created);
+      await cubit.submit();
+      expect(cubit.state.status, NewPropertyStatus.success);
+      verify(
+        () => repository.createProperty(
+          id: 'new-id',
+          ownerId: ownerId,
+          type: PropertyType.parking,
+        ),
+      ).called(1);
+      // Joined: not again.
+      await cubit.submit();
+      expect(calls, 2);
+      await cubit.close();
+    });
+
+    test('never copies a document twice', () async {
+      when(() => repository.getDocuments('new-id')).thenAnswer(
+        (_) async => const [
+          PropertyDocument(
+            id: 'copy',
+            propertyId: 'new-id',
+            kind: DocumentKind.identityDocument,
+            storagePath: 'user-id/new-id/id.pdf',
+          ),
+        ],
+      );
+      final cubit = build()..typeSelected(PropertyType.parking);
+      await cubit.submit();
+      expect(cubit.state.status, NewPropertyStatus.success);
+      verifyNever(
+        () => repository.copyDocument(
+          any(),
+          ownerId: any(named: 'ownerId'),
+          toPropertyId: any(named: 'toPropertyId'),
+        ),
+      );
+      await cubit.close();
+    });
 
     blocTest<NewPropertyCubit, NewPropertyState>(
       'reports the limit',

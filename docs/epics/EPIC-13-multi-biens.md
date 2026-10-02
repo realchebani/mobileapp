@@ -61,7 +61,7 @@ Arbitrages du porteur de projet (2026-10-02) :
 ## US-13.8 · Estimation par bien et par lot ✅
 *En tant que vendeur d’un lot, je veux une idée de la valeur de l’ensemble.*
 - ✅ Estimation par bien : maison, appartement, et aussi **garage / dépendance** (médiane des ventes DVF de dépendances seules, prix à l’unité — arbitrage Q5) ; les autres types affichent « l’expert vous donnera directement son avis de valeur ».
-- ✅ Fiche du lot : fourchette = somme des estimations des biens quand chaque bien estimable l’est ; sinon, estimations bien par bien et « estimé par l’expert » pour les autres — selon Q4.
+- ✅ Fiche du lot : fourchette = somme des estimations des biens une fois tous les biens envoyés ; si des biens sont estimés par l’expert (type non couvert, trop peu de ventes), elle n’est montrée que comme **« Somme partielle »** avec les biens laissés de côté, jamais comme la valeur du lot — selon Q4 et §12.
 - ✅ Une dépendance sur la même parcelle que le bien principal n’est pas additionnée (« comprise dans l’estimation »).
 - ✅ Le lot ne déclenche aucun calcul serveur supplémentaire.
 
@@ -76,7 +76,7 @@ Arbitrages du porteur de projet (2026-10-02) :
 *En tant que vendeur, je veux supprimer un bien créé par erreur.*
 - ✅ « Supprimer » sur un brouillon dans « Mes biens », avec confirmation intégrée à l’écran.
 - ✅ Les fichiers du bien sont supprimés du stockage, puis le bien et ses données.
-- ✅ Un bien envoyé ou certifié ne peut pas être supprimé (RLS existante) ; le lot sans membre est supprimé.
+- ✅ Un bien envoyé ou certifié ne peut pas être supprimé (RLS existante), ni un brouillon d’un lot figé (trigger) ; le lot sans membre est supprimé ; le statut est relu avant d’effacer les fichiers.
 
 ## US-13.11 · Voix selon le type ✅
 *En tant que vendeur, je veux que l’agent vocal ne me propose que ce qui a du sens pour mon bien.*
@@ -88,4 +88,4 @@ Arbitrages du porteur de projet (2026-10-02) :
 - Fiche du lot, « Mes biens », « Ajouter un bien » et la grille V3 à 8 types ne sont pas dans le canevas Claude Design : construits avec le design system, à ajouter au canevas.
 - Le texte « l’expert vous donnera directement son avis de valeur » n’est pas encore décliné par type (même message pour terrain, local, immeuble, autre).
 - Réutiliser un document « Depuis un autre bien » ne propose que les documents du même type (titre de propriété ↔ titre de propriété).
-- Les pièces (V5c) et le cadre de vie d’un ancien type ne sont pas effacés à l’envoi : seules les colonnes du bien le sont (Q9).
+- Les lignes enfants d’un ancien type (pièces V5c, atouts / points de vigilance V6) sont **conservées** à l’envoi : seules les colonnes du bien sont vidées (Q9) — **à confirmer par le porteur de projet**.
