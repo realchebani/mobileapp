@@ -2883,7 +2883,7 @@
   "@voiceConsentProvidersTitle": {
     "description": "Consentement voix : titre de la section prestataires"
   },
-  "voiceConsentProviders": "Votre voix est envoyée à OpenRouter, qui la confie à des fournisseurs de modèles d’IA : Mistral AI pour la transcription, Anthropic ou Google pour comprendre vos réponses et pour la voix de l’agent. Ces traitements peuvent avoir lieu hors de l’Union européenne.",
+  "voiceConsentProviders": "Votre voix est envoyée à OpenRouter, qui la confie à des fournisseurs de modèles d’IA (actuellement Whisper d’OpenAI pour la transcription, Gemini de Google pour comprendre vos réponses, Kokoro pour la voix de l’agent). Ces traitements peuvent avoir lieu hors de l’Union européenne, notamment aux États-Unis.",
   "@voiceConsentProviders": {
     "description": "Consentement voix : prestataires qui traitent l’audio"
   },

@@ -61,7 +61,7 @@ void main() {
     testWidgets('shows the providers and the retention', (tester) async {
       await tester.pumpApp(const VoiceConsentPage());
       expect(find.text('Répondre à la voix'), findsOneWidget);
-      expect(find.textContaining('Mistral AI'), findsOneWidget);
+      expect(find.textContaining('Whisper d’OpenAI'), findsOneWidget);
       expect(find.textContaining('jamais conservé'), findsOneWidget);
     });
   });

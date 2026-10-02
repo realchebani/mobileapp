@@ -10,6 +10,7 @@ import type {
   TurnUpdate,
 } from "./db.ts";
 import {
+  ASK_TO_REPEAT,
   defaultVoice,
   type Deps,
   handleSpeech,
@@ -96,7 +97,12 @@ type Handler = (
   init?: RequestInit,
 ) => Response | Promise<Response>;
 
-function deps(db: FakeDb | null, handler: Handler, calls: string[] = []): Deps {
+function deps(
+  db: FakeDb | null,
+  handler: Handler,
+  calls: string[] = [],
+  models = DEFAULT_MODELS,
+): Deps {
   return {
     db,
     openrouter: new OpenRouterClient({
@@ -106,7 +112,7 @@ function deps(db: FakeDb | null, handler: Handler, calls: string[] = []): Deps {
         return Promise.resolve(handler(url, init));
       },
     }),
-    models: DEFAULT_MODELS,
+    models,
     now: () => new Date("2026-10-01T10:00:00Z"),
   };
 }
@@ -295,6 +301,7 @@ Deno.test("turn: typed transcript, lifestyle labels and done", async () => {
 
 Deno.test("turn: refusals and failures", async () => {
   const db = new FakeDb();
+  const calls: string[] = [];
   const ok = deps(db, agentAnswer(technicalAnswer));
   const status = async (request: Request, d = ok) =>
     (await handleTurn(request, d)).status;
@@ -367,9 +374,14 @@ Deno.test("turn: refusals and failures", async () => {
       step: "technical",
       transcript: "date de 1998",
     }),
-    deps(db, agentAnswer("pas de json")),
+    deps(db, agentAnswer("pas de json"), calls),
   );
-  assertEquals(invalid.status, 502);
+  // Asked twice, then the seller is asked to repeat (no patch).
+  assertEquals(invalid.status, 200);
+  const repeat = await invalid.json();
+  assertEquals(repeat.reply_fr, ASK_TO_REPEAT);
+  assertEquals(repeat.patch, {});
+  assertEquals(calls.length, 2);
   assertEquals(db.turns.at(-1)!.error, "invalid_output");
   db.failInsert = true;
   assertEquals(
@@ -395,15 +407,17 @@ Deno.test("speech: speaks a reply once", async () => {
     deps(db, agentAnswer(technicalAnswer)),
   );
   const turnId = db.turns[0].id;
-  const pcm: Handler = () => new Response(new Uint8Array([0, 0, 1, 1]));
+  // Gemini TTS: 2 s of PCM wrapped in a WAV.
+  const gemini = { ...DEFAULT_MODELS, tts: "google/gemini-3.8-flash-lite-tts" };
+  const pcm: Handler = () => new Response(new Uint8Array(96_000));
   const response = await handleSpeech(
     jsonRequest({ turn_id: turnId }),
-    deps(db, pcm),
+    deps(db, pcm, [], gemini),
   );
   assertEquals(response.status, 200);
   assertEquals(response.headers.get("x-audio-format"), "wav");
-  assertEquals((await response.arrayBuffer()).byteLength, 48);
-  assertEquals(db.turns[0].tts_model, DEFAULT_MODELS.tts);
+  assertEquals((await response.arrayBuffer()).byteLength, 96_044);
+  assertEquals(db.turns[0].tts_model, gemini.tts);
   const again = await handleSpeech(
     jsonRequest({ turn_id: turnId }),
     deps(db, pcm),
@@ -493,4 +507,69 @@ Deno.test("config, voices and prompt", () => {
   })[1].content as string;
   assert(technical.includes("Type de bien : non précisé"));
   assert(technical.includes("seulement s’il y a une piscine"));
+});
+
+Deno.test("turn: a second answer is used after an invalid one", async () => {
+  const db = new FakeDb();
+  let call = 0;
+  const response = await handleTurn(
+    jsonRequest({
+      property_id: PROPERTY,
+      step: "technical",
+      transcript: "date de 1998",
+    }),
+    deps(
+      db,
+      (url, init) =>
+        agentAnswer(call++ === 0 ? '{"reply_fr": "Mer' : technicalAnswer)(
+          url,
+          init,
+        ),
+    ),
+  );
+  const body = await response.json();
+  assertEquals(body.patch, { construction_year: 1998 });
+  assertEquals(db.turns[0].cost_usd, 0.006);
+  assertEquals(db.turns[0].tokens_in, 200);
+});
+
+/** [count] MPEG-2 Layer III frames (24 kHz, 32 kbit/s, 24 ms each), the
+ * first one carrying a Xing header that declares [declared] frames. */
+function mp3(count: number, declared: number): Uint8Array {
+  const frame = 96;
+  const bytes = new Uint8Array(count * frame);
+  for (let i = 0; i < count; i++) {
+    bytes.set([0xff, 0xf3, 0x44, 0xc4], i * frame);
+  }
+  bytes.set([0x58, 0x69, 0x6e, 0x67, 0, 0, 0, 3], 13); // "Xing", flags 3
+  new DataView(bytes.buffer).setUint32(21, declared);
+  return bytes;
+}
+
+Deno.test("speech: Kokoro mp3, repaired header; truncated speech", async () => {
+  const db = new FakeDb();
+  await handleTurn(
+    jsonRequest({
+      property_id: PROPERTY,
+      step: "technical",
+      transcript: "date de 1998",
+    }),
+    deps(db, agentAnswer(technicalAnswer)),
+  );
+  const turnId = db.turns[0].id;
+  const ok = await handleSpeech(
+    jsonRequest({ turn_id: turnId }),
+    deps(db, () => new Response(mp3(125, 30) as BodyInit)),
+  );
+  assertEquals(ok.status, 200);
+  assertEquals(ok.headers.get("x-audio-format"), "mp3");
+  const audio = new Uint8Array(await ok.arrayBuffer());
+  assertEquals(new DataView(audio.buffer).getUint32(21), 124);
+  db.turns[0].tts_ms = null;
+  const short = await handleSpeech(
+    jsonRequest({ turn_id: turnId }),
+    deps(db, () => new Response(mp3(10, 10) as BodyInit)),
+  );
+  assertEquals(short.status, 422);
+  assertEquals((await short.json()).error, "speech_too_short");
 });

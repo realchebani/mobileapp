@@ -601,7 +601,7 @@
   "voiceConsentTitle": "Responder por voz",
   "voiceConsentIntro": "Antes de activar el micrófono, esto es lo que ocurre con su voz.",
   "voiceConsentProvidersTitle": "¿Quién procesa su voz?",
-  "voiceConsentProviders": "Su voz se envía a OpenRouter, que la transmite a proveedores de modelos de IA: Mistral AI para la transcripción, Anthropic o Google para entender sus respuestas y para la voz del agente. Este tratamiento puede realizarse fuera de la Unión Europea.",
+  "voiceConsentProviders": "Su voz se envía a OpenRouter, que la transmite a proveedores de modelos de IA (actualmente Whisper de OpenAI para la transcripción, Gemini de Google para entender sus respuestas, Kokoro para la voz del agente). Este tratamiento puede realizarse fuera de la Unión Europea, en particular en Estados Unidos.",
   "voiceConsentRetentionTitle": "Lo que se conserva",
   "voiceConsentRetention": "La grabación de audio nunca se conserva, ni en su teléfono ni en nuestros servidores. El texto transcrito y las respuestas retenidas se guardan con su expediente.",
   "voiceConsentIdentity": "No se envía ningún dato de identidad (nombre, teléfono, correo, dirección) a estos proveedores.",

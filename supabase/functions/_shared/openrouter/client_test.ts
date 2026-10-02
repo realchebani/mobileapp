@@ -1,6 +1,13 @@
 import { assert, assertEquals, assertRejects } from "jsr:@std/assert@1";
 import { OpenRouterClient, OpenRouterError, toBase64 } from "./client.ts";
-import { pcmToWav, speechFormatFor } from "./audio.ts";
+import {
+  audioSeconds,
+  isSpeechTooShort,
+  mp3Info,
+  pcmToWav,
+  repairXingHeader,
+  speechFormatFor,
+} from "./audio.ts";
 
 type Call = { url: string; init?: RequestInit };
 
@@ -177,4 +184,52 @@ Deno.test("audio helpers", () => {
   assertEquals(wav.length, 48);
   assertEquals(new TextDecoder().decode(wav.slice(0, 4)), "RIFF");
   assertEquals(new DataView(wav.buffer).getUint32(24, true), 24000);
+});
+
+/** [count] frames with header bytes [b1, b2] (MPEG-1 or MPEG-2 Layer III). */
+function frames(count: number, b1: number, b2: number, size: number) {
+  const bytes = new Uint8Array(count * size);
+  for (let i = 0; i < count; i++) bytes.set([0xff, b1, b2, 0xc4], i * size);
+  return bytes;
+}
+
+Deno.test("mp3Info walks MPEG frames after an ID3 tag", () => {
+  // MPEG-1, 128 kbit/s, 44.1 kHz: 417 bytes, 1152 samples per frame.
+  const mpeg1 = frames(10, 0xfb, 0x90, 417);
+  const tagged = new Uint8Array(20 + mpeg1.length);
+  tagged.set([0x49, 0x44, 0x33, 4, 0, 0, 0, 0, 0, 10], 0);
+  tagged.set(mpeg1, 20);
+  const info = mp3Info(tagged)!;
+  assertEquals(info.start, 20);
+  assertEquals(info.frames, 10);
+  assertEquals(Math.round(info.seconds * 1000), 261);
+  assertEquals(mp3Info(new Uint8Array([1, 2, 3, 4])), null);
+  assertEquals(mp3Info(frames(2, 0xf7, 0x44, 96)), null); // layer II
+  assertEquals(mp3Info(frames(2, 0xeb, 0x44, 96)), null); // reserved
+  assertEquals(mp3Info(frames(2, 0xf3, 0x4c, 96)), null); // bad rate
+  assertEquals(mp3Info(frames(2, 0xf3, 0x04, 96)), null); // free bitrate
+  assertEquals(audioSeconds(new Uint8Array(4), "mp3"), 0);
+});
+
+Deno.test("repairXingHeader", () => {
+  const plain = frames(5, 0xf3, 0x44, 96);
+  assertEquals(repairXingHeader(plain), plain);
+  assertEquals(repairXingHeader(new Uint8Array(3)).length, 3);
+  // An "Info" tag with the byte count only.
+  const info = frames(5, 0xf3, 0x44, 96);
+  info.set([0x49, 0x6e, 0x66, 0x6f, 0, 0, 0, 2], 13);
+  const repaired = repairXingHeader(info);
+  assertEquals(new DataView(repaired.buffer).getUint32(21), 480);
+  // A correct frame count is kept.
+  const right = frames(5, 0xf3, 0x44, 96);
+  right.set([0x58, 0x69, 0x6e, 0x67, 0, 0, 0, 1, 0, 0, 0, 4], 13);
+  assertEquals(new DataView(repairXingHeader(right).buffer).getUint32(21), 4);
+});
+
+Deno.test("speech duration checks", () => {
+  assertEquals(audioSeconds(new Uint8Array(48_044), "wav"), 1);
+  assertEquals(audioSeconds(new Uint8Array(10), "wav"), 0);
+  assert(isSpeechTooShort(1, 82));
+  assert(!isSpeechTooShort(4.7, 82));
+  assert(!isSpeechTooShort(0, 10));
 });

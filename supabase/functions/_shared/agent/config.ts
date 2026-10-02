@@ -1,6 +1,7 @@
 // Models of the voice agent, configurable with Supabase secrets (no app
-// release needed). The defaults are provisional: the owner chooses them
-// from the benchmark (docs/plans/2026-10-01-voix-et-agent-ia.md).
+// release needed). Defaults = the cheapest options of the benchmark for the
+// test phase (owner decision, 2026-10-02), to reassess afterwards
+// (docs/plans/2026-10-01-voix-et-agent-ia.md).
 
 export interface AgentModels {
   stt: string;
@@ -10,9 +11,10 @@ export interface AgentModels {
 }
 
 export const DEFAULT_MODELS: AgentModels = {
-  stt: "mistralai/voxtral-mini-transcribe",
-  agent: "anthropic/claude-haiku-4.5",
-  tts: "google/gemini-3.8-flash-lite-tts",
+  stt: "openai/whisper-large-v3-turbo",
+  agent: "google/gemini-3.5-flash-lite",
+  tts: "hexgrad/kokoro-82m",
+  // The voice of the TTS model (`defaultVoice`): ff_siwis for Kokoro.
   ttsVoice: undefined,
 };
 

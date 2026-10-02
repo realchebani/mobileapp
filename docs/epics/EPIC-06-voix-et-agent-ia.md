@@ -1,7 +1,7 @@
 # EPIC-06 · Voix et agent IA
 
 **Objectif** : permettre au vendeur de répondre au tunnel à la voix, avec un agent qui pose les questions et remplit le dossier (audit vocal V4, « Parlez librement » V6, micro de la barre d'action), en gardant toujours l'équivalent à l'écran.
-**Statut** : 🚧 En cours — banc d'essai fait, chaîne STT → agent → TTS codée et déployée (Edge Functions), écrans V4 / V6 codés ; migration `agent_conversations` écrite mais **pas encore poussée** (à valider), choix des modèles par défaut à faire par le porteur de projet.
+**Statut** : 🚧 En cours — banc d'essai fait, chaîne STT → agent → TTS codée et déployée (Edge Functions), écrans V4 / V6 codés ; migration `agent_conversations` écrite mais **pas encore poussée** (à valider), modèles par défaut = les moins chers pour la phase de test (Whisper Turbo, Gemini 3.5 Flash-Lite, Kokoro), à réévaluer ensuite.
 
 Décisions : IA via OpenRouter (clé uniquement en secret Supabase) ; modèles STT / agent / TTS **configurables côté serveur** (`OPENROUTER_MODEL_STT`, `OPENROUTER_MODEL_AGENT`, `OPENROUTER_MODEL_TTS`, `OPENROUTER_TTS_VOICE`) ; **consentement explicite** au premier usage du micro ; mode écran toujours disponible. Plan et banc d'essai : `docs/plans/2026-10-01-voix-et-agent-ia.md`.
 
@@ -21,6 +21,7 @@ Légende : ✅ fait · 🚧 partiel · 📋 à faire
 - ✅ Seules les informations dites sont retenues : citation littérale vérifiée côté serveur, confiance ≥ 0,7, sinon pastille « … ? ».
 - ✅ Validation serveur avec les règles des écrans (codes, bornes, toiture ≥ construction, chambres ≤ pièces, séjour ≤ surface) ; une valeur invalide n'est jamais renvoyée à l'app.
 - ✅ Une question à la fois, en vouvoyant (consignes de l'agent).
+- ✅ Réponse illisible de l'agent : une nouvelle tentative, puis « Pouvez-vous répéter ? » sans rien retenir.
 - 🚧 Dossier envoyé : refus serveur (409) et verrou de l'app (redirection V8) ; RLS des nouvelles tables écrite, migration pas encore poussée.
 - ✅ Aucune donnée d'identité envoyée (colonnes lues en liste blanche, note secrète masquée dans le prompt).
 
@@ -29,7 +30,7 @@ Légende : ✅ fait · 🚧 partiel · 📋 à faire
 - ✅ Réplique lue (TTS configurable), texte toujours affiché.
 - ✅ Micro coupé pendant que l'agent parle, écoute relancée ensuite.
 - ✅ « Couper la voix de l'agent » (préférence mémorisée sur l'appareil).
-- ✅ Une panne de la voix n'interrompt pas la conversation.
+- ✅ Une panne de la voix n'interrompt pas la conversation ; un audio tronqué (trop court pour le texte) est remplacé par la réplique en texte seul.
 
 ### US-06.4 · Audit technique à la voix (V4) — 🚧
 *En tant que vendeur, je veux faire l'audit technique en conversation.*

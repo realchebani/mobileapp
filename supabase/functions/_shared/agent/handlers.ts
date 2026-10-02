@@ -15,12 +15,26 @@ import {
   OpenRouterError,
   toBase64,
 } from "../openrouter/client.ts";
-import { pcmToWav, speechFormatFor } from "../openrouter/audio.ts";
+import {
+  audioSeconds,
+  isSpeechTooShort,
+  pcmToWav,
+  repairXingHeader,
+  speechFormatFor,
+} from "../openrouter/audio.ts";
 import { type AgentModels, agentProvider } from "./config.ts";
 import { type AgentDb, LIMITS, type PropertyRow, startOfDay } from "./db.ts";
 import { buildMessages } from "./prompt.ts";
 import { type AgentStep, outputSchema } from "./schema.ts";
-import { parseModelOutput, validateTurn } from "./validate.ts";
+import {
+  type ModelOutput,
+  parseModelOutput,
+  validateTurn,
+} from "./validate.ts";
+
+/** Reply when the agent's answer stays unreadable after a retry. */
+export const ASK_TO_REPEAT =
+  "Pardon, je n’ai pas bien saisi. Pouvez-vous répéter, s’il vous plaît ?";
 
 export interface Deps {
   db: AgentDb | null;
@@ -221,39 +235,70 @@ export async function handleTurn(
     };
     const currentYear = now.getUTCFullYear();
 
-    let chat;
-    try {
-      chat = await deps.openrouter.chat({
-        model: deps.models.agent,
-        messages: buildMessages({
-          step,
-          values: property,
-          transcript: turn.transcript,
-          history,
-          lifestyleLabels,
-          currentYear,
-        }),
-        jsonSchema: { name: "agent_turn", schema: outputSchema(step) },
-        maxTokens: 1500,
-        temperature: 0,
-        provider: agentProvider(deps.models.agent),
-      });
-    } catch (error) {
-      await db.updateTurn(turn.id, { error: "agent_failed" }).catch(() => {});
-      console.error(error instanceof Error ? error.message : "agent error");
-      return failure("upstream", 502, { turn_id: turn.id });
+    const messages = buildMessages({
+      step,
+      values: property,
+      transcript: turn.transcript,
+      history,
+      lifestyleLabels,
+      currentYear,
+    });
+    // A truncated or invalid JSON answer (seen with Gemini Flash-Lite) is
+    // asked again once, with more room; then the seller is asked to repeat.
+    let output: ModelOutput | null = null;
+    let ms = 0;
+    let tokensIn = 0;
+    let tokensOut = 0;
+    let cost = 0;
+    for (const maxTokens of [1500, 3000]) {
+      let chat;
+      try {
+        chat = await deps.openrouter.chat({
+          model: deps.models.agent,
+          messages,
+          jsonSchema: { name: "agent_turn", schema: outputSchema(step) },
+          maxTokens,
+          temperature: 0,
+          provider: agentProvider(deps.models.agent),
+        });
+      } catch (error) {
+        await db.updateTurn(turn.id, { error: "agent_failed" }).catch(() => {});
+        console.error(error instanceof Error ? error.message : "agent error");
+        return failure("upstream", 502, { turn_id: turn.id });
+      }
+      ms += chat.ms;
+      tokensIn += chat.usage.promptTokens ?? 0;
+      tokensOut += chat.usage.completionTokens ?? 0;
+      cost += chat.usage.cost ?? 0;
+      try {
+        output = parseModelOutput(chat.content);
+        break;
+      } catch {
+        console.error("agent: invalid JSON output");
+      }
     }
-
-    let output;
-    try {
-      output = parseModelOutput(chat.content);
-    } catch {
+    if (!output) {
       await db.updateTurn(turn.id, {
+        reply_fr: ASK_TO_REPEAT,
         error: "invalid_output",
         agent_model: deps.models.agent,
-        agent_ms: chat.ms,
+        tokens_in: tokensIn,
+        tokens_out: tokensOut,
+        agent_ms: ms,
+        cost_usd: (turn.cost_usd ?? 0) + cost,
       }).catch(() => {});
-      return failure("upstream", 502, { turn_id: turn.id });
+      return json({
+        turn_id: turn.id,
+        transcript: turn.transcript,
+        reply_fr: ASK_TO_REPEAT,
+        patch: {},
+        facts: [],
+        pending: [],
+        lifestyle_items: [],
+        suggestions: {},
+        next_field: null,
+        done: false,
+      });
     }
     const validated = validateTurn(output, {
       step,
@@ -270,10 +315,10 @@ export async function handleTurn(
       reply_fr: reply,
       extracted: { ...validated, done, next_field: nextField },
       agent_model: deps.models.agent,
-      tokens_in: chat.usage.promptTokens,
-      tokens_out: chat.usage.completionTokens,
-      agent_ms: chat.ms,
-      cost_usd: (turn.cost_usd ?? 0) + (chat.usage.cost ?? 0),
+      tokens_in: tokensIn,
+      tokens_out: tokensOut,
+      agent_ms: ms,
+      cost_usd: (turn.cost_usd ?? 0) + cost,
     });
     await db.updateSession(session.id, {
       next_field: nextField?.slice(0, 60) ?? null,
@@ -334,7 +379,15 @@ export async function handleSpeech(
       return upstreamError(error);
     }
     await db.updateTurn(turn.id, { tts_model: model, tts_ms: speech.ms });
-    const audio = format === "pcm" ? pcmToWav(speech.audio) : speech.audio;
+    const audio = format === "pcm"
+      ? pcmToWav(speech.audio)
+      : repairXingHeader(speech.audio);
+    const seconds = audioSeconds(audio, format === "pcm" ? "wav" : "mp3");
+    // Truncated speech: the app shows the reply as text only.
+    if (isSpeechTooShort(seconds, turn.reply_fr.length)) {
+      console.error(`agent-speech: ${seconds.toFixed(2)} s is too short`);
+      return failure("speech_too_short", 422);
+    }
     return new Response(audio as BodyInit, {
       headers: {
         "Content-Type": "application/octet-stream",

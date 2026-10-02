@@ -601,7 +601,7 @@
   "voiceConsentTitle": "Answer by voice",
   "voiceConsentIntro": "Before turning on the microphone, here is what happens to your voice.",
   "voiceConsentProvidersTitle": "Who processes your voice?",
-  "voiceConsentProviders": "Your voice is sent to OpenRouter, which passes it to AI model providers: Mistral AI for transcription, Anthropic or Google to understand your answers and for the agent’s voice. This processing may take place outside the European Union.",
+  "voiceConsentProviders": "Your voice is sent to OpenRouter, which passes it to AI model providers (currently OpenAI Whisper for transcription, Google Gemini to understand your answers, Kokoro for the agent’s voice). This processing may take place outside the European Union, notably in the United States.",
   "voiceConsentRetentionTitle": "What is kept",
   "voiceConsentRetention": "The audio recording is never kept, neither on your phone nor on our servers. The transcribed text and the answers kept are stored with your dossier.",
   "voiceConsentIdentity": "No identity data (name, phone, e-mail, address) is sent to these providers.",
