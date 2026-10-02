@@ -5,6 +5,8 @@ Journal des arbitrages du porteur de projet, du plus récent au plus ancien. Cha
 | Date | Décision | Contexte |
 |---|---|---|
 | 2026-10-02 | **À valider** : avis de valeur et notifications dans un nouveau paquet `sale_repository` ; fiche technique de V9b saisie par l’expert (avec provenance) plutôt que déduite du dossier ; « Mettre en vente » visible avec un message « bientôt » jusqu’à EPIC-08 | EPIC-07 |
+| 2026-10-01 | Organisation : **une branche et une PR par epic** (worktrees séparés) | — |
+| 2026-10-01 | **Paiements : plus tard** (aucun paiement en v1) ; **mandat : signature de test** (case à cocher + signature dessinée, tests internes uniquement, montage juridique à faire valider avant tout vrai vendeur) | EPIC-08 |
 | 2026-10-01 | **Certification** : **mini back-office web** pour les experts, utilisable par un **expert embauché** (rôle dédié, accès restreint, confidentialité) et par des **experts partenaires** (saisie directe ou rapports saisis par l'équipe) | EPIC-12 (à créer) |
 | 2026-10-01 | Rapport V9b **structuré dans l'app + PDF** facultatif ; **barre d'onglets dès le début** (Mon bien · Visites · Coffre-fort · Compte, déconnexion dans Compte) ; **notifications dans l'app uniquement** (promesse d'e-mail retirée de V8) | EPIC-07 |
 | 2026-10-01 | Estimation : **sans ajustements en v1** (prix m² du secteur × surface habitable) ; rue d'une vente comparable affichée **seulement si ≥ 3 ventes** dans la rue | EPIC-05 |
