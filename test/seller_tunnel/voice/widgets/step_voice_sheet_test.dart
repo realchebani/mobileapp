@@ -62,6 +62,10 @@ void main() {
     Widget? extra,
     Stream<VoiceConversationState>? states,
   }) async {
+    final view = tester.view
+      ..physicalSize = const Size(390, 1600)
+      ..devicePixelRatio = 1;
+    addTearDown(view.reset);
     if (states != null) {
       whenListen(conversation, states, initialState: state);
     } else {

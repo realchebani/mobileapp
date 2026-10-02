@@ -211,4 +211,24 @@ void main() {
       );
     });
   });
+
+  test('an undo replays the later turns on the same rooms (ids)', () async {
+    final cubit = build();
+    // R1 is the living room, then (once it is deleted) the bedroom.
+    await cubit.voiceTurnApplied(
+      _turn('t1', [_op(AgentEntityOp.delete, 'R1')]),
+    );
+    await cubit.voiceTurnApplied(
+      _turn('t2', [
+        _op(AgentEntityOp.update, 'R1', {'area_m2': 13}),
+      ]),
+    );
+    expect(cubit.state.rooms.single.areaM2, 13);
+    cubit.undoVoiceTurn('t1');
+    expect(cubit.state.rooms.map((r) => (r.id, r.areaM2)), [
+      ('r1', 38.0),
+      ('r2', 13.0),
+    ]);
+    await cubit.close();
+  });
 }

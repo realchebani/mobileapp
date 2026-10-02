@@ -388,6 +388,12 @@ void main() {
       expect(withoutA.patch, {'b': 2});
       expect(withoutA.facts.single.field, 'b');
       expect(withoutA.entityOps, hasLength(2));
+      final resolved = turn.withEntityOps([
+        turn.entityOps.last.withTarget('id:r1'),
+      ]);
+      expect(resolved.entityOps.single.target, 'id:r1');
+      expect(resolved.entityOps.single.label, 'S');
+      expect(resolved.patch, turn.patch);
       final withoutOp = turn.without('op:0');
       expect(withoutOp.patch, {'a': 1, 'b': 2});
       expect(withoutOp.entityOps.single.target, 'R1');

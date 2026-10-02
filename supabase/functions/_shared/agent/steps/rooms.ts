@@ -5,9 +5,10 @@
 import type { EntityDef, StepSchema } from "./types.ts";
 
 export const ROOM_LEVELS = {
+  // The app's labels (surfacesLevel…).
   sous_sol: "Sous-sol",
-  rdc: "RDC",
-  etage_1: "Étage 1",
+  rdc: "Rez-de-chaussée",
+  etage_1: "Étage",
   etage_2: "Étage 2",
   combles: "Combles",
 };

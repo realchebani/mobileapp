@@ -170,6 +170,18 @@ final class AgentEntityChange extends Equatable {
   /// Whether this creates a new entity.
   bool get isNew => target == 'new';
 
+  /// This change aimed at [target] (a stable id instead of a short
+  /// reference).
+  AgentEntityChange withTarget(String target) => AgentEntityChange(
+    entity: entity,
+    op: op,
+    target: target,
+    label: label,
+    values: values,
+    changedLabel: changedLabel,
+    corrected: corrected,
+  );
+
   @override
   List<Object?> get props => [
     entity,
@@ -381,6 +393,25 @@ final class AgentTurn extends Equatable {
       suggestions.isNotEmpty ||
       entityOps.isNotEmpty ||
       confirmations.isNotEmpty;
+
+  /// This turn with [ops] as its entity operations (e.g. short
+  /// references resolved to stable ids by the form).
+  AgentTurn withEntityOps(List<AgentEntityChange> ops) => AgentTurn(
+    turnId: turnId,
+    transcript: transcript,
+    reply: reply,
+    patch: patch,
+    facts: facts,
+    pending: pending,
+    lifestyleItems: lifestyleItems,
+    suggestions: suggestions,
+    entityOps: ops,
+    confirmations: confirmations,
+    outOfStep: outOfStep,
+    corrections: corrections,
+    nextField: nextField,
+    done: done,
+  );
 
   /// This turn without the answer [key]: a column of [patch] (its fact
   /// too) or `op:<index>` of [entityOps] (the seller undid that pill).

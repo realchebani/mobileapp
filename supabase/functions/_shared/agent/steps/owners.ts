@@ -69,6 +69,7 @@ export function ownersStep(coOwnerNames: boolean): StepSchema {
       ? [
         'Note les prénoms et noms des co-propriétaires ("co_owner", opération create) tels qu’ils sont entendus, sans corriger l’orthographe ; un nom par champ, la citation exacte de chacun.',
         "Ne demande jamais de téléphone, d’e-mail, d’adresse ni de date de naissance : ils se saisissent à l’écran.",
+        'Ne répète JAMAIS un prénom ni un nom dans "reply_fr" : dis « le co-propriétaire » (le vendeur confirme les noms à l’écran).',
       ]
       : [
         "Ne note aucun nom de personne ; ne demande jamais de téléphone, d’e-mail ni d’adresse.",

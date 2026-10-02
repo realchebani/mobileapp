@@ -120,6 +120,13 @@ class VoiceConversationCubit extends Cubit<VoiceConversationState> {
   /// Turns applied to the form in this session, oldest first.
   final List<String> _appliedTurnIds = [];
 
+  /// "Terminer" was asked: no more listening; the turn in flight is
+  /// applied first.
+  bool _finishing = false;
+
+  /// A recording is being transcribed, answered or applied.
+  bool _inFlight = false;
+
   /// Turns the seller undid, reported with the next agent call.
   final List<String> _undone = [];
 
@@ -134,7 +141,7 @@ class VoiceConversationCubit extends Cubit<VoiceConversationState> {
   }
 
   Future<void> _listen() async {
-    if (isClosed) return;
+    if (isClosed || _finishing) return;
     if (_paused) {
       emit(state.copyWith(phase: VoicePhase.paused));
       return;
@@ -176,6 +183,7 @@ class VoiceConversationCubit extends Cubit<VoiceConversationState> {
   /// "J’ai fini" (or the detected end of speech): sends the recording.
   Future<void> finishSpeaking() async {
     if (state.phase != VoicePhase.listening) return;
+    _inFlight = true;
     emit(state.copyWith(phase: VoicePhase.transcribing));
     await _levels?.cancel();
     _levels = null;
@@ -217,18 +225,23 @@ class VoiceConversationCubit extends Cubit<VoiceConversationState> {
   Future<bool> _local(String transcript) async {
     if (_form == null) return false;
     final command = LocalVoiceCommand.match(transcript);
-    final waiting = state.confirmations.firstOrNull;
+    // The latest question asked (older ones were dropped).
+    final waiting = state.confirmations.lastOrNull;
     switch (command) {
       case LocalVoiceCommand.yes when waiting != null:
+        _inFlight = false;
         await confirm(waiting);
       case LocalVoiceCommand.no when waiting != null:
+        _inFlight = false;
         await reject(waiting);
       case LocalVoiceCommand.cancel:
+        _inFlight = false;
         final undone = _appliedTurnIds.isNotEmpty;
         if (undone) undoTurn(_appliedTurnIds.last);
         _say(undone ? _localReplies.cancelled : _localReplies.nothingToCancel);
         await _listen();
       case LocalVoiceCommand.finish:
+        _inFlight = false;
         await finish();
       case LocalVoiceCommand.yes || LocalVoiceCommand.no || null:
         return false;
@@ -332,8 +345,9 @@ class VoiceConversationCubit extends Cubit<VoiceConversationState> {
         applied: _form == null
             ? state.applied
             : [...state.applied, ..._pillsOf(turn)],
+        // Only the questions of the latest turn are pending: a spoken
+        // "oui" answers the last one asked.
         confirmations: [
-          ...state.confirmations,
           for (final confirmation in turn.confirmations)
             VoicePendingConfirmation(
               turnId: turn.turnId,
@@ -345,7 +359,12 @@ class VoiceConversationCubit extends Cubit<VoiceConversationState> {
       ),
     );
     if (_speakReplies) await _speak(turn.turnId);
+    _inFlight = false;
     if (isClosed) return;
+    if (_finishing) {
+      await _completeFinish();
+      return;
+    }
     if (turn.done && _stopWhenDone) {
       emit(state.copyWith(phase: VoicePhase.done));
       return;
@@ -394,6 +413,8 @@ class VoiceConversationCubit extends Cubit<VoiceConversationState> {
   /// "Non" to [item]: nothing changes (the summary resumes the dictation).
   Future<void> reject(VoicePendingConfirmation item) async {
     if (isClosed || !state.confirmations.contains(item)) return;
+    // "Non" to the summary: the dictation goes on.
+    if (item.isSummary) _finishing = false;
     emit(
       state.copyWith(
         confirmations: [
@@ -463,14 +484,21 @@ class VoiceConversationCubit extends Cubit<VoiceConversationState> {
 
   /// "Terminer" / "terminé": the rooms dictation asks the spoken summary
   /// first ("9 pièces pour 115 m² habitables. Est-ce correct ?"); the
-  /// other sheets end at once.
+  /// other sheets end at once. A turn in flight is applied first; the
+  /// microphone never listens again afterwards.
   Future<void> finish() async {
+    if (_finishing) return;
+    _finishing = true;
+    if (_inFlight) return;
+    await _completeFinish();
+  }
+
+  Future<void> _completeFinish() async {
     final summary = _summary;
     await _stopListening();
-    if (summary == null || isClosed) {
-      if (!isClosed) {
-        emit(state.copyWith(phase: VoicePhase.done, finished: true));
-      }
+    if (isClosed) return;
+    if (summary == null) {
+      emit(state.copyWith(phase: VoicePhase.done, finished: true));
       return;
     }
     emit(state.copyWith(phase: VoicePhase.thinking));
@@ -491,21 +519,25 @@ class VoiceConversationCubit extends Cubit<VoiceConversationState> {
           ...state.messages,
           VoiceMessage(text: turn.reply, fromAgent: true),
         ],
+        // The summary is the only question left (shown once, in the
+        // agent's bubble; the card only holds Oui / Non).
         confirmations: [
-          ...state.confirmations,
           VoicePendingConfirmation(
             turnId: turn.turnId,
-            confirmation: AgentConfirmation(
+            confirmation: const AgentConfirmation(
               id: VoicePendingConfirmation.summaryId,
               reason: AgentConfirmationReason.mediumConfidence,
-              label: turn.reply,
+              label: '',
             ),
           ),
         ],
       ),
     );
     await _speak(turn.turnId);
-    await _listen();
+    // Waits for Oui / Non (tapped): nothing is listened to any more.
+    if (!isClosed && state.phase == VoicePhase.speaking) {
+      emit(state.copyWith(phase: VoicePhase.idle));
+    }
   }
 
   Future<void> _stopListening() async {
@@ -542,7 +574,13 @@ class VoiceConversationCubit extends Cubit<VoiceConversationState> {
   };
 
   void _fail(VoiceError error) {
+    _inFlight = false;
     if (isClosed) return;
+    // "Terminer" was asked meanwhile: the sheet ends anyway.
+    if (_finishing) {
+      unawaited(_completeFinish());
+      return;
+    }
     emit(state.copyWith(phase: VoicePhase.idle, error: () => error));
   }
 

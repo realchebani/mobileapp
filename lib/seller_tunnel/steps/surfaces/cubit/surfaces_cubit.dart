@@ -233,9 +233,22 @@ class SurfacesCubit extends Cubit<SurfacesState>
     );
   }
 
+  /// R1… become the room ids (`id:<id>`).
+  @override
+  AgentTurn resolveVoiceTurn(SurfacesState state, AgentTurn turn) {
+    final refs = _byRef(state.rooms);
+    return turn.withEntityOps([
+      for (final op in turn.entityOps)
+        if (refs[op.target]?.id case final id?) op.withTarget('id:$id') else op,
+    ]);
+  }
+
   @override
   SurfacesState applyVoiceTurn(SurfacesState state, AgentTurn turn) {
-    final refs = _byRef(state.rooms);
+    final refs = {
+      ..._byRef(state.rooms),
+      for (final room in state.rooms) 'id:${room.id}': room,
+    };
     var rooms = [...state.rooms];
     final dictated = {...state.dictated};
     var last = state.lastDictatedId;

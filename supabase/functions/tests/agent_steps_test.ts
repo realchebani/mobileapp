@@ -126,6 +126,7 @@ Deno.test("V3: previous estimates (entity)", () => {
           target: "E1",
           target_quote: "l’estimation de 280 000",
         }),
+        // Not said: refused before looking for the estimate.
         op({ entity: "previous_estimate", op: "update", target: "E9", fields: [] }),
         op({
           entity: "previous_estimate",
@@ -150,7 +151,7 @@ Deno.test("V3: previous estimates (entity)", () => {
   ]);
   assertEquals(
     result.rejected.map((r) => r.reason),
-    ["unknown_target", "out_of_range"],
+    ["quote_not_found", "out_of_range"],
   );
 });
 

@@ -50,7 +50,7 @@ final class OwnersState extends Equatable {
   final OwnershipType? submittedOwnershipType;
 
   /// What was answered by voice on this visit ("Dicté"): the ownership
-  /// type and the dictated co-owners (`co_owner:<index>`).
+  /// type and the dictated co-owners (`co_owner:<full name>`).
   final Set<String> dictated;
 
   bool get isMultiple => ownershipType == OwnershipType.multiple;

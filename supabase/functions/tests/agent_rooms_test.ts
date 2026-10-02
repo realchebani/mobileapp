@@ -76,7 +76,7 @@ Deno.test("a dictated room with its five values and a description (US-14.3)", ()
   });
   assertEquals(
     created.label_fr,
-    `Séjour · RDC · 38${NB}m² · Parquet chêne · Double vitrage`,
+    `Séjour · Rez-de-chaussée · 38${NB}m² · Parquet chêne · Double vitrage`,
   );
 });
 
@@ -193,12 +193,12 @@ Deno.test("existing rooms: designation, ambiguity, merge, delete", () => {
     ctx(transcript, rooms),
   );
   assertEquals(result.entity_ops.map((o) => [o.op, o.target, o.values, o.label_fr]), [
-    ["update", "R1", { area_m2: 40 }, `Séjour · RDC · 40${NB}m² (corrigé)`],
+    ["update", "R1", { area_m2: 40 }, `Séjour · Rez-de-chaussée · 40${NB}m² (corrigé)`],
     [
       "update",
       "R3",
       { floor_covering: "carrelage" },
-      `Chambre 2 · Étage 1 · 11${NB}m² · Carrelage`,
+      `Chambre 2 · Étage · 11${NB}m² · Carrelage`,
     ],
   ]);
   assertEquals(result.entity_ops[0].changed_fr, `Modifiée${NB}: 38 → 40${NB}m²`);
@@ -313,4 +313,39 @@ Deno.test("room helpers", () => {
   assertEquals(designate("R9", "la véranda", rooms, null).ok, false);
   assertEquals(designate("R3", "la deuxième chambre", rooms, null).ok, true);
   assertEquals(designate("R2", "la deuxième chambre", rooms, null).ok, false);
+});
+
+Deno.test("designation words must be said; copies are whitelisted; inputs kept", () => {
+  const rooms = [
+    room("R1", "Séjour", 38, { floor_covering: "parquet_chene", ceiling_height_m: 2.5 }),
+    room("R2", "Bureau", 9),
+  ];
+  const before = JSON.stringify(rooms);
+  const result = validateTurn(
+    output({
+      entity_ops: [
+        op({
+          op: "update",
+          target: "R1",
+          target_quote: "le salon",
+          fields: [f("area_m2", "40", "40 m²")],
+        }),
+        op({
+          op: "update",
+          target: "R2",
+          target_quote: "le bureau",
+          fields: [f("area_m2", "10", "fait 10 m²")],
+          copy_from: "R1",
+          copy_fields: ["floor_covering", "area_m2", "name"],
+          copy_quote: "même sol que le séjour",
+        }),
+      ],
+    }),
+    ctx("le séjour fait 40 m², le bureau fait 10 m², même sol que le séjour", rooms),
+  );
+  assertEquals(result.rejected.map((r) => [r.field, r.reason]), [["room", "quote_not_found"]]);
+  assertEquals(result.entity_ops.map((o) => o.values), [
+    { area_m2: 10, floor_covering: "parquet_chene" },
+  ]);
+  assertEquals(JSON.stringify(rooms), before);
 });

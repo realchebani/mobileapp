@@ -266,6 +266,18 @@ class PropertyContextCubit extends Cubit<PropertyContextState>
     ],
   );
 
+  /// E1… become the card keys (`key:<key>`).
+  @override
+  AgentTurn resolveVoiceTurn(PropertyContextState state, AgentTurn turn) {
+    final refs = {
+      for (final (i, draft) in state.estimates.indexed) 'E${i + 1}': draft.key,
+    };
+    return turn.withEntityOps([
+      for (final op in turn.entityOps)
+        if (refs[op.target] case final key?) op.withTarget('key:$key') else op,
+    ]);
+  }
+
   @override
   PropertyContextState applyVoiceTurn(
     PropertyContextState state,
@@ -319,6 +331,7 @@ class PropertyContextCubit extends Cubit<PropertyContextState>
     // Estimate cards (E1… in card order, as sent).
     final refs = {
       for (final (i, draft) in state.estimates.indexed) 'E${i + 1}': draft,
+      for (final draft in state.estimates) 'key:${draft.key}': draft,
     };
     var estimates = [...next.estimates];
     for (final op in turn.entityOps) {
@@ -328,8 +341,9 @@ class PropertyContextCubit extends Cubit<PropertyContextState>
       final month = DateTime.tryParse('${values['estimated_month']}');
       final agency = values['agency_name'] as String?;
       EstimateDraft filled(EstimateDraft draft) => EstimateDraft(
-        // A new key: the card shows the dictated values.
-        key: _nextKey++,
+        // The same key: a replay after an undo still finds the card (the
+        // card shows the new values itself).
+        key: draft.key,
         id: draft.id,
         price: price is num ? frenchNumber(price.toInt()) : draft.price,
         month: month == null

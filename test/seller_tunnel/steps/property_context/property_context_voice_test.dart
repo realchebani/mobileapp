@@ -168,8 +168,8 @@ void main() {
       expect(estimates, hasLength(1));
       expect(estimates.single.agency, 'Orpi');
       expect(estimates.single.price, '300 000');
-      // A new card key: the card shows the dictated values.
-      expect(estimates.single.key, isNot(firstKey));
+      // The same card key: an undo replay still finds the card.
+      expect(estimates.single.key, firstKey);
       await cubit.close();
     });
 
@@ -229,5 +229,69 @@ void main() {
       expect(find.text('Dicté'), findsOneWidget);
       expect(mocks.lastContext()!.draft['purchase_year'], 2010);
     });
+  });
+
+  test('an undo replays the later turns on the same cards (keys)', () async {
+    final cubit = build(
+      estimates: const [
+        PreviousEstimate(id: 'a', propertyId: 'p', priceEur: 300000),
+        PreviousEstimate(id: 'b', propertyId: 'p', priceEur: 280000),
+      ],
+    );
+    await cubit.voiceTurnApplied(
+      _turn(ops: [_estimate(AgentEntityOp.delete, 'E1')]),
+    );
+    await cubit.voiceTurnApplied(
+      AgentTurn(
+        turnId: 't2',
+        transcript: '',
+        reply: '',
+        entityOps: [
+          _estimate(AgentEntityOp.update, 'E1', {'agency_name': 'Orpi'}),
+        ],
+      ),
+    );
+    cubit.undoVoiceTurn('t');
+    expect(cubit.state.estimates.map((e) => (e.id, e.agency)), [
+      ('a', ''),
+      ('b', 'Orpi'),
+    ]);
+    await cubit.close();
+  });
+
+  testWidgets('an estimate card shows the dictated values', (tester) async {
+    final view = tester.view
+      ..physicalSize = const Size(390, 2400)
+      ..devicePixelRatio = 1;
+    addTearDown(view.reset);
+    final cubit = build(
+      estimates: const [
+        PreviousEstimate(id: 'a', propertyId: 'p', priceEur: 300000),
+      ],
+    );
+    await tester.pumpTunnelPage(
+      BlocProvider.value(value: cubit, child: const PropertyContextView()),
+      sellerTunnelCubit: mockSellerTunnelCubit(
+        const SellerTunnelState(
+          status: SellerTunnelStatus.success,
+          property: _property,
+        ),
+      ),
+    );
+    await cubit.voiceTurnApplied(
+      _turn(
+        ops: [
+          _estimate(AgentEntityOp.update, 'E1', {
+            'price_eur': 310000,
+            'estimated_month': '2024-03-01',
+            'agency_name': 'Orpi',
+          }),
+        ],
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('310\u00a0000'), findsOneWidget);
+    expect(find.text('03/2024'), findsOneWidget);
+    expect(find.text('Orpi'), findsOneWidget);
   });
 }

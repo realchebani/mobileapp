@@ -380,6 +380,34 @@ function withoutIdentity(validated: ValidatedTurn): ValidatedTurn {
   };
 }
 
+/** [reply] without the names of people said in [transcript] or extracted
+ * by the model (V1): they are replaced by « … ». */
+export function redactNames(reply: string, output: ModelOutput, transcript: string): string {
+  const names = new Set<string>();
+  for (const op of output.entity_ops ?? []) {
+    for (const field of op.fields) {
+      for (const word of field.value.split(/[\s'’-]+/)) {
+        if (word.length >= 2) names.add(word);
+      }
+    }
+  }
+  // Capitalised words of the transcript, except a sentence start.
+  transcript.split(/\s+/).forEach((word, i, all) => {
+    const clean = word.replace(/^[^\p{L}]+|[^\p{L}]+$/gu, "");
+    const sentenceStart = i === 0 || /[.!?…]$/.test(all[i - 1]);
+    if (!sentenceStart && clean.length >= 2 && /^\p{Lu}/u.test(clean)) names.add(clean);
+  });
+  let redacted = reply;
+  for (const name of names) {
+    const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    redacted = redacted.replace(
+      new RegExp(`(?<![\\p{L}])${escaped}(?![\\p{L}])`, "giu"),
+      "…",
+    );
+  }
+  return redacted;
+}
+
 function emptyAnswer(turn: { id: string; transcript: string }, reply: string) {
   return {
     turn_id: turn.id,
@@ -503,6 +531,16 @@ export async function handleTurn(
       if (!reserved) return failure("quota", 429);
       turn = reserved;
     }
+    // A V1 transcript wiped after a failed agent call can never be sent to
+    // the model: the seller is asked to repeat.
+    if (turn.transcript === IDENTITY_REMOVED) {
+      await db.updateTurn(turn.id, {
+        reply_fr: ASK_TO_REPEAT,
+        extracted: { mode: "identity_retry" },
+        error: null,
+      });
+      return json(emptyAnswer({ id: turn.id, transcript: "" }, ASK_TO_REPEAT));
+    }
     // A V1 transcript (names) is never kept, whatever happens next.
     const forget = identity ? { transcript: IDENTITY_REMOVED } : {};
 
@@ -610,7 +648,8 @@ export async function handleTurn(
     const done = output.done;
     const nextField = output.next_field === "none" ? null : output.next_field;
     await db.updateTurn(turn.id, {
-      reply_fr: reply,
+      // V1: the journal (and the spoken reply) never holds a name.
+      reply_fr: identity ? redactNames(reply, output, turn.transcript) : reply,
       extracted: {
         ...(identity ? withoutIdentity(validated) : validated),
         done,

@@ -40,12 +40,18 @@ mixin VoiceFormMixin<S> on Cubit<S> implements VoiceForm {
   /// Whether a turn can change the draft now (not while saving).
   bool get acceptsVoice => true;
 
+  /// [turn] with its short references (R1, E2…, valid for the draft the
+  /// agent saw: [state]) turned into stable ids, so that replaying it
+  /// after an undo still aims at the same entities.
+  AgentTurn resolveVoiceTurn(S state, AgentTurn turn) => turn;
+
   @override
   Future<void> voiceTurnApplied(AgentTurn turn) async {
     if (isClosed || !acceptsVoice) return;
     final before = state;
-    _voiceTurns.add((turn, before));
-    emit(applyVoiceTurn(before, turn));
+    final resolved = resolveVoiceTurn(before, turn);
+    _voiceTurns.add((resolved, before));
+    emit(applyVoiceTurn(before, resolved));
   }
 
   @override

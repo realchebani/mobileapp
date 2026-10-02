@@ -82,7 +82,7 @@ void main() {
       expect(cubit.state.coOwners, const [
         OwnerDraft(firstName: 'Marc', lastName: 'Durand'),
       ]);
-      expect(cubit.state.dictated, {'ownership_type', 'co_owner:0'});
+      expect(cubit.state.dictated, {'ownership_type', 'co_owner:Marc Durand'});
       expect(cubit.voiceContext.coOwnersCount, 1);
       expect(cubit.acceptsVoice, isTrue);
       // The dictated co-owner still needs a phone number.

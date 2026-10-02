@@ -422,10 +422,13 @@ void main() {
     );
     final summary = cubit.state.confirmations.single;
     expect(summary.isSummary, isTrue);
-    expect(cubit.state.phase, VoicePhase.listening);
+    expect(summary.confirmation.label, isEmpty);
+    // Never listening again after "Terminer": Oui / Non are tapped.
+    expect(cubit.state.phase, VoicePhase.idle);
     // "non": the dictation goes on.
     await cubit.reject(summary);
     expect(cubit.state.finished, isFalse);
+    expect(cubit.state.phase, VoicePhase.listening);
     // "oui" to a new summary ends it.
     await cubit.finish();
     await cubit.confirm(cubit.state.confirmations.single);
@@ -462,5 +465,97 @@ void main() {
     await cubit.close();
     done.completeError(Exception('late'));
     await finishing;
+  });
+
+  test('a new turn replaces the pending questions; "oui" answers the '
+      'latest', () async {
+    transcripts = ['achetée en 2012', 'en fait un box', 'oui'];
+    final cubit = build();
+    await cubit.start();
+    await speak();
+    const latest = AgentConfirmation(
+      id: 'c1',
+      reason: AgentConfirmationReason.mediumConfidence,
+      label: 'Stationnement box ?',
+      patch: {'parking_kind': 'box'},
+    );
+    answerTurn(
+      const AgentTurn(
+        turnId: 't2',
+        transcript: 'en fait un box',
+        reply: 'Un box ?',
+        confirmations: [latest],
+      ),
+    );
+    await speak();
+    expect(cubit.state.confirmations, const [
+      VoicePendingConfirmation(turnId: 't2', confirmation: latest),
+    ]);
+    await speak(); // "oui"
+    expect(form.applied.last.patch, {'parking_kind': 'box'});
+    await cubit.close();
+  });
+
+  test('"Terminer" during a turn: the turn is applied, then the sheet '
+      'ends without listening again', () async {
+    final answer = Completer<AgentTurn>();
+    when(
+      () => agent.turn(
+        propertyId: any(named: 'propertyId'),
+        step: any(named: 'step'),
+        turnId: any(named: 'turnId'),
+        assetLabels: any(named: 'assetLabels'),
+        watchPointLabels: any(named: 'watchPointLabels'),
+        context: any(named: 'context'),
+        undoneTurnIds: any(named: 'undoneTurnIds'),
+      ),
+    ).thenAnswer((_) => answer.future);
+    final cubit = build();
+    await cubit.start();
+    unawaited(speak());
+    for (var i = 0; i < 20; i++) {
+      await Future<void>.delayed(Duration.zero);
+    }
+    expect(cubit.state.phase, VoicePhase.thinking);
+    await cubit.finish();
+    await cubit.finish(); // once
+    expect(cubit.state.finished, isFalse);
+    answer.complete(_turn);
+    for (var i = 0; i < 20; i++) {
+      await Future<void>.delayed(Duration.zero);
+    }
+    expect(form.applied, [_turn]);
+    expect(cubit.state.finished, isTrue);
+    verify(() => recorder.start()).called(1);
+    await cubit.close();
+  });
+
+  test('"Terminer" during a failing turn ends the sheet', () async {
+    final answer = Completer<AgentTurn>();
+    when(
+      () => agent.turn(
+        propertyId: any(named: 'propertyId'),
+        step: any(named: 'step'),
+        turnId: any(named: 'turnId'),
+        assetLabels: any(named: 'assetLabels'),
+        watchPointLabels: any(named: 'watchPointLabels'),
+        context: any(named: 'context'),
+        undoneTurnIds: any(named: 'undoneTurnIds'),
+      ),
+    ).thenAnswer((_) => answer.future);
+    final cubit = build();
+    await cubit.start();
+    unawaited(speak());
+    for (var i = 0; i < 20; i++) {
+      await Future<void>.delayed(Duration.zero);
+    }
+    await cubit.finish();
+    answer.completeError(Exception('down'));
+    for (var i = 0; i < 20; i++) {
+      await Future<void>.delayed(Duration.zero);
+    }
+    expect(cubit.state.finished, isTrue);
+    expect(cubit.state.error, isNull);
+    await cubit.close();
   });
 }

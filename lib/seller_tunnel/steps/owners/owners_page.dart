@@ -324,7 +324,9 @@ class _OwnersViewState extends State<OwnersView> {
             for (final (index, coOwner) in state.coOwners.indexed)
               CoOwnerCard(
                 coOwner: coOwner,
-                dictated: state.dictated.contains('co_owner:$index'),
+                dictated: state.dictated.contains(
+                  'co_owner:${coOwner.fullName}',
+                ),
                 incomplete: state.coOwnerIncomplete(index),
                 onEdit: isBusy ? null : () => _editCoOwner(index, coOwner),
               ),

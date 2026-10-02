@@ -793,6 +793,10 @@ function validateLifestyleItems(
 // Entities: rooms (V5c), previous estimates (V3), co-owners (V1).
 // ---------------------------------------------------------------------------
 
+/** Room fields « même … que » may copy (never the name, area or
+ * description). */
+const COPYABLE = ["level", "floor_covering", "glazing", "ceiling_height_m"];
+
 const GLAZING_WORDS = ["vitr", "fenetre", "baie", "carreau", "menuiserie", "ouverture"];
 
 function roomLabel(values: Record<string, unknown>): string {
@@ -968,6 +972,16 @@ function validateEntities(
       if (corrected) result.corrections.push(`${entity.name}:${item.target}`);
     };
 
+    // An existing entity is designated by words actually said (« la
+    // dernière » may designate the room dictated last).
+    const designatedBySaid = op.target === "new" ||
+      quoteFound(op.target_quote, context.transcript) ||
+      (entity.name === "room" && op.target === context.lastRoomRef);
+    if (opName !== "create" && !designatedBySaid) {
+      result.rejected.push({ field: entity.name, value: op.target, reason: "quote_not_found" });
+      continue;
+    }
+
     if (entity.name === "room") {
       if (opName === "delete") {
         const found = designate(op.target, op.target_quote, rooms, context.lastRoomRef ?? null);
@@ -996,7 +1010,7 @@ function validateEntities(
         const said = /\b(meme|pareil|idem|comme|identique)\b/.test(normalize(quote)) &&
           quoteFound(quote, context.transcript);
         if (source && said) {
-          for (const column of op.copy_fields) {
+          for (const column of op.copy_fields.filter((c) => COPYABLE.includes(c))) {
             const copied = source[column as keyof RoomRow];
             if (!(column in values) && copied !== null && copied !== undefined) {
               values[column] = copied;
@@ -1114,7 +1128,9 @@ function validateEntities(
       }
       apply(item, reason, confirmLabel);
       if (!reason) {
-        if (existing) Object.assign(existing, after);
+        // The app's rows are never changed: a copy is updated.
+        const index = rooms.findIndex((r) => r.ref === after.ref);
+        if (index >= 0) rooms[index] = after;
         else rooms.push(after);
       }
       continue;

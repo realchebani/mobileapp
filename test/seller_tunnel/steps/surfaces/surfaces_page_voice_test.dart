@@ -176,7 +176,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(
       find.text('J’ai noté 2 pièces pour 47 m² habitables. Est-ce correct ?'),
-      findsNWidgets(2),
+      findsOneWidget,
     );
     verify(
       () => agent.roomsSummary(

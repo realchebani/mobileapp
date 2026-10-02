@@ -4,10 +4,12 @@ import { assert, assertEquals } from "jsr:@std/assert@1";
 import { agentModelFor, agentModels, DEFAULT_MODELS } from "../_shared/agent/config.ts";
 import {
   ADDRESS_REMOVED,
+  ASK_TO_REPEAT,
   handleTranscribe,
   handleTurn,
   IDENTITY_REMOVED,
   lastRetained,
+  redactNames,
   roomsSummaryText,
   sanitizeDraft,
   sanitizeEstimates,
@@ -16,6 +18,14 @@ import {
 import { audioRequest, deps, FakeDb, type Handler, jsonRequest, PROPERTY } from "./agent_fakes.ts";
 
 const NB = " ";
+
+const EMPTY_OUTPUT = {
+  reply_fr: "",
+  answers: [],
+  lifestyle_items: [],
+  next_field: "none",
+  done: false,
+};
 
 /** An OpenRouter fake: STT for audio, else [content] as the agent answer;
  * the chat requests are recorded in [requests]. */
@@ -194,7 +204,10 @@ Deno.test("rooms: table, draft, last turn and a per-step model", async () => {
   assertEquals(requests[1].model, "anthropic/claude-haiku-4.5");
   assertEquals(requests[1].max_tokens, 2500);
   const prompt = userPrompt(requests[1]);
-  assert(prompt.includes("R1 · Séjour · RDC · 38 m² · Parquet chêne · Double vitrage"), prompt);
+  assert(
+    prompt.includes("R1 · Séjour · Rez-de-chaussée · 38 m² · Parquet chêne · Double vitrage"),
+    prompt,
+  );
   assert(prompt.includes("R2 · ‹Cuisine›"), prompt);
   assert(!prompt.includes("bad"));
 });
@@ -383,4 +396,58 @@ Deno.test("rooms: the spoken summary needs no model", async () => {
     deps(db, openrouter({})),
   );
   assertEquals(quota.status, 429);
+});
+
+Deno.test("owners: no name in the stored reply; a wiped retry asks to repeat", async () => {
+  const db = new FakeDb();
+  const response = await handleTurn(
+    jsonRequest({
+      property_id: PROPERTY,
+      step: "owners",
+      transcript: "nous sommes deux avec mon frère Marc Durand",
+      interactive: true,
+    }),
+    deps(
+      db,
+      openrouter({
+        reply_fr: "Marc Durand est noté, c’est bien durand ?",
+        answers: [],
+        entity_ops: [{
+          entity: "co_owner",
+          op: "create",
+          target: "new",
+          target_quote: "",
+          correction: false,
+          fields: [
+            { field: "first_name", value: "Marc", confidence: 0.9, quote: "Marc" },
+            { field: "last_name", value: "Durand", confidence: 0.9, quote: "Durand" },
+          ],
+        }],
+        out_of_step: [],
+        next_field: "none",
+        done: false,
+      }),
+    ),
+  );
+  const body = await response.json();
+  assertEquals(body.reply_fr, "Marc Durand est noté, c’est bien durand ?");
+  assertEquals(db.turns[0].reply_fr, "… … est noté, c’est bien … ?");
+  assertEquals(
+    redactNames("Merci Paul.", { ...EMPTY_OUTPUT }, "Mon associé Paul. Paul est là"),
+    "Merci ….",
+  );
+
+  // A failed call wipes the transcript: its retry never reaches the model.
+  const failed = new FakeDb();
+  const requests: Record<string, unknown>[] = [];
+  await handleTurn(
+    jsonRequest({ property_id: PROPERTY, step: "owners", transcript: "avec Marc Durand" }),
+    deps(failed, () => new Response("x", { status: 500 })),
+  );
+  const retry = await handleTurn(
+    jsonRequest({ property_id: PROPERTY, step: "owners", turn_id: failed.turns[0].id }),
+    deps(failed, openrouter({}, requests)),
+  );
+  assertEquals((await retry.json()).reply_fr, ASK_TO_REPEAT);
+  assertEquals(requests.length, 0);
 });

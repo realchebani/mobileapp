@@ -86,7 +86,6 @@ Future<void> showStepVoiceSheet(
       content: Text(l10n.voiceSheetAdded(added)),
       // Goes away on its own: it must not hide "Continuer".
       persist: false,
-      duration: const Duration(seconds: 6),
       action: SnackBarAction(
         label: l10n.voiceSheetUndoSession,
         onPressed: () {
@@ -137,130 +136,162 @@ class StepVoiceSheet extends StatelessWidget {
           listener: (context, state) => unawaited(HapticFeedback.lightImpact()),
         ),
       ],
-      child: SafeArea(
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(
-              RealestySpacing.gutter,
-              RealestySpacing.md,
-              RealestySpacing.gutter,
-              RealestySpacing.md,
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              spacing: 12,
-              children: [
-                Semantics(
-                  header: true,
-                  child: Text(
-                    title,
-                    style: RealestyTextStyles.title2.copyWith(
-                      color: c.nuitTexte,
-                    ),
+      // At most 85 % of the screen: the form stays visible behind, and the
+      // actions stay pinned under the scrolling exchange.
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.sizeOf(context).height * 0.85,
+        ),
+        child: SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Flexible(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(
+                    RealestySpacing.gutter,
+                    RealestySpacing.md,
+                    RealestySpacing.gutter,
+                    RealestySpacing.xs,
                   ),
-                ),
-                Center(
-                  child: ListeningOrb(
-                    phase: state.phase,
-                    level: state.level,
-                    size: dictation ? 64 : 95,
-                  ),
-                ),
-                Center(child: VoiceWaveform(levels: state.levels)),
-                Semantics(
-                  liveRegion: true,
-                  child: Text(
-                    voicePhaseLabel(l10n, state.phase),
-                    textAlign: TextAlign.center,
-                    style: RealestyTextStyles.bodySmall.copyWith(
-                      color: c.nuitTexteDiscret,
-                      fontSize: 13,
-                    ),
-                  ),
-                ),
-                if (!dictation)
-                  Center(
-                    child: TextButton(
-                      onPressed: cubit.toggleMute,
-                      child: Text(
-                        state.muted
-                            ? l10n.voiceUnmuteAgent
-                            : l10n.voiceMuteAgent,
-                        style: link,
-                      ),
-                    ),
-                  ),
-                if (lastUser != null)
-                  UserBubble(message: lastUser.text, onDark: true),
-                AgentBubble(message: lastAgent.text, onDark: true),
-                for (final item in state.confirmations)
-                  ConfirmationCard(
-                    key: ValueKey('${item.turnId}/${item.confirmation.id}'),
-                    label: item.confirmation.label,
-                    onYes: () => unawaited(cubit.confirm(item)),
-                    onNo: () => unawaited(cubit.reject(item)),
-                  ),
-                if (state.applied.isNotEmpty ||
-                    state.pending.isNotEmpty ||
-                    state.outOfStep.isNotEmpty)
-                  Wrap(
-                    spacing: 6,
-                    runSpacing: 6,
-                    children: [
-                      for (final pill in state.applied)
-                        UndoablePill(
-                          label: pill.changedLabel == null
-                              ? pill.label
-                              : '${pill.label} · ${pill.changedLabel}',
-                          undoLabel: l10n.voiceSheetUndoPill(pill.label),
-                          onUndo: () => cubit.undoPill(pill),
-                        ),
-                      for (final pill in state.pending)
-                        FactPill(label: pill.label, pending: true),
-                      for (final item in state.outOfStep)
-                        OutOfStepPill(label: item.label),
-                    ],
-                  ),
-                if (state.appliedTurns > 0)
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: TextButton(
-                      onPressed: () => cubit.undoTurn(state.turnIds.last),
-                      child: Text(l10n.voiceSheetUndoTurn, style: link),
-                    ),
-                  ),
-                ?extra,
-                if (error != null)
-                  Column(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.stretch,
+                    spacing: 12,
                     children: [
-                      Text(
-                        voiceErrorLabel(l10n, error),
-                        style: RealestyTextStyles.bodySmall.copyWith(
-                          color: c.nuitTexte,
+                      Semantics(
+                        header: true,
+                        child: Text(
+                          title,
+                          style: RealestyTextStyles.title2.copyWith(
+                            color: c.nuitTexte,
+                          ),
                         ),
                       ),
-                      Wrap(
-                        children: [
-                          if (error != VoiceError.quota &&
-                              error != VoiceError.locked)
-                            TextButton(
-                              onPressed: cubit.retry,
-                              child: Text(l10n.voiceRetry, style: link),
-                            ),
-                          if (error == VoiceError.permissionDenied)
-                            TextButton(
-                              onPressed: () => unawaited(
-                                VoiceServices.of(context).openSettings(),
-                              ),
-                              child: Text(l10n.voiceOpenSettings, style: link),
-                            ),
-                        ],
+                      Center(
+                        child: ListeningOrb(
+                          phase: state.phase,
+                          level: state.level,
+                          size: dictation ? 64 : 95,
+                        ),
                       ),
+                      Center(child: VoiceWaveform(levels: state.levels)),
+                      Semantics(
+                        liveRegion: true,
+                        child: Text(
+                          voicePhaseLabel(l10n, state.phase),
+                          textAlign: TextAlign.center,
+                          style: RealestyTextStyles.bodySmall.copyWith(
+                            color: c.nuitTexteDiscret,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ),
+                      if (!dictation)
+                        Center(
+                          child: TextButton(
+                            onPressed: cubit.toggleMute,
+                            child: Text(
+                              state.muted
+                                  ? l10n.voiceUnmuteAgent
+                                  : l10n.voiceMuteAgent,
+                              style: link,
+                            ),
+                          ),
+                        ),
+                      if (lastUser != null)
+                        UserBubble(message: lastUser.text, onDark: true),
+                      Semantics(
+                        liveRegion: true,
+                        child: AgentBubble(
+                          message: lastAgent.text,
+                          onDark: true,
+                        ),
+                      ),
+                      for (final item in state.confirmations)
+                        ConfirmationCard(
+                          key: ValueKey(
+                            '${item.turnId}/${item.confirmation.id}',
+                          ),
+                          label: item.confirmation.label,
+                          onYes: () => unawaited(cubit.confirm(item)),
+                          onNo: () => unawaited(cubit.reject(item)),
+                        ),
+                      if (state.applied.isNotEmpty ||
+                          state.pending.isNotEmpty ||
+                          state.outOfStep.isNotEmpty)
+                        Wrap(
+                          spacing: 6,
+                          runSpacing: 6,
+                          children: [
+                            for (final pill in state.applied)
+                              UndoablePill(
+                                label: pill.changedLabel == null
+                                    ? pill.label
+                                    : '${pill.label} · ${pill.changedLabel}',
+                                undoLabel: l10n.voiceSheetUndoPill(pill.label),
+                                onUndo: () => cubit.undoPill(pill),
+                              ),
+                            for (final pill in state.pending)
+                              FactPill(label: pill.label, pending: true),
+                            for (final item in state.outOfStep)
+                              OutOfStepPill(label: item.label),
+                          ],
+                        ),
+                      if (state.appliedTurns > 0)
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: TextButton(
+                            onPressed: () => cubit.undoTurn(state.turnIds.last),
+                            child: Text(l10n.voiceSheetUndoTurn, style: link),
+                          ),
+                        ),
+                      ?extra,
+                      if (error != null)
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Text(
+                              voiceErrorLabel(l10n, error),
+                              style: RealestyTextStyles.bodySmall.copyWith(
+                                color: c.nuitTexte,
+                              ),
+                            ),
+                            Wrap(
+                              children: [
+                                if (error != VoiceError.quota &&
+                                    error != VoiceError.locked)
+                                  TextButton(
+                                    onPressed: cubit.retry,
+                                    child: Text(l10n.voiceRetry, style: link),
+                                  ),
+                                if (error == VoiceError.permissionDenied)
+                                  TextButton(
+                                    onPressed: () => unawaited(
+                                      VoiceServices.of(context).openSettings(),
+                                    ),
+                                    child: Text(
+                                      l10n.voiceOpenSettings,
+                                      style: link,
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ],
+                        ),
                     ],
                   ),
-                Row(
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  RealestySpacing.gutter,
+                  RealestySpacing.xs,
+                  RealestySpacing.gutter,
+                  RealestySpacing.md,
+                ),
+                child: Row(
                   spacing: RealestySpacing.sm,
                   children: [
                     if (state.phase == VoicePhase.listening)
@@ -280,8 +311,8 @@ class StepVoiceSheet extends StatelessWidget {
                     ),
                   ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
@@ -369,42 +400,50 @@ class UndoablePill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.realestyColors;
-    return Container(
-      constraints: const BoxConstraints(minHeight: 26),
-      padding: const EdgeInsets.only(left: 10),
-      decoration: BoxDecoration(
-        color: c.lueur,
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        spacing: 5,
-        children: [
-          RealestyIcon(RealestyIcons.check, size: 12, color: c.encre),
-          Flexible(
-            child: Text(
-              label,
-              style: RealestyTextStyles.badge.copyWith(color: c.encre),
-            ),
-          ),
-          Semantics(
-            button: true,
-            label: undoLabel,
-            excludeSemantics: true,
-            child: GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: onUndo,
+    // The pill is drawn 28 high; its cross keeps a 44 × 44 touch target.
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minHeight: 44),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: c.lueur,
+          borderRadius: BorderRadius.circular(22),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(width: 12),
+            RealestyIcon(RealestyIcons.check, size: 12, color: c.encre),
+            const SizedBox(width: 5),
+            Flexible(
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(2, 6, 10, 6),
-                child: RealestyIcon(
-                  RealestyIcons.close,
-                  size: 12,
-                  color: c.encre,
+                padding: const EdgeInsets.symmetric(vertical: 6),
+                child: Text(
+                  label,
+                  style: RealestyTextStyles.badge.copyWith(color: c.encre),
                 ),
               ),
             ),
-          ),
-        ],
+            Semantics(
+              button: true,
+              label: undoLabel,
+              excludeSemantics: true,
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: onUndo,
+                child: SizedBox.square(
+                  dimension: 44,
+                  child: Center(
+                    child: RealestyIcon(
+                      RealestyIcons.close,
+                      size: 14,
+                      color: c.encre,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -419,14 +458,14 @@ class OutOfStepPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.realestyColors;
+    // Grows with a long label (wraps) instead of overflowing.
     return Container(
-      height: 26,
-      padding: const EdgeInsets.symmetric(horizontal: 10),
+      constraints: const BoxConstraints(minHeight: 26),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
         border: Border.all(color: c.nuitBordure),
-        borderRadius: BorderRadius.circular(999),
+        borderRadius: BorderRadius.circular(13),
       ),
-      alignment: Alignment.center,
       child: Text(
         label,
         style: RealestyTextStyles.badge.copyWith(color: c.nuitTexteDiscret),

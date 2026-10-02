@@ -127,8 +127,14 @@ class OwnersCubit extends Cubit<OwnersState> with VoiceFormMixin<OwnersState> {
       final first = op.values['first_name'];
       final last = op.values['last_name'];
       if (first is! String || last is! String) continue;
-      dictated.add('co_owner:${coOwners.length}');
-      coOwners.add(OwnerDraft(firstName: first.trim(), lastName: last.trim()));
+      final coOwner = OwnerDraft(
+        firstName: first.trim(),
+        lastName: last.trim(),
+      );
+      // By name, not position: removing another co-owner keeps the tag
+      // (editing the name drops it).
+      dictated.add('co_owner:${coOwner.fullName}');
+      coOwners.add(coOwner);
     }
     return state.copyWith(
       ownershipType: type,
