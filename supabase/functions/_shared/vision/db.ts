@@ -82,8 +82,10 @@ export const VISION_LIMITS = {
   roomMaxTokens: 700,
   planMaxTokens: 3_000,
   /** A request in progress for the same target younger than this blocks
-   * a new one (older ones are considered dead). */
+   * a new one (older ones are considered dead): photos, then plans (longer
+   * answers; an Edge Function runs at most 150 s). */
   busySeconds: 120,
+  planBusySeconds: 180,
   /** How long a request waits for the result of the same analysis in
    * progress, and how often it looks. */
   busyWaitMs: 20_000,

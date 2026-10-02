@@ -353,6 +353,18 @@ void main() {
       verify(() => repository.analyzeRoomPhoto('a')).called(2);
     });
 
+    test('tells when the photo is already being analysed', () async {
+      when(() => repository.getRoomPhotos(any(), roomId: any(named: 'roomId')))
+          .thenAnswer((_) async => [testRoomPhoto('a')]);
+      when(() => repository.analyzeRoomPhoto(any()))
+          .thenThrow(const VisionBusyFailure('x'));
+      final cubit = build(analysis: true);
+      await cubit.load();
+      await settle();
+      expect(cubit.state.notice, RoomPhotosNotice.analysisBusy);
+      expect(cubit.state.analysisFailed, {'a'});
+    });
+
     test('stops analysing once the quota is used up', () async {
       when(() => repository.getRoomPhotos(any(), roomId: any(named: 'roomId')))
           .thenAnswer((_) async => [testRoomPhoto('a'), testRoomPhoto('b')]);

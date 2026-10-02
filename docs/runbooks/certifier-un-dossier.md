@@ -42,7 +42,7 @@ group by 1, 2, 3 order by 3 desc;
 
 Changer de modèle sans nouvelle version de l’app : `supabase secrets set OPENROUTER_MODEL_VISION=<modèle>` (photos) et, au besoin, `OPENROUTER_MODEL_PLAN=<modèle>` (plans).
 
-Valeurs de `vision_requests.error` : `null` (réussi), `locked` (dossier envoyé pendant l’analyse : payé mais non enregistré), `in_progress` (en cours, ou appel interrompu : au-delà de 2 minutes une nouvelle analyse de la même photo est permise), `invalid_output`, `upstream`, `failed`, `missing_file`, `too_large`, `unsupported`. Deux appels simultanés pour la même photo (ou le même plan) ne coûtent qu’une analyse : le second attend le résultat du premier (20 s au plus, puis 409 `busy`).
+Valeurs de `vision_requests.error` : `null` (réussi), `locked` (dossier envoyé pendant l’analyse : payé mais non enregistré), `duplicate` (résultat déjà enregistré par un autre appel : aucun appel au modèle), `in_progress` (en cours, ou appel interrompu : au-delà de 2 minutes — 3 pour un plan — une nouvelle analyse de la même cible est permise), `invalid_output`, `upstream`, `failed`, `missing_file`, `too_large`, `unsupported`. Deux appels simultanés pour la même photo (ou le même plan) ne coûtent qu’une analyse : le second attend le résultat du premier (20 s au plus, puis 409 `busy`).
 
 Une fois le dossier envoyé (`submitted`), le vendeur ne peut plus supprimer la **dernière photo d’une pièce principale** (déclencheur `room_photos_keep_main_photo`, erreur `room_photo_required`) ; l’équipe le peut depuis le SQL Editor (sans JWT), par exemple pour retirer une photo où une personne est visible — prévenir alors le vendeur.
 

@@ -2590,6 +2590,10 @@
   "@documentsNoticeUnsupportedType": {
     "description": "V7 · erreur : format non accepté"
   },
+  "documentsNoticeMetadataUnremovable": "Impossible de nettoyer les métadonnées de cette image : exportez-la en JPEG ou PDF.",
+  "@documentsNoticeMetadataUnremovable": {
+    "description": "Durcissement · image refusée : ses métadonnées (position GPS…) ne peuvent pas être retirées"
+  },
   "documentsNoticeAccessDenied": "Accès refusé. Autorisez l’accès à l’appareil photo ou aux photos dans les Réglages.",
   "@documentsNoticeAccessDenied": {
     "description": "V7 · erreur : accès à l’appareil photo ou aux photos refusé"
@@ -5277,6 +5281,10 @@
   "@photosNoticeQuota": {
     "description": "EPIC-15 · quota IA atteint"
   },
+  "photosNoticeAnalysisBusy": "Analyse déjà en cours, réessayez dans un instant.",
+  "@photosNoticeAnalysisBusy": {
+    "description": "Durcissement · la même photo est déjà en cours d’analyse (409 busy)"
+  },
   "surfacesPhotosBadge": "{count, plural, =0{Aucune photo} =1{1 photo} other{{count} photos}}",
   "@surfacesPhotosBadge": {
     "description": "V5c · badge du nombre de photos (EPIC-15)",
@@ -5372,6 +5380,10 @@
   "methodPlanQuota": "Limite de lectures de plan du jour atteinte : saisissez vos pièces ou réessayez demain.",
   "@methodPlanQuota": {
     "description": "V5 · quota de lecture de plan (EPIC-15)"
+  },
+  "methodPlanBusy": "Analyse déjà en cours, réessayez dans un instant.",
+  "@methodPlanBusy": {
+    "description": "Durcissement · le même plan est déjà en cours de lecture (409 busy)"
   },
   "methodPlanSavedNoAi": "Plan déposé pour l’expert. Saisissez maintenant vos pièces.",
   "@methodPlanSavedNoAi": {

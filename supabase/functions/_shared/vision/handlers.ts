@@ -19,7 +19,14 @@
 import { type OpenRouterClient, OpenRouterError, toBase64 } from "../openrouter/client.ts";
 import { failure, json, readCapped } from "../agent/handlers.ts";
 import { VISION_PROVIDER, type VisionModels } from "./config.ts";
-import { type Download, startOfDay, VISION_LIMITS, type VisionDb, type VisionKind } from "./db.ts";
+import {
+  type Download,
+  type RequestUpdate,
+  startOfDay,
+  VISION_LIMITS,
+  type VisionDb,
+  type VisionKind,
+} from "./db.ts";
 import { PLAN_INSTRUCTIONS, ROOM_PHOTO_INSTRUCTIONS, visionMessages } from "./prompt.ts";
 import { PLAN_SCHEMA, ROOM_PHOTO_SCHEMA } from "./schema.ts";
 import {
@@ -130,24 +137,6 @@ async function analyze<T>(
     return other instanceof Response ? other : { result: other, cached: true };
   }
   const requestId = reservation.id;
-  const file: Download = await db.download(job.path, VISION_LIMITS.imageBytes);
-  if (file === "missing") {
-    await db.finish(requestId, { error: "missing_file" });
-    return failure("not_found", 404);
-  }
-  if (file === "too_large") {
-    await db.finish(requestId, { error: "too_large" });
-    return failure("too_long", 413);
-  }
-  const type = imageType(file);
-  if (!type) {
-    await db.finish(requestId, { error: "unsupported" });
-    return failure("unsupported", 415);
-  }
-  const messages = visionMessages(
-    job.instructions,
-    `data:${type};base64,${toBase64(file)}`,
-  );
   let tokensIn = 0;
   let tokensOut = 0;
   let cost = 0;
@@ -159,7 +148,41 @@ async function analyze<T>(
     cost_usd: cost,
     ms,
   });
+  // The journal row is always closed; a failure to close it never hides
+  // the outcome (a result already stored is still returned).
+  const close = async (update: RequestUpdate) => {
+    try {
+      await db.finish(requestId, update);
+    } catch (error) {
+      console.error(`${job.kind}: journal: ${error instanceof Error ? error.message : ""}`);
+    }
+  };
   try {
+    // Another request may have stored its result between the first check
+    // and this reservation: never call the model twice.
+    const done = await job.stored();
+    if (done !== null) {
+      await close({ error: "duplicate" });
+      return { result: done, cached: true };
+    }
+    const file: Download = await db.download(job.path, VISION_LIMITS.imageBytes);
+    if (file === "missing") {
+      await close({ error: "missing_file" });
+      return failure("not_found", 404);
+    }
+    if (file === "too_large") {
+      await close({ error: "too_large" });
+      return failure("too_long", 413);
+    }
+    const type = imageType(file);
+    if (!type) {
+      await close({ error: "unsupported" });
+      return failure("unsupported", 415);
+    }
+    const messages = visionMessages(
+      job.instructions,
+      `data:${type};base64,${toBase64(file)}`,
+    );
     for (let attempt = 0;; attempt++) {
       const answer = await deps.openrouter.chat({
         model: job.model,
@@ -173,18 +196,20 @@ async function analyze<T>(
       tokensOut += answer.usage.completionTokens ?? 0;
       cost += answer.usage.cost ?? 0;
       ms += answer.ms;
+      let result: T;
       try {
-        const result = job.validate(answer.content, job.model, now);
-        if (!await job.save(result)) {
-          // Sent (or locked) while the model was answering: not stored.
-          await db.finish(requestId, { ...usage(), error: "locked" });
-          return failure("locked", 409);
-        }
-        await db.finish(requestId, { ...usage(), error: null });
-        return { result, cached: false };
+        result = job.validate(answer.content, job.model, now);
       } catch (error) {
         if (!(error instanceof InvalidOutput) || attempt > 0) throw error;
+        continue;
       }
+      if (!await job.save(result)) {
+        // Sent (or locked) while the model was answering: not stored.
+        await close({ ...usage(), error: "locked" });
+        return failure("locked", 409);
+      }
+      await close({ ...usage(), error: null });
+      return { result, cached: false };
     }
   } catch (error) {
     const code = error instanceof InvalidOutput
@@ -194,7 +219,7 @@ async function analyze<T>(
       : "failed";
     // Never echo upstream bodies to the app; logged server-side only.
     console.error(`${job.kind}: ${code}: ${error instanceof Error ? error.message : ""}`);
-    await db.finish(requestId, { ...usage(), error: code }).catch(() => {});
+    await close({ ...usage(), error: code });
     return failure(code === "invalid_output" ? "invalid_output" : "upstream", 502);
   }
 }

@@ -129,6 +129,15 @@ final class VisionQuotaFailure extends PropertyFailure {
   String get _name => 'VisionQuotaFailure';
 }
 
+/// Thrown when the same photo or plan is already being analysed by
+/// another request (HTTP 409 `busy`): try again in a moment.
+final class VisionBusyFailure extends PropertyFailure {
+  const new([super.error]);
+
+  @override
+  String get _name => 'VisionBusyFailure';
+}
+
 /// Thrown when the vision AI cannot answer (analysis of a photo, reading
 /// of a plan).
 final class VisionRequestFailure extends PropertyFailure {
@@ -863,10 +872,11 @@ class PropertyRepository {
     }
   }
 
-  /// Stores the order of [photos] (photos of one room, their position in
-  /// the list) in one transaction (RPC `reorder_room_photos`: all or
-  /// nothing); returns the photos of the room in their new order. Nothing
-  /// is written when the order does not change.
+  /// Stores the order of [photos] (EVERY photo of one room, their position
+  /// in the list; the server refuses a partial list) in one transaction
+  /// (RPC `reorder_room_photos`: all or nothing); returns the photos of
+  /// the room in their new order. Nothing is written when the order does
+  /// not change.
   ///
   /// Throws [PropertySaveFailure] on error.
   Future<List<RoomPhoto>> reorderRoomPhotos(List<RoomPhoto> photos) async {
@@ -915,8 +925,9 @@ class PropertyRepository {
   /// Asks the vision AI to analyse the photo [photoId] (once: a stored
   /// analysis is returned as is) and returns its suggestions.
   ///
-  /// Throws [VisionQuotaFailure] when the daily quota is used up and
-  /// [VisionRequestFailure] on any other error.
+  /// Throws [VisionQuotaFailure] when the daily quota is used up,
+  /// [VisionBusyFailure] when the photo is being analysed by another
+  /// request and [VisionRequestFailure] on any other error.
   Future<RoomPhotoAnalysis> analyzeRoomPhoto(String photoId) async {
     final data = await _invokeVision(visionRoomFunction, {'photo_id': photoId});
     return RoomPhotoAnalysis.fromJson(
@@ -927,8 +938,9 @@ class PropertyRepository {
   /// Asks the vision AI to read the floor plan [documentId] (a `plan`
   /// document, JPEG or PNG) and returns the rooms printed on it.
   ///
-  /// Throws [VisionQuotaFailure] when the daily quota is used up and
-  /// [VisionRequestFailure] on any other error.
+  /// Throws [VisionQuotaFailure] when the daily quota is used up,
+  /// [VisionBusyFailure] when the plan is being read by another request
+  /// and [VisionRequestFailure] on any other error.
   Future<PlanReading> readPlan(String documentId) async {
     final data = await _invokeVision(planReaderFunction, {
       'document_id': documentId,
@@ -947,12 +959,12 @@ class PropertyRepository {
       );
       return response.data as Map<String, dynamic>;
     } on Object catch (error, stackTrace) {
-      Error.throwWithStackTrace(
-        error is FunctionException && error.status == 429
-            ? VisionQuotaFailure(error)
-            : VisionRequestFailure(error),
-        stackTrace,
-      );
+      Error.throwWithStackTrace(switch (error) {
+        FunctionException(status: 429) => VisionQuotaFailure(error),
+        FunctionException(status: 409, details: {'error': 'busy'}) =>
+          VisionBusyFailure(error),
+        _ => VisionRequestFailure(error),
+      }, stackTrace);
     }
   }
 

@@ -217,6 +217,8 @@ class _DocumentsViewState extends State<DocumentsView> {
   ) => switch (notice) {
     DocumentsNotice.fileTooLarge => l10n.documentsNoticeTooLarge,
     DocumentsNotice.unsupportedType => l10n.documentsNoticeUnsupportedType,
+    DocumentsNotice.metadataUnremovable =>
+      l10n.documentsNoticeMetadataUnremovable,
     DocumentsNotice.accessDenied => l10n.documentsNoticeAccessDenied,
     DocumentsNotice.pickFailed => l10n.documentsNoticePickFailed,
     DocumentsNotice.uploadFailed => l10n.documentsNoticeUploadFailed,

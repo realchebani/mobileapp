@@ -454,7 +454,11 @@ class RoomPhotosCubit extends Cubit<RoomPhotosState> {
         state.copyWith(
           analyzing: {...state.analyzing}..remove(id),
           analysisFailed: {...state.analysisFailed, id},
-          notice: quota ? RoomPhotosNotice.analysisQuota : null,
+          notice: quota
+              ? RoomPhotosNotice.analysisQuota
+              : error is VisionBusyFailure
+              ? RoomPhotosNotice.analysisBusy
+              : null,
         ),
       );
     }

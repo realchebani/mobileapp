@@ -108,7 +108,7 @@ export class SupabaseVisionDb implements VisionDb {
       p_target_id: targetId,
       p_since: since.toISOString(),
       p_max: kind === "plan" ? VISION_LIMITS.plansPerDay : VISION_LIMITS.photosPerDay,
-      p_busy_seconds: VISION_LIMITS.busySeconds,
+      p_busy_seconds: kind === "plan" ? VISION_LIMITS.planBusySeconds : VISION_LIMITS.busySeconds,
     });
     fail(error);
     const row = (data as { request_id: string | null; outcome: string }[] | null)?.[0];

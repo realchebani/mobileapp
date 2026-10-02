@@ -177,6 +177,7 @@ Uint8List _heif({
   int iinfVersion = 0,
   int infeVersion = 2,
   int baseOffsetSize = 0,
+  int baseOffsetByte = 0,
   int constructionMethod = 0,
   bool inIdat = false,
   bool withMetadata = true,
@@ -214,7 +215,7 @@ Uint8List _heif({
               : 0,
         ),
       0, 0, // data reference index
-      ...List.filled(baseOffsetSize, 0),
+      ...List.filled(baseOffsetSize, baseOffsetByte),
       ..._be16(1),
       ..._be32(offsets[id]!),
       ..._be32(
@@ -367,6 +368,39 @@ void main() {
           );
           expect(_contains(stripped, 'Exif'), isFalse);
         }
+      });
+
+      test('keeps the orientation of the first EXIF segment', () {
+        List<int> exif(int orientation) => _segment(0xE1, [
+          ..._ascii('Exif'),
+          0,
+          0,
+          ..._tiff(orientation: orientation),
+        ]);
+        final stripped = stripImageMetadata(
+          _jpeg(segments: [exif(6), exif(3)]),
+        );
+        expect(img.decodeJpgExif(stripped)!.imageIfd.orientation, 6);
+      });
+
+      test('drops metadata found between the scans of the image', () {
+        final source = _jpeg();
+        // Insert a comment and an XMP segment right before the end marker,
+        // after the image data (as between two progressive scans).
+        final at = source.length - 2;
+        final withLate = Uint8List.fromList([
+          ...source.sublist(0, at),
+          ..._segment(0xFE, _ascii('late secret')),
+          ..._segment(
+            0xE1,
+            _ascii('http://ns.adobe.com/xap/1.0/\x00late secret'),
+          ),
+          0xFF, 0xFF, // fill byte
+          ...source.sublist(at),
+        ]);
+        final stripped = stripImageMetadata(withLate);
+        expect(_contains(stripped, 'secret'), isFalse);
+        expect(stripped, source);
       });
 
       test('returns a clean JPEG as is', () {
@@ -547,6 +581,9 @@ void main() {
           _heif(inIdat: true, lengthOverride: 9999),
           _heif(inIdat: true, lengthOverride: 0),
           _heif(baseOffsetSize: 2),
+          // A negative, then a huge 64-bit base offset.
+          _heif(baseOffsetSize: 8, baseOffsetByte: 0xFF),
+          _heif(baseOffsetSize: 8, baseOffsetByte: 0x7F),
         ]) {
           expect(() => stripImageMetadata(source), throwsFormatException);
         }
@@ -560,6 +597,44 @@ void main() {
         final at = _indexOf(badName, _ascii('application/rdf+xml'));
         badName.fillRange(at, at + 20, 0x61);
         expect(() => stripImageMetadata(badName), throwsFormatException);
+      });
+
+      test('throws a FormatException on boxes shorter than their fields', () {
+        final ftyp = _box('ftyp', [..._ascii('heic'), 0, 0, 0, 0]);
+        final exifInfe = _infe(2, 2, 'Exif');
+        final iloc = _fullBox('iloc', 1, [0x44, 0, 0, 0]);
+        for (final children in [
+          // Item information without its count.
+          [
+            ..._box('iinf', [0, 0, 0, 0]),
+            ...iloc,
+          ],
+          // Item location without its sizes and count.
+          [
+            ..._fullBox('iinf', 0, [0, 1, ...exifInfe]),
+            ..._box('iloc', [1, 0, 0, 0, 0x44]),
+          ],
+          // An item entry cut in its type.
+          [
+            ..._fullBox('iinf', 0, [
+              0,
+              1,
+              ..._box('infe', [2, 0, 0, 0, 0, 2, 0, 0, ..._ascii('Ex')]),
+            ]),
+            ...iloc,
+          ],
+          // An empty item entry.
+          [
+            ..._fullBox('iinf', 0, [0, 1, ..._box('infe', const [])]),
+            ...iloc,
+          ],
+        ]) {
+          final source = Uint8List.fromList([
+            ...ftyp,
+            ..._fullBox('meta', 0, children),
+          ]);
+          expect(() => stripImageMetadata(source), throwsFormatException);
+        }
       });
 
       test('ignores other brands', () {

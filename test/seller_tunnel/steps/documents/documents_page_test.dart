@@ -143,6 +143,7 @@ void main() {
     double height = 3000,
     MockGoRouter? goRouter,
     SellerPropertiesCubit? sellerPropertiesCubit,
+    PhotoServices? photoServices,
   }) async {
     final view = tester.view
       ..physicalSize = Size(390, height)
@@ -162,6 +163,7 @@ void main() {
       sellerPropertiesCubit: sellerPropertiesCubit,
       propertyRepository: repository,
       goRouter: goRouter,
+      photoServices: photoServices,
     );
     return cubit;
   }
@@ -593,6 +595,42 @@ void main() {
           'HEIC.',
         ),
         findsOneWidget,
+      );
+    });
+
+    testWidgets('refuses an image whose metadata cannot be removed', (
+      tester,
+    ) async {
+      when(() => picker.pick(any())).thenAnswer(
+        // A JPEG that can be neither parsed nor decoded.
+        (_) async => XFile.fromData(
+          Uint8List.fromList([0xFF, 0xD8, 0xFF, 0xD9]),
+          path: '/tmp/carte.jpg',
+        ),
+      );
+      await pump(tester, photoServices: await testPhotoServices());
+
+      await tester.tap(find.bySemanticsLabel('Importer · Diagnostics'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Fichiers'));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text(
+          'Impossible de nettoyer les métadonnées de cette image$_nbsp: '
+          'exportez-la en JPEG ou PDF.',
+        ),
+        findsOneWidget,
+      );
+      verifyNever(
+        () => repository.uploadDocument(
+          ownerId: any(named: 'ownerId'),
+          propertyId: any(named: 'propertyId'),
+          kind: any(named: 'kind'),
+          fileName: any(named: 'fileName'),
+          bytes: any(named: 'bytes'),
+          mimeType: any(named: 'mimeType'),
+        ),
       );
     });
 

@@ -364,6 +364,22 @@ void main() {
       expect(find.text('1 photo n’a pas pu être analysée.'), findsNothing);
     });
 
+    testWidgets('tells when the photo is already being analysed', (
+      tester,
+    ) async {
+      stored = [testRoomPhoto('a')];
+      when(() => repository.analyzeRoomPhoto(any()))
+          .thenThrow(const VisionBusyFailure('x'));
+      final services = await testPhotoServices(
+        consent: PhotoAnalysisConsent.given,
+      );
+      await pump(tester, services: services);
+      expect(
+        find.text('Analyse déjà en cours, réessayez dans un instant.'),
+        findsOneWidget,
+      );
+    });
+
     testWidgets('tells when the analysis quota is reached', (tester) async {
       stored = [testRoomPhoto('a')];
       when(() => repository.analyzeRoomPhoto(any()))

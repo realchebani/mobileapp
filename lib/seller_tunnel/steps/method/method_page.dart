@@ -211,6 +211,7 @@ class MethodView extends StatelessWidget {
         PlanReadingNotice.uploadFailed => l10n.methodPlanUploadError,
         PlanReadingNotice.readFailed => l10n.methodPlanError,
         PlanReadingNotice.quota => l10n.methodPlanQuota,
+        PlanReadingNotice.busy => l10n.methodPlanBusy,
         PlanReadingNotice.saveFailed => l10n.planReviewSaveError,
       };
 

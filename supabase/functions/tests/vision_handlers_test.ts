@@ -56,6 +56,10 @@ class FakeVisionDb implements VisionDb {
   lockedAtWrite = false;
   /** Another request is analysing the same target. */
   busy = false;
+  /** Runs once the request is reserved (another request finishing). */
+  onReserve?: () => void;
+  /** The journal cannot be completed. */
+  failFinish = false;
 
   photo(id: string) {
     return Promise.resolve(this.photos.get(id) ?? null);
@@ -74,9 +78,11 @@ class FakeVisionDb implements VisionDb {
     if (this.quotaLeft === 0) return Promise.resolve("quota" as const);
     this.quotaLeft--;
     this.requests.push({ kind, target: targetId, error: "in_progress" });
+    this.onReserve?.();
     return Promise.resolve({ id: `r${this.requests.length}` });
   }
   finish(requestId: string, update: RequestUpdate) {
+    if (this.failFinish) return Promise.reject(new Error("db: down"));
     Object.assign(this.requests[Number(requestId.slice(1)) - 1], update);
     return Promise.resolve();
   }
@@ -490,4 +496,44 @@ Deno.test("a vanished photo or plan is not awaited forever", async () => {
     (await call(handlePlanReader, post({ document_id: PLAN }), deps(other, [], [], clear)))[0],
     409,
   );
+});
+
+Deno.test("an analysis stored just before the reservation is not redone", async () => {
+  const db = new FakeVisionDb();
+  db.onReserve = () => db.photos.get(PHOTO)!.analysis = { version: 1, room_kind: "bedroom" };
+  const [status, body] = await call(handleVisionRoom, post({ photo_id: PHOTO }), deps(db, []));
+  assertEquals([status, body], [200, {
+    analysis: { version: 1, room_kind: "bedroom" },
+    cached: true,
+  }]);
+  assertEquals(db.requests[0].error, "duplicate");
+  const plans = new FakeVisionDb();
+  plans.onReserve = () =>
+    plans.documents.get(PLAN)!.extracted = { plan_reading: { version: 1, rooms: [] } };
+  const [code, reading] = await call(
+    handlePlanReader,
+    post({ document_id: PLAN }),
+    deps(plans, []),
+  );
+  assertEquals([code, reading.cached], [200, true]);
+});
+
+Deno.test("a stored analysis is returned even if the journal fails", async () => {
+  const db = new FakeVisionDb();
+  db.failFinish = true;
+  const [status, body] = await call(
+    handleVisionRoom,
+    post({ photo_id: PHOTO }),
+    deps(db, [chat(ROOM_ANSWER)]),
+  );
+  assertEquals([status, body.cached], [200, false]);
+  assertEquals(db.analyses.length, 1);
+});
+
+Deno.test("a failed download closes the journal row", async () => {
+  const db = new FakeVisionDb();
+  db.download = () => Promise.reject(new Error("storage: down"));
+  const [status] = await call(handleVisionRoom, post({ photo_id: PHOTO }), deps(db, []));
+  assertEquals(status, 502);
+  assertEquals(db.requests[0].error, "failed");
 });

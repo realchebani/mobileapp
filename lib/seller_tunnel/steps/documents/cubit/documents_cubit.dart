@@ -129,10 +129,15 @@ class DocumentsCubit extends Cubit<DocumentsState> {
         _notify(DocumentsNotice.fileTooLarge);
         return null;
       }
+      final bytes = await _withoutMetadata(await file.readAsBytes(), mimeType);
+      if (bytes == null) {
+        _notify(DocumentsNotice.metadataUnremovable);
+        return null;
+      }
       return PickedDocument(
         fileName: _fileNameOf(file),
         mimeType: mimeType,
-        bytes: await _withoutMetadata(await file.readAsBytes(), mimeType),
+        bytes: bytes,
       );
     } on DocumentAccessDenied catch (error, stackTrace) {
       addError(error, stackTrace);
@@ -145,15 +150,15 @@ class DocumentsCubit extends Cubit<DocumentsState> {
   }
 
   /// [bytes] without the metadata of an image (privacy: GPS position,
-  /// device…). A PDF is never changed; an image that cannot be parsed
-  /// safely is kept as it is (the error is reported).
-  Future<Uint8List> _withoutMetadata(Uint8List bytes, String mimeType) async {
+  /// device…), or null when it cannot be removed (the file must not be
+  /// uploaded; the error is reported). A PDF is never changed.
+  Future<Uint8List?> _withoutMetadata(Uint8List bytes, String mimeType) async {
     if (mimeType == 'application/pdf') return bytes;
     try {
       return await _photoProcessor.stripMetadata(bytes);
     } on FormatException catch (error, stackTrace) {
       addError(error, stackTrace);
-      return bytes;
+      return null;
     }
   }
 

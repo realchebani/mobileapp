@@ -280,15 +280,28 @@ void main() {
         });
 
         blocTest<DocumentsCubit, DocumentsState>(
-          'keeps an image that cannot be parsed, and reports it',
+          'refuses an image whose metadata cannot be removed',
           build: () =>
               build(processor: _FakeProcessor(const FormatException())),
           act: (cubit) => cubit.pick(
             DocumentSource.photos,
             kind: DocumentKind.identityDocument,
           ),
+          skip: 2,
+          expect: () => [
+            initial.copyWith(notice: DocumentsNotice.metadataUnremovable),
+          ],
           errors: () => [isA<FormatException>()],
-          verify: (_) => expect(uploaded(), _bytes),
+          verify: (_) => verifyNever(
+            () => repository.uploadDocument(
+              ownerId: any(named: 'ownerId'),
+              propertyId: any(named: 'propertyId'),
+              kind: any(named: 'kind'),
+              fileName: any(named: 'fileName'),
+              bytes: any(named: 'bytes'),
+              mimeType: any(named: 'mimeType'),
+            ),
+          ),
         );
       });
 

@@ -31,6 +31,9 @@ enum RoomPhotosNotice {
 
   /// The daily quota of the vision AI is used up.
   analysisQuota,
+
+  /// The photo is already being analysed (another request).
+  analysisBusy,
 }
 
 /// A photo being prepared or sent (or whose upload failed).

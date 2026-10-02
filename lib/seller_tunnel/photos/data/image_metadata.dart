@@ -106,10 +106,12 @@ bool _isJpeg(Uint8List b) =>
 
 Uint8List _stripJpeg(Uint8List b) {
   final kept = <Uint8List>[];
-  var orientation = 1;
+  // The orientation of the FIRST EXIF segment (null: none seen).
+  int? orientation;
   var changed = false;
+  var scanned = false;
   var at = 2;
-  while (true) {
+  while (at < b.length) {
     if (at + 2 > b.length || b[at] != 0xFF) _malformed('JPEG');
     final marker = b[at + 1];
     if (marker == 0xFF) {
@@ -117,39 +119,49 @@ Uint8List _stripJpeg(Uint8List b) {
       at++;
       continue;
     }
+    if (marker == 0xD9) {
+      // End of image: anything after it (multi-picture data…) is dropped.
+      if (!scanned) _malformed('JPEG');
+      kept.add(Uint8List.sublistView(b, at, at + 2));
+      at += 2;
+      break;
+    }
     if (marker == 0x01 || (marker >= 0xD0 && marker <= 0xD7)) {
       kept.add(Uint8List.sublistView(b, at, at + 2));
       at += 2;
       continue;
     }
-    if (marker == 0xD9) _malformed('JPEG');
     final length = _u16(b, at + 2);
     final end = at + 2 + length;
     if (length < 2 || end > b.length) _malformed('JPEG');
-    final segment = Uint8List.sublistView(b, at, end);
     if (marker == 0xDA) {
-      // Start of scan: the image data runs to the end of image marker.
-      final imageEnd = _jpegEnd(b, end);
-      kept.add(Uint8List.sublistView(b, at, imageEnd));
-      if (imageEnd < b.length) changed = true;
-      break;
+      // Start of scan: its image data runs to the next marker (a
+      // progressive image has several scans, and segments in between).
+      scanned = true;
+      final next = _nextJpegMarker(b, end);
+      kept.add(Uint8List.sublistView(b, at, next));
+      at = next;
+      continue;
     }
+    final segment = Uint8List.sublistView(b, at, end);
     if (_dropsJpegSegment(marker, segment)) {
       changed = true;
       if (marker == 0xE1 && _startsWith(segment, 4, _ascii('Exif\x00\x00'))) {
-        orientation = _tiffOrientation(segment, 10);
+        orientation ??= _tiffOrientation(segment, 10);
       }
     } else {
       kept.add(segment);
     }
     at = end;
   }
+  if (!scanned) _malformed('JPEG');
+  if (at < b.length) changed = true;
   if (!changed) return b;
   final out = BytesBuilder(copy: false)..add(const [0xFF, 0xD8]);
   // The orientation segment goes after a JFIF segment, else first.
-  var exifAt = kept.isNotEmpty && kept.first[1] == 0xE0 ? 1 : 0;
+  var exifAt = kept.first[1] == 0xE0 ? 1 : 0;
   for (final segment in kept) {
-    if (exifAt == 0 && orientation != 1) {
+    if (exifAt == 0 && orientation != null && orientation != 1) {
       final payload = [
         ..._ascii('Exif\x00\x00'),
         ..._orientationTiff(orientation),
@@ -168,12 +180,17 @@ Uint8List _stripJpeg(Uint8List b) {
   return out.takeBytes();
 }
 
-/// Index just after the end of image marker that follows [from] (image
-/// data byte-stuffs 0xFF, so 0xFF 0xD9 only appears there), or the end of
-/// [b] for a file without it.
-int _jpegEnd(Uint8List b, int from) {
+/// Index of the marker that ends the image data starting at [from] (image
+/// data byte-stuffs 0xFF as 0xFF 0x00 and holds restart markers), or the
+/// end of [b] for a truncated image.
+int _nextJpegMarker(Uint8List b, int from) {
   for (var i = from; i + 1 < b.length; i++) {
-    if (b[i] == 0xFF && b[i + 1] == 0xD9) return i + 2;
+    if (b[i] != 0xFF) continue;
+    final next = b[i + 1];
+    if (next == 0x00 || next == 0xFF || (next >= 0xD0 && next <= 0xD7)) {
+      continue;
+    }
+    return i;
   }
   return b.length;
 }
@@ -282,7 +299,8 @@ List<_Box> _boxes(Uint8List b, int start, int end) {
     } else if (size == 0) {
       size = end - at;
     }
-    if (size < header || at + size > end) _malformed('HEIF');
+    // Overflow-safe: a 64-bit size may be negative or huge.
+    if (size < header || size > end - at) _malformed('HEIF');
     boxes.add((
       type: String.fromCharCodes(b, at + 4, at + 8),
       content: at + header,
@@ -311,6 +329,21 @@ _Box? _child(List<_Box> boxes, String type) {
 }
 
 Uint8List _stripHeif(Uint8List b) {
+  try {
+    return _stripHeifItems(b);
+    // A box shorter than its fields: never read past it.
+    // ignore: avoid_catching_errors
+  } on RangeError catch (error) {
+    throw FormatException('Malformed HEIF: $error');
+  }
+}
+
+/// The content of [box] (indices relative to it, so that no field is read
+/// past the box).
+Uint8List _content(Uint8List b, _Box box) =>
+    Uint8List.sublistView(b, box.content, box.end);
+
+Uint8List _stripHeifItems(Uint8List b) {
   final meta = _child(_boxes(b, 0, b.length), 'meta');
   if (meta == null) return b;
   // `meta` is a full box: version and flags first.
@@ -320,20 +353,23 @@ Uint8List _stripHeif(Uint8List b) {
   if (infos == null || locations == null) return b;
   final exif = <int>{};
   final xmp = <int>{};
-  final infoVersion = b[infos.content];
-  final firstEntry = infos.content + (infoVersion == 0 ? 6 : 8);
-  for (final entry in _boxes(b, firstEntry, infos.end)) {
-    if (entry.type != 'infe') continue;
-    final version = b[entry.content];
+  final iinf = _content(b, infos);
+  if (iinf.length < 6) _malformed('HEIF item information');
+  final firstEntry = infos.content + (iinf[0] == 0 ? 6 : 8);
+  for (final box in _boxes(b, firstEntry, infos.end)) {
+    if (box.type != 'infe') continue;
+    final entry = _content(b, box);
+    final version = entry[0];
     if (version < 2) continue;
-    var at = entry.content + 4;
-    final id = version == 2 ? _u16(b, at) : _u32(b, at);
+    var at = 4;
+    final id = version == 2 ? _u16(entry, at) : _u32(entry, at);
     at += (version == 2 ? 2 : 4) + 2;
-    final type = String.fromCharCodes(b, at, at + 4);
+    if (at + 4 > entry.length) _malformed('HEIF item');
+    final type = String.fromCharCodes(entry, at, at + 4);
     if (type == 'Exif') exif.add(id);
     if (type == 'mime') {
-      final (_, afterName) = _cString(b, at + 4, entry.end);
-      final (contentType, _) = _cString(b, afterName, entry.end);
+      final (_, afterName) = _cString(entry, at + 4, entry.length);
+      final (contentType, _) = _cString(entry, afterName, entry.length);
       if (contentType.contains('xmp') || contentType.contains('rdf')) {
         xmp.add(id);
       }
@@ -367,45 +403,51 @@ const _emptyExif = [
 
 /// Every extent of the items of the `iloc` box: item id, file offset,
 /// length.
-List<(int, int, int)> _itemExtents(Uint8List b, _Box iloc, _Box? idat) {
-  final version = b[iloc.content];
+List<(int, int, int)> _itemExtents(Uint8List b, _Box box, _Box? idat) {
+  final iloc = _content(b, box);
+  if (iloc.length < 8) _malformed('HEIF item location');
+  final version = iloc[0];
   if (version > 2) _malformed('HEIF item location');
-  var at = iloc.content + 4;
-  final offsetSize = b[at] >> 4;
-  final lengthSize = b[at] & 0xF;
-  final baseOffsetSize = b[at + 1] >> 4;
-  final indexSize = version == 0 ? 0 : b[at + 1] & 0xF;
+  var at = 4;
+  final offsetSize = iloc[at] >> 4;
+  final lengthSize = iloc[at] & 0xF;
+  final baseOffsetSize = iloc[at + 1] >> 4;
+  final indexSize = version == 0 ? 0 : iloc[at + 1] & 0xF;
   at += 2;
-  final count = version < 2 ? _u16(b, at) : _u32(b, at);
+  final count = version < 2 ? _u16(iloc, at) : _u32(iloc, at);
   at += version < 2 ? 2 : 4;
   final extents = <(int, int, int)>[];
   for (var i = 0; i < count; i++) {
-    final id = version < 2 ? _u16(b, at) : _u32(b, at);
+    final id = version < 2 ? _u16(iloc, at) : _u32(iloc, at);
     at += version < 2 ? 2 : 4;
     var method = 0;
     if (version > 0) {
-      method = _u16(b, at) & 0xF;
+      method = _u16(iloc, at) & 0xF;
       at += 2;
     }
     at += 2; // data reference index
-    final base = _uint(b, at, baseOffsetSize);
+    final base = _uint(iloc, at, baseOffsetSize);
     at += baseOffsetSize;
-    final extentCount = _u16(b, at);
+    final extentCount = _u16(iloc, at);
     at += 2;
     for (var e = 0; e < extentCount; e++) {
       at += indexSize;
-      final offset = _uint(b, at, offsetSize);
+      final offset = _uint(iloc, at, offsetSize);
       at += offsetSize;
-      final length = _uint(b, at, lengthSize);
+      final length = _uint(iloc, at, lengthSize);
       at += lengthSize;
       final origin = switch (method) {
         0 => 0,
         1 when idat != null => idat.content,
         _ => _malformed('HEIF item location'),
       };
-      final start = origin + base + offset;
       final limit = method == 0 ? b.length : idat!.end;
-      if (length == 0 || start < origin || start + length > limit) {
+      // Overflow-safe: 64-bit fields may be negative or huge.
+      if (base < 0 || offset < 0 || length <= 0) {
+        _malformed('HEIF item extent');
+      }
+      final start = origin + base + offset;
+      if (start < origin || start > limit || length > limit - start) {
         _malformed('HEIF item extent');
       }
       extents.add((id, start, length));

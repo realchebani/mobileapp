@@ -245,6 +245,7 @@ class _RoomPhotosViewState extends State<RoomPhotosView> {
           l10n.photosNoticeLastPhotoRequired,
         RoomPhotosNotice.reorderFailed => l10n.photosNoticeReorderFailed,
         RoomPhotosNotice.analysisQuota => l10n.photosNoticeQuota,
+        RoomPhotosNotice.analysisBusy => l10n.photosNoticeAnalysisBusy,
       };
 
   @override

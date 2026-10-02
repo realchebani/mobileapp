@@ -25,7 +25,7 @@ Légende : ✅ fait · 🚧 partiel · 📋 à faire
 ## US-15.3 · Suggestions de l’IA avec consentement ✅
 *En tant que vendeur, je veux que l’app me propose le type de pièce, le revêtement et le vitrage à partir de mes photos, sans rien imposer.*
 - ✅ Je peux retirer mon accord à tout moment (« Désactiver les suggestions de l’IA », Compte) ; le serveur refuse toute analyse sans accord.
-- ✅ La position GPS et l’appareil (EXIF) ne quittent jamais le téléphone — y compris pour les images importées comme documents en V7 (JPEG, PNG, HEIC, sans perte de qualité ; un PDF n’est jamais modifié).
+- ✅ La position GPS et l’appareil (EXIF) ne quittent jamais le téléphone — y compris pour les images importées comme documents en V7 (JPEG, PNG, HEIC, sans perte de qualité ; un PDF n’est jamais modifié) ; une image dont on ne peut pas retirer les métadonnées est réencodée, sinon refusée (« exportez-la en JPEG ou PDF »).
 - ✅ Une analyse n’est jamais enregistrée sur un dossier envoyé entre-temps, et deux demandes simultanées pour la même photo ne coûtent qu’une analyse.
 - ✅ À la première photo, un écran explique l’analyse (fournisseur via OpenRouter, sans conservation ni entraînement, jamais de mesure) ; je peux accepter ou refuser, et changer d’avis plus tard.
 - ✅ Avec mon accord, chaque photo est analysée une fois : type de pièce, revêtement, vitrage, constats (sans chiffre), objets personnels à ranger, personne visible.

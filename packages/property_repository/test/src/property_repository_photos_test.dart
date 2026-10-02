@@ -476,6 +476,16 @@ void main() {
         repository.readPlan('doc'),
         failure<VisionRequestFailure>(),
       );
+      respond = (_) => json({'error': 'busy'}, status: 409);
+      await expectLater(
+        repository.readPlan('doc'),
+        failure<VisionBusyFailure>(),
+      );
+      respond = (_) => json({'error': 'locked'}, status: 409);
+      await expectLater(
+        repository.analyzeRoomPhoto(photoId),
+        failure<VisionRequestFailure>(),
+      );
     });
 
     test('failures have a readable toString', () {
@@ -488,6 +498,7 @@ void main() {
         'RoomPhotoRequiredFailure(x)',
       );
       expect(const VisionQuotaFailure('x').toString(), 'VisionQuotaFailure(x)');
+      expect(const VisionBusyFailure('x').toString(), 'VisionBusyFailure(x)');
       expect(
         const VisionRequestFailure('x').toString(),
         'VisionRequestFailure(x)',

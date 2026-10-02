@@ -87,7 +87,7 @@ class FakePhotoProcessor implements PhotoProcessor {
 
   @override
   Future<Uint8List> stripMetadata(Uint8List bytes) async =>
-      stripImageMetadata(bytes);
+      cleanDocumentImage(bytes);
 }
 
 /// A processed photo of [bytes].

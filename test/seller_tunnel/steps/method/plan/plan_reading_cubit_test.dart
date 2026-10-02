@@ -112,6 +112,10 @@ void main() {
       await cubit.read(_plan);
       expect(cubit.state.reading, isNull);
       expect(cubit.state.notice, PlanReadingNotice.quota);
+      when(() => repository.readPlan(any()))
+          .thenThrow(const VisionBusyFailure('x'));
+      await cubit.read(_plan);
+      expect(cubit.state.notice, PlanReadingNotice.busy);
       when(() => repository.readPlan(any())).thenThrow(Exception());
       await cubit.read(_plan);
       expect(cubit.state.notice, PlanReadingNotice.readFailed);
