@@ -42,6 +42,8 @@
   "loginTitle": "Welcome",
   "loginSubtitle": "Sell or buy with a file audited by AI and validated by a real-estate expert.",
   "loginEmailButton": "Continue with email",
+  "loginDevTestButton": "Test sign-in (dev)",
+  "loginDevTestInvalidCredentials": "Test credentials rejected. Check config/development.local.json.",
   "loginEmailTitle": "Sign in with email",
   "loginEmailSubtitle": "Enter your address: we’ll send you a secure sign-in link. No password to remember.",
   "loginEmailLabel": "Email address",

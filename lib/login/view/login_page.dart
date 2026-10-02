@@ -6,6 +6,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:mobileapp/app/app.dart';
 import 'package:mobileapp/l10n/l10n.dart';
 import 'package:mobileapp/login/cubit/login_cubit.dart';
+import 'package:mobileapp/login/view/dev_test_login.dart';
 import 'package:mobileapp/login/view/login_failure_message.dart';
 import 'package:mobileapp/ui/ui.dart';
 import 'package:mobileapp/widgets/widgets.dart';
@@ -41,13 +42,17 @@ class _LoginPageState extends State<LoginPage> {
       listenWhen: (previous, current) =>
           current.isLinkFailure && current.hasNewFailureSince(previous),
       listener: showLoginFailure,
-      child: const LoginView(),
+      child: LoginView(devTestCredentials: DevTestCredentials.fromEnvironment),
     );
   }
 }
 
 class LoginView extends StatefulWidget {
-  const new({super.key});
+  const new({this.devTestCredentials, super.key});
+
+  /// Shows the "Connexion de test (dev)" button when set (development
+  /// flavor only, see [DevTestCredentials.fromEnvironment]).
+  final DevTestCredentials? devTestCredentials;
 
   @override
   State<LoginView> createState() => _LoginViewState();
@@ -106,6 +111,10 @@ class _LoginViewState extends State<LoginView> {
                   leadingIcon: RealestyIcons.mail,
                   onPressed: () => unawaited(_openEmailLogin()),
                 ),
+                if (widget.devTestCredentials case final credentials?) ...[
+                  const SizedBox(height: RealestySpacing.xs),
+                  DevTestLoginButton(credentials: credentials),
+                ],
               ],
             ),
           ),

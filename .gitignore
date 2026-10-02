@@ -116,3 +116,6 @@ app.*.map.json
 # Generated l10n files
 lib/l10n/gen/
 supabase/.temp/
+
+# Local secrets (e.g. dev test account credentials)
+config/*.local.json

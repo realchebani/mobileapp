@@ -147,6 +147,55 @@ class AuthLinkFailure implements Exception {
   String toString() => 'AuthLinkFailure($reason, $error)';
 }
 
+/// Why signing in with a password failed.
+enum SignInWithPasswordFailureReason {
+  /// The e-mail / password pair was rejected.
+  invalidCredentials,
+
+  /// The server could not be reached or failed.
+  network,
+
+  /// Any other error.
+  unknown,
+}
+
+/// {@template sign_in_with_password_failure}
+/// Thrown when [AuthRepository.signInWithPassword] fails.
+/// {@endtemplate}
+class SignInWithPasswordFailure implements Exception {
+  /// {@macro sign_in_with_password_failure}
+  const new(this.reason, [this.error]);
+
+  /// Builds the failure matching an error thrown by the auth client.
+  factory fromError(Object error) {
+    if (error is AuthRetryableFetchException) {
+      return SignInWithPasswordFailure(
+        SignInWithPasswordFailureReason.network,
+        error,
+      );
+    }
+    if (error is AuthException && error.code == 'invalid_credentials') {
+      return SignInWithPasswordFailure(
+        SignInWithPasswordFailureReason.invalidCredentials,
+        error,
+      );
+    }
+    return SignInWithPasswordFailure(
+      SignInWithPasswordFailureReason.unknown,
+      error,
+    );
+  }
+
+  /// Why the sign-in failed.
+  final SignInWithPasswordFailureReason reason;
+
+  /// The underlying error, if any.
+  final Object? error;
+
+  @override
+  String toString() => 'SignInWithPasswordFailure($reason, $error)';
+}
+
 /// {@template sign_out_failure}
 /// Thrown when [AuthRepository.signOut] fails.
 /// {@endtemplate}
@@ -215,6 +264,24 @@ class AuthRepository {
     } on Object catch (error, stackTrace) {
       Error.throwWithStackTrace(
         SendMagicLinkFailure.fromError(error),
+        stackTrace,
+      );
+    }
+  }
+
+  /// Signs in with an e-mail and a password (development test account
+  /// only: the app's users sign in with magic links).
+  ///
+  /// Throws a [SignInWithPasswordFailure] on error.
+  Future<void> signInWithPassword({
+    required String email,
+    required String password,
+  }) async {
+    try {
+      await _auth.signInWithPassword(email: email.trim(), password: password);
+    } on Object catch (error, stackTrace) {
+      Error.throwWithStackTrace(
+        SignInWithPasswordFailure.fromError(error),
         stackTrace,
       );
     }

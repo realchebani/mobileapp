@@ -237,6 +237,74 @@ void main() {
       });
     });
 
+    group('signInWithPassword', () {
+      const password = 'secret';
+
+      When<Future<AuthResponse>> stubSignIn() => when(
+        () => auth.signInWithPassword(
+          email: any(named: 'email'),
+          password: any(named: 'password'),
+        ),
+      );
+
+      test('calls signInWithPassword with the trimmed email', () async {
+        stubSignIn().thenAnswer((_) async => AuthResponse());
+        await repository.signInWithPassword(
+          email: ' $email ',
+          password: password,
+        );
+        verify(() => auth.signInWithPassword(email: email, password: password))
+            .called(1);
+      });
+
+      Future<void> expectReason(
+        Object error,
+        SignInWithPasswordFailureReason reason,
+      ) async {
+        stubSignIn().thenThrow(error);
+        await expectLater(
+          repository.signInWithPassword(email: email, password: password),
+          throwsA(
+            isA<SignInWithPasswordFailure>()
+                .having((f) => f.reason, 'reason', reason)
+                .having((f) => f.error, 'error', error),
+          ),
+        );
+      }
+
+      test('throws invalidCredentials on invalid_credentials', () async {
+        await expectReason(
+          const AuthApiException(
+            'Invalid login credentials',
+            statusCode: '400',
+            code: 'invalid_credentials',
+          ),
+          SignInWithPasswordFailureReason.invalidCredentials,
+        );
+      });
+
+      test('throws network when the request could not be made', () async {
+        await expectReason(
+          AuthRetryableFetchException(message: 'SocketException'),
+          SignInWithPasswordFailureReason.network,
+        );
+      });
+
+      test('throws unknown on other auth errors', () async {
+        await expectReason(
+          const AuthApiException('nope', code: 'email_not_confirmed'),
+          SignInWithPasswordFailureReason.unknown,
+        );
+      });
+
+      test('throws unknown on non-auth errors', () async {
+        await expectReason(
+          Exception('oops'),
+          SignInWithPasswordFailureReason.unknown,
+        );
+      });
+    });
+
     group('signOut', () {
       test('calls signOut on the auth client', () async {
         when(() => auth.signOut()).thenAnswer((_) async {});
@@ -261,6 +329,17 @@ void main() {
         const SendMagicLinkFailure(SendMagicLinkFailureReason.network)
             .toString(),
         'SendMagicLinkFailure(SendMagicLinkFailureReason.network, null)',
+      );
+    });
+  });
+
+  group('SignInWithPasswordFailure', () {
+    test('has a readable toString', () {
+      expect(
+        const SignInWithPasswordFailure(SignInWithPasswordFailureReason.network)
+            .toString(),
+        'SignInWithPasswordFailure('
+        'SignInWithPasswordFailureReason.network, null)',
       );
     });
   });
