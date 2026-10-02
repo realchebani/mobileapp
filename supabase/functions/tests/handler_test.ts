@@ -185,15 +185,15 @@ Deno.test("computes in the background and stores the result once", async () => {
   const [id, row] = updates[0];
   assertEquals(id, "snap-1");
   assertEquals(row.status, "ok");
-  assertEquals(row.estimate_median_eur, 479000);
+  assertEquals(row.estimate_median_eur, 476000);
   assertEquals(row.explanation_fr, "Texte");
   assertEquals(row.explanation_source, "ai");
   assertEquals(row.error, null);
   assertEquals(row.semester_medians[0].semester, "2021-S1");
   assertEquals(saved, [{
-    ai_estimate_low_eur: 420000,
-    ai_estimate_median_eur: 479000,
-    ai_estimate_high_eur: 546000,
+    ai_estimate_low_eur: 419000,
+    ai_estimate_median_eur: 476000,
+    ai_estimate_high_eur: 540000,
     ai_estimate_confidence: row.confidence,
     ai_estimate_computed_at: "2026-10-01T10:00:00.000Z",
   }]);

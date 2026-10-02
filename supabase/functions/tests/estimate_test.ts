@@ -1,13 +1,14 @@
 import { assert, assertEquals } from "jsr:@std/assert@1";
 import {
   computeEstimate,
+  countCandidates,
   displayDistance,
   insufficient,
   latestSaleDate,
 } from "../_shared/estimation/estimate.ts";
 import { curveFromSales } from "../_shared/estimation/trend.ts";
 import { buildFactors } from "../_shared/estimation/factors.ts";
-import { chaponostSales, sale, subject } from "./helpers.ts";
+import { chaponostSales, sale, sparseRuralSales, subject } from "./helpers.ts";
 
 const houses = chaponostSales().filter((s) => s.type === "maison");
 const dataUntil = latestSaleDate(houses)!;
@@ -25,7 +26,7 @@ Deno.test("displayDistance rounds to 100 m", () => {
   assertEquals(displayDistance(1234), 1200);
 });
 
-Deno.test("Chaponost house of 115 m²: estimate from the 500 m comparables", () => {
+Deno.test("Chaponost house of 115 m²: 500 m and 2 years are enough", () => {
   const result = computeEstimate({
     subject: subject({ outdoorEquipment: ["piscine"] }),
     communeSales: houses,
@@ -38,15 +39,15 @@ Deno.test("Chaponost house of 115 m²: estimate from the 500 m comparables", () 
   assertEquals(result.reason, null);
   assertEquals(
     [result.lowEur, result.medianEur, result.highEur],
-    [420000, 479000, 546000],
+    [419000, 476000, 540000],
   );
   assertEquals(
     [result.priceM2Low, result.priceM2Median, result.priceM2High],
-    [3572, 4162, 4648],
+    [3595, 4136, 4634],
   );
-  assertEquals(result.confidence, 81);
-  assertEquals(result.comparablesCount, 27);
-  assertEquals([result.scope, result.radiusM, result.months], ["radius", 500, 36]);
+  assertEquals(result.confidence, 78);
+  assertEquals(result.comparablesCount, 18);
+  assertEquals([result.scope, result.radiusM, result.months], ["radius", 500, 24]);
   assertEquals(result.sales12m, 62);
   assertEquals(result.yoyChangePct, 0.2);
   assertEquals(result.semesterMedians.length, 10);
@@ -80,34 +81,48 @@ Deno.test("fewer than 5 comparables: no estimate", () => {
   assertEquals(result.sales12m, 4);
 });
 
-Deno.test("widens to the commune and to 5 years when the radius is thin", () => {
-  // 6 sales 4 years ago, far away (5 km) or without coordinates.
-  const old = Array.from({ length: 6 }, (_, i) =>
-    sale({
-      soldOn: "2022-03-01",
-      lat: i % 2 === 0 ? null : 45.755,
-      lng: i % 2 === 0 ? null : 4.7469,
-      street: null,
-      priceEur: 450000 + i * 5000,
-    }));
-  // A neighbour sale of another commune and an apartment are ignored.
+Deno.test("sparse rural area: widens the geography first, on recent sales", () => {
   const result = computeEstimate({
     subject: subject({ roomsCount: null, constructionYear: null, landM2: null }),
-    communeSales: old,
-    nearbySales: [
-      sale({ insee: "69000", soldOn: "2022-03-01", lat: 45.755 }),
-      sale({ type: "appartement" }),
-      old[0],
-    ],
+    communeSales: [],
+    nearbySales: sparseRuralSales(),
     curve: null,
     dataUntil: "2025-12-19",
     today: "2026-10-01",
   });
   assertEquals(result.status, "ok");
-  assertEquals([result.scope, result.radiusM, result.months], ["commune", null, 60]);
-  assertEquals(result.comparablesCount, 6);
-  assertEquals(result.comparables.filter((c) => c.distance_m === null).length, 3);
+  // 4 recent sales within 5 km, 12 recent ones within 10 km: 10 km, 2 years
+  // (not 5 km with older sales).
+  assertEquals([result.radiusM, result.months], [10000, 24]);
+  assertEquals(result.comparablesCount, 12);
   assert(result.confidence! < 60);
+});
+
+Deno.test("widens the period only when the widest radius is too sparse", () => {
+  const old = Array.from(
+    { length: 6 },
+    (_, i) => sale({ soldOn: "2022-03-01", lat: 45.85, priceEur: 450000 + i * 5000 }),
+  );
+  const result = computeEstimate({
+    subject: subject(),
+    communeSales: [],
+    // A sale without coordinates and an apartment are ignored.
+    nearbySales: [...old, sale({ lat: null, lng: null }), sale({ type: "appartement" }), old[0]],
+    curve: null,
+    dataUntil: "2025-12-19",
+    today: "2026-10-01",
+  });
+  assertEquals(result.status, "ok");
+  assertEquals([result.radiusM, result.months], [20000, 60]);
+  assertEquals(result.comparablesCount, 6);
+});
+
+Deno.test("countCandidates counts each sale once within radius and period", () => {
+  const sales = sparseRuralSales();
+  assertEquals(countCandidates(subject(), sales, "2025-12-19", 5000, 24), 4);
+  assertEquals(countCandidates(subject(), sales, "2025-12-19", 10000, 24), 12);
+  assertEquals(countCandidates(subject(), [...sales, sales[0]], "2025-12-19", 20000, 60), 20);
+  assertEquals(countCandidates(subject(), [sale({ lat: null })], "2025-12-19", 20000, 60), 0);
 });
 
 Deno.test("outliers outside 1.5 × IQR of the commune are dropped", () => {

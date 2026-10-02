@@ -617,7 +617,7 @@
   "marketPriceM2": "{value} €/m²",
   "marketSectorMedian": "Mediana zona {value} €/m²",
   "marketBandSemantics": "Precio por m² de la zona de {low} a {high} €, mediana {median} €. Su inmueble: {own} €/m².",
-  "marketBasisRadius": "{count} ventas comparables · radio de {distance} · {years} años",
+  "marketBasisRadius": "{count} ventas comparables a menos de {distance} · últimos {years} años",
   "marketBasisCommune": "{count} ventas comparables · {city} · {years} años",
   "marketSales12m": "Ventas en 12 meses",
   "marketYoy": "Evolución de precios en 1 año",
@@ -641,5 +641,7 @@
   "marketUnavailable": "No hay síntesis del mercado para este inmueble: el experto se encargará en su informe de valoración.",
   "marketLoadError": "No se pudo cargar la síntesis del mercado.",
   "marketAllSalesTitle": "Ventas comparables",
-  "submittedAiRateLimited": "Demasiadas solicitudes de cálculo hoy: vuelva a intentarlo mañana."
+  "submittedAiRateLimited": "Demasiadas solicitudes de cálculo hoy: vuelva a intentarlo mañana.",
+  "submittedAiWidened": "Búsqueda ampliada por falta de ventas cercanas y recientes: ventas hasta {distance}, últimos {years} años.",
+  "marketWidened": "Búsqueda ampliada por falta de ventas cercanas y recientes: ventas hasta {distance}, últimos {years} años."
 }

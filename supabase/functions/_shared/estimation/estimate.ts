@@ -27,28 +27,61 @@ export const MIN_SALES_PER_STREET = 3;
 /** Comparables kept in the snapshot. */
 export const MAX_COMPARABLES_STORED = 30;
 
+/** Search radii, widened until enough comparables (owner decision 2026-10-02). */
+export const RADII_M = [500, 1000, 2000, 5000, 10000, 20000];
+/** Time windows: the most recent first, widened only after the widest radius. */
+export const WINDOWS_MONTHS = [24, 36, 60];
+
+/** Confidence factor of each radius (proximity of the comparables). */
+const RADIUS_FACTOR: Record<number, number> = {
+  500: 1,
+  1000: 0.85,
+  2000: 0.7,
+  5000: 0.5,
+  10000: 0.35,
+  20000: 0.2,
+};
+/** Confidence factor of each time window (freshness first). */
+const WINDOW_FACTOR: Record<number, number> = { 24: 1, 36: 0.8, 60: 0.5 };
+
 interface Tier {
-  radiusM: number | null;
+  radiusM: number;
   months: number;
-  distanceFactor: number;
 }
 
-const TIERS: Tier[] = [
-  { radiusM: 500, months: 36, distanceFactor: 1 },
-  { radiusM: 1000, months: 36, distanceFactor: 0.8 },
-  { radiusM: 2000, months: 36, distanceFactor: 0.6 },
-  { radiusM: null, months: 36, distanceFactor: 0.4 },
-  { radiusM: null, months: 60, distanceFactor: 0.3 },
-];
+/** Recency first: every radius at 24 months, then at 36, then at 60. */
+export const TIERS: Tier[] = WINDOWS_MONTHS.flatMap((months) =>
+  RADII_M.map((radiusM) => ({ radiusM, months }))
+);
 
-/** Distance assumed for a sale without coordinates (commune tiers). */
-const UNKNOWN_DISTANCE_M = 2000;
+/** Candidates of [sales] for [subject] in a radius and a period (no outlier filter). */
+export function countCandidates(
+  subject: Subject,
+  sales: DvfSale[],
+  dataUntil: string,
+  radiusM: number,
+  months: number,
+): number {
+  const since = monthsBefore(dataUntil, months);
+  const seen = new Set<string>();
+  for (const sale of sales) {
+    if (
+      sale.type === subject.type && sale.soldOn > since && sale.lat !== null &&
+      sale.lng !== null &&
+      Math.abs(sale.areaM2 - subject.livingAreaM2) <= AREA_TOLERANCE * subject.livingAreaM2 &&
+      distanceM(subject.lat, subject.lng, sale.lat, sale.lng) <= radiusM
+    ) {
+      seen.add(`${sale.insee}|${sale.idMutation}`);
+    }
+  }
+  return seen.size;
+}
 
 export interface EstimateInput {
   subject: Subject;
   /** Sales of the subject's type in its commune (5 years). */
   communeSales: DvfSale[];
-  /** Sales of the subject's type near it (≤ 2 km, any commune). */
+  /** Sales of the subject's type near it (up to the widest radius, any commune). */
   nearbySales: DvfSale[];
   /** Half-year curve (commune, EPCI or département), null if unknown. */
   curve: SemesterPoint[] | null;
@@ -151,12 +184,11 @@ export function computeEstimate(input: EstimateInput): EstimateResult {
   const inTier = (tier: Tier) => {
     const since = monthsBefore(dataUntil, tier.months);
     return candidates.filter((c) =>
-      c.sale.soldOn > since &&
-      (tier.radiusM === null
-        ? c.sale.insee === subject.insee
-        : c.distance !== null && c.distance <= tier.radiusM)
+      c.sale.soldOn > since && c.distance !== null && c.distance <= tier.radiusM
     );
   };
+  // First tier reaching the target; otherwise the one with the most
+  // comparables (the earliest, i.e. freshest and closest, on ties).
   let tier = TIERS[0];
   let selected = inTier(tier);
   for (const next of TIERS.slice(1)) {
@@ -180,7 +212,7 @@ export function computeEstimate(input: EstimateInput): EstimateResult {
   }
 
   const weights = selected.map((c) =>
-    (1 / (1 + (c.distance ?? UNKNOWN_DISTANCE_M) / 500)) *
+    (1 / (1 + c.distance! / 500)) *
     Math.pow(0.5, Math.max(0, monthsBetween(c.sale.soldOn, today)) / 24)
   );
   const values = selected.map((c) => c.priceM2Today);
@@ -192,13 +224,13 @@ export function computeEstimate(input: EstimateInput): EstimateResult {
   const fN = Math.min(1, effectiveCount(weights) / 20);
   const fDispersion = clamp(1 - ((m2High - m2Low) / m2Median - 0.15) / 0.35, 0, 1);
   const medianAge = median(selected.map((c) => monthsBetween(c.sale.soldOn, today)));
-  const fRecency = clamp(1 - (medianAge - 6) / 30, 0, 1);
+  const fRecency = clamp(1 - (medianAge - 6) / 30, 0, 1) * WINDOW_FACTOR[tier.months];
   const inputs = [true, subject.roomsCount !== null, subject.constructionYear !== null];
   if (subject.type === "maison") inputs.push(subject.landM2 !== null);
   const fData = inputs.filter(Boolean).length / inputs.length;
   const confidence = Math.round(
     100 *
-      (0.35 * fN + 0.25 * fDispersion + 0.15 * tier.distanceFactor + 0.15 * fRecency +
+      (0.35 * fN + 0.25 * fDispersion + 0.15 * RADIUS_FACTOR[tier.radiusM] + 0.15 * fRecency +
         0.1 * fData),
   );
 
@@ -240,7 +272,7 @@ export function computeEstimate(input: EstimateInput): EstimateResult {
     priceM2High: Math.round(m2High),
     confidence,
     comparablesCount: selected.length,
-    scope: tier.radiusM === null ? "commune" : "radius",
+    scope: "radius",
     radiusM: tier.radiusM,
     months: tier.months,
     comparables,

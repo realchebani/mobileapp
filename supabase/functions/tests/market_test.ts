@@ -1,7 +1,7 @@
-import { assertEquals } from "jsr:@std/assert@1";
+import { assertEquals, assertRejects } from "jsr:@std/assert@1";
 import { loadMarket, type SalesStore } from "../estimate-property/market.ts";
 import type { DvfSale } from "../_shared/estimation/types.ts";
-import { chaponostSales, sale, subject } from "./helpers.ts";
+import { chaponostSales, sale, sparseRuralSales, subject } from "./helpers.ts";
 
 const houses = chaponostSales().filter((s) => s.type === "maison");
 
@@ -22,15 +22,35 @@ function fakeStore(commune: DvfSale[], nearby: DvfSale[]) {
   return { store, loads, queries };
 }
 
-/** geo.api answers Chaponost + Brindas; the stats API answers [stats]. */
+/** Centre of a commune [km] north of the subject. */
+const north = (code: string, km: number) => ({
+  code,
+  centre: { coordinates: [4.7469, 45.7104 + km / 111.32] },
+});
+
+/**
+ * geo.api: Chaponost + Brindas (69028) up to 2 km; département 69 with
+ * communes whose centre is 1.5 km (69028), 6 km (69100), 12 km (69200) and
+ * 40 km (69300) away. The stats API answers [stats].
+ */
 function fakeFetch(stats: Record<string, unknown[]> = {}) {
   return (url: string) => {
     if (url.startsWith("https://geo.api.gouv.fr")) {
-      return Promise.resolve(
-        new Response(
-          JSON.stringify(url.includes("lat=45.72") ? [{ code: "69028" }] : [{ code: "69043" }]),
-        ),
-      );
+      const body = url.includes("codeDepartement=69")
+        ? [
+          north("69043", 0),
+          north("69028", 1.5),
+          north("69100", 6),
+          north("69200", 12),
+          north("69300", 40),
+          { code: "69999" },
+        ]
+        : url.includes("fields=codeDepartement")
+        ? [{ codeDepartement: "69" }]
+        : url.includes("lat=45.72")
+        ? [{ code: "69028" }]
+        : [{ code: "69043" }];
+      return Promise.resolve(new Response(JSON.stringify(body)));
     }
     const code = new URL(url).searchParams.get("code_geo__exact")!;
     if (!(code in stats)) return Promise.resolve(new Response("x", { status: 500 }));
@@ -38,22 +58,55 @@ function fakeFetch(stats: Record<string, unknown[]> = {}) {
   };
 }
 
-Deno.test("loads the commune (5 years + current), neighbours (4 years) and the curve", async () => {
+const today = new Date("2026-10-01T10:00:00Z");
+
+Deno.test("a dense commune: the 2 km ring and the 3 recent years are enough", async () => {
   const { store, loads, queries } = fakeStore(houses, [
     sale({ insee: "69028", soldOn: "2025-02-01" }),
   ]);
-  const market = await loadMarket(subject(), store, fakeFetch(), new Date("2026-10-01T10:00:00Z"));
+  const market = await loadMarket(subject(), store, fakeFetch(), today);
   assertEquals(loads, [
     [["69043"], [2026, 2025, 2024, 2023, 2022, 2021]],
-    [["69028"], [2025, 2024, 2023, 2022]],
+    [["69028"], [2025, 2024, 2023]],
   ]);
   const query = queries[0] as { insees: string[]; minArea: number; since: string };
   assertEquals(query.insees, ["69043", "69028"]);
   assertEquals(Math.round(query.minArea), 81);
-  assertEquals(query.since, "2021-12-31");
+  assertEquals(query.since, "2019-12-31");
+  assertEquals(queries.length, 1);
   assertEquals(market.dataUntil, "2025-12-19");
   assertEquals(market.curve![0].scale, "commune");
   assertEquals(market.sourceVersion, "geo-dvf 2026-05-18");
+});
+
+Deno.test("sparse rural area: loads the rings progressively until 10 recent sales", async () => {
+  const { store, loads, queries } = fakeStore([], sparseRuralSales());
+  const market = await loadMarket(subject(), store, fakeFetch(), today);
+  assertEquals(loads, [
+    [["69043"], [2026, 2025, 2024, 2023, 2022, 2021]],
+    [["69028"], [2025, 2024, 2023]],
+    [["69100"], [2025, 2024, 2023]],
+    [["69200"], [2025, 2024, 2023]],
+  ]);
+  assertEquals(queries.length, 3);
+  assertEquals(market.dataUntil, "2025-05-10");
+});
+
+Deno.test("widest ring still sparse: loads 5 years", async () => {
+  const far = Array.from({ length: 3 }, () => sale({ soldOn: "2025-03-01", lat: 45.85 }));
+  const { store, loads } = fakeStore([], far);
+  await loadMarket(subject(), store, fakeFetch(), today);
+  assertEquals(loads.at(-1), [["69028", "69100", "69200"], [2022, 2021, 2020]]);
+});
+
+Deno.test("stops when the loading budget is exceeded", async () => {
+  let t = 0;
+  const { store } = fakeStore([], []);
+  await assertRejects(
+    () => loadMarket(subject(), store, fakeFetch(), today, () => (t += 60_000)),
+    Error,
+    "load budget exceeded",
+  );
 });
 
 function months(count: number, median: number) {

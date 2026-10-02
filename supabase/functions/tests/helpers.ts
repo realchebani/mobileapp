@@ -56,3 +56,44 @@ export function sale(overrides: Partial<DvfSale> = {}): DvfSale {
     ...overrides,
   };
 }
+
+/**
+ * Sparse rural fixture around the subject (45.7104, 4.7469): 4 recent sales
+ * at ~3–4 km, 8 recent ones at ~7–9 km, 8 older ones (2022) at ~4 km.
+ */
+export function sparseRuralSales(): DvfSale[] {
+  const at = (km: number, i: number) => {
+    const angle = (i * Math.PI) / 4;
+    return {
+      lat: 45.7104 + (km / 111.32) * Math.sin(angle),
+      lng: 4.7469 + (km / (111.32 * Math.cos((45.7104 * Math.PI) / 180))) * Math.cos(angle),
+    };
+  };
+  return [
+    ...Array.from(
+      { length: 4 },
+      (_, i) =>
+        sale({
+          insee: "23001",
+          soldOn: "2025-05-10",
+          priceEur: 180000 + i * 4000,
+          ...at(3 + i / 4, i),
+        }),
+    ),
+    ...Array.from(
+      { length: 8 },
+      (_, i) =>
+        sale({
+          insee: "23002",
+          soldOn: "2024-11-10",
+          priceEur: 170000 + i * 3000,
+          ...at(7 + i / 4, i),
+        }),
+    ),
+    ...Array.from(
+      { length: 8 },
+      (_, i) =>
+        sale({ insee: "23001", soldOn: "2022-02-10", priceEur: 160000 + i * 3000, ...at(4, i) }),
+    ),
+  ];
+}

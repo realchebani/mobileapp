@@ -6,6 +6,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:mobileapp/app/app.dart';
 import 'package:mobileapp/l10n/l10n.dart';
 import 'package:mobileapp/seller_tunnel/cubit/seller_tunnel_cubit.dart';
+import 'package:mobileapp/seller_tunnel/market/widgets/market_format.dart';
 import 'package:mobileapp/seller_tunnel/steps/submitted/cubit/ai_estimate_cubit.dart';
 import 'package:mobileapp/seller_tunnel/steps/submitted/cubit/notification_preference_cubit.dart';
 import 'package:mobileapp/seller_tunnel/steps/submitted/data/notification_preference_store.dart';
@@ -276,6 +277,7 @@ class _AiEstimate extends StatelessWidget {
           high: high,
           computedAt: snapshot!.computedAt,
           confidence: snapshot.confidenceLevel,
+          widenedNote: _widenedNote(l10n, snapshot),
           onSynthesis: () => context.go(AppRoutes.sellerMarket),
         ),
       AiEstimateStatus.computing => AiEstimateStatusCard(
@@ -297,6 +299,13 @@ class _AiEstimate extends StatelessWidget {
       ),
     };
   }
+}
+
+String? _widenedNote(AppLocalizations l10n, MarketSnapshot snapshot) {
+  final radius = snapshot.radiusM;
+  final years = snapshot.years;
+  if (!snapshot.isSearchWidened || radius == null || years == null) return null;
+  return l10n.submittedAiWidened(marketDistance(l10n, radius), years);
 }
 
 class _Card extends StatelessWidget {

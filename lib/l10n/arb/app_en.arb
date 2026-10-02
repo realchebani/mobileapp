@@ -617,7 +617,7 @@
   "marketPriceM2": "€{value}/m²",
   "marketSectorMedian": "Area median €{value}/m²",
   "marketBandSemantics": "Area price per m² from €{low} to €{high}, median €{median}. Your property: €{own}/m².",
-  "marketBasisRadius": "{count} comparable sales · {distance} radius · {years} years",
+  "marketBasisRadius": "{count} comparable sales within {distance} · last {years} years",
   "marketBasisCommune": "{count} comparable sales · {city} · {years} years",
   "marketSales12m": "Sales over 12 months",
   "marketYoy": "Price change over 1 year",
@@ -641,5 +641,7 @@
   "marketUnavailable": "No market summary for this property: the expert will handle it in your valuation.",
   "marketLoadError": "The market summary could not be loaded.",
   "marketAllSalesTitle": "Comparable sales",
-  "submittedAiRateLimited": "Too many computation requests today: please try again tomorrow."
+  "submittedAiRateLimited": "Too many computation requests today: please try again tomorrow.",
+  "submittedAiWidened": "Search widened for lack of recent nearby sales: sales up to {distance}, last {years} years.",
+  "marketWidened": "Search widened for lack of recent nearby sales: sales up to {distance}, last {years} years."
 }

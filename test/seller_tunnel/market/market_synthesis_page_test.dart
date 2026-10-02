@@ -109,7 +109,16 @@ void main() {
     expect(find.text('3${nb}572$nb€/m²'), findsOne);
     expect(find.text('Médiane secteur 4${nb}162$nb€/m²'), findsOne);
     expect(
-      find.text('27 ventes comparables · rayon de 500${nb}m · 3${nb}ans'),
+      find.text(
+        '27 ventes comparables à moins de 500${nb}m · 3${nb}dernières années',
+      ),
+      findsOne,
+    );
+    expect(
+      find.text(
+        'Recherche élargie faute de ventes proches et récentes$nb: ventes '
+        'jusqu’à 500${nb}m, 3${nb}dernières années.',
+      ),
       findsOne,
     );
     expect(

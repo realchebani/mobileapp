@@ -155,6 +155,15 @@ class MarketSynthesisView extends StatelessWidget {
           high: high,
           own: ownM2,
         ),
+      if (snapshot.isSearchWidened &&
+          snapshot.radiusM != null &&
+          snapshot.years != null)
+        InlineBanner(
+          message: l10n.marketWidened(
+            marketDistance(l10n, snapshot.radiusM!),
+            snapshot.years!,
+          ),
+        ),
       if (sales12m != null || yoy != null)
         IntrinsicHeight(
           child: Row(
@@ -346,7 +355,7 @@ class _SectorCard extends StatelessWidget {
     final l10n = context.l10n;
     final c = context.realestyColors;
     final count = snapshot.comparablesCount ?? snapshot.comparables.length;
-    final years = ((snapshot.months ?? 36) / 12).round();
+    final years = snapshot.years ?? 3;
     final radius = snapshot.radiusM;
     final basis = snapshot.scope == MarketScope.radius && radius != null
         ? l10n.marketBasisRadius(count, marketDistance(l10n, radius), years)

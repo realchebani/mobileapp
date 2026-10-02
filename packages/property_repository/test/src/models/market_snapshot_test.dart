@@ -80,6 +80,8 @@ void main() {
         MarketFactor(positive: false, label: 'Route'),
       ]);
       expect(snapshot.explanation, 'Texte');
+      expect(snapshot.isSearchWidened, isTrue);
+      expect(snapshot.years, 3);
       expect(snapshot.props, isNotEmpty);
     });
 
@@ -96,6 +98,8 @@ void main() {
       expect(snapshot.status, MarketSnapshotStatus.error);
       expect(snapshot.isFinal, isFalse);
       expect(snapshot.confidenceLevel, isNull);
+      expect(snapshot.isSearchWidened, isFalse);
+      expect(snapshot.years, isNull);
       expect(snapshot.comparables.single.soldYear, 0);
       expect(snapshot.comparables.single.areaM2, 0);
       expect(snapshot.factors.single.label, '');
@@ -111,6 +115,20 @@ void main() {
       );
       expect(snapshot.isFinal, isTrue);
     });
+  });
+
+  test('a 10 km search on 2 years is widened, 2 km on 2 years is not', () {
+    MarketSnapshot search(int radius, int months) => MarketSnapshot(
+      id: 's',
+      propertyId: 'p',
+      status: MarketSnapshotStatus.ok,
+      createdAt: DateTime(2026),
+      radiusM: radius,
+      months: months,
+    );
+    expect(search(10000, 24).isSearchWidened, isTrue);
+    expect(search(2000, 24).isSearchWidened, isFalse);
+    expect(search(2000, 24).years, 2);
   });
 
   test('EstimateConfidenceLevel.of', () {

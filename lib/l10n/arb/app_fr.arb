@@ -2993,7 +2993,7 @@
       }
     }
   },
-  "marketBasisRadius": "{count} ventes comparables · rayon de {distance} · {years} ans",
+  "marketBasisRadius": "{count} ventes comparables à moins de {distance} · {years} dernières années",
   "@marketBasisRadius": {
     "description": "Base de calcul : nombre de ventes, rayon, période (V8b)",
     "placeholders": {
@@ -3182,5 +3182,29 @@
   "submittedAiRateLimited": "Trop de demandes de calcul aujourd’hui : réessayez demain.",
   "@submittedAiRateLimited": {
     "description": "Carte Tendance IA quand la limite de 3 calculs par 24 h est atteinte"
+  },
+  "submittedAiWidened": "Recherche élargie faute de ventes proches et récentes : ventes jusqu’à {distance}, {years} dernières années.",
+  "@submittedAiWidened": {
+    "description": "Carte Tendance IA quand la recherche des ventes comparables a été élargie (rayon ≥ 5 km ou plus de 2 ans)",
+    "placeholders": {
+      "distance": {
+        "type": "String"
+      },
+      "years": {
+        "type": "int"
+      }
+    }
+  },
+  "marketWidened": "Recherche élargie faute de ventes proches et récentes : ventes jusqu’à {distance}, {years} dernières années.",
+  "@marketWidened": {
+    "description": "V8b quand la recherche des ventes comparables a été élargie (rayon ≥ 5 km ou plus de 2 ans)",
+    "placeholders": {
+      "distance": {
+        "type": "String"
+      },
+      "years": {
+        "type": "int"
+      }
+    }
   }
 }

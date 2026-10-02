@@ -1,8 +1,23 @@
-// Loads the market data of a subject: DVF sales of its commune (5 years)
-// and of the communes up to 2 km around it, and the half-year curve
-// (commune, else EPCI, else département statistics).
-import { communesAround, type FetchLike, monthlyStats } from "../_shared/dvf/sources.ts";
-import { AREA_TOLERANCE, latestSaleDate } from "../_shared/estimation/estimate.ts";
+// Loads the market data of a subject: DVF sales of its commune (5 years),
+// then of the communes around it, ring after ring (2 → 5 → 10 → 20 km, the
+// 3 most recent years) until there are enough recent comparables, then 5
+// years only if the widest ring is still too sparse (freshness first,
+// owner decision 2026-10-02); and the half-year curve (commune, else EPCI,
+// else département statistics).
+import {
+  type CommuneCentre,
+  communesWithin,
+  type FetchLike,
+  monthlyStats,
+} from "../_shared/dvf/sources.ts";
+import {
+  AREA_TOLERANCE,
+  countCandidates,
+  latestSaleDate,
+  RADII_M,
+  TARGET_COMPARABLES,
+  WINDOWS_MONTHS,
+} from "../_shared/estimation/estimate.ts";
 import { monthsBefore } from "../_shared/estimation/stats.ts";
 import { curveFromMonthly, curveFromSales } from "../_shared/estimation/trend.ts";
 import type { DvfSale, PropertyType, SemesterPoint, Subject } from "../_shared/estimation/types.ts";
@@ -27,9 +42,6 @@ export interface MarketData {
   dataUntil: string | null;
   sourceVersion: string;
 }
-
-/** Radius of the neighbourhood search, with a margin for the box. */
-const NEARBY_RADIUS_M = 2100;
 
 function years(from: number, to: number): number[] {
   const result: number[] = [];
@@ -60,40 +72,80 @@ async function statisticsCurve(
   return null;
 }
 
+/** Rings loaded progressively (the smaller radii are inside the first one). */
+const LOAD_RADII_M = RADII_M.filter((radius) => radius >= 2000);
+/** Wall-clock budget for loading (Edge Function limit ~150 s): the cache keeps
+ * what was loaded, a retry resumes from there. */
+export const LOAD_BUDGET_MS = 100_000;
+
 export async function loadMarket(
   subject: Subject,
   store: SalesStore,
   fetcher: FetchLike,
   today: Date,
+  clock: () => number = Date.now,
 ): Promise<MarketData> {
+  const deadline = clock() + LOAD_BUDGET_MS;
+  const checkBudget = () => {
+    if (clock() > deadline) throw new Error("load budget exceeded (cache kept, retry resumes)");
+  };
   const year = today.getUTCFullYear();
   // geo-dvf keeps 5 vintages; the current year is probed (404 until published).
   const sourceDate = await store.ensureLoaded([subject.insee], years(year - 5, year));
   const communeSales = await store.communeSales(subject.insee, subject.type);
-
-  const around = (await communesAround(fetcher, subject.lat, subject.lng))
-    .filter((code) => code !== subject.insee);
   const latest = latestSaleDate(communeSales);
-  const lastYear = latest ? Number(latest.slice(0, 4)) : year;
+  const lastYear = latest ? Number(latest.slice(0, 4)) : year - 1;
+
+  const loaded = new Set([subject.insee]);
+  const departments = new Map<string, CommuneCentre[]>();
   let neighbourDate: string | null = null;
-  if (around.length > 0) {
-    neighbourDate = await store.ensureLoaded(around, years(lastYear - 3, lastYear));
+  let nearbySales: DvfSale[] = [];
+  const query = (radius: number) => {
+    const reach = radius * 1.05;
+    const dLat = reach / 111320;
+    const dLng = reach / (111320 * Math.cos((subject.lat * Math.PI) / 180));
+    return store.nearbySales({
+      insees: [...loaded],
+      type: subject.type,
+      box: {
+        minLat: subject.lat - dLat,
+        maxLat: subject.lat + dLat,
+        minLng: subject.lng - dLng,
+        maxLng: subject.lng + dLng,
+      },
+      minArea: subject.livingAreaM2 * (1 - AREA_TOLERANCE),
+      maxArea: subject.livingAreaM2 * (1 + AREA_TOLERANCE),
+      since: monthsBefore(`${lastYear}-12-31`, 72),
+    });
+  };
+  const enough = (radius: number, months: number) => {
+    const all = [...communeSales, ...nearbySales];
+    const until = latestSaleDate(all);
+    return until !== null &&
+      countCandidates(subject, all, until, radius, months) >= TARGET_COMPARABLES;
+  };
+
+  // Geography first, on the most recent years.
+  let radius = LOAD_RADII_M[0];
+  for (radius of LOAD_RADII_M) {
+    checkBudget();
+    const codes = await communesWithin(fetcher, subject.lat, subject.lng, radius, departments);
+    const fresh = codes.filter((code) => !loaded.has(code));
+    if (fresh.length > 0) {
+      neighbourDate = await store.ensureLoaded(fresh, years(lastYear - 2, lastYear)) ??
+        neighbourDate;
+      for (const code of fresh) loaded.add(code);
+    }
+    nearbySales = await query(radius);
+    if (enough(radius, WINDOWS_MONTHS[0])) break;
   }
-  const dLat = NEARBY_RADIUS_M / 111320;
-  const dLng = NEARBY_RADIUS_M / (111320 * Math.cos((subject.lat * Math.PI) / 180));
-  const nearbySales = await store.nearbySales({
-    insees: [subject.insee, ...around],
-    type: subject.type,
-    box: {
-      minLat: subject.lat - dLat,
-      maxLat: subject.lat + dLat,
-      minLng: subject.lng - dLng,
-      maxLng: subject.lng + dLng,
-    },
-    minArea: subject.livingAreaM2 * (1 - AREA_TOLERANCE),
-    maxArea: subject.livingAreaM2 * (1 + AREA_TOLERANCE),
-    since: monthsBefore(`${lastYear}-12-31`, 48),
-  });
+  // Older years only when even the widest ring lacks recent sales.
+  if (!enough(radius, WINDOWS_MONTHS[1])) {
+    checkBudget();
+    const others = [...loaded].filter((code) => code !== subject.insee);
+    if (others.length > 0) await store.ensureLoaded(others, years(lastYear - 5, lastYear - 3));
+    nearbySales = await query(radius);
+  }
 
   const dataUntil = latestSaleDate([...communeSales, ...nearbySales]);
   const curve = dataUntil === null ? null : curveFromSales(communeSales, dataUntil) ??

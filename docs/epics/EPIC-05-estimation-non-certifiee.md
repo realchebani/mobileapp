@@ -26,8 +26,10 @@ Règles validées :
 - ✅ `estimate-property` : propriétaire seulement (JWT, sinon 404), dossier envoyé / en examen avec titre de propriété et pièce d'identité non rejetés (sinon 409).
 - ✅ Plafond de coût : 3 nouveaux calculs par utilisateur sur 24 h (429, message « Trop de demandes de calcul aujourd'hui » dans l'app, sans « Réessayer »).
 - ✅ Terrain / autre, surface ou localisation manquante, Alsace-Moselle / Mayotte → résultat définitif `insufficient` avec une raison.
-- ✅ Comparables même type, surface ± 30 %, 500 m → 1 km → 2 km → commune (3 ans) → commune (5 ans).
-- ✅ < 5 comparables → pas d'estimation, pas d'appel IA.
+- ✅ Comparables même type, surface ± 30 %, **fraîcheur d'abord** : 2 dernières années en élargissant la zone 500 m → 1 → 2 → 5 → 10 → 20 km (communes voisines chargées au fur et à mesure dans le cache), puis 3 et 5 ans seulement si le rayon de 20 km reste insuffisant ; objectif 10 ventes.
+- ✅ L'indice de confiance baisse avec le rayon et la période utilisés ; V8 et V8b affichent « Recherche élargie faute de ventes proches et récentes : ventes jusqu'à 10 km, 2 dernières années » dès 5 km ou plus de 2 ans.
+- ✅ Chargement borné à ~100 s (au-delà : échec, le cache est conservé et « Réessayer » reprend) ; plafond de 3 calculs par jour inchangé.
+- ✅ < 5 comparables même à 20 km sur 5 ans → pas d'estimation (« l'expert s'en charge »), pas d'appel IA.
 - ✅ Médiane / quartiles pondérés (proximité, ancienneté) du €/m² projeté à aujourd'hui (courbe semestrielle commune, sinon EPCI / département des Statistiques DVF ; dérive ± 5 %/an max).
 - ✅ Fourchette au millier (± 5 % à ± 20 %), indice de confiance 0–100.
 - ✅ Calcul unique (index uniques), en arrière-plan (202) ; un calcul bloqué > 150 s est abandonné.

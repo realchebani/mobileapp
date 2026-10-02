@@ -278,7 +278,7 @@ class MarketSnapshot extends Equatable {
   final MarketScope? scope;
   final int? radiusM;
 
-  /// Period of the comparable sales (36 or 60 months).
+  /// Period of the comparable sales (24, 36 or 60 months).
   final int? months;
 
   /// Sales of the property type in the commune over the last 12 months.
@@ -299,6 +299,16 @@ class MarketSnapshot extends Equatable {
   bool get isFinal =>
       status == MarketSnapshotStatus.ok ||
       status == MarketSnapshotStatus.insufficient;
+
+  /// Whether the search of comparables had to be widened beyond the
+  /// neighbourhood (radius of 5 km or more) or the 2 most recent years.
+  bool get isSearchWidened => (radiusM ?? 0) >= 5000 || (months ?? 0) > 24;
+
+  /// Search period in years (2, 3 or 5), null when unknown.
+  int? get years {
+    final months = this.months;
+    return months == null ? null : (months / 12).round();
+  }
 
   /// Level of [confidence], null when unknown.
   EstimateConfidenceLevel? get confidenceLevel {

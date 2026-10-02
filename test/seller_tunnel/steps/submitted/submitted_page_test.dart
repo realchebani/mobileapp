@@ -286,6 +286,30 @@ void main() {
       verifyNever(() => repository.requestEstimate(any()));
     });
 
+    testWidgets('says when the search had to be widened', (tester) async {
+      when(() => repository.getMarketSnapshot(any())).thenAnswer(
+        (_) async => MarketSnapshot(
+          id: 's1',
+          propertyId: 'property-id',
+          status: MarketSnapshotStatus.ok,
+          createdAt: DateTime.now(),
+          lowEur: 103000,
+          medianEur: 123000,
+          highEur: 148000,
+          radiusM: 10000,
+          months: 24,
+        ),
+      );
+      await pump(tester);
+      expect(
+        find.text(
+          'Recherche élargie faute de ventes proches et récentes$nb: ventes '
+          'jusqu’à 10${nb}km, 2${nb}dernières années.',
+        ),
+        findsOne,
+      );
+    });
+
     testWidgets('without date, with an empty range and other reliabilities', (
       tester,
     ) async {

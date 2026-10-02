@@ -1,6 +1,8 @@
 import { assertEquals, assertRejects } from "jsr:@std/assert@1";
 import {
   communesAround,
+  communesWithin,
+  departmentCommunes,
   departmentOf,
   downloadCommuneCsv,
   geoDvfUrl,
@@ -121,5 +123,46 @@ Deno.test("monthlyStats reads the tabular API", async () => {
   );
   await assertRejects(() =>
     monthlyStats(() => Promise.resolve(new Response("x", { status: 500 })), "x", "maison")
+  );
+});
+
+Deno.test("departmentCommunes adds the arrondissements of Paris / Lyon / Marseille", async () => {
+  const urls: string[] = [];
+  const communes = await departmentCommunes((url) => {
+    urls.push(url);
+    const body = url.includes("arrondissement")
+      ? [{ code: "75115", centre: { coordinates: [2.29, 48.84] } }]
+      : [{ code: "75056", centre: { coordinates: [2.34, 48.85] } }];
+    return Promise.resolve(new Response(JSON.stringify(body)));
+  }, "75");
+  assertEquals(communes, [{ code: "75115", lat: 48.84, lng: 2.29 }]);
+  assertEquals(urls.length, 2);
+});
+
+Deno.test("communesWithin: sampled points up to 2 km, département lists beyond", async () => {
+  const fetcher = (url: string) => {
+    const body = url.includes("codeDepartement=23")
+      ? [
+        { code: "23001", centre: { coordinates: [4.7469, 45.7104] } },
+        { code: "23002", centre: { coordinates: [4.7469, 45.7104 + 7 / 111.32] } },
+        { code: "23003", centre: { coordinates: [4.7469, 45.7104 + 30 / 111.32] } },
+      ]
+      : url.includes("fields=codeDepartement")
+      ? [{ codeDepartement: "23" }]
+      : [{ code: "23001" }];
+    return Promise.resolve(new Response(JSON.stringify(body)));
+  };
+  const cache = new Map();
+  assertEquals(await communesWithin(fetcher, 45.7104, 4.7469, 2000, cache), ["23001"]);
+  assertEquals(await communesWithin(fetcher, 45.7104, 4.7469, 5000, cache), ["23001", "23002"]);
+  assertEquals(cache.size, 1);
+  await assertRejects(() =>
+    communesWithin(
+      () => Promise.resolve(new Response("x", { status: 500 })),
+      45,
+      4,
+      5000,
+      new Map(),
+    )
   );
 });

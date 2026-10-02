@@ -165,3 +165,83 @@ export async function monthlyStats(
     })),
   };
 }
+
+export interface CommuneCentre {
+  code: string;
+  lat: number;
+  lng: number;
+}
+
+async function getJson<T>(fetcher: FetchLike, url: string, what: string): Promise<T> {
+  const response = await fetchWithTimeout(fetcher, url);
+  if (!response.ok) {
+    await response.body?.cancel();
+    throw new Error(`${what}: HTTP ${response.status}`);
+  }
+  return await response.json() as T;
+}
+
+/** Communes (arrondissements in Paris / Lyon / Marseille) of a département, with their centre. */
+export async function departmentCommunes(
+  fetcher: FetchLike,
+  department: string,
+): Promise<CommuneCentre[]> {
+  type Row = { code: string; centre?: { coordinates: [number, number] } };
+  const base = `https://geo.api.gouv.fr/communes?codeDepartement=${department}&fields=code,centre`;
+  const rows = await getJson<Row[]>(fetcher, base, "geo.api");
+  if (rows.some((row) => PLM.has(row.code))) {
+    rows.push(
+      ...await getJson<Row[]>(fetcher, `${base}&type=arrondissement-municipal`, "geo.api"),
+    );
+  }
+  return rows
+    .filter((row) => !PLM.has(row.code) && row.centre)
+    .map((row) => ({
+      code: row.code,
+      lng: row.centre!.coordinates[0],
+      lat: row.centre!.coordinates[1],
+    }));
+}
+
+/** Margin added to a radius to catch communes whose centre is farther out. */
+const COMMUNE_MARGIN_M = 3000;
+
+/**
+ * Codes of the communes that may hold sales within [radiusM] of a point:
+ * sampled points up to 2 km, then the communes of the départements met on
+ * the circle whose centre is within the radius (+ 3 km). [departments]
+ * caches the département lists between calls.
+ */
+export async function communesWithin(
+  fetcher: FetchLike,
+  lat: number,
+  lng: number,
+  radiusM: number,
+  departments: Map<string, CommuneCentre[]>,
+): Promise<string[]> {
+  if (radiusM <= 2000) return await communesAround(fetcher, lat, lng);
+  type Row = { codeDepartement: string };
+  const codes = new Set<string>();
+  const found = await Promise.all(
+    samplePoints(lat, lng, radiusM, 8).map(([pLat, pLng]) =>
+      getJson<Row[]>(
+        fetcher,
+        `https://geo.api.gouv.fr/communes?lat=${pLat.toFixed(5)}&lon=${pLng.toFixed(5)}` +
+          "&fields=codeDepartement",
+        "geo.api",
+      )
+    ),
+  );
+  const wanted = new Set(found.flat().map((row) => row.codeDepartement));
+  for (const department of [...wanted].sort()) {
+    if (!departments.has(department)) {
+      departments.set(department, await departmentCommunes(fetcher, department));
+    }
+    for (const commune of departments.get(department)!) {
+      const dLat = (commune.lat - lat) * 111320;
+      const dLng = (commune.lng - lng) * 111320 * Math.cos((lat * Math.PI) / 180);
+      if (Math.hypot(dLat, dLng) <= radiusM + COMMUNE_MARGIN_M) codes.add(commune.code);
+    }
+  }
+  return [...codes].sort();
+}

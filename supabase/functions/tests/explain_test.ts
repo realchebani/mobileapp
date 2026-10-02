@@ -42,7 +42,7 @@ Deno.test("template explanation", () => {
   const text = templateExplanation(subject(), result);
   assertStringIncludes(
     text,
-    "D’après 27 ventes de maisons comparables à moins de 500 m de votre bien",
+    "D’après 27 ventes de maisons comparables à moins de 500 m de votre bien sur les 3 dernières années",
   );
   assertStringIncludes(text, "4 162 €/m²");
   assertStringIncludes(text, "non certifiés");

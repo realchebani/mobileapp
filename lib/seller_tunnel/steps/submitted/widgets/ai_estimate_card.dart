@@ -14,6 +14,7 @@ class AiEstimateCard extends StatelessWidget {
     required this.high,
     this.computedAt,
     this.confidence,
+    this.widenedNote,
     this.onSynthesis,
     super.key,
   });
@@ -25,6 +26,10 @@ class AiEstimateCard extends StatelessWidget {
 
   /// Reliability of the estimate, hidden when unknown.
   final EstimateConfidenceLevel? confidence;
+
+  /// Says that the search of comparable sales had to be widened (radius,
+  /// period); hidden when null.
+  final String? widenedNote;
 
   /// Opens the market summary (V8b); the button is hidden when null.
   final VoidCallback? onSynthesis;
@@ -39,6 +44,7 @@ class AiEstimateCard extends StatelessWidget {
     final computedAt = this.computedAt;
     final confidence = this.confidence;
     final onSynthesis = this.onSynthesis;
+    final widenedNote = this.widenedNote;
     final span = high - low;
     final medianShare = span <= 0
         ? 0.5
@@ -167,6 +173,26 @@ class AiEstimateCard extends StatelessWidget {
                 fontWeight: FontWeight.w700,
                 color: c.encre,
               ),
+            ),
+          if (widenedNote != null)
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              spacing: RealestySpacing.xs,
+              children: [
+                RealestyIcon(
+                  RealestyIcons.infoCircle,
+                  size: 16,
+                  color: c.attention,
+                ),
+                Expanded(
+                  child: Text(
+                    widenedNote,
+                    style: RealestyTextStyles.listSubtitle.copyWith(
+                      color: c.encre,
+                    ),
+                  ),
+                ),
+              ],
             ),
           Text(
             computedAt == null

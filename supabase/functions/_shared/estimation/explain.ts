@@ -44,7 +44,7 @@ export function explanationFacts(subject: Subject, result: EstimateResult) {
     zone: result.scope === "radius" && result.radiusM !== null
       ? `rayon de ${radiusLabel(result.radiusM)}`
       : "commune",
-    periode_mois: result.months,
+    periode_annees: result.months === null ? null : Math.round(result.months / 12),
     prix_m2_bas: result.priceM2Low,
     prix_m2_median: result.priceM2Median,
     prix_m2_haut: result.priceM2High,
@@ -66,7 +66,10 @@ export function templateExplanation(subject: Subject, result: EstimateResult): s
     : subject.city
     ? `à ${subject.city}`
     : "dans votre commune";
-  return `D’après ${result.comparablesCount} ventes de ${kind} comparables ${where}, ` +
+  const period = result.months === null
+    ? ""
+    : ` sur les ${Math.round(result.months / 12)} dernières années`;
+  return `D’après ${result.comparablesCount} ventes de ${kind} comparables ${where}${period}, ` +
     `le prix médian ressort à ${frenchNumber(result.priceM2Median ?? 0)} €/m², ` +
     `soit une tendance de ${frenchNumber(result.lowEur ?? 0)} à ` +
     `${frenchNumber(result.highEur ?? 0)} € pour ` +
