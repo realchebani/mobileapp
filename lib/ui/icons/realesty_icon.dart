@@ -21,6 +21,7 @@ enum RealestyIcons {
   clock('clock'),
   close('close'),
   cube('cube'),
+  download('download'),
   euro('euro'),
   eye('eye'),
   file('file'),

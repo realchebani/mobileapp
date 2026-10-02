@@ -1,0 +1,71 @@
+import 'package:equatable/equatable.dart';
+
+/// What an [AppNotification] is about (`notifications.kind`).
+enum AppNotificationKind {
+  /// An expert took the dossier over (`review_started`).
+  reviewStarted('review_started'),
+
+  /// The certified valuation is available (`valuation_certified`).
+  valuationCertified('valuation_certified'),
+
+  /// A kind this version of the app does not know.
+  other('other');
+
+  new(this.value);
+
+  /// Value stored in the database.
+  final String value;
+
+  static AppNotificationKind parse(Object? value) =>
+      values.firstWhere((kind) => kind.value == value, orElse: () => other);
+}
+
+/// An in-app notification of the signed-in user (`notifications` table).
+class AppNotification extends Equatable {
+  const new({
+    required this.id,
+    required this.kind,
+    required this.title,
+    required this.createdAt,
+    this.body,
+    this.route,
+    this.readAt,
+  });
+
+  factory fromJson(Map<String, dynamic> json) => AppNotification(
+    id: json['id'] as String,
+    kind: AppNotificationKind.parse(json['kind']),
+    title: json['title'] as String,
+    body: json['body'] as String?,
+    route: json['route'] as String?,
+    readAt: json['read_at'] == null
+        ? null
+        : DateTime.parse(json['read_at'] as String),
+    createdAt: DateTime.parse(json['created_at'] as String),
+  );
+
+  final String id;
+  final AppNotificationKind kind;
+  final String title;
+  final String? body;
+
+  /// App location to open (e.g. `/vendeur/rapport`).
+  final String? route;
+  final DateTime? readAt;
+  final DateTime createdAt;
+
+  bool get isRead => readAt != null;
+
+  AppNotification markedRead(DateTime at) => AppNotification(
+    id: id,
+    kind: kind,
+    title: title,
+    body: body,
+    route: route,
+    readAt: readAt ?? at,
+    createdAt: createdAt,
+  );
+
+  @override
+  List<Object?> get props => [id, kind, title, body, route, readAt, createdAt];
+}

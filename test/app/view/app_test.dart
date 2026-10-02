@@ -11,15 +11,18 @@ import 'package:mobileapp/app/app.dart';
 import 'package:mobileapp/login/login.dart';
 import 'package:mobileapp/onboarding/onboarding.dart';
 import 'package:mobileapp/role/role.dart';
+import 'package:mobileapp/seller_space/seller_space.dart';
 import 'package:mobileapp/seller_tunnel/seller_tunnel.dart';
 import 'package:mobileapp/splash/splash.dart';
 import 'package:mobileapp/ui/ui.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:profile_repository/profile_repository.dart';
 import 'package:property_repository/property_repository.dart';
+import 'package:sale_repository/sale_repository.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../helpers/helpers.dart';
+import '../../seller_space/fixtures.dart';
 import '../../seller_tunnel/steps/location/location_fixtures.dart';
 
 /// The photo library, returning a small in-memory photo.
@@ -56,6 +59,8 @@ void main() {
   late AuthRepository authRepository;
   late ProfileRepository profileRepository;
   late PropertyRepository propertyRepository;
+  late ValuationRepository valuationRepository;
+  late NotificationRepository notificationRepository;
   late StreamController<AuthUser?> userController;
 
   setUpAll(() async {
@@ -85,6 +90,14 @@ void main() {
     authRepository = MockAuthRepository();
     profileRepository = MockProfileRepository();
     propertyRepository = MockPropertyRepository();
+    valuationRepository = MockValuationRepository();
+    notificationRepository = MockNotificationRepository();
+    when(() => valuationRepository.getLatestValuation(any()))
+        .thenAnswer((_) async => null);
+    when(() => notificationRepository.getNotifications(any()))
+        .thenAnswer((_) async => []);
+    when(() => notificationRepository.markRead(any()))
+        .thenAnswer((_) async => DateTime(2026));
     when(() => propertyRepository.getOrCreateDossier(any())).thenAnswer(
       (_) async => const Property(id: 'property-id', ownerId: 'user-id'),
     );
@@ -131,6 +144,8 @@ void main() {
         profileRepository: profileRepository,
         propertyRepository: propertyRepository,
         onboardingRepository: OnboardingRepository(preferences: preferences),
+        valuationRepository: valuationRepository,
+        notificationRepository: notificationRepository,
         geoRepository: geoRepository,
         enableDesignSystem: enableDesignSystem,
       ),
@@ -220,8 +235,13 @@ void main() {
       verify(() => profileRepository.updateRole('user-id', UserRole.seller))
           .called(1);
       expect(find.text('Mon dossier vendeur'), findsOneWidget);
-      expect(find.text('Design system'), findsNothing);
+      expect(find.byType(RealestyTabBar), findsOneWidget);
 
+      // Signing out lives in the "Compte" tab.
+      await tester.tap(find.text('Compte'));
+      await tester.pumpAndSettle();
+      expect(find.byType(AccountPage), findsOneWidget);
+      expect(find.text('Design system'), findsNothing);
       await tester.tap(find.text('Se déconnecter'));
       await tester.pumpAndSettle();
       expect(find.byType(LoginView), findsOneWidget);
@@ -232,11 +252,9 @@ void main() {
         (_) async => const Profile(id: 'user-id', role: UserRole.seller),
       );
       when(() => propertyRepository.updateProperty(any(), any())).thenAnswer(
-        (invocation) async => Property(
-          id: 'property-id',
-          ownerId: 'user-id',
-          currentStep:
-              (invocation.positionalArguments[1] as Map)['current_step'] as int,
+        (invocation) async => _patched(
+          const Property(id: 'property-id', ownerId: 'user-id'),
+          invocation.positionalArguments[1] as Map<String, Object?>,
         ),
       );
       when(() => propertyRepository.getOrCreateDossier(any())).thenAnswer(
@@ -284,11 +302,15 @@ void main() {
       expect(patch['current_step'], 8);
       expect(patch['status'], PropertyStatus.submitted);
 
-      await tester.tap(find.text('Retour à mon dossier'));
+      // V8 → V9 (the tab bar is back), and V9 → V8 to follow the review.
+      expect(find.byType(RealestyTabBar), findsNothing);
+      await tester.tap(find.text('Aller au tableau de bord'));
       await tester.pumpAndSettle();
-      expect(find.text('Voir mon dossier envoyé'), findsOneWidget);
+      expect(find.byType(DashboardPage), findsOneWidget);
+      expect(find.byType(RealestyTabBar), findsOneWidget);
+      expect(find.text('Analyse en cours'), findsOneWidget);
 
-      await tester.tap(find.text('Voir mon dossier envoyé'));
+      await tester.tap(find.text('Suivi de mon dossier'));
       await tester.pumpAndSettle();
       expect(find.byType(SubmittedPage), findsOneWidget);
     });
@@ -528,7 +550,7 @@ void main() {
       );
       await pumpApp(tester);
       await emitUser(tester, user);
-      expect(find.text('Voir mon dossier envoyé'), findsOneWidget);
+      expect(find.byType(DashboardPage), findsOneWidget);
 
       for (final step in SellerTunnelStep.values) {
         GoRouter.of(tester.element(find.byType(Navigator).first)).go(step.path);
@@ -536,6 +558,62 @@ void main() {
         expect(find.byType(SubmittedPage), findsOneWidget, reason: step.name);
       }
       verifyNever(() => propertyRepository.updateProperty(any(), any()));
+    });
+
+    testWidgets('shows a certified seller the dashboard and the report', (
+      tester,
+    ) async {
+      when(() => profileRepository.getProfile(any())).thenAnswer(
+        (_) async => const Profile(
+          id: 'user-id',
+          role: UserRole.seller,
+          firstName: 'Sophie',
+        ),
+      );
+      when(() => propertyRepository.getOrCreateDossier(any()))
+          .thenAnswer((_) async => certifiedProperty);
+      when(() => valuationRepository.getLatestValuation(any()))
+          .thenAnswer((_) async => testValuation);
+      when(() => notificationRepository.getNotifications(any()))
+          .thenAnswer((_) async => [testNotification]);
+      await pumpApp(tester);
+      await emitUser(tester, user);
+
+      // V9 · certified variant, with an unread notification.
+      expect(find.byType(DashboardPage), findsOneWidget);
+      expect(find.text('Sophie'), findsOneWidget);
+      expect(find.text('525 000 €'), findsOneWidget);
+      final bell = find.bySemanticsLabel('Notifications, 1 non lues');
+      expect(bell, findsOneWidget);
+
+      // The notification opens the report and is marked read.
+      await tester.tap(bell);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(testNotification.title));
+      await tester.pumpAndSettle();
+      expect(find.byType(ReportPage), findsOneWidget);
+      expect(find.byType(RealestyTabBar), findsOneWidget);
+      verify(() => notificationRepository.markRead(['notification-id']))
+          .called(1);
+
+      await tester.tap(find.text('Prix'));
+      await tester.pumpAndSettle();
+      expect(find.text('Ce qui vous revient'), findsOneWidget);
+
+      // Back to V9, then the other tabs.
+      await tester.tap(find.bySemanticsLabel('Retour'));
+      await tester.pumpAndSettle();
+      expect(find.byType(DashboardPage), findsOneWidget);
+      await tester.tap(find.text('Visites'));
+      await tester.pumpAndSettle();
+      expect(find.text('Demandes de visite'), findsOneWidget);
+      await tester.tap(find.text('Coffre-fort'));
+      await tester.pumpAndSettle();
+      expect(find.text('Bientôt'), findsOneWidget);
+      // Each tab keeps its stack: Mon bien is still V9.
+      await tester.tap(find.text('Mon bien'));
+      await tester.pumpAndSettle();
+      expect(find.byType(DashboardPage), findsOneWidget);
     });
 
     testWidgets('opens the space of a returning buyer', (tester) async {
@@ -558,6 +636,8 @@ void main() {
       await emitUser(tester, user);
       expect(find.byType(SellerHomePage), findsOneWidget);
 
+      await tester.tap(find.text('Compte'));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Design system'));
       await tester.pumpAndSettle();
       expect(find.byType(DesignSystemGalleryPage), findsOneWidget);

@@ -1,4 +1,3 @@
-import 'package:auth_repository/auth_repository.dart';
 import 'package:flutter/rendering.dart' show RenderParagraph;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
@@ -88,14 +87,19 @@ void main() {
     expect(find.textContaining('Vous serez alerté(e)'), findsOne);
     expect(find.text('Transmis le 24/09 à 18${nb}h${nb}42'), findsOne);
     expect(find.text('Réponse estimée sous 24${nb}h'), findsOne);
-    expect(find.text('Consultable ici et envoyé par e-mail'), findsOne);
+    expect(
+      find.text('Consultable ici, avec une notification dans l’application'),
+      findsOne,
+    );
     expect(nodeStates(tester), [
       TimelineNodeState.done,
       TimelineNodeState.current,
       TimelineNodeState.todo,
     ]);
     expect(find.byType(AiEstimateCard), findsNothing);
-    expect(find.text('Et par e-mail à sophie.durand@email.fr'), findsOne);
+    // Notifications are in-app only (no e-mail promise).
+    expect(find.text('Vous serez prévenu(e) dans l’application.'), findsOne);
+    expect(find.textContaining('e-mail à'), findsNothing);
     expect(find.bySemanticsLabel(RegExp('Dossier complet, Terminé')), findsOne);
     expect(
       find.bySemanticsLabel(RegExp('Analyse professionnelle, En cours')),
@@ -191,21 +195,12 @@ void main() {
     );
   });
 
-  testWidgets('without owner: generic thanks and account e-mail', (
-    tester,
-  ) async {
-    final appBloc = MockAppBloc();
-    when(() => appBloc.state).thenReturn(
-      const AppState.authenticated(
-        AuthUser(id: 'user-id', email: 'compte@email.fr'),
-      ),
-    );
-    await pump(tester, owners: const [], appBloc: appBloc);
+  testWidgets('without owner: generic thanks', (tester) async {
+    await pump(tester, owners: const []);
     expect(find.text('Merci, votre dossier est complet'), findsOne);
-    expect(find.text('Et par e-mail à compte@email.fr'), findsOne);
   });
 
-  testWidgets('without any e-mail: no e-mail line', (tester) async {
+  testWidgets('without a first name: generic thanks', (tester) async {
     await pump(
       tester,
       owners: const [
@@ -218,7 +213,6 @@ void main() {
       ],
     );
     expect(find.text('Merci, votre dossier est complet'), findsOne);
-    expect(find.textContaining('Et par e-mail'), findsNothing);
   });
 
   testWidgets('shows the AI trend when it was computed', (tester) async {
@@ -366,12 +360,12 @@ void main() {
     verify(() => store.write('property-id', enabled: false)).called(1);
   });
 
-  testWidgets('"Retour à mon dossier" opens the seller space', (tester) async {
+  testWidgets('"Aller au tableau de bord" opens the dashboard', (tester) async {
     final goRouter = MockGoRouter();
     when(() => goRouter.go(any())).thenReturn(null);
     await pump(tester, goRouter: goRouter);
-    await tester.ensureVisible(find.text('Retour à mon dossier'));
-    await tester.tap(find.text('Retour à mon dossier'));
+    await tester.ensureVisible(find.text('Aller au tableau de bord'));
+    await tester.tap(find.text('Aller au tableau de bord'));
     verify(() => goRouter.go(AppRoutes.seller)).called(1);
   });
 

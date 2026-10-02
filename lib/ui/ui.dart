@@ -2,8 +2,12 @@
 /// components.
 library;
 
+export 'components/action_card.dart';
 export 'components/agent_chat.dart';
+export 'components/hero_value_card.dart';
+export 'components/initials_avatar.dart';
 export 'components/inline_banner.dart';
+export 'components/key_value_row.dart';
 export 'components/provenance_tag.dart';
 export 'components/realesty_badge.dart';
 export 'components/realesty_button.dart';
@@ -16,6 +20,7 @@ export 'components/realesty_segmented_control.dart';
 export 'components/realesty_select.dart';
 export 'components/realesty_snack_bar.dart';
 export 'components/realesty_stepper.dart';
+export 'components/realesty_tab_bar.dart';
 export 'components/realesty_text_field.dart';
 export 'components/segmented_progress.dart';
 export 'format/realesty_format.dart';

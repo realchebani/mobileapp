@@ -12,6 +12,7 @@ Statuts : ✅ Terminé · 🚧 En cours · 📋 À faire
 | [EPIC-04](epics/EPIC-04-tunnel-vendeur.md) | Tunnel vendeur (audit du bien) | ✅ (US-04.12 au backlog) |
 | [EPIC-05](epics/EPIC-05-estimation-non-certifiee.md) | Estimation non certifiée (tendance de prix) | 📋 |
 | [EPIC-06](epics/EPIC-06-voix-et-agent-ia.md) | Voix et agent IA | 📋 |
+| [EPIC-07](epics/EPIC-07-tableau-de-bord-vendeur.md) | Espace vendeur : tableau de bord & avis de valeur | 🚧 |
 
 ## Plans d'implémentation
 
@@ -28,6 +29,8 @@ Chaque chantier commence par un plan, versionné dans [`plans/`](plans/) (`AAAA-
 ## Décisions et backlog
 
 Les arbitrages du porteur de projet et le backlog non planifié sont dans [`decisions.md`](decisions.md).
+
+Procédures d’exploitation : [`runbooks/`](runbooks/) (ex. [certifier un dossier](runbooks/certifier-un-dossier.md)).
 
 ## Méthode de travail
 

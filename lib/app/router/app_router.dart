@@ -9,6 +9,7 @@ import 'package:mobileapp/login/login.dart';
 import 'package:mobileapp/onboarding/onboarding.dart';
 import 'package:mobileapp/profile/profile.dart';
 import 'package:mobileapp/role/role.dart';
+import 'package:mobileapp/seller_space/seller_space.dart';
 import 'package:mobileapp/seller_tunnel/seller_tunnel.dart';
 import 'package:mobileapp/splash/splash.dart';
 import 'package:mobileapp/ui/ui.dart';
@@ -26,6 +27,7 @@ GoRouter createAppRouter({
   required Listenable refreshListenable,
   required bool enableDesignSystem,
 }) {
+  final sellerNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'seller');
   return GoRouter(
     initialLocation: AppRoutes.splash,
     refreshListenable: refreshListenable,
@@ -62,21 +64,66 @@ GoRouter createAppRouter({
         path: AppRoutes.role,
         builder: (context, state) => const RolePage(),
       ),
-      // Seller space: the dossier is loaded once for the entry screen and
-      // every tunnel step (SellerTunnelShell provides SellerTunnelCubit).
+      // Seller space: the dossier is loaded once for every /vendeur screen
+      // (SellerTunnelShell provides SellerTunnelCubit). Inside, the four
+      // tabs (StatefulShellRoute, one navigation stack per tab); the tunnel
+      // steps V1–V8 are pushed above the tabs, on the seller navigator.
       ShellRoute(
+        navigatorKey: sellerNavigatorKey,
         builder: (context, state, child) => SellerTunnelShell(child: child),
         routes: [
-          GoRoute(
-            path: AppRoutes.seller,
-            builder: (context, state) =>
-                SellerHomePage(showDesignSystemLink: enableDesignSystem),
-            routes: [
-              for (final (path, page) in _sellerTunnelPages)
-                GoRoute(
-                  path: path.substring(AppRoutes.seller.length + 1),
-                  builder: (context, state) => page,
-                ),
+          StatefulShellRoute.indexedStack(
+            builder: (context, state, navigationShell) =>
+                SellerTabScaffold(navigationShell: navigationShell),
+            branches: [
+              StatefulShellBranch(
+                routes: [
+                  GoRoute(
+                    path: AppRoutes.seller,
+                    builder: (context, state) => const MyPropertyPage(),
+                    routes: [
+                      GoRoute(
+                        path: _child(AppRoutes.sellerReport),
+                        builder: (context, state) => const ReportPage(),
+                      ),
+                      // TODO(EPIC-05): V8b (/vendeur/marche) goes here, with
+                      // parentNavigatorKey: sellerNavigatorKey. The dashboard
+                      // shows its link once the route exists.
+                      for (final (path, page) in _sellerTunnelPages)
+                        GoRoute(
+                          parentNavigatorKey: sellerNavigatorKey,
+                          path: _child(path),
+                          builder: (context, state) => page,
+                        ),
+                    ],
+                  ),
+                ],
+              ),
+              StatefulShellBranch(
+                routes: [
+                  GoRoute(
+                    path: AppRoutes.sellerVisits,
+                    builder: (context, state) => ComingSoonPage.visits(context),
+                  ),
+                ],
+              ),
+              StatefulShellBranch(
+                routes: [
+                  GoRoute(
+                    path: AppRoutes.sellerVault,
+                    builder: (context, state) => ComingSoonPage.vault(context),
+                  ),
+                ],
+              ),
+              StatefulShellBranch(
+                routes: [
+                  GoRoute(
+                    path: AppRoutes.sellerAccount,
+                    builder: (context, state) =>
+                        AccountPage(showDesignSystemLink: enableDesignSystem),
+                  ),
+                ],
+              ),
             ],
           ),
         ],
@@ -96,6 +143,10 @@ GoRouter createAppRouter({
     ],
   );
 }
+
+/// [location] relative to the seller space root (`/vendeur/x` → `x`).
+String _child(String location) =>
+    location.substring(AppRoutes.seller.length + 1);
 
 /// One screen per seller tunnel step; each page lives in its own file under
 /// `lib/seller_tunnel/steps/`.

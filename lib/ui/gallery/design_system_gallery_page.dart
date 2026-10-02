@@ -2,8 +2,12 @@ import 'dart:async';
 
 import 'package:flutter/gestures.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:mobileapp/ui/components/action_card.dart';
 import 'package:mobileapp/ui/components/agent_chat.dart';
+import 'package:mobileapp/ui/components/hero_value_card.dart';
+import 'package:mobileapp/ui/components/initials_avatar.dart';
 import 'package:mobileapp/ui/components/inline_banner.dart';
+import 'package:mobileapp/ui/components/key_value_row.dart';
 import 'package:mobileapp/ui/components/provenance_tag.dart';
 import 'package:mobileapp/ui/components/realesty_badge.dart';
 import 'package:mobileapp/ui/components/realesty_button.dart';
@@ -15,6 +19,7 @@ import 'package:mobileapp/ui/components/realesty_segmented_control.dart';
 import 'package:mobileapp/ui/components/realesty_select.dart';
 import 'package:mobileapp/ui/components/realesty_snack_bar.dart';
 import 'package:mobileapp/ui/components/realesty_stepper.dart';
+import 'package:mobileapp/ui/components/realesty_tab_bar.dart';
 import 'package:mobileapp/ui/components/realesty_text_field.dart';
 import 'package:mobileapp/ui/components/segmented_progress.dart';
 import 'package:mobileapp/ui/format/realesty_format.dart';
@@ -46,6 +51,7 @@ class _DesignSystemGalleryPageState extends State<DesignSystemGalleryPage> {
   String _segment = 'maison';
   int _rooms = 3;
   String? _propertyType;
+  int _tab = 0;
 
   @override
   void dispose() {
@@ -374,6 +380,62 @@ class _DesignSystemGalleryPageState extends State<DesignSystemGalleryPage> {
               children: _nightBubbles,
             ),
           ),
+          const _Section('Espace vendeur'),
+          ..._spaced([
+            HeroValueCard(
+              caption: 'Avis de valeur certifié',
+              badgeLabel: 'Certifié',
+              value: '525 000 €',
+              details: 'Fourchette 505 000 – 545 000 €',
+              expertInitials: 'JM',
+              expertLabel: 'Validé par Julien M., expert immobilier',
+              actionLabel: 'Voir le rapport complet',
+              actionIcon: RealestyIcons.file,
+              onAction: () => _toast('Rapport'),
+            ),
+            ActionCard(
+              icon: RealestyIcons.trending,
+              title: 'Mettre mon bien en vente',
+              subtitle: 'Choisissez votre formule, dès 1 % au succès',
+              variant: ActionCardVariant.accent,
+              onPressed: () => _toast('Mise en vente'),
+            ),
+            ActionCard(
+              icon: RealestyIcons.clock,
+              title: 'Suivi de mon dossier',
+              subtitle: 'Un expert analyse votre dossier',
+              onPressed: () => _toast('Suivi'),
+            ),
+            const Column(
+              children: [
+                KeyValueRow(label: 'Prix affiché', value: '525 000 €'),
+                KeyValueRow(
+                  label: 'Coût total',
+                  value: '569 400 €',
+                  emphasized: true,
+                  divider: false,
+                ),
+              ],
+            ),
+            const Row(
+              spacing: RealestySpacing.xs,
+              children: [InitialsAvatar('SD'), InitialsAvatar('JM', size: 40)],
+            ),
+            RealestyTabBar(
+              currentIndex: _tab,
+              onTap: (index) => setState(() => _tab = index),
+              tabs: const [
+                RealestyTab(icon: RealestyIcons.home, label: 'Mon bien'),
+                RealestyTab(
+                  icon: RealestyIcons.calendar,
+                  label: 'Visites',
+                  badge: true,
+                ),
+                RealestyTab(icon: RealestyIcons.vault, label: 'Coffre-fort'),
+                RealestyTab(icon: RealestyIcons.user, label: 'Compte'),
+              ],
+            ),
+          ]),
         ],
       ),
     );

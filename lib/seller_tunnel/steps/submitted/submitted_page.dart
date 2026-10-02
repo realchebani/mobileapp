@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:mobileapp/app/app.dart';
 import 'package:mobileapp/l10n/l10n.dart';
 import 'package:mobileapp/seller_tunnel/cubit/seller_tunnel_cubit.dart';
 import 'package:mobileapp/seller_tunnel/steps/submitted/cubit/notification_preference_cubit.dart';
@@ -91,18 +90,9 @@ class SubmittedView extends StatelessWidget {
         _Card(child: SubmittedTimeline(entries: _timeline(l10n, property))),
         if (status == PropertyStatus.submitted ||
             status == PropertyStatus.inReview)
-          _NotificationRow(email: _email(context, state)),
+          const _NotificationRow(),
       ],
     );
-  }
-
-  static String? _email(BuildContext context, SellerTunnelState state) {
-    for (final owner in state.owners) {
-      if (owner.position == 1 && (owner.email?.isNotEmpty ?? false)) {
-        return owner.email;
-      }
-    }
-    return context.read<AppBloc>().state.user?.email;
   }
 
   static List<TimelineEntry> _timeline(
@@ -263,19 +253,17 @@ class _Card extends StatelessWidget {
   }
 }
 
-/// "Me prévenir par notification": a device preference in v1 (no push
-/// notifications yet), see `NotificationPreferenceStore`.
+/// "Me prévenir par notification": a device preference in v1, see
+/// `NotificationPreferenceStore`. Notifications are in-app only (no push,
+/// no e-mail: decisions 2026-10-01).
 class _NotificationRow extends StatelessWidget {
-  const new({required this.email});
-
-  final String? email;
+  const new();
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final c = context.realestyColors;
     final enabled = context.watch<NotificationPreferenceCubit>().state;
-    final email = this.email;
     return MergeSemantics(
       child: ConstrainedBox(
         constraints: const BoxConstraints(
@@ -294,13 +282,12 @@ class _NotificationRow extends StatelessWidget {
                       color: c.encre,
                     ),
                   ),
-                  if (email != null && email.isNotEmpty)
-                    Text(
-                      l10n.submittedNotifyEmail(email),
-                      style: RealestyTextStyles.listSubtitle.copyWith(
-                        color: c.texteDiscret,
-                      ),
+                  Text(
+                    l10n.submittedNotifyInApp,
+                    style: RealestyTextStyles.listSubtitle.copyWith(
+                      color: c.texteDiscret,
                     ),
+                  ),
                 ],
               ),
             ),

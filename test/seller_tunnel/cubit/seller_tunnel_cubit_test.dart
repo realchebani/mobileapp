@@ -304,6 +304,71 @@ void main() {
     ],
   );
 
+  group('refresh', () {
+    const certified = Property(
+      id: 'property-id',
+      ownerId: ownerId,
+      status: PropertyStatus.certified,
+    );
+
+    blocTest<SellerTunnelCubit, SellerTunnelState>(
+      'reloads the dossier without a loading state',
+      setUp: () {
+        when(() => repository.getProperty(any()))
+            .thenAnswer((_) async => certified);
+        when(() => repository.getRooms(any())).thenAnswer((_) async => []);
+      },
+      build: build,
+      seed: () => loaded,
+      act: (cubit) => cubit.refresh(),
+      expect: () => [loaded.copyWith(property: certified, rooms: const [])],
+    );
+
+    blocTest<SellerTunnelCubit, SellerTunnelState>(
+      'keeps the state when it fails',
+      setUp: () {
+        when(() => repository.getProperty(any()))
+            .thenThrow(const PropertyLoadFailure());
+      },
+      build: build,
+      seed: () => loaded,
+      act: (cubit) =>
+          expectLater(cubit.refresh(), throwsA(isA<PropertyLoadFailure>())),
+      expect: () => const <SellerTunnelState>[],
+      errors: () => [isA<PropertyLoadFailure>()],
+    );
+
+    blocTest<SellerTunnelCubit, SellerTunnelState>(
+      'does nothing before the dossier is loaded',
+      build: build,
+      act: (cubit) => cubit.refresh(),
+      expect: () => const <SellerTunnelState>[],
+    );
+
+    test('ignores an answer arriving after close', () async {
+      final completer = Completer<Property>();
+      when(() => repository.getProperty(any()))
+          .thenAnswer((_) => completer.future);
+      final cubit = build()..emit(loaded);
+      final refreshing = cubit.refresh();
+      await cubit.close();
+      completer.complete(certified);
+      await refreshing;
+      expect(cubit.state, loaded);
+    });
+
+    test('ignores a failure arriving after close', () async {
+      final completer = Completer<Property>();
+      when(() => repository.getProperty(any()))
+          .thenAnswer((_) => completer.future);
+      final cubit = build()..emit(loaded);
+      final refreshing = cubit.refresh();
+      await cubit.close();
+      completer.completeError(const PropertyLoadFailure());
+      await expectLater(refreshing, throwsA(anything));
+    });
+  });
+
   group(SellerTunnelState, () {
     test('resumes at the current step', () {
       expect(const SellerTunnelState().resumeStep, SellerTunnelStep.owners);

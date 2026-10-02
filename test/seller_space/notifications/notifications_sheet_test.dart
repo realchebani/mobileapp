@@ -1,0 +1,119 @@
+import 'package:flutter_test/flutter_test.dart';
+import 'package:material_ui/material_ui.dart';
+import 'package:mobileapp/seller_space/seller_space.dart';
+import 'package:mocktail/mocktail.dart';
+import 'package:sale_repository/sale_repository.dart';
+
+import '../../helpers/helpers.dart';
+import '../fixtures.dart';
+import '../pump_seller_space.dart';
+
+void main() {
+  late MockGoRouter goRouter;
+
+  setUp(() {
+    goRouter = MockGoRouter();
+    when(() => goRouter.go(any())).thenReturn(null);
+  });
+
+  Future<MockNotificationsCubit> open(
+    WidgetTester tester,
+    NotificationsState state,
+  ) async {
+    final cubit = mockNotificationsCubit(state);
+    await tester.pumpSellerSpacePage(
+      Builder(
+        builder: (context) => TextButton(
+          onPressed: () => showNotificationsSheet(context),
+          child: const Text('open'),
+        ),
+      ),
+      notificationsCubit: cubit,
+      goRouter: goRouter,
+    );
+    await tester.tap(find.text('open'));
+    await tester.pumpAndSettle();
+    return cubit;
+  }
+
+  group('showNotificationsSheet', () {
+    testWidgets('opens the screen of a notification and marks them read', (
+      tester,
+    ) async {
+      final cubit = await open(
+        tester,
+        NotificationsState(
+          status: NotificationsStatus.success,
+          notifications: [
+            testNotification,
+            AppNotification(
+              id: 'other',
+              kind: AppNotificationKind.reviewStarted,
+              title: 'Un expert analyse votre dossier',
+              createdAt: DateTime(2026, 9, 24),
+              readAt: DateTime(2026, 9, 24),
+            ),
+          ],
+        ),
+      );
+      verify(cubit.load).called(1);
+      expect(find.text('Notifications'), findsOneWidget);
+      expect(find.text('Le 25/09/2026 à 10 h 05'), findsOneWidget);
+      expect(find.bySemanticsLabel(RegExp('Non lue')), findsOneWidget);
+
+      // Without a route, a notification is not a link.
+      await tester.tap(find.text('Un expert analyse votre dossier'));
+      await tester.pumpAndSettle();
+      expect(find.text('Notifications'), findsOneWidget);
+
+      await tester.tap(find.text(testNotification.title));
+      await tester.pumpAndSettle();
+      expect(find.text('Notifications'), findsNothing);
+      verify(cubit.markAllRead).called(1);
+      verify(() => goRouter.go('/vendeur/rapport')).called(1);
+    });
+
+    testWidgets('closes without navigating', (tester) async {
+      final cubit = await open(
+        tester,
+        const NotificationsState(status: NotificationsStatus.success),
+      );
+      expect(find.text('Aucune notification pour le moment.'), findsOneWidget);
+      await tester.tap(find.bySemanticsLabel('Fermer'));
+      await tester.pumpAndSettle();
+      verify(cubit.markAllRead).called(1);
+      verifyNever(() => goRouter.go(any()));
+    });
+
+    testWidgets('shows the loading and failure states', (tester) async {
+      await open(
+        tester,
+        const NotificationsState(status: NotificationsStatus.failure),
+      );
+      expect(
+        find.text('Impossible de charger vos notifications.'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('shows a spinner while loading', (tester) async {
+      final cubit = mockNotificationsCubit(
+        const NotificationsState(status: NotificationsStatus.loading),
+      );
+      await tester.pumpSellerSpacePage(
+        Builder(
+          builder: (context) => TextButton(
+            onPressed: () => showNotificationsSheet(context),
+            child: const Text('open'),
+          ),
+        ),
+        notificationsCubit: cubit,
+        goRouter: goRouter,
+      );
+      await tester.tap(find.text('open'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    });
+  });
+}

@@ -616,3 +616,15 @@ Waves: {O1, O3} → {O2} → {O4, O8} → {O5, O7, O9} → {O6}.
 - Q3 Barre d'onglets : **dès le début** ; « Mon bien » = Commencer / Reprendre l'audit tant que le dossier est en brouillon ; déconnexion dans « Compte ».
 - Q11 Notifications : **dans l'app uniquement** ; reformuler la promesse d'e-mail de V8.
 - Questions 4–10 et 12–18 : à trancher avant EPIC-08 à EPIC-11.
+
+## 10. Journal d’exécution — EPIC-07
+
+- **2026-10-01/02 · EPIC-07 (branche `feat/epic-07-dashboard-vendeur`)**
+  - D1 ✅ Migration `20261001162633_valuations_and_notifications.sql` poussée (tables `valuations`, `notifications`, bucket `valuation-reports`, fonctions `staff_start_review` / `staff_certify_property` / `staff_attach_valuation_report`) ; RLS vérifiée (bloc `DO` annulé : propriétaire lit son avis et ses notifications, ne peut ni écrire ni appeler les fonctions ; autre utilisateur et `anon` ne voient rien). Runbook `docs/runbooks/certifier-un-dossier.md`. La notification de certification est créée par la fonction (pas de trigger).
+  - D2 ✅ (écart au plan) Modèles et accès dans un **nouveau paquet `packages/sale_repository`** (`ValuationRepository`, `NotificationRepository`) plutôt que dans `property_repository`, pour ne pas toucher aux fichiers d’EPIC-05 en parallèle ; EPIC-08 y ajoutera les ventes. Job CI ajouté.
+  - D3 ✅ `RealestyTabBar`, `HeroValueCard`, `ActionCard`, `KeyValueRow`, `InitialsAvatar`, icône `download` (+ galerie). Pas encore extraits : `Timeline` de V8, `KpiTile`, `RealestySwitch`.
+  - D4 ✅ `StatefulShellRoute` à 4 onglets dans le `ShellRoute` vendeur ; les étapes V1–V8 restent des sous-routes de `/vendeur` posées sur le navigateur vendeur (au-dessus des onglets, avec Mon bien dessous) ; `SellerHomePage` = brouillon seulement ; Compte (C2 v1) avec déconnexion ; Visites / Coffre-fort « Bientôt ». V8 : « Aller au tableau de bord », promesses d’e-mail remplacées par la notification dans l’app. `SellerTunnelCubit.refresh()` (rechargement silencieux, tirer pour actualiser).
+  - D5 ✅ V9 (variantes en attente / certifiée), sans `DashboardCubit` : V9 lit le dossier (`SellerTunnelCubit`), `ValuationCubit` et `NotificationsCubit` fournis par la coque. Lien V8b masqué tant que `/vendeur/marche` n’existe pas (détection automatique de la route).
+  - D6/D7 🚧 V9b : 4 onglets alimentés par le rapport structuré ; la fiche technique vient de l’expert (`technical_sheet`) plutôt que des colonnes du dossier ; courbe du secteur (`MiniLineChart`) en attente de l’instantané EPIC-05.
+  - K5 (anticipé) ✅ Notifications in-app : cloche avec pastille, point sur l’onglet Mon bien, liste en feuille, ouverture de l’écran lié, marquage lu à la fermeture.
+  - D8 📋 Branchement V8b (route, pied de page) : avec EPIC-05.
