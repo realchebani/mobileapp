@@ -27,16 +27,20 @@ export interface SessionRow {
   step: AgentStep;
 }
 
-export interface TurnInsert {
+/** A new turn, recorded only within the caller's daily quota. */
+export interface TurnReservation {
   session_id: string;
   transcript: string;
-  audio_seconds?: number | null;
-  stt_model?: string | null;
-  stt_ms?: number | null;
-  cost_usd?: number | null;
+  /** Server-measured audio (0 for a typed transcript). */
+  audio_seconds: number;
+  since: Date;
 }
 
 export type TurnUpdate = Partial<{
+  transcript: string;
+  audio_seconds: number;
+  stt_model: string;
+  stt_ms: number;
   reply_fr: string | null;
   extracted: unknown;
   agent_model: string;
@@ -71,7 +75,20 @@ export interface AgentDb {
   turn(id: string): Promise<(TurnRow & { session: SessionRow }) | null>;
   /** The last [limit] turns of a session, oldest first. */
   recentTurns(sessionId: string, limit: number): Promise<TurnRow[]>;
-  insertTurn(turn: TurnInsert): Promise<TurnRow>;
+  /**
+   * Checks the daily quota and records [turn] atomically (serialised per
+   * user), claimed for its first call (`error = 'in_progress'`); null when
+   * the quota is used up.
+   */
+  reserveTurn(turn: TurnReservation): Promise<TurnRow | null>;
+  /**
+   * Claims the agent call of an existing turn: true for exactly one caller,
+   * while the turn has no answer and is not being answered (a failed call,
+   * `agent_failed`, can be claimed again).
+   */
+  claimTurn(id: string): Promise<boolean>;
+  /** Claims the speech of a turn (true for exactly one caller, once). */
+  claimSpeech(id: string): Promise<boolean>;
   updateTurn(id: string, patch: TurnUpdate): Promise<void>;
   /** The caller's turns and audio seconds since [since]. */
   usageSince(since: Date): Promise<DailyUsage>;

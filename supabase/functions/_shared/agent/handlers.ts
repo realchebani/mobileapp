@@ -95,6 +95,47 @@ function upstreamError(error: unknown): Response {
   return failure("upstream", error instanceof OpenRouterError ? 502 : 500);
 }
 
+/** The request body, or null when it exceeds [max] bytes (read as a
+ * stream: a missing or false content-length cannot bypass the limit). */
+export async function readCapped(request: Request, max: number): Promise<Uint8Array | null> {
+  const declared = Number(request.headers.get("content-length") ?? "0");
+  if (declared > max) return null;
+  if (!request.body) return new Uint8Array();
+  const reader = request.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let size = 0;
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    size += value.length;
+    if (size > max) {
+      await reader.cancel();
+      return null;
+    }
+    chunks.push(value);
+  }
+  const body = new Uint8Array(size);
+  let offset = 0;
+  for (const chunk of chunks) {
+    body.set(chunk, offset);
+    offset += chunk.length;
+  }
+  return body;
+}
+
+/** Largest JSON body of agent-turn / agent-speech. */
+const MAX_JSON_BYTES = 16_000;
+
+async function readJson<T>(request: Request): Promise<T | Response> {
+  const body = await readCapped(request, MAX_JSON_BYTES);
+  if (!body) return failure("too_long", 413);
+  try {
+    return JSON.parse(new TextDecoder().decode(body)) as T;
+  } catch {
+    return failure("bad_request", 400);
+  }
+}
+
 export async function handleTranscribe(
   request: Request,
   deps: Deps,
@@ -110,22 +151,25 @@ export async function handleTranscribe(
   if (!isStep(step) || !AUDIO_FORMATS.includes(format)) {
     return failure("bad_request", 400);
   }
-  const length = Number(request.headers.get("content-length") ?? "0");
-  if (length > LIMITS.audioBytes) return failure("too_long", 413);
-  const audio = new Uint8Array(await request.arrayBuffer());
+  const audio = await readCapped(request, LIMITS.audioBytes);
+  if (!audio) return failure("too_long", 413);
   if (audio.length === 0) return failure("bad_request", 400);
-  if (audio.length > LIMITS.audioBytes) return failure("too_long", 413);
   const measured = recordingSeconds(audio);
   if (measured > LIMITS.audioSecondsPerTurn + 1) return failure("too_long", 413);
 
   try {
-    const property = await draftProperty(
-      db,
-      url.searchParams.get("property_id"),
-    );
+    const property = await draftProperty(db, url.searchParams.get("property_id"));
     if (property instanceof Response) return property;
-    const quota = await quotaError(db, now, { audioSeconds: measured });
-    if (quota) return quota;
+    const session = await db.session(property.id, step);
+    // Reserved before the STT call, atomically with the quota check: parallel
+    // uploads cannot exceed the quota nor multiply the STT calls beyond it.
+    const turn = await db.reserveTurn({
+      session_id: session.id,
+      transcript: "",
+      audio_seconds: measured,
+      since: startOfDay(now),
+    });
+    if (!turn) return failure("quota", 429);
 
     let result;
     try {
@@ -136,23 +180,20 @@ export async function handleTranscribe(
         language: "fr",
       });
     } catch (error) {
+      await db.updateTurn(turn.id, { error: "stt_failed" }).catch(() => {});
       return upstreamError(error);
     }
     const transcript = result.text.slice(0, LIMITS.transcriptChars);
-    const session = await db.session(property.id, step);
     // Journaled even when empty: the audio and its cost count in the quotas.
-    const turn = await db.insertTurn({
-      session_id: session.id,
+    await db.updateTurn(turn.id, {
       transcript,
       audio_seconds: Math.min(Math.max(result.seconds ?? 0, measured), 9999),
       stt_model: deps.models.stt,
       stt_ms: result.ms,
       cost_usd: result.cost,
+      error: transcript ? null : "empty",
     });
-    if (!transcript) {
-      await db.updateTurn(turn.id, { error: "empty" });
-      return failure("empty", 422);
-    }
+    if (!transcript) return failure("empty", 422);
     return json({ turn_id: turn.id, transcript });
   } catch (error) {
     return upstreamError(error);
@@ -182,12 +223,9 @@ export async function handleTurn(
   const db = deps.db;
   if (!db) return failure("unauthorized", 401);
   const now = deps.now?.() ?? new Date();
-  let body: TurnBody;
-  try {
-    body = await request.json();
-  } catch {
-    return failure("bad_request", 400);
-  }
+  const body = await readJson<TurnBody>(request);
+  if (body instanceof Response) return body;
+  if (typeof body !== "object" || body === null) return failure("bad_request", 400);
   const step = body.step;
   if (!isStep(step)) return failure("bad_request", 400);
 
@@ -205,12 +243,15 @@ export async function handleTurn(
       if (!found || found.session.id !== session.id) {
         return failure("not_found", 404);
       }
-      // Exactly one agent answer per turn (a failed call may be retried).
-      if (found.reply_fr !== null || found.extracted != null) {
-        return failure("already_answered", 409);
-      }
       const quota = await quotaError(db, now, { newTurn: false });
       if (quota) return quota;
+      // Exactly one agent answer per turn: claimed atomically (a failed
+      // call may be claimed again).
+      if (
+        found.reply_fr !== null || found.extracted != null || !(await db.claimTurn(found.id))
+      ) {
+        return failure("already_answered", 409);
+      }
       turn = found;
     } else {
       const transcript = typeof body.transcript === "string" ? body.transcript.trim() : "";
@@ -218,9 +259,14 @@ export async function handleTurn(
       if (transcript.length > LIMITS.transcriptChars) {
         return failure("too_long", 413);
       }
-      const quota = await quotaError(db, now);
-      if (quota) return quota;
-      turn = await db.insertTurn({ session_id: session.id, transcript });
+      const reserved = await db.reserveTurn({
+        session_id: session.id,
+        transcript,
+        audio_seconds: 0,
+        since: startOfDay(now),
+      });
+      if (!reserved) return failure("quota", 429);
+      turn = reserved;
     }
 
     const history = (await db.recentTurns(session.id, LIMITS.historyTurns + 1))
@@ -322,6 +368,7 @@ export async function handleTurn(
       tokens_out: tokensOut,
       agent_ms: ms,
       cost_usd: (turn.cost_usd ?? 0) + cost,
+      error: null,
     });
     await db.updateSession(session.id, {
       next_field: nextField?.slice(0, 60) ?? null,
@@ -351,26 +398,25 @@ export async function handleSpeech(
   if (request.method !== "POST") return failure("method", 405);
   const db = deps.db;
   if (!db) return failure("unauthorized", 401);
-  let body: { turn_id?: unknown };
-  try {
-    body = await request.json();
-  } catch {
-    return failure("bad_request", 400);
-  }
-  if (typeof body.turn_id !== "string" || !UUID.test(body.turn_id)) {
+  const body = await readJson<{ turn_id?: unknown }>(request);
+  if (body instanceof Response) return body;
+  if (typeof body?.turn_id !== "string" || !UUID.test(body.turn_id)) {
     return failure("bad_request", 400);
   }
   try {
     const turn = await db.turn(body.turn_id);
     if (!turn || !turn.reply_fr) return failure("not_found", 404);
-    // Each reply is spoken once: the function is not a free TTS.
-    if (turn.tts_ms !== null) return failure("already_spoken", 409);
     const property = await draftProperty(db, turn.session.property_id);
     if (property instanceof Response) return property;
     const quota = await quotaError(db, deps.now?.() ?? new Date(), {
       newTurn: false,
     });
     if (quota) return quota;
+    // Each reply is spoken once, claimed atomically: the function is not a
+    // free TTS, even with parallel requests.
+    if (turn.tts_ms !== null || !(await db.claimSpeech(turn.id))) {
+      return failure("already_spoken", 409);
+    }
 
     const model = deps.models.tts;
     const format = speechFormatFor(model);

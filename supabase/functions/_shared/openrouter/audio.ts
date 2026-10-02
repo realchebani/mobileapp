@@ -142,34 +142,51 @@ export function isSpeechTooShort(seconds: number, chars: number): boolean {
   return chars >= 20 && seconds < chars / 45;
 }
 
-/** Duration declared by the `mvhd` box of an MP4 / m4a file, or null. */
+/** Duration declared by the `mvhd` box of an MP4 / m4a file, or null
+ * (never throws, whatever the bytes). */
 export function m4aSeconds(bytes: Uint8Array): number | null {
-  for (let i = 4; i + 32 <= bytes.length; i++) {
-    if (
-      bytes[i] !== 0x6d || bytes[i + 1] !== 0x76 || bytes[i + 2] !== 0x68 ||
-      bytes[i + 3] !== 0x64
-    ) continue; // "mvhd"
-    const view = new DataView(bytes.buffer, bytes.byteOffset + i + 4);
-    const version = view.getUint8(0);
-    const timescale = view.getUint32(version === 1 ? 20 : 12);
-    const duration = version === 1 ? Number(view.getBigUint64(24)) : view.getUint32(16);
-    return timescale > 0 ? duration / timescale : null;
+  try {
+    for (let i = 4; i + 4 <= bytes.length; i++) {
+      if (
+        bytes[i] !== 0x6d || bytes[i + 1] !== 0x76 || bytes[i + 2] !== 0x68 ||
+        bytes[i + 3] !== 0x64
+      ) continue; // "mvhd"
+      const box = i + 4;
+      const version = bytes[box];
+      // version 0: timescale @12, duration @16 (4 bytes); version 1:
+      // timescale @20, duration @24 (8 bytes).
+      const end = box + (version === 1 ? 32 : 20);
+      if (end > bytes.length) return null;
+      const view = new DataView(bytes.buffer, bytes.byteOffset + box, end - box);
+      const timescale = view.getUint32(version === 1 ? 20 : 12);
+      const duration = version === 1 ? Number(view.getBigUint64(24)) : view.getUint32(16);
+      return timescale > 0 && Number.isFinite(duration) ? duration / timescale : null;
+    }
+  } catch {
+    // Malformed: fall back to the size bounds.
   }
   return null;
 }
 
 /** Highest bit rate expected from a voice recording (16 KB/s = 128 kbit/s,
- * four times the app's AAC 32 kbit/s): its size then bounds its duration
- * from below. */
+ * four times the app's AAC 32 kbit/s): the size bounds the duration from
+ * below. */
 export const MAX_AUDIO_BYTES_PER_SECOND = 16_000;
+
+/** Lowest bit rate accepted (1 KB/s = 8 kbit/s, a quarter of the app's):
+ * the size bounds the duration from above. */
+export const MIN_AUDIO_BYTES_PER_SECOND = 1_000;
 
 /**
  * Server-measured duration of an uploaded recording, for the quotas and
- * the 60 s limit: the larger of the m4a header and the size-based lower
- * bound, so a forged header can only make it longer. The client's own
- * figure is never trusted; the STT provider's measure is added later.
+ * the 60 s limit. The m4a header is trusted only within the bounds given by
+ * the size (≥ 8 kbit/s and ≤ 128 kbit/s), and the upper bound is used when
+ * there is no header: a forged header cannot shrink the count. The client's
+ * own figure is never trusted; the STT provider's measure is added later.
  */
 export function recordingSeconds(bytes: Uint8Array): number {
-  const bound = bytes.length / MAX_AUDIO_BYTES_PER_SECOND;
-  return Math.max(m4aSeconds(bytes) ?? 0, bound);
+  const lower = bytes.length / MAX_AUDIO_BYTES_PER_SECOND;
+  const upper = bytes.length / MIN_AUDIO_BYTES_PER_SECOND;
+  const declared = m4aSeconds(bytes);
+  return declared === null ? upper : Math.min(Math.max(declared, lower), upper);
 }

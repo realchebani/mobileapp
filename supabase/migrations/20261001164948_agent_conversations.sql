@@ -79,3 +79,51 @@ revoke all on table public.agent_sessions, public.agent_turns
   from anon, authenticated;
 grant select on table public.agent_sessions, public.agent_turns
   to authenticated;
+
+-- Quota reservation ---------------------------------------------------------------
+-- Checks the caller's daily quota and records a new turn in ONE transaction,
+-- serialised per user (advisory lock): parallel requests cannot all pass
+-- the check. Returns the new turn id, or null when the quota is used up.
+-- The turn starts claimed (error = 'in_progress') until its call completes.
+-- Called by the Edge Functions with the service role only.
+create function public.agent_reserve_turn(
+  p_owner_id uuid,
+  p_session_id uuid,
+  p_transcript text,
+  p_audio_seconds numeric,
+  p_since timestamptz,
+  p_max_turns integer,
+  p_max_audio_seconds numeric
+)
+returns uuid
+language plpgsql
+security invoker
+set search_path = ''
+as $$
+declare
+  used_turns integer;
+  used_seconds numeric;
+  new_id uuid;
+begin
+  perform pg_advisory_xact_lock(hashtextextended('agent_quota:' || p_owner_id::text, 0));
+  select count(*), coalesce(sum(audio_seconds), 0)
+    into used_turns, used_seconds
+    from public.agent_turns
+    where owner_id = p_owner_id and created_at >= p_since;
+  if used_turns + 1 > p_max_turns
+    or used_seconds + coalesce(p_audio_seconds, 0) > p_max_audio_seconds then
+    return null;
+  end if;
+  insert into public.agent_turns (session_id, owner_id, transcript, audio_seconds, error)
+    values (p_session_id, p_owner_id, p_transcript, p_audio_seconds, 'in_progress')
+    returning id into new_id;
+  return new_id;
+end;
+$$;
+
+revoke all on function public.agent_reserve_turn(
+  uuid, uuid, text, numeric, timestamptz, integer, numeric
+) from public, anon, authenticated;
+grant execute on function public.agent_reserve_turn(
+  uuid, uuid, text, numeric, timestamptz, integer, numeric
+) to service_role;

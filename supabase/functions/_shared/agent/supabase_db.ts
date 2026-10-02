@@ -8,10 +8,11 @@ import { createClient, type SupabaseClient } from "npm:@supabase/supabase-js@2";
 import {
   type AgentDb,
   type DailyUsage,
+  LIMITS,
   PROPERTY_COLUMNS,
   type PropertyRow,
   type SessionRow,
-  type TurnInsert,
+  type TurnReservation,
   type TurnRow,
   type TurnUpdate,
 } from "./db.ts";
@@ -111,12 +112,49 @@ export class SupabaseAgentDb implements AgentDb {
     return ((data ?? []) as TurnRow[]).reverse();
   }
 
-  async insertTurn(turn: TurnInsert): Promise<TurnRow> {
-    const { data, error } = await this.service.from("agent_turns")
-      .insert({ ...turn, owner_id: this.userId })
-      .select(TURN_COLUMNS).single();
+  async reserveTurn(turn: TurnReservation): Promise<TurnRow | null> {
+    const { data, error } = await this.service.rpc("agent_reserve_turn", {
+      p_owner_id: this.userId,
+      p_session_id: turn.session_id,
+      p_transcript: turn.transcript,
+      p_audio_seconds: turn.audio_seconds,
+      p_since: turn.since.toISOString(),
+      p_max_turns: LIMITS.turnsPerDay,
+      p_max_audio_seconds: LIMITS.audioSecondsPerDay,
+    });
     fail(error);
-    return data as TurnRow;
+    if (typeof data !== "string") return null;
+    return {
+      id: data,
+      session_id: turn.session_id,
+      transcript: turn.transcript,
+      reply_fr: null,
+      extracted: null,
+      tts_ms: null,
+      cost_usd: null,
+    };
+  }
+
+  async claimTurn(id: string): Promise<boolean> {
+    // Conditional UPDATE … RETURNING: one caller wins.
+    const { data, error } = await this.service.from("agent_turns")
+      .update({ error: "in_progress" })
+      .eq("id", id).eq("owner_id", this.userId)
+      .is("reply_fr", null).is("extracted", null)
+      .or("error.is.null,error.eq.agent_failed")
+      .select("id");
+    fail(error);
+    return (data ?? []).length === 1;
+  }
+
+  async claimSpeech(id: string): Promise<boolean> {
+    const { data, error } = await this.service.from("agent_turns")
+      .update({ tts_ms: 0 })
+      .eq("id", id).eq("owner_id", this.userId)
+      .is("tts_ms", null).not("reply_fr", "is", null)
+      .select("id");
+    fail(error);
+    return (data ?? []).length === 1;
   }
 
   async updateTurn(id: string, patch: TurnUpdate): Promise<void> {

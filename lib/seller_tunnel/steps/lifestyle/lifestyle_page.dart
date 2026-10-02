@@ -117,7 +117,10 @@ class _LifestyleViewState extends State<LifestyleView> {
       (cubit) => cubit.state.property?.propertyType,
     );
     final isBusy = state.isSubmitting || tunnelSaving;
-    final voiceAvailable = VoiceServices.of(context).isAvailable;
+    // No voice for land (the agent only serves building dossiers).
+    final voiceAvailable =
+        VoiceServices.of(context).isAvailable &&
+        propertyType != PropertyType.land;
     final suggestion = state.secretNoteSuggestion;
     final noise = state.noiseLevel;
     final noiseText = noise == null
@@ -152,7 +155,7 @@ class _LifestyleViewState extends State<LifestyleView> {
           label: l10n.tunnelContinue,
           isLoading: isBusy,
           onPressed: cubit.submit,
-          onMicPressed: isBusy
+          onMicPressed: isBusy || !voiceAvailable
               ? null
               : () => unawaited(showLifestyleVoiceSheet(context)),
         ),

@@ -8,6 +8,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:mobileapp/seller_tunnel/seller_tunnel.dart';
 import 'package:mobileapp/ui/ui.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:property_repository/property_repository.dart';
 import 'package:voice_repository/voice_repository.dart';
 
 import '../../../helpers/helpers.dart';
@@ -146,5 +147,30 @@ void main() {
     await tester.tap(find.text('Continuer à l’écran'));
     await tester.pumpAndSettle();
     verifyNever(recorder.requestPermission);
+  });
+
+  testWidgets('no voice for land', (tester) async {
+    usePhoneSurface();
+    await tester.pumpTunnelPage(
+      RepositoryProvider.value(
+        value: await testVoiceServices(),
+        child: const LifestylePage(),
+      ),
+      sellerTunnelCubit: mockSellerTunnelCubit(
+        const SellerTunnelState(
+          status: SellerTunnelStatus.success,
+          property: Property(
+            id: 'p',
+            ownerId: 'u',
+            propertyType: PropertyType.land,
+          ),
+        ),
+      ),
+    );
+    expect(find.byType(RealestyMicButton), findsNothing);
+    expect(
+      find.text('Parlez librement, l’agent classe vos réponses'),
+      findsNothing,
+    );
   });
 }
