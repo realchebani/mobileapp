@@ -112,7 +112,8 @@ void main() {
     expect(find.text('Dictée des pièces'), findsNothing);
     expect(find.text('Cuisine'), findsOneWidget);
     expect(find.byType(ToConfirmTag), findsOneWidget);
-    await tester.tap(find.text('Tout est correct, continuer'));
+    expect(find.textContaining('dont 12'), findsOneWidget);
+    await tester.tap(find.text('C’est correct, continuer'));
     await tester.pumpAndSettle();
     final resolve =
         verify(
@@ -153,7 +154,7 @@ void main() {
         ),
       ],
     );
-    await tester.tap(find.text('Tout est correct, continuer'));
+    await tester.tap(find.text('C’est correct, continuer'));
     await tester.pumpAndSettle();
     final patch =
         verify(

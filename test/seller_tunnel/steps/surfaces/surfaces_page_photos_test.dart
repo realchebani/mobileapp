@@ -284,7 +284,7 @@ void main() {
           ),
         ],
       );
-      await tap(tester, find.text('Tout est correct, continuer'));
+      await tap(tester, find.text('C’est correct, continuer'));
       expect(savedStepPatch(cubit, SellerTunnelStep.surfaces), {
         PropertyColumns.livingAreaM2: 30.0,
         PropertyColumns.annexAreaM2: 0.0,

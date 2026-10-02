@@ -272,7 +272,7 @@
   "surfacesAnnexTag": "Anexo",
   "surfacesAreaValue": "{area} m²",
   "surfacesAddRoom": "Añadir una habitación",
-  "surfacesContinue": "Todo correcto, continuar",
+  "surfacesContinue": "Correcto, continuar",
   "surfacesEmpty": "Todavía no hay habitaciones.",
   "surfacesErrorNoRooms": "Añada al menos una habitación habitable para continuar.",
   "surfacesEditRoom": "Editar {name}",
@@ -1140,5 +1140,6 @@
   "documentsPendingTitle": "{count, plural, =1{Información dictada por confirmar (1)} other{Información dictada por confirmar ({count})}}",
   "documentsPendingHint": "Puede enviar su expediente sin confirmarlas: no se aplicarán.",
   "documentsPendingSee": "Ver",
-  "summaryStepNotes": "Notas adicionales"
+  "summaryStepNotes": "Notas adicionales",
+  "surfacesToConfirmArea": "de los cuales {area} m² por confirmar"
 }

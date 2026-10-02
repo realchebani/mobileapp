@@ -133,7 +133,7 @@ void main() {
       expect(find.text('Annexe'), findsNothing);
       expect(find.text('52,5${_nbsp}m²'), findsOneWidget);
       expect(find.bySemanticsLabel('Modifier Séjour'), findsOneWidget);
-      expect(find.text('Tout est correct, continuer'), findsOneWidget);
+      expect(find.text('C’est correct, continuer'), findsOneWidget);
     });
 
     testWidgets('counts the annexes apart from the living area', (
@@ -153,7 +153,7 @@ void main() {
       expect(find.text('52,5${_nbsp}m²'), findsOneWidget);
       expect(find.text('Annexes$_nbsp: 18,0${_nbsp}m²'), findsOneWidget);
 
-      await tester.tap(find.text('Tout est correct, continuer'));
+      await tester.tap(find.text('C’est correct, continuer'));
       await tester.pumpAndSettle();
       expect(savedStepPatch(cubit, SellerTunnelStep.surfaces), {
         PropertyColumns.livingAreaM2: 52.5,
@@ -168,7 +168,7 @@ void main() {
 
     testWidgets('annexes alone cannot continue', (tester) async {
       final cubit = await pump(tester, state: _state(rooms: const [_garage]));
-      await tester.tap(find.text('Tout est correct, continuer'));
+      await tester.tap(find.text('C’est correct, continuer'));
       await tester.pumpAndSettle();
       expect(
         find.text('Ajoutez au moins une pièce habitable pour continuer.'),
@@ -211,7 +211,7 @@ void main() {
       expect(find.text('0,0${_nbsp}m²'), findsOneWidget);
       expect(find.byType(RealestyBadge), findsNothing);
 
-      await tester.tap(find.text('Tout est correct, continuer'));
+      await tester.tap(find.text('C’est correct, continuer'));
       await tester.pumpAndSettle();
 
       expect(
@@ -283,7 +283,7 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('Supprimer cette pièce'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Tout est correct, continuer'));
+      await tester.tap(find.text('C’est correct, continuer'));
       await tester.pumpAndSettle();
 
       verify(() => repository.deleteRoom('r3')).called(1);
@@ -309,7 +309,7 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('Supprimer cette pièce'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Tout est correct, continuer'));
+      await tester.tap(find.text('C’est correct, continuer'));
       await tester.pumpAndSettle();
 
       expect(
@@ -333,7 +333,7 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('Supprimer cette pièce'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Tout est correct, continuer'));
+      await tester.tap(find.text('C’est correct, continuer'));
       await tester.pump();
 
       expect(
@@ -382,7 +382,7 @@ void main() {
 
     testWidgets('reveals the error on a small screen', (tester) async {
       await pump(tester, state: _state(rooms: const []), height: 500);
-      await tester.tap(find.text('Tout est correct, continuer'));
+      await tester.tap(find.text('C’est correct, continuer'));
       await tester.pumpAndSettle();
       expect(
         find.text('Ajoutez au moins une pièce habitable pour continuer.'),

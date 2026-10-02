@@ -240,6 +240,10 @@ class _PropertyContextViewState extends State<PropertyContextView> {
       dictated: dictated(column),
     );
     final trace = context.watch<StepTraceCubit>().state;
+    final estimateToConfirm = state.estimates.any(
+      (draft) =>
+          draft.pendingId != null && !trace.confirmed.contains(draft.pendingId),
+    );
     return MultiBlocListener(
       listeners: [
         BlocListener<PropertyContextCubit, PropertyContextState>(
@@ -401,7 +405,17 @@ class _PropertyContextViewState extends State<PropertyContextView> {
               ),
               ContextQuestion(
                 label: l10n.contextPreviouslyEstimatedLabel,
-                tag: tag(PropertyColumns.previouslyEstimated),
+                // « Oui » set by an estimate said on another step.
+                tag:
+                    estimateToConfirm &&
+                        context
+                                .read<SellerTunnelCubit>()
+                                .state
+                                .property
+                                ?.previouslyEstimated !=
+                            true
+                    ? const ToConfirmTag()
+                    : tag(PropertyColumns.previouslyEstimated),
                 child: _YesNo(
                   value: state.previouslyEstimated,
                   onChanged: (value) => cubit.previouslyEstimatedChanged(

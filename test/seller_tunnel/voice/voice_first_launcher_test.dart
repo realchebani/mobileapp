@@ -2,6 +2,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:mobileapp/seller_tunnel/voice/voice.dart';
+import 'package:mocktail/mocktail.dart';
 
 import '../../helpers/helpers.dart';
 
@@ -106,14 +107,18 @@ void main() {
     expect(find.byType(SnackBar), findsNothing);
   });
 
-  testWidgets('a refused microphone shows its banner once per session', (
-    tester,
-  ) async {
+  testWidgets('a refused microphone shows its banner once per session, '
+      'and is checked again when the app comes back', (tester) async {
     final opened = <Uri>[];
+    final recorder = MockVoiceRecorder();
+    var granted = false;
+    when(recorder.requestPermission).thenAnswer((_) async => granted);
+    when(recorder.dispose).thenAnswer((_) async {});
     final services = await testVoiceServices(
       inputMode: VoiceInputMode.voice,
       extraPreferences: {VoicePreferences.micDeniedKey: true},
       openedUrls: opened,
+      recorder: recorder,
     );
     expect(await schedule(tester, services: services), 0);
     expect(
@@ -129,6 +134,43 @@ void main() {
     expect(
       find.text('Micro désactivé : vous pouvez répondre à l’écran.'),
       findsNothing,
+    );
+    // Allowed in the iOS Settings: cleared when the app comes back.
+    granted = true;
+    [
+      AppLifecycleState.inactive,
+      AppLifecycleState.hidden,
+      AppLifecycleState.paused,
+      AppLifecycleState.hidden,
+      AppLifecycleState.inactive,
+      AppLifecycleState.resumed,
+    ].forEach(tester.binding.handleAppLifecycleStateChanged);
+    for (var i = 0; i < 5; i++) {
+      await tester.pump();
+    }
+    expect(services.preferences!.micDenied, isFalse);
+    VoiceFirstLauncher.resetSession();
+  });
+
+  testWidgets('a microphone allowed since then opens the sheet', (
+    tester,
+  ) async {
+    final recorder = MockVoiceRecorder();
+    when(recorder.requestPermission).thenAnswer((_) async => true);
+    when(recorder.dispose).thenAnswer((_) async {});
+    final services = await testVoiceServices(
+      inputMode: VoiceInputMode.voice,
+      extraPreferences: {VoicePreferences.micDeniedKey: true},
+      recorder: recorder,
+    );
+    expect(await schedule(tester, services: services), 1);
+    expect(services.preferences!.micDenied, isFalse);
+  });
+
+  test('recheckMicrophone needs the services', () async {
+    expect(
+      await VoiceFirstLauncher.recheckMicrophone(const VoiceServices()),
+      isFalse,
     );
   });
 }

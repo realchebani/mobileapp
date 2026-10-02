@@ -183,11 +183,97 @@ void main() {
     expect(cubit.state.rooms.single.description, hasLength(600));
   });
 
-  test('a room prepared for its photos keeps its pending origin', () async {
+  test('a pre-filled room written for its photos is linked, not confirmed, '
+      'and not added again on the next visit', () async {
+    final answer = _pending('kept', {'name': 'Cuisine', 'area_m2': 12});
+    final cubit = build([answer]);
+    await cubit.preparePhotos('n0');
+    final written = cubit.state.photosRoom!;
+    // Linked to its answer, without a confirmation before « Continuer ».
+    final source = written.fieldSources['name']! as Map;
+    expect(source['s'], 'dicte_autre_etape');
+    expect(source['p'], 'kept');
+    expect(source.containsKey('c'), isFalse);
+
+    // The seller leaves, then comes back: the stored row is the one shown.
+    final again = SurfacesCubit(
+      propertyRepository: repository,
+      propertyId: 'p',
+      rooms: [written],
+      pendingRooms: [answer],
+      clock: () => at,
+    );
+    expect(again.state.rooms, hasLength(1));
+    expect(again.state.toConfirm, {'n0': 'kept'});
+    await again.submit(confirmed: {'kept'});
+    expect(again.state.pendingResolutions, {
+      PendingResolution.yes: ['kept'],
+    });
+    expect(
+      (again.state.savedRooms.single.fieldSources['name']! as Map)['c'],
+      'oui',
+    );
+
+    // Edited after the photos: still linked, recorded as kept by
+    // « Continuer » for the values not typed.
+    final edited =
+        SurfacesCubit(
+          propertyRepository: repository,
+          propertyId: 'p',
+          rooms: [written],
+          pendingRooms: [answer],
+          clock: () => at,
+        )..roomEdited(
+          'n0',
+          const RoomInput(name: 'Cuisine', level: null, areaM2: 13),
+        );
+    await edited.submit(confirmed: {'kept'});
+    expect(edited.state.pendingResolutions, {
+      PendingResolution.modified: ['kept'],
+    });
+    final sources = edited.state.savedRooms.single.fieldSources;
+    expect((sources['area_m2']! as Map)['s'], 'saisi');
+    expect((sources['name']! as Map)['c'], 'oui');
+
+    // Edited, then « Continuer » without « oui »: « continuer ».
+    final tapped =
+        SurfacesCubit(
+          propertyRepository: repository,
+          propertyId: 'p',
+          rooms: [written],
+          pendingRooms: [answer],
+          clock: () => at,
+        )..roomEdited(
+          'n0',
+          const RoomInput(name: 'Cuisine', level: null, areaM2: 14),
+        );
+    await tapped.submit();
+    expect(
+      (tapped.state.savedRooms.single.fieldSources['name']! as Map)['c'],
+      'continuer',
+    );
+
+    // Confirmed before but its resolution lost: accepted again.
+    final confirmedRoom = edited.state.savedRooms.single;
+    final settled = SurfacesCubit(
+      propertyRepository: repository,
+      propertyId: 'p',
+      rooms: [confirmedRoom],
+      pendingRooms: [answer],
+      clock: () => at,
+    );
+    expect(settled.state.toConfirm, isEmpty);
+    await settled.submit();
+    expect(settled.state.pendingResolutions, {
+      PendingResolution.continueTapped: ['kept'],
+    });
+  });
+
+  test('the spoken summary counts only the rooms confirmed', () {
     final cubit = build([
       _pending('kept', {'name': 'Cuisine', 'area_m2': 12}),
     ]);
-    await cubit.preparePhotos('n0');
-    expect(sourceKinds(cubit.state.photosRoom!)['name'], 'dicte_autre_etape');
+    expect(cubit.voiceContext.rooms.map((r) => r.name), ['Séjour', 'Cuisine']);
+    expect(cubit.confirmedVoiceRooms.map((r) => r.name), ['Séjour']);
   });
 }

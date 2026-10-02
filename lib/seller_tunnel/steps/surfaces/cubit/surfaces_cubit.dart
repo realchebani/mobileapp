@@ -36,9 +36,17 @@ class SurfacesCubit extends Cubit<SurfacesState>
        _clock = clock ?? DateTime.now,
        super(SurfacesState(rooms: rooms)) {
     // EPIC-16: the rooms said on another step join the table « À
-    // confirmer ».
+    // confirmer ». A room already written for its photos is linked to its
+    // answer by its `field_sources` (`p`): it is not added again, and stays
+    // « À confirmer » until « Continuer » records the confirmation (`c`).
     var table = [...rooms];
     for (final answer in pendingRooms) {
+      final stored = rooms.where((room) => _pendingIdIn(room) == answer.id);
+      if (stored.firstOrNull case final room?) {
+        _pending[room.id!] = answer;
+        if (_confirmedIn(room)) _accepted.add(room.id!);
+        continue;
+      }
       final room = _dictatedRoom(answer.values, table);
       if (room == null) continue;
       table = [...table, room];
@@ -50,12 +58,29 @@ class SurfacesCubit extends Cubit<SurfacesState>
           rooms: table,
           toConfirm: {
             for (final MapEntry(:key, :value) in _pending.entries)
-              key: value.id,
+              if (!_accepted.contains(key)) key: value.id,
           },
         ),
       );
     }
   }
+
+  /// The pending answer a stored room was pre-filled from, if any.
+  static String? _pendingIdIn(Room room) {
+    for (final source in room.fieldSources.values) {
+      if (source is Map && source['p'] is String) return source['p'] as String;
+    }
+    return null;
+  }
+
+  /// Whether the pre-filled values of [room] were confirmed (`c`).
+  static bool _confirmedIn(Room room) => room.fieldSources.values.any(
+    (source) => source is Map && source['p'] != null && source['c'] != null,
+  );
+
+  /// Rooms written and confirmed before, whose answer is still open (its
+  /// resolution was lost): accepted again.
+  final Set<String> _accepted = {};
 
   final DateTime Function() _clock;
 
@@ -136,7 +161,7 @@ class SurfacesCubit extends Cubit<SurfacesState>
     _unconfirm(id);
   }
 
-  /// "Tout est correct, continuer": shows the error when there is no
+  /// "C’est correct, continuer": shows the error when there is no
   /// living-space room; otherwise deletes the removed rooms, then writes the
   /// new and changed ones (unchanged rows are not written), in table order.
   ///
@@ -163,13 +188,22 @@ class SurfacesCubit extends Cubit<SurfacesState>
     final now = _clock();
     final wanted = [
       for (final (index, room) in state.rooms.indexed)
-        _confirmedSources(_withSortOrder(room, index), confirmed, now),
+        _sealed(
+          _pendingSources(
+            _withSortOrder(room, index),
+            now,
+            confirmation: (id) => confirmed.contains(id)
+                ? FieldConfirmation.yes
+                : FieldConfirmation.continueTapped,
+          ),
+          confirmed,
+        ),
     ];
     final resolutions = <PendingResolution, List<String>>{};
     for (final MapEntry(key: id, value: answer) in _pending.entries) {
       final resolution = !state.rooms.any((room) => room.id == id)
           ? PendingResolution.erased
-          : state.toConfirm.containsKey(id)
+          : state.toConfirm.containsKey(id) || _accepted.contains(id)
           ? confirmed.contains(answer.id)
                 ? PendingResolution.yes
                 : PendingResolution.continueTapped
@@ -243,10 +277,12 @@ class SurfacesCubit extends Cubit<SurfacesState>
     if (state.isSubmitting) return;
     final index = state.rooms.indexWhere((room) => room.id == id);
     if (index < 0) return;
-    final room = _confirmedSources(
+    // Not confirmed yet: the answer is linked (`p`) without a confirmation,
+    // recorded by « Continuer » only.
+    final room = _pendingSources(
       _withSortOrder(state.rooms[index], index),
-      const {},
       _clock(),
+      confirmation: (_) => null,
     );
     final stored = _saved.where((saved) => saved.id == id).firstOrNull;
     if (stored != null && stored == room) {
@@ -366,8 +402,12 @@ class SurfacesCubit extends Cubit<SurfacesState>
   }
 
   /// A room still holding what was said on another step: its values are
-  /// recorded as said there and confirmed ([confirmed]: by « oui »).
-  Room _confirmedSources(Room room, Set<String> confirmed, DateTime at) {
+  /// recorded as said there, with [confirmation] (null before « Continuer »).
+  Room _pendingSources(
+    Room room,
+    DateTime at, {
+    required FieldConfirmation? Function(String pendingId) confirmation,
+  }) {
     final answer = _pending[room.id];
     if (answer == null || !state.toConfirm.containsKey(room.id)) return room;
     final source = FieldSource(
@@ -375,13 +415,36 @@ class SurfacesCubit extends Cubit<SurfacesState>
       at: at,
       turnId: answer.turnId,
       pendingId: answer.id,
-      confirmation: confirmed.contains(answer.id)
-          ? FieldConfirmation.yes
-          : FieldConfirmation.continueTapped,
+      confirmation: confirmation(answer.id),
     );
     return _withSources(room, {
       for (final column in _tracedColumns)
         if (answer.values.containsKey(column)) column: source,
+    });
+  }
+
+  /// [room] saved by « Continuer »: a value still linked to a pending
+  /// answer without a confirmation (written for the photos, then kept)
+  /// is now confirmed.
+  static Room _sealed(Room room, Set<String> confirmed) {
+    final open = {
+      for (final MapEntry(:key, :value) in room.fieldSources.entries)
+        if (value is Map && value['p'] is String && value['c'] == null)
+          key: value,
+    };
+    if (open.isEmpty) return room;
+    return Room.fromJson({
+      ...room.toJson(),
+      'field_sources': {
+        ...room.fieldSources,
+        for (final MapEntry(:key, :value) in open.entries)
+          key: {
+            ...value,
+            'c': confirmed.contains(value['p'])
+                ? FieldConfirmation.yes.value
+                : FieldConfirmation.continueTapped.value,
+          },
+      },
     });
   }
 
@@ -439,6 +502,16 @@ class SurfacesCubit extends Cubit<SurfacesState>
           if (room.id != null && room.id == state.lastDictatedId) ref,
       ].firstOrNull,
     );
+  }
+
+  /// The rooms of [voiceContext] without those still « À confirmer »
+  /// (EPIC-16): the spoken summary counts only the rooms confirmed.
+  List<AgentRoom> get confirmedVoiceRooms {
+    final refs = _byRef(state.rooms);
+    return [
+      for (final room in voiceContext.rooms)
+        if (!state.toConfirm.containsKey(refs[room.ref]?.id)) room,
+    ];
   }
 
   /// R1… become the room ids (`id:<id>`).

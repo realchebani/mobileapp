@@ -365,3 +365,61 @@ Deno.test("evidence of entity changes and confirmations", () => {
   assertEquals(strong.confirmations[0].reason, "strong_change");
   assertEquals(strong.evidence.map((e) => e.k), ["purchase_year"]);
 });
+
+Deno.test("cross-step items respect the per-kind cap; long labels are shortened", () => {
+  const transcript = "il y a un parc juste à côté et une très longue route";
+  const result = validateTurn(
+    output({
+      cross_step: cross({
+        lifestyle_items: [
+          { kind: "asset", label: "Parc juste à côté", quote: "un parc juste à côté" },
+          { kind: "watch_point", label: "Route passante", quote: "une très longue route" },
+        ],
+      }),
+    }),
+    ctx({
+      transcript,
+      lifestyleLabels: {
+        asset: Array.from({ length: 9 }, (_, i) => `Atout ${i}`),
+        watch_point: [],
+      },
+      pending: [{
+        id: "p1",
+        target_step: "lifestyle",
+        kind: "lifestyle_item",
+        field: null,
+        value: { kind: "asset", label: "Calme" },
+        label_fr: "Calme",
+      }],
+    }),
+  );
+  assertEquals(result.rejected.map((r) => [r.field, r.reason]), [["x:lifestyle", "full"]]);
+  assertEquals(result.cross_step.map((c) => (c.value as { kind: string }).kind), [
+    "watch_point",
+  ]);
+
+  // A long change (every heating system) is shortened to 160 characters.
+  const saved = [
+    "electricite",
+    "pac",
+    "gaz",
+    "fioul",
+    "bois",
+    "granules",
+    "cheminee",
+    "reseau_chaleur",
+  ];
+  const changed = validateTurn(
+    output({
+      cross_step: cross({
+        answers: [answer("heating_systems", "solaire", "panneaux solaires")],
+      }),
+    }),
+    ctx({
+      transcript: "des panneaux solaires",
+      values: { property_type: "maison", heating_systems: saved },
+    }),
+  );
+  assertEquals(changed.cross_step[0].changed_fr!.length, 160);
+  assert(changed.cross_step[0].changed_fr!.endsWith("…"));
+});

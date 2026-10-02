@@ -1,6 +1,6 @@
 part of 'surfaces_cubit.dart';
 
-/// Progress of "Tout est correct, continuer": the rooms are saved first,
+/// Progress of "C’est correct, continuer": the rooms are saved first,
 /// then the view hands the total to the tunnel cubit.
 enum SurfacesSubmission { idle, inProgress, success, failure }
 

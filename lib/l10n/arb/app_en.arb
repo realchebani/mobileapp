@@ -272,7 +272,7 @@
   "surfacesAnnexTag": "Annex",
   "surfacesAreaValue": "{area} m²",
   "surfacesAddRoom": "Add a room",
-  "surfacesContinue": "All correct, continue",
+  "surfacesContinue": "Correct, continue",
   "surfacesEmpty": "No rooms yet.",
   "surfacesErrorNoRooms": "Add at least one living-space room to continue.",
   "surfacesEditRoom": "Edit {name}",
@@ -1140,5 +1140,6 @@
   "documentsPendingTitle": "{count, plural, =1{Dictated information to confirm (1)} other{Dictated information to confirm ({count})}}",
   "documentsPendingHint": "You can send your dossier without confirming them: they will not be applied.",
   "documentsPendingSee": "See",
-  "summaryStepNotes": "Additional notes"
+  "summaryStepNotes": "Additional notes",
+  "surfacesToConfirmArea": "of which {area} m² to confirm"
 }

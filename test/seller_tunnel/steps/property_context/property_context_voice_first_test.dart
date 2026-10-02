@@ -100,7 +100,9 @@ void main() {
     );
     expect(find.text('Contexte à la voix'), findsOneWidget);
     await mocks.close(tester);
-    expect(find.byType(ToConfirmTag), findsNWidgets(3));
+    // The year, « construit », the estimate card and « Déjà estimé » (set
+    // by the pending estimate).
+    expect(find.byType(ToConfirmTag), findsNWidgets(4));
     await tester.tap(find.text('Continuer'));
     await tester.pumpAndSettle();
     final captured = verify(

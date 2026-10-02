@@ -1284,9 +1284,9 @@
   "@surfacesAddRoom": {
     "description": "V5c · bouton d’ajout d’une pièce"
   },
-  "surfacesContinue": "Tout est correct, continuer",
+  "surfacesContinue": "C’est correct, continuer",
   "@surfacesContinue": {
-    "description": "V5c · bouton principal"
+    "description": "V5c · bouton principal (court : tient à côté du micro en grands caractères)"
   },
   "surfacesEmpty": "Aucune pièce pour l’instant.",
   "@surfacesEmpty": {
@@ -5686,5 +5686,15 @@
   "summaryStepNotes": "Notes complémentaires",
   "@summaryStepNotes": {
     "description": "V8 · aperçu du dossier : notes complémentaires d’une étape ou d’une pièce (EPIC-16)"
+  },
+  "surfacesToConfirmArea": "dont {area} m² à confirmer",
+  "@surfacesToConfirmArea": {
+    "description": "V5c · total : surface des pièces dites à une autre étape, pas encore confirmées (EPIC-16)",
+    "placeholders": {
+      "area": {
+        "type": "String",
+        "example": "12"
+      }
+    }
   }
 }

@@ -68,8 +68,32 @@ abstract final class VoiceFirstLauncher {
   /// The « Micro désactivé » banner shows once per app session.
   static bool _micBannerShown = false;
 
+  /// Re-checks the microphone when the app comes back (from the iOS
+  /// Settings) while it is remembered as refused.
+  static AppLifecycleListener? _resumeListener;
+
   @visibleForTesting
-  static void resetSession() => _micBannerShown = false;
+  static void resetSession() {
+    _micBannerShown = false;
+    _resumeListener?.dispose();
+    _resumeListener = null;
+  }
+
+  /// Whether the microphone is allowed now (no prompt once the seller
+  /// answered); clears the remembered refusal when it is.
+  static Future<bool> recheckMicrophone(VoiceServices services) async {
+    final preferences = services.preferences;
+    final create = services.createRecorder;
+    if (preferences == null || create == null) return false;
+    final recorder = create();
+    try {
+      final granted = await recorder.requestPermission();
+      if (granted) await preferences.setMicDenied(denied: false);
+      return granted;
+    } finally {
+      await recorder.dispose();
+    }
+  }
 
   /// After the first frame of the step under [context]: calls [open] (the
   /// step's sheet) unless [skipReason] says otherwise; a refused
@@ -83,10 +107,10 @@ abstract final class VoiceFirstLauncher {
     required Future<void> Function() open,
     DateTime Function() clock = DateTime.now,
   }) {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!context.mounted) return;
       final services = VoiceServices.of(context);
-      final reason = skipReason(
+      VoiceFirstSkip? reasonNow() => skipReason(
         services: services,
         hasVoice: hasVoice,
         locked: locked,
@@ -94,11 +118,22 @@ abstract final class VoiceFirstLauncher {
         hasPending: hasPending,
         now: clock(),
       );
+      var reason = reasonNow();
+      // Refused before: allowed since in the iOS Settings?
+      if (reason == VoiceFirstSkip.micDenied &&
+          await recheckMicrophone(services)) {
+        reason = reasonNow();
+      }
+      if (!context.mounted) return;
       if (reason == null) {
         unawaited(open());
         return;
       }
-      if (reason != VoiceFirstSkip.micDenied || _micBannerShown) return;
+      if (reason != VoiceFirstSkip.micDenied) return;
+      _resumeListener ??= AppLifecycleListener(
+        onResume: () => unawaited(recheckMicrophone(services)),
+      );
+      if (_micBannerShown) return;
       _micBannerShown = true;
       final l10n = context.l10n;
       ScaffoldMessenger.maybeOf(context)?.showSnackBar(

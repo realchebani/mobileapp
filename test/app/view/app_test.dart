@@ -566,7 +566,7 @@ void main() {
         find.bySemanticsLabel('Photos de Chambre 1\u00a0: 1'),
         findsOneWidget,
       );
-      await tap(find.text('Tout est correct, continuer'));
+      await tap(find.text('C’est correct, continuer'));
       expect(find.byType(LifestylePage), findsOneWidget);
       expect(
         continuedTo(SellerTunnelStep.lifestyle)[PropertyColumns.livingAreaM2],

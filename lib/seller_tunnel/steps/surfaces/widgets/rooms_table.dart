@@ -20,8 +20,13 @@ class RoomsTable extends StatelessWidget {
     this.annexArea,
     this.dictated = const {},
     this.toConfirm = const {},
+    this.toConfirmArea = 0,
     super.key,
   });
+
+  /// Living area of the rooms still « À confirmer », included in
+  /// [livingArea] (EPIC-16): shown under the total.
+  final double toConfirmArea;
 
   /// Opens the photos of a room (EPIC-15); null disables the buttons.
   final ValueChanged<Room>? onPhotos;
@@ -131,6 +136,16 @@ class RoomsTable extends StatelessWidget {
                       ),
                     ],
                   ),
+                  if (toConfirmArea > 0)
+                    Text(
+                      l10n.surfacesToConfirmArea(
+                        RoomArea.format(toConfirmArea),
+                      ),
+                      textAlign: TextAlign.end,
+                      style: RealestyTextStyles.listSubtitle.copyWith(
+                        color: c.nuitTexteDiscret,
+                      ),
+                    ),
                   if (annexArea case final annexArea?)
                     Text(
                       l10n.surfacesAnnexTotal(RoomArea.format(annexArea)),

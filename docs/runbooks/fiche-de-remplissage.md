@@ -2,7 +2,7 @@
 
 Avant de certifier un dossier ([certifier-un-dossier.md](certifier-un-dossier.md)), l’expert relit **d’où vient chaque valeur** (fiche de remplissage) et, si besoin, **ce que le vendeur a dit** à l’assistant vocal (fil de conversation). En attendant le back-office EPIC-12, les deux se lisent dans le **SQL Editor** du tableau de bord Supabase (rôle `postgres`) ou avec `supabase db query --linked` (rôle `service_role`). Les fonctions ne sont pas appelables depuis l’application (exécution retirée à `public`, `anon` et `authenticated`).
 
-Migration : `supabase/migrations/20261002175436_voix_prioritaire.sql`. Plan : [Voix prioritaire](../plans/2026-10-03-voix-prioritaire.md) §5.
+Migrations : `supabase/migrations/20261002175436_voix_prioritaire.sql`, `20261002200016_fill_sheet_sources.sql` (corrections de la fiche). Plan : [Voix prioritaire](../plans/2026-10-03-voix-prioritaire.md) §5.
 
 ## 1. La fiche de remplissage
 
@@ -22,15 +22,15 @@ Une ligne par valeur enregistrée du dossier (bien, pièces, estimations précé
 | `step` | étape du tunnel : `location`, `context`, `technical`, `rooms`, `lifestyle` |
 | `entity` | `property`, `room`, `previous_estimate`, `lifestyle_item`, `note` |
 | `entity_id`, `entity_label` | ligne de la pièce / estimation / atout (« Séjour », « Estimation 1 », « Atout ») ; pour une réponse en attente, son id |
-| `field`, `label_fr` | colonne et libellé (catalogue `dossier_field_catalog`) |
-| `value` | valeur enregistrée, codes traduits par le catalogue ; pour une réponse non acceptée, la valeur proposée |
-| `source` | `dicte` (dit sur l’étape), `dicte_autre_etape` (dit ailleurs, pré-rempli « À confirmer », puis confirmé), `saisi` (tapé), `extrait` (lu sur un plan ou une photo), `externe` (Base Adresse Nationale, cadastre, copie d’un autre bien), `non_trace` (valeur enregistrée avant EPIC-16) |
+| `field`, `label_fr` | colonne et libellé (catalogue `dossier_field_catalog`) ; pour une note en attente : l’étape (`technical`…) et « Notes complémentaires » |
+| `value` | valeur enregistrée, codes traduits par le catalogue ; pour une réponse non acceptée, la valeur proposée (le texte même pour une note) |
+| `source` | `dicte` (dit sur l’étape), `dicte_autre_etape` (dit ailleurs, pré-rempli « À confirmer », puis confirmé), `saisi` (tapé), `extrait` (lu sur un plan ou une photo), `externe` (Base Adresse Nationale, cadastre, copie d’un autre bien), `non_trace` (valeur enregistrée avant EPIC-16), `invalide` (source inconnue : entrée forgée ou cassée, jamais vérifiée) |
 | `quote` | phrase d’origine (citation littérale, prise dans le journal du serveur) |
 | `turn_id`, `said_at` | tour de conversation et heure de la phrase |
 | `saved_at` | heure d’enregistrement par l’application |
-| `confirmed` | `true` si la valeur est au dossier |
-| `confirmation` | pour une valeur dite ailleurs : `continuer` (bouton), `oui` (dit ou touché), `mise_a_jour` (étape déjà validée) ; pour une réponse non acceptée : son statut `pending`, `rejected`, `superseded` ou `expired` |
-| `verified` | `true` : le tour cité appartient bien à une session de ce bien et la valeur du journal correspond à la valeur enregistrée ; `false` : **à vérifier** ; vide : sans objet (valeur tapée ou externe) |
+| `confirmed` | `true` si la valeur est au dossier et confirmée ; `false` pour une réponse non acceptée, ou pour une valeur déjà écrite mais liée à une réponse encore en attente (pièce enregistrée pour ses photos avant « Continuer ») |
+| `confirmation` | pour une valeur dite ailleurs : `continuer` (bouton), `oui` (dit ou touché), `mise_a_jour` (étape déjà validée), ou le statut de sa réponse tant qu’elle n’est pas confirmée ; pour une réponse non acceptée : son statut `pending`, `rejected`, `superseded` ou `expired` |
+| `verified` | `true` : le tour cité (ou la réponse acceptée) appartient bien à ce bien et sa valeur correspond à la valeur enregistrée ; `false` : **à vérifier** (dont une valeur « dicté » sans tour ni réponse, et toute source `invalide`) ; vide : sans objet (valeur tapée, externe ou non tracée) |
 | `sort_order` | ordre d’affichage (étape, champ, ligne) |
 
 ### Lire la fiche

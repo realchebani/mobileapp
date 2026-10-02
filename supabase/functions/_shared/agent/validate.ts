@@ -277,6 +277,9 @@ export interface ValidationContext {
 /** Longest step note (`properties.step_notes`). */
 export const NOTE_MAX = 1000;
 
+/** Longest label of a pending answer (`pending_answers.label_fr`). */
+export const PENDING_LABEL_MAX = 160;
+
 const NBSP = "\u00a0";
 
 /** [value] the French way: "38,5", "320 000". */
@@ -835,8 +838,9 @@ function withTypography(turn: ValidatedTurn): ValidatedTurn {
   }
   for (const item of turn.out_of_step) item.label_fr = typo(item.label_fr);
   for (const item of turn.cross_step) {
-    item.label_fr = typo(item.label_fr).slice(0, 160);
-    if (item.changed_fr) item.changed_fr = typo(item.changed_fr).slice(0, 160);
+    // pending_answers: label_fr and changed_fr ≤ 160 characters.
+    item.label_fr = shorten(typo(item.label_fr), PENDING_LABEL_MAX);
+    if (item.changed_fr) item.changed_fr = shorten(typo(item.changed_fr), PENDING_LABEL_MAX);
   }
   return turn;
 }
@@ -1554,12 +1558,20 @@ function validateCrossStep(
   }
 
   if (targets.lifestyle) {
+    const pendingItems = pending.filter((row) => row.kind === "lifestyle_item")
+      .map((row) => row.value as { kind?: unknown; label?: unknown });
     const known = [
       ...(context.lifestyleLabels?.asset ?? []),
       ...(context.lifestyleLabels?.watch_point ?? []),
-      ...pending.filter((row) => row.kind === "lifestyle_item")
-        .map((row) => String((row.value as { label?: unknown })?.label ?? "")),
+      ...pendingItems.map((item) => String(item?.label ?? "")),
     ].map(normalize);
+    // Saved and pending items per kind: V6 takes 10 of each at most.
+    const counts: Record<string, number> = {
+      asset: (context.lifestyleLabels?.asset ?? []).length +
+        pendingItems.filter((item) => item?.kind === "asset").length,
+      watch_point: (context.lifestyleLabels?.watch_point ?? []).length +
+        pendingItems.filter((item) => item?.kind === "watch_point").length,
+    };
     for (const item of cross.lifestyle_items) {
       const label = item.label.trim().replace(/\s+/g, " ");
       const length = [...label].length;
@@ -1571,6 +1583,8 @@ function validateCrossStep(
         reject("lifestyle", label, "quote_not_found");
       } else if (known.includes(normalize(label))) {
         reject("lifestyle", label, "duplicate");
+      } else if (counts[item.kind] >= LIFESTYLE_ITEMS_PER_KIND) {
+        reject("lifestyle", label, "full");
       } else if (
         push({
           target_step: "lifestyle",
@@ -1583,6 +1597,7 @@ function validateCrossStep(
         })
       ) {
         known.push(normalize(label));
+        counts[item.kind]++;
       }
     }
   }

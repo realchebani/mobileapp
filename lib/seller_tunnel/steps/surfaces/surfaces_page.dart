@@ -118,9 +118,10 @@ class _SurfacesViewState extends State<SurfacesView> {
       title: l10n.surfacesVoiceTitle,
       intro: l10n.surfacesVoiceIntro,
       dictation: VoiceDefaults.silentRoomsDictation,
+      // The rooms still « À confirmer » are not counted in the summary.
       summary: () => repository.roomsSummary(
         propertyId: propertyId,
-        rooms: cubit.voiceContext.rooms,
+        rooms: cubit.confirmedVoiceRooms,
       ),
       extra: BlocProvider.value(value: cubit, child: const DictatedRoomsList()),
     );
@@ -329,6 +330,12 @@ class _SurfacesViewState extends State<SurfacesView> {
     final missingPhotos = requirePhotos
         ? state.mainRoomsWithoutPhotos.length
         : 0;
+    // EPIC-16: the rooms said on another step, not confirmed yet.
+    final confirmed = context.watch<StepTraceCubit>().state.confirmed;
+    final toConfirm = {
+      for (final MapEntry(key: room, value: pending) in state.toConfirm.entries)
+        if (!confirmed.contains(pending)) room,
+    };
     return MultiBlocListener(
       listeners: [
         BlocListener<SurfacesCubit, SurfacesState>(
@@ -408,16 +415,12 @@ class _SurfacesViewState extends State<SurfacesView> {
                 livingArea: state.livingArea,
                 annexArea: state.hasAnnexes ? state.annexArea : null,
                 dictated: state.dictated,
-                toConfirm: {
-                  for (final MapEntry(key: room, value: pending)
-                      in state.toConfirm.entries)
-                    if (!context
-                        .watch<StepTraceCubit>()
-                        .state
-                        .confirmed
-                        .contains(pending))
-                      room,
-                },
+                toConfirm: toConfirm,
+                toConfirmArea: state.rooms
+                    .where(
+                      (room) => !room.isAnnex && toConfirm.contains(room.id),
+                    )
+                    .fold(0, (sum, room) => sum + room.areaM2),
                 requirePhotos: requirePhotos,
                 onEdit: busy ? null : (room) => _editRoom(state, room),
                 onPhotos: busy ? null : (room) => unawaited(_openPhotos(room)),
