@@ -8,6 +8,8 @@ environment:
   flutter: ^3.47.0
 
 dependencies:
+  agent_repository:
+    path: packages/agent_repository
   auth_repository:
     path: packages/auth_repository
   bloc: ^9.2.1
@@ -40,6 +42,8 @@ dependencies:
   shared_preferences: ^2.5.5
   supabase_flutter: ^2.18.0
   url_launcher: ^6.3.2
+  voice_repository:
+    path: packages/voice_repository
 
 dev_dependencies:
   bloc_lint: ^0.4.2

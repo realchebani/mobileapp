@@ -44,9 +44,32 @@ class LifestyleItemRow extends StatelessWidget {
               ),
             ),
             Expanded(
-              child: Text(
-                item.label,
-                style: RealestyTextStyles.bubble.copyWith(color: c.encre),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                spacing: 4,
+                children: [
+                  Text(
+                    item.label,
+                    style: RealestyTextStyles.bubble.copyWith(color: c.encre),
+                  ),
+                  if (item.fromVoice)
+                    Row(
+                      spacing: 4,
+                      children: [
+                        RealestyIcon(
+                          RealestyIcons.mic,
+                          size: 12,
+                          color: c.vertTexte,
+                        ),
+                        Text(
+                          context.l10n.lifestyleVoiceAdded,
+                          style: RealestyTextStyles.badge.copyWith(
+                            color: c.vertTexte,
+                          ),
+                        ),
+                      ],
+                    ),
+                ],
               ),
             ),
             RealestyIcon(RealestyIcons.pen, size: 16, color: c.texteDiscret),

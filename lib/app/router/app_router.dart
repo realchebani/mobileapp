@@ -160,6 +160,7 @@ final List<(String, Widget)> _sellerTunnelPages = [
   (SellerTunnelStep.location.path, const LocationPage()),
   (SellerTunnelStep.context.path, const PropertyContextPage()),
   (SellerTunnelStep.technical.path, const TechnicalPage()),
+  (AppRoutes.sellerVoiceAudit, const VoiceAuditPage()),
   (SellerTunnelStep.method.path, const MethodPage()),
   (SellerTunnelStep.surfaces.path, const SurfacesPage()),
   (SellerTunnelStep.lifestyle.path, const LifestylePage()),

@@ -1,3 +1,4 @@
+import 'package:agent_repository/agent_repository.dart';
 import 'package:auth_repository/auth_repository.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:geo_repository/geo_repository.dart';
@@ -11,6 +12,7 @@ import 'package:mocktail/mocktail.dart';
 import 'package:profile_repository/profile_repository.dart';
 import 'package:property_repository/property_repository.dart';
 import 'package:sale_repository/sale_repository.dart';
+import 'package:voice_repository/voice_repository.dart';
 
 class MockAuthRepository extends Mock implements AuthRepository;
 
@@ -33,6 +35,11 @@ class MockProfileCubit extends MockCubit<ProfileState> implements ProfileCubit;
 
 class MockGoRouter extends Mock implements GoRouter;
 
+class MockAgentRepository extends Mock implements AgentRepository;
+
+class MockVoiceRecorder extends Mock implements VoiceRecorder;
+
+class MockVoicePlayer extends Mock implements VoicePlayer;
 class MockValuationRepository extends Mock implements ValuationRepository;
 
 class MockNotificationRepository extends Mock implements NotificationRepository;

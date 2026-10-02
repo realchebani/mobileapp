@@ -1,10 +1,14 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:mobileapp/l10n/l10n.dart';
+import 'package:mobileapp/seller_tunnel/voice/voice_services.dart';
 import 'package:mobileapp/ui/ui.dart';
 
 /// Sticky bottom bar of a tunnel step (spec 0.3): optional hint line, the
-/// microphone (hidden until voice input exists, see [voiceEnabled]) and
-/// the main action.
+/// microphone and the main action.
+///
+/// The microphone shows when the step handles it ([onMicPressed]) and
+/// voice is available ([VoiceServices.isAvailable]: `VOICE_ENABLED` flag of
+/// the flavor); otherwise the tunnel stays screen-only.
 class AgentActionBar extends StatelessWidget {
   const new({
     required this.label,
@@ -13,14 +17,10 @@ class AgentActionBar extends StatelessWidget {
     this.isLoading = false,
     this.variant = RealestyButtonVariant.primary,
     this.trailingIcon,
-    this.showMic = voiceEnabled,
+    this.showMic,
     this.onMicPressed,
     super.key,
   });
-
-  /// Whether voice input is available in this version (v1: no). While
-  /// false, the microphone is hidden by default.
-  static const voiceEnabled = false;
 
   /// Main action label ("Continuer"…).
   final String label;
@@ -42,8 +42,9 @@ class AgentActionBar extends StatelessWidget {
   /// Optional icon after the main action label.
   final RealestyIcons? trailingIcon;
 
-  /// Whether the microphone button is shown.
-  final bool showMic;
+  /// Forces the microphone on or off; by default it shows when
+  /// [onMicPressed] is set and voice is available.
+  final bool? showMic;
 
   final VoidCallback? onMicPressed;
 
@@ -51,6 +52,9 @@ class AgentActionBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final c = context.realestyColors;
+    final showMic =
+        this.showMic ??
+        (onMicPressed != null && VoiceServices.of(context).isAvailable);
     final hint = showMic || this.hint != l10n.tunnelHintVoiceOrScreen
         ? this.hint
         : null;

@@ -9,8 +9,10 @@ import 'package:mobileapp/seller_tunnel/steps/lifestyle/cubit/lifestyle_cubit.da
 import 'package:mobileapp/seller_tunnel/steps/lifestyle/models/lifestyle_item_draft.dart';
 import 'package:mobileapp/seller_tunnel/steps/lifestyle/widgets/lifestyle_item_row.dart';
 import 'package:mobileapp/seller_tunnel/steps/lifestyle/widgets/lifestyle_item_sheet.dart';
+import 'package:mobileapp/seller_tunnel/steps/lifestyle/widgets/lifestyle_voice_sheet.dart';
 import 'package:mobileapp/seller_tunnel/steps/lifestyle/widgets/noise_slider.dart';
 import 'package:mobileapp/seller_tunnel/view/seller_tunnel_navigation.dart';
+import 'package:mobileapp/seller_tunnel/voice/voice_services.dart';
 import 'package:mobileapp/seller_tunnel/widgets/widgets.dart';
 import 'package:mobileapp/ui/ui.dart';
 import 'package:property_repository/property_repository.dart';
@@ -115,28 +117,47 @@ class _LifestyleViewState extends State<LifestyleView> {
       (cubit) => cubit.state.property?.propertyType,
     );
     final isBusy = state.isSubmitting || tunnelSaving;
+    // No voice for land (the agent only serves building dossiers).
+    final voiceAvailable =
+        VoiceServices.of(context).isAvailable &&
+        propertyType != PropertyType.land;
+    final suggestion = state.secretNoteSuggestion;
     final noise = state.noiseLevel;
     final noiseText = noise == null
         ? l10n.lifestyleNoiseUnset
         : l10n.lifestyleNoiseValue(noise, noiseLevelLabel(l10n, noise));
 
-    return BlocListener<LifestyleCubit, LifestyleState>(
-      listenWhen: (previous, current) =>
-          previous.submission != current.submission,
-      listener: _onSubmission,
+    return MultiBlocListener(
+      listeners: [
+        BlocListener<LifestyleCubit, LifestyleState>(
+          listenWhen: (previous, current) =>
+              previous.submission != current.submission,
+          listener: _onSubmission,
+        ),
+        // The suggested secret note was used: show it in the field.
+        BlocListener<LifestyleCubit, LifestyleState>(
+          listenWhen: (previous, current) => current.secretNote != _note.text,
+          listener: (context, state) => _note.text = state.secretNote,
+        ),
+      ],
       child: TunnelScaffold(
         spacing: 18,
         header: TunnelHeader(
           step: _step,
-          // Screen mode: the voice free talk of the mockup is deferred.
-          mode: TunnelHeaderMode.screen,
+          // "Vocal" when the free talk (microphone) is available.
+          mode: voiceAvailable
+              ? TunnelHeaderMode.voice
+              : TunnelHeaderMode.screen,
           onBack: isBusy ? null : () => context.goBackFrom(_step),
         ),
         actionBar: AgentActionBar(
-          hint: l10n.lifestyleHint,
+          hint: voiceAvailable ? l10n.lifestyleVoiceHint : l10n.lifestyleHint,
           label: l10n.tunnelContinue,
           isLoading: isBusy,
           onPressed: cubit.submit,
+          onMicPressed: isBusy || !voiceAvailable
+              ? null
+              : () => unawaited(showLifestyleVoiceSheet(context)),
         ),
         children: [
           AgentIntro(
@@ -210,6 +231,12 @@ class _LifestyleViewState extends State<LifestyleView> {
             ],
           ),
           const _NeighbourhoodCard(),
+          if (suggestion != null)
+            _SecretNoteSuggestion(
+              text: suggestion,
+              onUse: isBusy ? null : cubit.secretNoteSuggestionUsed,
+              onDismiss: isBusy ? null : cubit.secretNoteSuggestionDismissed,
+            ),
           RealestyTextField(
             label: l10n.lifestyleSecretNoteLabel,
             hint: l10n.lifestyleSecretNoteHint,
@@ -324,6 +351,65 @@ class _ItemsSection extends StatelessWidget {
             ),
           ),
       ],
+    );
+  }
+}
+
+/// The secret note proposed by the voice agent: never written unless the
+/// seller taps "Utiliser".
+class _SecretNoteSuggestion extends StatelessWidget {
+  const new({required this.text, required this.onUse, required this.onDismiss});
+
+  final String text;
+  final VoidCallback? onUse;
+  final VoidCallback? onDismiss;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final c = context.realestyColors;
+    return Container(
+      padding: const EdgeInsets.fromLTRB(14, 12, 6, 6),
+      decoration: BoxDecoration(
+        color: c.vertTeinte,
+        borderRadius: BorderRadius.circular(RealestyRadius.card),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        spacing: 4,
+        children: [
+          Row(
+            spacing: 6,
+            children: [
+              RealestyIcon(RealestyIcons.mic, size: 14, color: c.vertTexte),
+              Expanded(
+                child: Text(
+                  l10n.lifestyleVoiceSecretSuggestion,
+                  style: RealestyTextStyles.badge.copyWith(color: c.vertTexte),
+                ),
+              ),
+              RealestyIconButton(
+                icon: RealestyIcons.close,
+                semanticLabel: l10n.voiceAuditClose,
+                onPressed: onDismiss,
+              ),
+            ],
+          ),
+          Text(
+            text,
+            style: RealestyTextStyles.bodySmall.copyWith(color: c.encre),
+          ),
+          Align(
+            alignment: Alignment.centerRight,
+            child: RealestyButton(
+              label: l10n.lifestyleVoiceSecretUse,
+              variant: RealestyButtonVariant.text,
+              height: 40,
+              onPressed: onUse,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

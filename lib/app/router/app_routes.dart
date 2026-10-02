@@ -49,6 +49,9 @@ abstract final class AppRoutes {
   /// V4b · Audit technique (mode écran).
   static const sellerTechnical = '/vendeur/audit/technique';
 
+  /// V4 · Audit vocal technique (voice mode of V4b, EPIC-06).
+  static const sellerVoiceAudit = '/vendeur/audit/technique-vocal';
+
   /// V5 · Méthode de relevé.
   static const sellerMethod = '/vendeur/audit/methode';
 
