@@ -155,17 +155,15 @@ void main() {
 
       await tester.tap(find.text('Tout est correct, continuer'));
       await tester.pumpAndSettle();
-      verify(
-        () => cubit.saveAndContinue(SellerTunnelStep.surfaces, {
-          PropertyColumns.livingAreaM2: 52.5,
-          PropertyColumns.annexAreaM2: 18.0,
-          PropertyColumns.provenance: {
-            'construction_year': 'document',
-            'living_area_m2': 'declared',
-            'annex_area_m2': 'declared',
-          },
-        }),
-      ).called(1);
+      expect(savedStepPatch(cubit, SellerTunnelStep.surfaces), {
+        PropertyColumns.livingAreaM2: 52.5,
+        PropertyColumns.annexAreaM2: 18.0,
+        PropertyColumns.provenance: {
+          'construction_year': 'document',
+          'living_area_m2': 'declared',
+          'annex_area_m2': 'declared',
+        },
+      });
     });
 
     testWidgets('annexes alone cannot continue', (tester) async {
@@ -176,7 +174,7 @@ void main() {
         find.text('Ajoutez au moins une pièce habitable pour continuer.'),
         findsOneWidget,
       );
-      verifyNever(() => cubit.saveAndContinue(any(), any()));
+      verifyNoStepSaved(cubit);
     });
 
     testWidgets('templates the agent message by count', (tester) async {
@@ -220,7 +218,7 @@ void main() {
         find.text('Ajoutez au moins une pièce habitable pour continuer.'),
         findsOneWidget,
       );
-      verifyNever(() => cubit.saveAndContinue(any(), any()));
+      verifyNoStepSaved(cubit);
     });
 
     testWidgets('adds a room on the level of the last one', (tester) async {
@@ -292,17 +290,15 @@ void main() {
       verifyNever(() => repository.saveRoom(any()));
       verify(() => cubit.updateChildren(rooms: const [_living, _bedroom]))
           .called(1);
-      verify(
-        () => cubit.saveAndContinue(SellerTunnelStep.surfaces, {
-          PropertyColumns.livingAreaM2: 50.9,
-          PropertyColumns.annexAreaM2: 0.0,
-          PropertyColumns.provenance: {
-            'construction_year': 'document',
-            'living_area_m2': 'declared',
-            'annex_area_m2': 'declared',
-          },
-        }),
-      ).called(1);
+      expect(savedStepPatch(cubit, SellerTunnelStep.surfaces), {
+        PropertyColumns.livingAreaM2: 50.9,
+        PropertyColumns.annexAreaM2: 0.0,
+        PropertyColumns.provenance: {
+          'construction_year': 'document',
+          'living_area_m2': 'declared',
+          'annex_area_m2': 'declared',
+        },
+      });
     });
 
     testWidgets('a failed save shows an error', (tester) async {
@@ -322,7 +318,7 @@ void main() {
         ),
         findsOneWidget,
       );
-      verifyNever(() => cubit.saveAndContinue(any(), any()));
+      verifyNoStepSaved(cubit);
       // The tunnel keeps the rows still stored.
       verify(() => cubit.updateChildren(rooms: const [_living, _bedroom, _wc]))
           .called(1);

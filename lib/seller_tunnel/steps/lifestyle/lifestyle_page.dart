@@ -25,15 +25,24 @@ class LifestylePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) {
-        final tunnel = context.read<SellerTunnelCubit>().state;
-        return LifestyleCubit(
-          propertyRepository: context.read<PropertyRepository>(),
-          property: tunnel.property!,
-          items: tunnel.lifestyleItems,
-        );
-      },
+    final tunnel = context.read<SellerTunnelCubit>().state;
+    // EPIC-16: what was said on another step starts « À confirmer ».
+    final trace = StepVoiceFirst.createTrace(
+      tunnel,
+      SellerTunnelStep.lifestyle,
+    );
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider.value(value: trace),
+        BlocProvider(
+          create: (context) => LifestyleCubit(
+            propertyRepository: context.read<PropertyRepository>(),
+            property: trace.state.prefilledProperty(tunnel.property!),
+            items: tunnel.lifestyleItems,
+            pendingItems: trace.state.prefilledOf(PendingKind.lifestyleItem),
+          ),
+        ),
+      ],
       child: const LifestyleView(),
     );
   }
@@ -55,6 +64,16 @@ class _LifestyleViewState extends State<LifestyleView> {
   late final _note = TextEditingController(
     text: context.read<LifestyleCubit>().state.secretNote,
   );
+
+  @override
+  void initState() {
+    super.initState();
+    StepVoiceFirst.schedule(
+      context,
+      _step,
+      () => showLifestyleVoiceSheet(context, autoOpened: true),
+    );
+  }
 
   @override
   void dispose() {
@@ -91,8 +110,26 @@ class _LifestyleViewState extends State<LifestyleView> {
       case LifestyleSubmission.success:
         final tunnel = context.read<SellerTunnelCubit>()
           ..updateChildren(lifestyleItems: state.savedItems);
+        final traced = StepVoiceFirst.save(
+          context,
+          state.patchFor(tunnel.state.property!),
+          voiceSource: context.read<LifestyleCubit>().voiceSourceOf,
+        );
         unawaited(
-          tunnel.saveAndContinue(_step, state.patchFor(tunnel.state.property!)),
+          tunnel.saveStepAndContinue(
+            _step,
+            traced.patch,
+            resolve: {
+              for (final resolution in {
+                ...traced.resolutions.keys,
+                ...state.pendingResolutions.keys,
+              })
+                resolution: [
+                  ...?traced.resolutions[resolution],
+                  ...?state.pendingResolutions[resolution],
+                ],
+            },
+          ),
         );
       case LifestyleSubmission.failure:
         showRealestySnackBar(
@@ -157,7 +194,11 @@ class _LifestyleViewState extends State<LifestyleView> {
           hint: voiceAvailable ? l10n.lifestyleVoiceHint : l10n.lifestyleHint,
           label: l10n.tunnelContinue,
           isLoading: isBusy,
-          onPressed: cubit.submit,
+          onPressed: () => unawaited(
+            cubit.submit(
+              confirmed: context.read<StepTraceCubit>().state.confirmed,
+            ),
+          ),
           onMicPressed: isBusy || !voiceAvailable
               ? null
               : () => unawaited(showLifestyleVoiceSheet(context)),
@@ -177,6 +218,7 @@ class _LifestyleViewState extends State<LifestyleView> {
               canAdd: state.canAdd(kind),
               onAdd: isBusy ? null : () => _add(kind),
               onEdit: isBusy ? null : _edit,
+              confirmed: context.watch<StepTraceCubit>().state.confirmed,
             ),
           // Noise and overlooking: not for commercial premises.
           if (profile.asksNeighbourhood) ...[
@@ -190,8 +232,13 @@ class _LifestyleViewState extends State<LifestyleView> {
                     Expanded(
                       child: _FieldLabel(
                         l10n.lifestyleNoiseLabel,
-                        dictated: state.dictated.contains(
+                        tag: StepVoiceFirst.tagOf(
+                          context,
                           PropertyColumns.noiseLevel,
+                          noise,
+                          dictated: state.dictated.contains(
+                            PropertyColumns.noiseLevel,
+                          ),
                         ),
                       ),
                     ),
@@ -221,8 +268,13 @@ class _LifestyleViewState extends State<LifestyleView> {
               children: [
                 _FieldLabel(
                   l10n.lifestyleOverlookingLabel,
-                  dictated: state.dictated.contains(
+                  tag: StepVoiceFirst.tagOf(
+                    context,
                     PropertyColumns.overlooking,
+                    state.overlooking?.value,
+                    dictated: state.dictated.contains(
+                      PropertyColumns.overlooking,
+                    ),
                   ),
                 ),
                 RealestySegmentedControl<Overlooking?>(
@@ -274,6 +326,7 @@ class _LifestyleViewState extends State<LifestyleView> {
               ),
             ),
           ),
+          StepNotesField(enabled: !isBusy),
         ],
       ),
     );
@@ -308,9 +361,13 @@ class _ItemsSection extends StatelessWidget {
     required this.canAdd,
     required this.onAdd,
     required this.onEdit,
+    this.confirmed = const {},
   });
 
   final LifestyleItemKind kind;
+
+  /// Pending answers confirmed by « oui » (EPIC-16).
+  final Set<String> confirmed;
   final List<LifestyleItemDraft> items;
   final bool canAdd;
   final VoidCallback? onAdd;
@@ -348,6 +405,8 @@ class _ItemsSection extends StatelessWidget {
             key: ValueKey(item.id),
             item: item,
             onEdit: onEdit == null ? null : () => onEdit(item),
+            toConfirm:
+                item.pendingId != null && !confirmed.contains(item.pendingId),
           ),
         if (canAdd)
           RealestyButton(
@@ -434,12 +493,13 @@ class _SecretNoteSuggestion extends StatelessWidget {
 
 /// Form label (13/600 Encre 2), as above the text fields.
 class _FieldLabel extends StatelessWidget {
-  const new(this.text, {this.dictated = false});
+  const new(this.text, {this.tag});
 
   final String text;
 
-  /// Answered by voice on this visit ("Dicté").
-  final bool dictated;
+  /// « Dicté » (answered by voice on this visit) or « À confirmer »
+  /// (said on another step, EPIC-16).
+  final Widget? tag;
 
   @override
   Widget build(BuildContext context) {
@@ -449,13 +509,14 @@ class _FieldLabel extends StatelessWidget {
         color: context.realestyColors.encre2,
       ),
     );
-    if (!dictated) return label;
-    return Row(
+    final tag = this.tag;
+    if (tag == null) return label;
+    // Wraps under the label when the column is narrow.
+    return Wrap(
       spacing: RealestySpacing.xs,
-      children: [
-        Flexible(child: label),
-        const DictatedTag(),
-      ],
+      runSpacing: 4,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [label, tag],
     );
   }
 }

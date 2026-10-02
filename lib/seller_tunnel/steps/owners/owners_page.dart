@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:agent_repository/agent_repository.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:material_ui/material_ui.dart';
@@ -16,7 +15,6 @@ import 'package:mobileapp/seller_tunnel/steps/owners/widgets/co_owner_sheet.dart
 import 'package:mobileapp/seller_tunnel/steps/owners/widgets/owner_field_error_text.dart';
 import 'package:mobileapp/seller_tunnel/steps/owners/widgets/owners_copied_note.dart';
 import 'package:mobileapp/seller_tunnel/view/seller_tunnel_navigation.dart';
-import 'package:mobileapp/seller_tunnel/voice/voice.dart';
 import 'package:mobileapp/seller_tunnel/widgets/widgets.dart';
 import 'package:mobileapp/ui/ui.dart';
 import 'package:property_repository/property_repository.dart';
@@ -112,19 +110,6 @@ class _OwnersViewState extends State<OwnersView> {
     }
   }
 
-  /// The V1 voice sheet (EPIC-14): ownership and co-owners' names.
-  Future<void> _openVoiceSheet() async {
-    final l10n = context.l10n;
-    await showStepVoiceSheet(
-      context,
-      propertyId: context.read<SellerTunnelCubit>().state.property!.id,
-      step: AgentStep.owners,
-      form: context.read<OwnersCubit>(),
-      title: l10n.ownersVoiceTitle,
-      intro: ownersVoiceIntro(l10n, names: VoiceDefaults.coOwnerNames),
-    );
-  }
-
   /// Scrolls to the first missing or invalid answer.
   void _revealFirstError(BuildContext context, OwnersState state) {
     final field = OwnerField.values
@@ -183,12 +168,6 @@ class _OwnersViewState extends State<OwnersView> {
     final nameFormatters = [
       LengthLimitingTextInputFormatter(ownerNameMaxLength),
     ];
-    final voice =
-        VoiceServices.of(context).isAvailable &&
-        context.select<SellerTunnelCubit, bool>(
-          (cubit) => cubit.state.profile.hasVoice(SellerTunnelStep.owners),
-        );
-
     return MultiBlocListener(
       listeners: [
         BlocListener<OwnersCubit, OwnersState>(
@@ -212,9 +191,6 @@ class _OwnersViewState extends State<OwnersView> {
           label: l10n.tunnelContinue,
           isLoading: isBusy,
           onPressed: cubit.submit,
-          onMicPressed: isBusy || !voice
-              ? null
-              : () => unawaited(_openVoiceSheet()),
         ),
         children: [
           AgentIntro(message: l10n.ownersIntro),
@@ -324,9 +300,6 @@ class _OwnersViewState extends State<OwnersView> {
             for (final (index, coOwner) in state.coOwners.indexed)
               CoOwnerCard(
                 coOwner: coOwner,
-                dictated: state.dictated.contains(
-                  'co_owner:${coOwner.fullName}',
-                ),
                 incomplete: state.coOwnerIncomplete(index),
                 onEdit: isBusy ? null : () => _editCoOwner(index, coOwner),
               ),
@@ -345,11 +318,6 @@ class _OwnersViewState extends State<OwnersView> {
     );
   }
 }
-
-/// The intro of the V1 voice sheet: with the co-owners' names when they
-/// can be dictated (owner decision Q1).
-String ownersVoiceIntro(AppLocalizations l10n, {required bool names}) =>
-    names ? l10n.ownersVoiceIntro : l10n.ownersVoiceIntroWithoutNames;
 
 /// Error under a group of answers, styled like the text field errors.
 class _FormError extends StatelessWidget {

@@ -252,6 +252,16 @@ class PlanReadingCubit extends Cubit<PlanReadingState> {
                 isMain: input.isMain && !input.isAnnex,
                 isAnnex: input.isAnnex,
                 source: planRoom.fromPlan ? RoomSource.plan : RoomSource.manual,
+                // EPIC-16: read on the plan (name and area) or typed.
+                fieldSources: {
+                  for (final column in const ['name', 'area_m2', 'level'])
+                    column: FieldSource(
+                      kind: planRoom.fromPlan
+                          ? FieldSourceKind.extracted
+                          : FieldSourceKind.typed,
+                      at: DateTime.now(),
+                    ).toJson(),
+                },
               ),
             )
             .timeout(_timeout);

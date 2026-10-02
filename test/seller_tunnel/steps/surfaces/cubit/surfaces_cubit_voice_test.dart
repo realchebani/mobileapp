@@ -101,8 +101,9 @@ void main() {
       );
       final rooms = cubit.state.rooms;
       expect(rooms, hasLength(5));
+      expect(sourceKinds(rooms[2])['area_m2'], 'dicte');
       expect(
-        rooms[2],
+        withoutSources(rooms[2]),
         const Room(
           id: 'new-1',
           propertyId: 'p',
@@ -156,7 +157,7 @@ void main() {
             ),
           ]),
         );
-        expect(cubit.state.rooms, [
+        expect(cubit.state.rooms.map(withoutSources), [
           const Room(
             id: 'r1',
             propertyId: 'p',

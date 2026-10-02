@@ -17,8 +17,16 @@ part 'technical_state.dart';
 /// The V4b voice sheet (EPIC-14) fills the same draft ([applyVoiceTurn]).
 class TechnicalCubit extends Cubit<TechnicalState>
     with VoiceFormMixin<TechnicalState> {
-  new({required Property property, DateTime? today})
-    : super(TechnicalState.fromProperty(property, today ?? DateTime.now()));
+  /// [property] may hold answers pre-filled « À confirmer » (EPIC-16):
+  /// [saved] is then the dossier as saved.
+  new({required Property property, Property? saved, DateTime? today})
+    : super(
+        TechnicalState.fromProperty(
+          property,
+          today ?? DateTime.now(),
+          saved: saved,
+        ),
+      );
 
   @override
   AgentTurnContext get voiceContext =>

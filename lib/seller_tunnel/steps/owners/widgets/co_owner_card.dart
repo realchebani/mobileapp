@@ -1,26 +1,23 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:mobileapp/l10n/l10n.dart';
 import 'package:mobileapp/seller_tunnel/steps/owners/models/owner_draft.dart';
-import 'package:mobileapp/seller_tunnel/voice/widgets/step_voice_sheet.dart';
 import 'package:mobileapp/ui/ui.dart';
 
 /// A co-owner on V1: initials, name, "Co-propriétaire · 06 98 76 54 32" and
-/// the edit button (deleting is done from the edit sheet). A dictated
-/// co-owner is tagged "Dicté"; an incomplete one asks to be completed.
+/// the edit button (deleting is done from the edit sheet). An incomplete
+/// one asks to be completed.
 class CoOwnerCard extends StatelessWidget {
   const new({
     required this.coOwner,
     required this.onEdit,
-    this.dictated = false,
     this.incomplete = false,
     super.key,
   });
 
   final OwnerDraft coOwner;
   final VoidCallback? onEdit;
-  final bool dictated;
 
-  /// Missing answers (a dictated co-owner has no phone yet).
+  /// Missing answers.
   final bool incomplete;
 
   @override
@@ -75,7 +72,6 @@ class CoOwnerCard extends StatelessWidget {
                           color: c.encre,
                         ),
                       ),
-                      if (dictated) const DictatedTag(),
                     ],
                   ),
                   Text(

@@ -4,6 +4,7 @@ import 'package:agent_repository/agent_repository.dart';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:mobileapp/seller_tunnel/voice/models/local_voice_commands.dart';
+import 'package:mobileapp/seller_tunnel/voice/voice_defaults.dart';
 import 'package:mobileapp/seller_tunnel/voice/voice_form.dart';
 import 'package:mobileapp/seller_tunnel/voice/voice_services.dart';
 import 'package:voice_repository/voice_repository.dart';
@@ -21,6 +22,8 @@ final class VoiceLocalReplies {
     this.nothingToCancel = '',
     this.confirmed = '',
     this.rejected = '',
+    this.prefilledConfirmed = '',
+    this.notePrefix = '',
   });
 
   /// "C’est annulé." after "annule".
@@ -34,6 +37,12 @@ final class VoiceLocalReplies {
 
   /// "D’accord, je n’y touche pas." after "non".
   final String rejected;
+
+  /// "C’est confirmé." after "oui" to the pre-filled values (EPIC-16).
+  final String prefilledConfirmed;
+
+  /// "Note : " before a note in its pill (EPIC-16).
+  final String notePrefix;
 }
 
 /// The voice loop: listen → transcribe (`agent-transcribe`) → agent turn
@@ -60,6 +69,8 @@ class VoiceConversationCubit extends Cubit<VoiceConversationState> {
     this._stopWhenDone = true,
     this._localReplies = const VoiceLocalReplies(),
     this._summary,
+    this._pendingSink,
+    this._updateLabel,
     List<String> Function()? assetLabels,
     List<String> Function()? watchPointLabels,
     DateTime Function()? clock,
@@ -93,6 +104,8 @@ class VoiceConversationCubit extends Cubit<VoiceConversationState> {
   final bool _stopWhenDone;
   final VoiceLocalReplies _localReplies;
   final Future<AgentTurn> Function()? _summary;
+  final VoicePendingSink? _pendingSink;
+  final String Function(AgentCrossStep item)? _updateLabel;
   final List<String> Function() _assetLabels;
   final List<String> Function() _watchPointLabels;
   final DateTime Function() _clock;
@@ -136,6 +149,9 @@ class VoiceConversationCubit extends Cubit<VoiceConversationState> {
     if (!await _recorder.requestPermission()) {
       _fail(VoiceError.permissionDenied);
       return;
+    }
+    if (_preferences.micDenied) {
+      unawaited(_preferences.setMicDenied(denied: false));
     }
     await _listen();
   }
@@ -243,6 +259,12 @@ class VoiceConversationCubit extends Cubit<VoiceConversationState> {
       case LocalVoiceCommand.finish:
         _inFlight = false;
         await finish();
+      // EPIC-16: "oui" with no question waiting confirms the values
+      // pre-filled « À confirmer » on the step, without the agent.
+      case LocalVoiceCommand.yes when _form.confirmPrefilled():
+        _inFlight = false;
+        _say(_localReplies.prefilledConfirmed);
+        await _listen();
       case LocalVoiceCommand.yes || LocalVoiceCommand.no || null:
         return false;
     }
@@ -307,6 +329,15 @@ class VoiceConversationCubit extends Cubit<VoiceConversationState> {
       ),
   ];
 
+  List<VoiceAppliedPill> _notePillsOf(AgentTurn turn) => [
+    for (final (i, note) in turn.notes.indexed)
+      VoiceAppliedPill(
+        turnId: turn.turnId,
+        key: 'note:$i',
+        label: '${_localReplies.notePrefix}$note',
+      ),
+  ];
+
   Future<void> _apply(AgentTurn turn) async {
     try {
       await _onTurn(turn);
@@ -329,6 +360,26 @@ class VoiceConversationCubit extends Cubit<VoiceConversationState> {
       for (final item in state.outOfStep) item.field: item,
       for (final item in turn.outOfStep) item.field: item,
     };
+    // EPIC-16: what was said for other steps is kept by the tunnel; a
+    // value for a validated step is proposed as an update.
+    final sink = _pendingSink;
+    sink?.pendingRecorded(turn.crossStep, turn.supersededIds);
+    final superseded = {...turn.supersededIds};
+    final updates = [
+      if (sink != null && VoiceDefaults.updateValidatedSteps)
+        for (final item in turn.crossStep)
+          if ((item.kind == AgentCrossStepKind.field ||
+                  item.kind == AgentCrossStepKind.note) &&
+              sink.isStepValidated(item.targetStep))
+            VoicePendingConfirmation(
+              turnId: turn.turnId,
+              confirmation: AgentConfirmation(
+                id: '${VoicePendingConfirmation.updatePrefix}${item.id}',
+                reason: AgentConfirmationReason.strongChange,
+                label: _updateLabel?.call(item) ?? item.label,
+              ),
+            ),
+    ];
     emit(
       state.copyWith(
         phase: VoicePhase.speaking,
@@ -344,7 +395,7 @@ class VoiceConversationCubit extends Cubit<VoiceConversationState> {
         suggestScreenMode: _misses >= missesBeforeScreenMode,
         applied: _form == null
             ? state.applied
-            : [...state.applied, ..._pillsOf(turn)],
+            : [...state.applied, ..._pillsOf(turn), ..._notePillsOf(turn)],
         // Only the questions of the latest turn are pending: a spoken
         // "oui" answers the last one asked.
         confirmations: [
@@ -353,8 +404,15 @@ class VoiceConversationCubit extends Cubit<VoiceConversationState> {
               turnId: turn.turnId,
               confirmation: confirmation,
             ),
+          ...updates,
         ],
         outOfStep: outOfStep.values.toList(),
+        crossStep: [
+          for (final pill in state.crossStep)
+            if (!superseded.contains(pill.item.id)) pill,
+          for (final item in turn.crossStep)
+            VoiceCrossPill(turnId: turn.turnId, item: item),
+        ],
         turnIds: [..._appliedTurnIds],
       ),
     );
@@ -389,6 +447,18 @@ class VoiceConversationCubit extends Cubit<VoiceConversationState> {
       emit(state.copyWith(phase: VoicePhase.done, finished: true));
       return;
     }
+    final update = item.updateOf;
+    if (update != null) {
+      final saved = await _pendingSink?.acceptPendingUpdate(update) ?? false;
+      if (isClosed) return;
+      if (!saved) {
+        _fail(VoiceError.save);
+        return;
+      }
+      _say(_localReplies.confirmed);
+      if (state.phase != VoicePhase.listening) await _listen();
+      return;
+    }
     final turn = AgentTurn.confirmed(item.turnId, item.confirmation);
     try {
       await _onTurn(turn);
@@ -415,6 +485,10 @@ class VoiceConversationCubit extends Cubit<VoiceConversationState> {
     if (isClosed || !state.confirmations.contains(item)) return;
     // "Non" to the summary: the dictation goes on.
     if (item.isSummary) _finishing = false;
+    final update = item.updateOf;
+    if (update != null) {
+      unawaited(_pendingSink?.rejectPending(update, cancelled: false));
+    }
     emit(
       state.copyWith(
         confirmations: [
@@ -455,18 +529,20 @@ class VoiceConversationCubit extends Cubit<VoiceConversationState> {
       for (final other in state.applied)
         if (other != pill) other,
     ];
-    // An entity operation removed: the later ones of that turn shift.
-    if (pill.key.startsWith('op:')) {
-      final index = int.parse(pill.key.substring(3));
+    // An entity operation (or a note) removed: the later ones of that
+    // turn shift.
+    for (final prefix in const ['op:', 'note:']) {
+      if (!pill.key.startsWith(prefix)) continue;
+      final index = int.parse(pill.key.substring(prefix.length));
       for (final (i, other) in remaining.indexed) {
-        if (other.turnId != pill.turnId || !other.key.startsWith('op:')) {
+        if (other.turnId != pill.turnId || !other.key.startsWith(prefix)) {
           continue;
         }
-        final otherIndex = int.parse(other.key.substring(3));
+        final otherIndex = int.parse(other.key.substring(prefix.length));
         if (otherIndex > index) {
           remaining[i] = VoiceAppliedPill(
             turnId: other.turnId,
-            key: 'op:${otherIndex - 1}',
+            key: '$prefix${otherIndex - 1}',
             label: other.label,
             changedLabel: other.changedLabel,
           );
@@ -474,6 +550,27 @@ class VoiceConversationCubit extends Cubit<VoiceConversationState> {
       }
     }
     emit(state.copyWith(applied: remaining));
+  }
+
+  /// The cross of a « Noté pour … » pill: that pending answer is dropped
+  /// (and its update proposal with it).
+  void undoCross(VoiceCrossPill pill) {
+    if (isClosed || !state.crossStep.contains(pill)) return;
+    unawaited(_pendingSink?.rejectPending(pill.item.id, cancelled: true));
+    _reportUndone(pill.turnId);
+    final update = '${VoicePendingConfirmation.updatePrefix}${pill.item.id}';
+    emit(
+      state.copyWith(
+        crossStep: [
+          for (final other in state.crossStep)
+            if (other != pill) other,
+        ],
+        confirmations: [
+          for (final other in state.confirmations)
+            if (other.confirmation.id != update) other,
+        ],
+      ),
+    );
   }
 
   void _reportUndone(String turnId) {
@@ -575,6 +672,21 @@ class VoiceConversationCubit extends Cubit<VoiceConversationState> {
 
   void _fail(VoiceError error) {
     _inFlight = false;
+    // EPIC-16: what keeps the sheet from opening by itself next time.
+    final now = _clock();
+    switch (error) {
+      case VoiceError.quota:
+        unawaited(_preferences.markQuotaReached(now));
+      case VoiceError.network:
+        unawaited(_preferences.markOffline(now));
+      case VoiceError.permissionDenied:
+        unawaited(_preferences.setMicDenied(denied: true));
+      case VoiceError.empty ||
+          VoiceError.locked ||
+          VoiceError.tooLong ||
+          VoiceError.save:
+        break;
+    }
     if (isClosed) return;
     // "Terminer" was asked meanwhile: the sheet ends anyway.
     if (_finishing) {

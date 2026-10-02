@@ -14,6 +14,7 @@ import 'package:mobileapp/seller_tunnel/steps/documents/scan/document_scan_page.
 import 'package:mobileapp/seller_tunnel/steps/documents/widgets/document_files_sheet.dart';
 import 'package:mobileapp/seller_tunnel/steps/documents/widgets/document_labels.dart';
 import 'package:mobileapp/seller_tunnel/steps/documents/widgets/document_option_sheets.dart';
+import 'package:mobileapp/seller_tunnel/steps/documents/widgets/pending_answers_card.dart';
 import 'package:mobileapp/seller_tunnel/steps/documents/widgets/reuse_document_sheet.dart';
 import 'package:mobileapp/seller_tunnel/steps/documents/widgets/transparency_score_card.dart';
 import 'package:mobileapp/seller_tunnel/view/seller_tunnel_navigation.dart';
@@ -308,6 +309,8 @@ class _DocumentsViewState extends State<DocumentsView> {
                     l10n.documentKindInSentence(nextBest),
                   ),
           ),
+          // EPIC-16: what was said for a step and is still to confirm.
+          if (!state.isLocked) const PendingAnswersCard(),
           if (state.showsSubmissionErrors &&
               checklist.missingPhotoRooms.isNotEmpty)
             Column(

@@ -17,6 +17,7 @@ import {
   type TurnUpdate,
 } from "./db.ts";
 import type { AgentStep } from "./schema.ts";
+import type { CrossStepItem, EntitySummaries, PendingRow } from "./validate.ts";
 
 const TURN_COLUMNS = "id,session_id,transcript,reply_fr,extracted,tts_ms,cost_usd";
 
@@ -176,6 +177,59 @@ export class SupabaseAgentDb implements AgentDb {
       .select("id");
     fail(error);
     return (data ?? []).length;
+  }
+
+  async pendingAnswers(propertyId: string): Promise<PendingRow[]> {
+    const { data, error } = await this.caller.from("pending_answers")
+      .select("id,target_step,kind,field,value,label_fr")
+      .eq("property_id", propertyId).eq("status", "pending")
+      .order("created_at").limit(LIMITS.pendingAnswers);
+    fail(error);
+    return (data ?? []) as PendingRow[];
+  }
+
+  async entitySummaries(propertyId: string): Promise<EntitySummaries> {
+    const [rooms, estimates] = await Promise.all([
+      this.caller.from("rooms").select("name,area_m2").eq("property_id", propertyId),
+      this.caller.from("previous_estimates").select("price_eur,estimated_month")
+        .eq("property_id", propertyId),
+    ]);
+    fail(rooms.error);
+    fail(estimates.error);
+    return {
+      rooms: ((rooms.data ?? []) as { name: string; area_m2: number | string }[])
+        .map((r) => ({ name: r.name, area_m2: Number(r.area_m2) })),
+      estimates: (estimates.data ?? []) as EntitySummaries["estimates"],
+    };
+  }
+
+  async recordPending(
+    propertyId: string,
+    turnId: string,
+    sourceStep: AgentStep,
+    items: CrossStepItem[],
+  ) {
+    if (items.length === 0) return { ids: [], superseded: [] };
+    const { data, error } = await this.service.rpc("agent_record_pending", {
+      p_owner_id: this.userId,
+      p_property_id: propertyId,
+      p_turn_id: turnId,
+      p_source_step: sourceStep,
+      p_rows: items.map((item) => ({
+        target_step: item.target_step,
+        kind: item.kind,
+        field: item.field,
+        value: item.value,
+        label_fr: item.label_fr,
+        changed_fr: item.changed_fr ?? null,
+        quote: item.quote.slice(0, LIMITS.pendingQuoteChars),
+        confidence: Math.min(Math.max(Math.round(item.confidence * 100) / 100, 0), 1),
+      })),
+      p_max: LIMITS.pendingAnswers,
+    });
+    fail(error);
+    const result = (data ?? {}) as { ids?: (string | null)[]; superseded?: string[] };
+    return { ids: result.ids ?? [], superseded: result.superseded ?? [] };
   }
 
   async usageSince(since: Date): Promise<DailyUsage> {

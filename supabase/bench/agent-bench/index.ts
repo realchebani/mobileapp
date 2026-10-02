@@ -83,7 +83,7 @@ Deno.serve(async (request) => {
             currentYear,
             lifestyleLabels: { asset: [], watch_point: [] },
           }),
-          jsonSchema: { name: "agent_turn", schema: outputSchema(step) },
+          jsonSchema: { name: "agent_turn", schema: outputSchema(step, body.values) },
           maxTokens: 1200,
           temperature: 0,
           provider: agentProvider(body.model),

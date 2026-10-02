@@ -12,16 +12,25 @@ import 'package:mobileapp/seller_tunnel/voice/widgets/voice_widgets.dart';
 import 'package:mobileapp/ui/ui.dart';
 
 /// A plain dictation (transcription only, EPIC-14 Q2): the text said, or
-/// null when the sheet is closed first. Asks the consent on first use.
+/// null when the sheet is closed first. Asks the consent on first use;
+/// opened by itself ([autoOpened], EPIC-16), a refused consent remembers
+/// the written mode, like « Écrire plutôt ».
 Future<String?> showVoiceDictationSheet(
   BuildContext context, {
   required String propertyId,
   required AgentStep step,
   required String title,
   required String hint,
+  bool autoOpened = false,
 }) async {
   final services = VoiceServices.of(context);
-  if (!await ensureVoiceConsent(context) || !context.mounted) return null;
+  if (!await ensureVoiceConsent(context)) {
+    if (autoOpened) {
+      await services.preferences?.setInputMode(VoiceInputMode.text);
+    }
+    return null;
+  }
+  if (!context.mounted) return null;
   return await showModalBottomSheet<String>(
     context: context,
     isScrollControlled: true,
@@ -79,14 +88,38 @@ class VoiceDictationSheet extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               spacing: 12,
               children: [
-                Semantics(
-                  header: true,
-                  child: Text(
-                    title,
-                    style: RealestyTextStyles.title2.copyWith(
-                      color: c.nuitTexte,
+                Row(
+                  children: [
+                    Expanded(
+                      child: Semantics(
+                        header: true,
+                        child: Text(
+                          title,
+                          style: RealestyTextStyles.title2.copyWith(
+                            color: c.nuitTexte,
+                          ),
+                        ),
+                      ),
                     ),
-                  ),
+                    // EPIC-16: back to the form, remembered.
+                    TextButton(
+                      style: TextButton.styleFrom(
+                        minimumSize: const Size(
+                          RealestySpacing.minTouchTarget,
+                          RealestySpacing.minTouchTarget,
+                        ),
+                      ),
+                      onPressed: () {
+                        unawaited(
+                          VoiceServices.of(context).preferences
+                              ?.setInputMode(VoiceInputMode.text),
+                        );
+                        unawaited(cubit.cancel());
+                        Navigator.of(context).pop();
+                      },
+                      child: Text(l10n.voiceFirstWriteInstead, style: link),
+                    ),
+                  ],
                 ),
                 Center(
                   child: ListeningOrb(

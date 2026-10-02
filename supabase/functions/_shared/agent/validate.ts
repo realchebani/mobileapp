@@ -5,19 +5,13 @@
 // Nothing the model says reaches the dossier without passing here, and the
 // app then writes it itself (RLS, lock).
 
-import {
-  isPersonName,
-  lexicalAnchor,
-  normalize,
-  numericAnchor,
-  quoteFound,
-  textCovered,
-} from "./anchors.ts";
+import { lexicalAnchor, normalize, numericAnchor, quoteFound, textCovered } from "./anchors.ts";
 import { VOICE_DEFAULTS } from "./defaults.ts";
 import { designate, duplicateOf, roomKindOf, type RoomRow } from "./rooms.ts";
 import {
   type AgentStep,
   codesOf,
+  crossStepTargets,
   type EntityDef,
   type FieldDef,
   isAsked,
@@ -79,11 +73,27 @@ export interface ModelLifestyleItem {
   quote: string;
 }
 
+export interface ModelNote {
+  text: string;
+  quote: string;
+}
+
+/** What the model heard for other steps (plan §7). */
+export interface ModelCrossStep {
+  answers: ModelAnswer[];
+  entities: { entity: string; fields: ModelEntityField[] }[];
+  lifestyle_items: ModelLifestyleItem[];
+  notes: (ModelNote & { step: string })[];
+}
+
 export interface ModelOutput {
   reply_fr: string;
   answers: ModelAnswer[];
   entity_ops?: ModelEntityOp[];
   lifestyle_items: ModelLifestyleItem[];
+  /** Notes of the open step (what fits no field). */
+  notes?: ModelNote[];
+  cross_step?: ModelCrossStep;
   out_of_step?: string[];
   next_field: string;
   done: boolean;
@@ -125,8 +135,8 @@ export interface Rejection {
   reason: RejectionReason;
 }
 
-/** A change of an entity, applied by the app to its form: a room, a
- * previous estimate or a co-owner. */
+/** A change of an entity, applied by the app to its form: a room or a
+ * previous estimate. */
 export interface EntityChange {
   entity: string;
   op: "create" | "update" | "delete";
@@ -143,7 +153,6 @@ export interface EntityChange {
 export type ConfirmationReason =
   | "type_change"
   | "delete"
-  | "co_owner"
   | "medium_confidence"
   | "strong_change"
   | "clear_situations"
@@ -167,6 +176,51 @@ export interface OutOfStep {
   label_fr: string;
 }
 
+/** A value retained from the turn with the words it comes from (journal
+ * `extracted.evidence`, plan §5.3): key (`purchase_year`, `op:0.area_m2`,
+ * `c1.op:0.name`, `li:0`, `note:0`, `x:2`), value, quote, confidence. */
+export interface Evidence {
+  k: string;
+  v: unknown;
+  q: string;
+  c: number;
+}
+
+export type PendingKind = "field" | "room" | "previous_estimate" | "lifestyle_item" | "note";
+
+/** A value said for another step, validated with that step's definitions
+ * and kept as a pending answer (plan §3). */
+export interface CrossStepItem {
+  target_step: AgentStep;
+  kind: PendingKind;
+  /** The `properties` column (kind field). */
+  field: string | null;
+  value: unknown;
+  /** "Construction 1998", "Cuisine · 12 m²". */
+  label_fr: string;
+  /** "Construction : 1998 → 1999" when it replaces a saved value. */
+  changed_fr?: string;
+  quote: string;
+  confidence: number;
+}
+
+/** An open pending answer of the property (rules, duplicates, prompt). */
+export interface PendingRow {
+  id: string;
+  target_step: string;
+  kind: string;
+  field: string | null;
+  value: unknown;
+  label_fr: string;
+}
+
+/** Saved rooms and estimates of the dossier (duplicates of the entities
+ * said for another step). */
+export interface EntitySummaries {
+  rooms: { name: string; area_m2: number }[];
+  estimates: { price_eur: number | null; estimated_month: string | null }[];
+}
+
 export interface ValidatedTurn {
   patch: Record<string, unknown>;
   facts: Fact[];
@@ -179,6 +233,12 @@ export interface ValidatedTurn {
   out_of_step: OutOfStep[];
   /** Columns (or "room:R3"…) the seller corrected in this turn. */
   corrections: string[];
+  /** Notes of the open step, appended by the app to its « Notes
+   * complémentaires ». */
+  notes: { text: string }[];
+  /** Values said for another step (pending answers once recorded). */
+  cross_step: CrossStepItem[];
+  evidence: Evidence[];
 }
 
 /** A previous estimate as sent by the app (V3 cards). */
@@ -208,9 +268,14 @@ export interface ValidationContext {
   lastRoomRef?: string | null;
   /** V3 estimate cards. */
   estimates?: EstimateRow[];
-  /** V1 co-owners already listed. */
-  coOwnersCount?: number;
+  /** Open pending answers of the property. */
+  pending?: PendingRow[];
+  /** Saved rooms and estimates (the other steps' entities). */
+  entities?: EntitySummaries;
 }
+
+/** Longest step note (`properties.step_notes`). */
+export const NOTE_MAX = 1000;
 
 const NBSP = "\u00a0";
 
@@ -450,7 +515,6 @@ function rawFactLabel(field: FieldDef, value: unknown): string {
       const label = kind.codes[value as string];
       if (field.column === "wall_material") return label;
       if (field.column === "property_type") return `Type : ${lowerFirst(label)}`;
-      if (field.column === "ownership_type") return label;
       return `${field.label} ${lowerFirst(label)}`;
     }
     case "list":
@@ -496,6 +560,42 @@ interface Accepted {
   previous: unknown;
   corrected: boolean;
   medium: boolean;
+  quote: string;
+  confidence: number;
+}
+
+/** Cross-field rules of the screens, on [values] as they would be. */
+function consistentWith(column: string, value: unknown, values: Record<string, unknown>): boolean {
+  const num = (key: string) => typeof values[key] === "number" ? values[key] as number : null;
+  const v = value as number;
+  switch (column) {
+    case "roof_year": {
+      const built = num("construction_year");
+      return built === null || v >= built;
+    }
+    case "construction_year": {
+      const roof = num("roof_year");
+      return roof === null || roof >= v;
+    }
+    case "living_room_area_m2": {
+      const living = num("living_area_m2");
+      return living === null || v <= living;
+    }
+    case "living_area_m2": {
+      const room = num("living_room_area_m2");
+      return room === null || room <= v;
+    }
+    case "bedrooms_count": {
+      const rooms = num("rooms_count");
+      return rooms === null || v <= rooms;
+    }
+    case "rooms_count": {
+      const bedrooms = num("bedrooms_count");
+      return bedrooms === null || bedrooms <= v;
+    }
+    default:
+      return true;
+  }
 }
 
 /** Validates a model answer for [context]: see [ValidatedTurn]. */
@@ -515,6 +615,9 @@ export function validateTurn(output: ModelOutput, context: ValidationContext): V
     confirmations: [],
     out_of_step: [],
     corrections: [],
+    notes: [],
+    cross_step: [],
+    evidence: [],
   };
   const merged: Record<string, unknown> = { ...values };
   const accepted: Accepted[] = [];
@@ -581,44 +684,22 @@ export function validateTurn(output: ModelOutput, context: ValidationContext): V
       previous: merged[field.column],
       corrected: answer.correction === true,
       medium,
+      quote: answer.quote,
+      confidence: answer.confidence,
     });
     merged[field.column] = value;
   }
 
   // Cross-field rules, on the dossier as it would be after this turn.
-  const num = (column: string) =>
-    typeof merged[column] === "number" ? merged[column] as number : null;
-  const consistent = (field: FieldDef, value: unknown): boolean => {
-    const v = value as number;
-    switch (field.column) {
-      case "roof_year": {
-        const built = num("construction_year");
-        return built === null || v >= built;
-      }
-      case "construction_year": {
-        const roof = num("roof_year");
-        return roof === null || roof >= v;
-      }
-      case "living_room_area_m2": {
-        const living = num("living_area_m2");
-        return living === null || v <= living;
-      }
-      case "living_area_m2": {
-        const room = num("living_room_area_m2");
-        return room === null || room <= v;
-      }
-      case "bedrooms_count": {
-        const rooms = num("rooms_count");
-        return rooms === null || v <= rooms;
-      }
-      case "rooms_count": {
-        const bedrooms = num("bedrooms_count");
-        return bedrooms === null || bedrooms <= v;
-      }
-      default:
-        return true;
-    }
-  };
+  const consistent = (field: FieldDef, value: unknown) =>
+    consistentWith(field.column, value, merged);
+  const evidenceOf = (item: Accepted) =>
+    result.evidence.push({
+      k: item.field.column,
+      v: item.value,
+      q: item.quote,
+      c: item.confidence,
+    });
 
   const typeAnswer = accepted.find((a) => a.field.column === "property_type");
   const typeChange = typeAnswer !== undefined && !isEmpty(typeAnswer.previous) &&
@@ -654,6 +735,7 @@ export function validateTurn(output: ModelOutput, context: ValidationContext): V
         }
       } else if (field.column === "property_type" || !isAsked(field, values)) {
         typeConfirmation.patch[field.column] = value;
+        evidenceOf(item);
         continue;
       }
     }
@@ -681,9 +763,11 @@ export function validateTurn(output: ModelOutput, context: ValidationContext): V
         patch: { [field.column]: value },
         entity_ops: [],
       });
+      evidenceOf(item);
       continue;
     }
     result.patch[field.column] = value;
+    evidenceOf(item);
     const fact: Fact = {
       field: field.column,
       label_fr: item.corrected ? `${factLabel(field, value)} (corrigé)` : factLabel(field, value),
@@ -721,10 +805,15 @@ export function validateTurn(output: ModelOutput, context: ValidationContext): V
   }
 
   if (schema.lifestyle) validateLifestyleItems(output, context, result);
+  validateNotes(output.notes ?? [], context, result);
+  if (VOICE_DEFAULTS.crossStepPrefill && output.cross_step) {
+    validateCrossStep(output.cross_step, context, merged, result);
+  }
 
   result.confirmations.forEach((confirmation, index) => {
     confirmation.id = `c${index + 1}`;
   });
+  entityEvidence(result);
   return withTypography(result);
 }
 
@@ -745,6 +834,10 @@ function withTypography(turn: ValidatedTurn): ValidatedTurn {
     confirmation.entity_ops.forEach(change);
   }
   for (const item of turn.out_of_step) item.label_fr = typo(item.label_fr);
+  for (const item of turn.cross_step) {
+    item.label_fr = typo(item.label_fr).slice(0, 160);
+    if (item.changed_fr) item.changed_fr = typo(item.changed_fr).slice(0, 160);
+  }
   return turn;
 }
 
@@ -785,12 +878,18 @@ function validateLifestyleItems(
       continue;
     }
     known[kind].push(key);
+    result.evidence.push({
+      k: `li:${result.lifestyle_items.length}`,
+      v: label,
+      q: item.quote,
+      c: 1,
+    });
     result.lifestyle_items.push({ kind, label });
   }
 }
 
 // ---------------------------------------------------------------------------
-// Entities: rooms (V5c), previous estimates (V3), co-owners (V1).
+// Entities: rooms (V5c), previous estimates (V3).
 // ---------------------------------------------------------------------------
 
 /** Room fields « même … que » may copy (never the name, area or
@@ -821,23 +920,37 @@ function estimateLabel(values: Record<string, unknown>): string {
   ].filter((part) => part).join(" · ");
 }
 
+type Quotes = Record<string, { q: string; c: number }>;
+
+/** The quote of each validated field of an entity change (evidence). */
+const QUOTES = new WeakMap<EntityChange, Quotes>();
+
 /** Validates the fields of one entity operation: the accepted values,
- * whether one has a medium confidence, and the fields asked again. */
+ * whether one has a medium confidence, and the fields asked again. A
+ * [prefix] marks the rejections of another step's entity ("x:room:…"). */
 function entityFields(
   entity: EntityDef,
-  op: ModelEntityOp,
+  op: { fields: ModelEntityField[] },
   context: ValidationContext,
   result: ValidatedTurn,
   parseContext: { year: number; month: number; values: Record<string, unknown> },
-): { values: Record<string, unknown>; medium: boolean; failed: string[]; dims?: [number, number] } {
+  prefix = "",
+): {
+  values: Record<string, unknown>;
+  medium: boolean;
+  failed: string[];
+  dims?: [number, number];
+  quotes: Quotes;
+} {
   const values: Record<string, unknown> = {};
+  const quotes: Quotes = {};
   const failed: string[] = [];
   let medium = false;
   let dims: [number, number] | undefined;
-  const interactive = context.interactive === true;
+  const interactive = context.interactive === true || prefix !== "";
   for (const said of op.fields) {
     const field = entity.fields.find((f) => f.column === said.field);
-    const key = `${entity.name}:${said.field}`;
+    const key = `${prefix}${entity.name}:${said.field}`;
     if (!field) {
       result.rejected.push({ field: key, value: said.value, reason: "unknown_field" });
       continue;
@@ -850,7 +963,10 @@ function entityFields(
     }
     const isMedium = said.confidence >= VOICE_DEFAULTS.confirmFrom &&
       said.confidence < MIN_CONFIDENCE;
-    if (!(said.confidence >= MIN_CONFIDENCE) && !(isMedium && interactive)) {
+    if (
+      (!(said.confidence >= MIN_CONFIDENCE) && !(isMedium && interactive)) ||
+      (prefix !== "" && !(said.confidence >= VOICE_DEFAULTS.crossStepMinConfidence))
+    ) {
       result.rejected.push({ field: key, value: said.value, reason: "low_confidence" });
       failed.push(field.column);
       continue;
@@ -868,9 +984,6 @@ function entityFields(
     ) {
       weak = "anchor_missing";
     }
-    if (!weak && entity.name === "co_owner" && !isPersonName(parsed.value as string)) {
-      weak = "invalid_value";
-    }
     if (!weak && entity.name === "room" && field.column === "name") {
       const kind = roomKindOf(parsed.value as string);
       if (!kind && !textCovered(parsed.value as string, context.transcript)) weak = "not_covered";
@@ -883,8 +996,9 @@ function entityFields(
     if (parsed.dimensions) dims = parsed.dimensions;
     medium ||= isMedium;
     values[field.column] = parsed.value;
+    quotes[field.column] = { q: said.quote, c: said.confidence };
   }
-  return { values, medium, failed, dims };
+  return { values, medium, failed, dims, quotes };
 }
 
 function validateEntities(
@@ -902,7 +1016,6 @@ function validateEntities(
   };
   const rooms = [...(context.rooms ?? [])];
   const estimates = context.estimates ?? [];
-  let coOwners = context.coOwnersCount ?? 0;
   let deletes = 0;
   let estimatesCount = estimates.length;
   const pending = (label: string) => {
@@ -926,7 +1039,7 @@ function validateEntities(
       result.rejected.push({ field: op.entity, value: op.op, reason: "not_allowed" });
       continue;
     }
-    const { values, medium, failed, dims } = entityFields(
+    const { values, medium, failed, dims, quotes } = entityFields(
       entity,
       op,
       context,
@@ -940,22 +1053,26 @@ function validateEntities(
       vals: Record<string, unknown>,
       label: string,
       changed?: string,
-    ): EntityChange => ({
-      entity: entity.name,
-      op: opValue,
-      target,
-      values: vals,
-      label_fr: corrected ? `${label} (corrigé)` : label,
-      ...(changed ? { changed_fr: changed } : {}),
-      ...(corrected ? { corrected: true } : {}),
-    });
+    ): EntityChange => {
+      const item: EntityChange = {
+        entity: entity.name,
+        op: opValue,
+        target,
+        values: vals,
+        label_fr: corrected ? `${label} (corrigé)` : label,
+        ...(changed ? { changed_fr: changed } : {}),
+        ...(corrected ? { corrected: true } : {}),
+      };
+      QUOTES.set(item, quotes);
+      return item;
+    };
     const apply = (item: EntityChange, reason: ConfirmationReason | null, label?: string) => {
       if (reason && interactive) {
         result.confirmations.push({
           id: "",
           reason,
           label_fr: label ?? `${item.label_fr} ?`,
-          patch: entity.name === "co_owner" ? { ownership_type: "multiple" } : {},
+          patch: {},
           entity_ops: [item],
         });
         return;
@@ -1185,23 +1302,25 @@ function validateEntities(
       );
       continue;
     }
+  }
+}
 
-    // co_owner: created only, always confirmed (names in STT).
-    if (merged.ownership_type === "single") {
-      result.rejected.push({ field: "co_owner", value: op.op, reason: "inconsistent" });
-      continue;
+/** Evidence of the entity changes: one entry per validated field. */
+function entityEvidence(result: ValidatedTurn): void {
+  const add = (prefix: string, op: EntityChange) => {
+    for (const [column, quote] of Object.entries(QUOTES.get(op) ?? {})) {
+      if (!(column in op.values)) continue;
+      result.evidence.push({
+        k: `${prefix}.${column}`,
+        v: op.values[column],
+        q: quote.q,
+        c: quote.c,
+      });
     }
-    if (values.first_name === undefined || values.last_name === undefined) {
-      pending("Co-propriétaire : prénom et nom ?");
-      continue;
-    }
-    if (coOwners >= entity.max) {
-      result.rejected.push({ field: "co_owner", value: op.op, reason: "full" });
-      continue;
-    }
-    coOwners++;
-    const name = `${values.first_name} ${values.last_name}`;
-    apply(change("new", "create", values, name), "co_owner", `${name} ?`);
+  };
+  result.entity_ops.forEach((op, index) => add(`op:${index}`, op));
+  for (const confirmation of result.confirmations) {
+    confirmation.entity_ops.forEach((op, index) => add(`${confirmation.id}.op:${index}`, op));
   }
 }
 
@@ -1210,6 +1329,287 @@ const ROOM_AREA_FIELD: FieldDef = {
   label: "Surface",
   kind: { type: "area", min: 0.5, max: 500 },
 };
+
+// ---------------------------------------------------------------------------
+// Notes (« Notes complémentaires ») and answers for other steps (EPIC-16).
+// ---------------------------------------------------------------------------
+
+/** A note as kept: single spaces, trimmed. */
+function noteText(text: string): string {
+  return text.replace(/\s+/g, " ").trim();
+}
+
+/** Whether a note may be kept: its quote was said, its words were said
+ * (≥ 80 %), no number added, no phone number nor e-mail. */
+function noteRejection(
+  text: string,
+  quote: string,
+  transcript: string,
+): RejectionReason | null {
+  if (text.length === 0) return "invalid_value";
+  if (text.length > NOTE_MAX) return "out_of_range";
+  if (!quoteFound(quote, transcript)) return "quote_not_found";
+  return textCovered(text, transcript) ? null : "not_covered";
+}
+
+function validateNotes(notes: ModelNote[], context: ValidationContext, result: ValidatedTurn) {
+  if (!VOICE_DEFAULTS.stepNotes) return;
+  for (const note of notes.slice(0, 3)) {
+    const text = noteText(note.text);
+    const reason = noteRejection(text, note.quote, context.transcript);
+    if (reason) {
+      result.rejected.push({ field: "note", value: shorten(text), reason });
+      continue;
+    }
+    result.evidence.push({ k: `note:${result.notes.length}`, v: text, q: note.quote, c: 1 });
+    result.notes.push({ text });
+  }
+}
+
+function sameRoom(a: { name: string; area_m2: number }, b: { name: string; area_m2: number }) {
+  return normalize(a.name) === normalize(b.name) && Math.abs(a.area_m2 - b.area_m2) < 0.005;
+}
+
+/** Validates the values said for other steps (plan §3.2, §3.3), each with
+ * the definitions of its target step: bounds, codes of the type, anchors,
+ * quote, coverage, cross rules on the dossier + draft + open pending
+ * answers; duplicates and the per-turn ceiling. */
+function validateCrossStep(
+  cross: ModelCrossStep,
+  context: ValidationContext,
+  merged: Record<string, unknown>,
+  result: ValidatedTurn,
+): void {
+  const { step, transcript } = context;
+  const pending = context.pending ?? [];
+  const targets = crossStepTargets(step, merged);
+  // The dossier with the open pending answers (rules, isAsked).
+  const values: Record<string, unknown> = { ...merged };
+  for (const row of pending) {
+    if (row.kind === "field" && row.field && !(row.field in result.patch)) {
+      values[row.field] = row.value;
+    }
+  }
+  const parseContext = { year: context.currentYear, month: context.currentMonth ?? 12, values };
+  const reject = (field: string, value: string, reason: RejectionReason) =>
+    result.rejected.push({ field: `x:${field}`, value, reason });
+  const push = (item: CrossStepItem): boolean => {
+    if (result.cross_step.length >= VOICE_DEFAULTS.crossStepMax) {
+      reject(item.field ?? item.kind, shorten(item.label_fr), "full");
+      return false;
+    }
+    result.evidence.push({
+      k: `x:${result.cross_step.length}`,
+      v: item.value,
+      q: item.quote,
+      c: item.confidence,
+    });
+    result.cross_step.push(item);
+    return true;
+  };
+
+  const rank = (answer: ModelAnswer) =>
+    targets.fields.find((t) => t.field.column === answer.field)?.field.kind.type === "list" ? 0 : 1;
+  for (const answer of [...cross.answers].sort((a, b) => rank(a) - rank(b))) {
+    const target = targets.fields.find((t) => t.field.column === answer.field);
+    if (!target) {
+      reject(answer.field, answer.value, "unknown_field");
+      continue;
+    }
+    const field = target.field;
+    if (!quoteFound(answer.quote, transcript)) {
+      reject(field.column, answer.value, "quote_not_found");
+      continue;
+    }
+    if (!(answer.confidence >= VOICE_DEFAULTS.crossStepMinConfidence)) {
+      reject(field.column, answer.value, "low_confidence");
+      continue;
+    }
+    if (!isAsked(field, values)) {
+      reject(field.column, answer.value, "not_asked");
+      continue;
+    }
+    const parsed = parseValue(field, answer.value, parseContext);
+    if (!parsed.ok) {
+      reject(field.column, answer.value, parsed.reason);
+      continue;
+    }
+    const weak = anchored(field, parsed, answer.quote, transcript);
+    if (weak) {
+      reject(field.column, answer.value, weak);
+      continue;
+    }
+    let value = parsed.value;
+    if (field.kind.type === "list") {
+      const existing = Array.isArray(values[field.column]) ? values[field.column] as string[] : [];
+      const said = value as string[];
+      const exclusive = field.kind.exclusive;
+      const union = exclusive && said.includes(exclusive)
+        ? [exclusive]
+        : [...existing.filter((code) => code !== exclusive), ...said];
+      value = Object.keys(field.kind.codes).filter((code) => union.includes(code));
+    }
+    if (!consistentWith(field.column, value, values)) {
+      reject(field.column, String(value), "inconsistent");
+      continue;
+    }
+    if (!isEmpty(values[field.column]) && sameValue(values[field.column], value)) {
+      reject(field.column, String(value), "duplicate");
+      continue;
+    }
+    const saved = merged[field.column];
+    const replaces = !isEmpty(saved) && !sameValue(saved, value);
+    if (
+      push({
+        target_step: target.step,
+        kind: "field",
+        field: field.column,
+        value,
+        label_fr: factLabel(field, value),
+        ...(replaces
+          ? {
+            changed_fr: `${field.label} : ${valueText(field, saved)} → ${valueText(field, value)}`,
+          }
+          : {}),
+        quote: answer.quote,
+        confidence: answer.confidence,
+      })
+    ) {
+      values[field.column] = value;
+    }
+  }
+
+  const rooms = [
+    ...(context.entities?.rooms ?? []),
+    ...pending.filter((row) => row.kind === "room").map((row) => row.value as never),
+  ] as { name: string; area_m2: number }[];
+  const estimates = [
+    ...(context.entities?.estimates ?? []),
+    ...pending.filter((row) => row.kind === "previous_estimate").map((row) => row.value as never),
+  ] as { price_eur: number | null; estimated_month: string | null }[];
+  for (const said of cross.entities) {
+    const target = targets.entities.find((t) => t.entity.name === said.entity);
+    if (!target) {
+      reject(said.entity, "create", "unknown_field");
+      continue;
+    }
+    const { values: fields, failed, quotes } = entityFields(
+      target.entity,
+      said,
+      context,
+      result,
+      parseContext,
+      "x:",
+    );
+    const quote = Object.values(quotes)[0];
+    const confidence = Math.min(...Object.values(quotes).map((q) => q.c), 1);
+    if (target.entity.name === "room") {
+      const name = fields.name as string | undefined;
+      if (name === undefined || typeof fields.area_m2 !== "number") {
+        reject("room", name ?? "", failed.length ? "invalid_value" : "anchor_missing");
+        continue;
+      }
+      const kind = roomKindOf(name);
+      fields.name = kind ? kind.label : upperFirst(name);
+      fields.kind = kind?.kind ?? "other";
+      const room = { name: fields.name as string, area_m2: fields.area_m2 };
+      if (rooms.some((r) => r.name && sameRoom(r, room))) {
+        reject("room", room.name, "duplicate");
+        continue;
+      }
+      if (
+        push({
+          target_step: "rooms",
+          kind: "room",
+          field: null,
+          value: fields,
+          label_fr: roomLabel(fields),
+          quote: quotes.area_m2?.q ?? quote.q,
+          confidence,
+        })
+      ) rooms.push(room);
+      continue;
+    }
+    // previous_estimate
+    if (typeof fields.price_eur !== "number") {
+      reject("previous_estimate", "", failed.length ? "invalid_value" : "anchor_missing");
+      continue;
+    }
+    const month = (fields.estimated_month as string | undefined) ?? null;
+    if (estimates.some((e) => e.price_eur === fields.price_eur && e.estimated_month === month)) {
+      reject("previous_estimate", String(fields.price_eur), "duplicate");
+      continue;
+    }
+    if (
+      push({
+        target_step: "context",
+        kind: "previous_estimate",
+        field: null,
+        value: fields,
+        label_fr: estimateLabel(fields),
+        quote: quotes.price_eur.q,
+        confidence,
+      })
+    ) estimates.push({ price_eur: fields.price_eur, estimated_month: month });
+  }
+
+  if (targets.lifestyle) {
+    const known = [
+      ...(context.lifestyleLabels?.asset ?? []),
+      ...(context.lifestyleLabels?.watch_point ?? []),
+      ...pending.filter((row) => row.kind === "lifestyle_item")
+        .map((row) => String((row.value as { label?: unknown })?.label ?? "")),
+    ].map(normalize);
+    for (const item of cross.lifestyle_items) {
+      const label = item.label.trim().replace(/\s+/g, " ");
+      const length = [...label].length;
+      if (item.kind !== "asset" && item.kind !== "watch_point") {
+        reject("lifestyle", label, "invalid_value");
+      } else if (length < LIFESTYLE_ITEM_MIN || length > LIFESTYLE_ITEM_MAX) {
+        reject("lifestyle", label, "out_of_range");
+      } else if (!quoteFound(item.quote, transcript)) {
+        reject("lifestyle", label, "quote_not_found");
+      } else if (known.includes(normalize(label))) {
+        reject("lifestyle", label, "duplicate");
+      } else if (
+        push({
+          target_step: "lifestyle",
+          kind: "lifestyle_item",
+          field: null,
+          value: { kind: item.kind, label },
+          label_fr: `${item.kind === "asset" ? "Atout" : "Vigilance"} : ${label}`,
+          quote: item.quote,
+          confidence: 1,
+        })
+      ) {
+        known.push(normalize(label));
+      }
+    }
+  }
+
+  for (const note of cross.notes) {
+    const target = targets.noteSteps.find((other) => other === note.step);
+    const text = noteText(note.text);
+    if (!target) {
+      reject("note", shorten(text), "unknown_field");
+      continue;
+    }
+    const reason = noteRejection(text, note.quote, transcript);
+    if (reason) {
+      reject("note", shorten(text), reason);
+      continue;
+    }
+    push({
+      target_step: target,
+      kind: "note",
+      field: null,
+      value: text,
+      label_fr: `Note : ${shorten(text, 60)}`,
+      quote: note.quote,
+      confidence: 1,
+    });
+  }
+}
 
 /** Parses the model's JSON answer, or throws. */
 export function parseModelOutput(content: string): ModelOutput {
@@ -1257,19 +1657,60 @@ export function parseModelOutput(content: string): ModelOutput {
         : {}),
       ...(typeof o.copy_quote === "string" && o.copy_quote ? { copy_quote: o.copy_quote } : {}),
     }));
-  const output: ModelOutput = {
-    reply_fr: text(json.reply_fr).trim(),
-    answers,
-    lifestyle_items: list(json.lifestyle_items)
+  // deno-lint-ignore no-explicit-any
+  const said = (a: any): ModelAnswer => ({
+    field: String(a.field),
+    value: String(a.value ?? ""),
+    confidence: typeof a.confidence === "number" ? a.confidence : 0,
+    quote: text(a.quote),
+  });
+  const items = (value: unknown) =>
+    list(value)
       // deno-lint-ignore no-explicit-any
       .filter((i: any) => i && typeof i.label === "string")
       // deno-lint-ignore no-explicit-any
-      .map((i: any) => ({ kind: String(i.kind), label: i.label, quote: text(i.quote) })),
+      .map((i: any) => ({ kind: String(i.kind), label: i.label, quote: text(i.quote) }));
+  // deno-lint-ignore no-explicit-any
+  const notes = (value: unknown) => list(value).filter((n: any) => n && typeof n.text === "string");
+  const cross = json.cross_step && typeof json.cross_step === "object" ? json.cross_step : {};
+  const crossStep: ModelCrossStep = {
+    // deno-lint-ignore no-explicit-any
+    answers: list(cross.answers).filter((a: any) => a && typeof a.field === "string").map(said),
+    entities: list(cross.entities)
+      // deno-lint-ignore no-explicit-any
+      .filter((e: any) => e && typeof e.entity === "string")
+      // deno-lint-ignore no-explicit-any
+      .map((e: any) => ({
+        entity: e.entity,
+        // deno-lint-ignore no-explicit-any
+        fields: list(e.fields).filter((f: any) => f && typeof f.field === "string").map(said),
+      })),
+    lifestyle_items: items(cross.lifestyle_items),
+    // deno-lint-ignore no-explicit-any
+    notes: notes(cross.notes).map((n: any) => ({
+      step: String(n.step ?? ""),
+      text: n.text,
+      quote: text(n.quote),
+    })),
+  };
+  const output: ModelOutput = {
+    reply_fr: text(json.reply_fr).trim(),
+    answers,
+    lifestyle_items: items(json.lifestyle_items),
     next_field: typeof json.next_field === "string" ? json.next_field : "none",
     done: json.done === true,
   };
   if (entityOps.length) output.entity_ops = entityOps;
   const outOfStep = list(json.out_of_step).filter((c): c is string => typeof c === "string");
   if (outOfStep.length) output.out_of_step = outOfStep;
+  // deno-lint-ignore no-explicit-any
+  const ownNotes = notes(json.notes).map((n: any) => ({ text: n.text, quote: text(n.quote) }));
+  if (ownNotes.length) output.notes = ownNotes;
+  if (
+    crossStep.answers.length || crossStep.entities.length || crossStep.lifestyle_items.length ||
+    crossStep.notes.length
+  ) {
+    output.cross_step = crossStep;
+  }
   return output;
 }

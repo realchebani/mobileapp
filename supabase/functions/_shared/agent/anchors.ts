@@ -87,8 +87,25 @@ export function textCovered(value: string, transcript: string): boolean {
   return coverage(value, transcript) >= MIN_COVERAGE;
 }
 
-/** Whether a name (a co-owner's) is plausible: letters, spaces, hyphens
- * and apostrophes only. */
-export function isPersonName(value: string): boolean {
-  return /^[\p{L}][\p{L}' ’-]{0,99}$/u.test(value.trim());
+export const PHONE_MASK = "[numéro masqué]";
+export const EMAIL_MASK = "[e-mail masqué]";
+
+// A French number (0X XX XX XX XX, +33 X XX…, digits grouped or not) or an
+// international one; an e-mail written or spelled out (« jean point dupont
+// arobase gmail point com »).
+const PHONE_NUMBER =
+  /(?:(?:\+|00)\s?33\s?\(?0?\)?\s?|\b0)[1-9](?:[\s.-]?\d{2}){4}\b|(?:\+|\b00)\s?\d{1,3}(?:[\s.-]?\d){7,12}\b/g;
+const EMAIL_ADDRESS = /[\p{L}\d._%+-]+@[\p{L}\d.-]+\.[\p{L}]{2,}/gu;
+const SPOKEN_EMAIL =
+  /(?:\S+\s+(?:point|tiret)\s+)*\S+\s+(?:arobase|at)\s+\S+(?:\s+point\s+\S+)+/giu;
+
+/** [text] with its phone numbers and e-mails masked (plan §5.1): applied
+ * to every transcript, reply and note before it is kept. Years, prices and
+ * surfaces are not phone numbers (a phone has 10 digits starting with 0, or
+ * an international prefix). */
+export function maskContacts(text: string): string {
+  return text
+    .replace(EMAIL_ADDRESS, EMAIL_MASK)
+    .replace(SPOKEN_EMAIL, EMAIL_MASK)
+    .replace(PHONE_NUMBER, PHONE_MASK);
 }

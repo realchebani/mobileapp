@@ -19,6 +19,7 @@ class RoomsTable extends StatelessWidget {
     this.requirePhotos = false,
     this.annexArea,
     this.dictated = const {},
+    this.toConfirm = const {},
     super.key,
   });
 
@@ -42,6 +43,10 @@ class RoomsTable extends StatelessWidget {
 
   /// Ids of the rooms dictated on this visit ("Dicté").
   final Set<String> dictated;
+
+  /// Ids of the rooms said on another step, not confirmed yet (EPIC-16,
+  /// « À confirmer »).
+  final Set<String> toConfirm;
 
   @override
   Widget build(BuildContext context) {
@@ -88,6 +93,7 @@ class RoomsTable extends StatelessWidget {
                 room: room,
                 border: border,
                 dictated: dictated.contains(room.id),
+                toConfirm: toConfirm.contains(room.id),
                 photoRequired:
                     requirePhotos && room.isMain && room.photosCount == 0,
                 onEdit: onEdit == null ? null : () => onEdit!(room),
@@ -150,6 +156,7 @@ class _RoomRow extends StatelessWidget {
     required this.onEdit,
     this.onPhotos,
     this.dictated = false,
+    this.toConfirm = false,
     this.photoRequired = false,
     super.key,
   });
@@ -159,6 +166,7 @@ class _RoomRow extends StatelessWidget {
   final VoidCallback? onEdit;
   final VoidCallback? onPhotos;
   final bool dictated;
+  final bool toConfirm;
 
   /// A main room without a photo (needed to send the dossier).
   final bool photoRequired;
@@ -184,7 +192,7 @@ class _RoomRow extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 spacing: 2,
                 children: [
-                  if (room.isAnnex || dictated || fromPlan)
+                  if (room.isAnnex || dictated || toConfirm || fromPlan)
                     Wrap(
                       spacing: 6,
                       runSpacing: 4,
@@ -193,7 +201,10 @@ class _RoomRow extends StatelessWidget {
                         Text(room.name, style: textStyle),
                         if (room.isAnnex)
                           RealestyBadge(label: l10n.surfacesAnnexTag),
-                        if (dictated) const DictatedTag(),
+                        if (toConfirm)
+                          const ToConfirmTag()
+                        else if (dictated)
+                          const DictatedTag(),
                         if (fromPlan)
                           ProvenanceTag(
                             ProvenanceKind.document,

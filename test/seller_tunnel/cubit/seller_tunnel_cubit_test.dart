@@ -35,6 +35,7 @@ void main() {
     when(() => repository.getRooms(any())).thenAnswer((_) async => [room]);
     when(() => repository.getLifestyleItems(any())).thenAnswer((_) async => []);
     when(() => repository.getDocuments(any())).thenAnswer((_) async => []);
+    when(() => repository.getPendingAnswers(any())).thenAnswer((_) async => []);
   });
 
   SellerTunnelCubit build({Duration timeout = const Duration(seconds: 1)}) =>

@@ -229,18 +229,16 @@ void main() {
       await tap(tester, find.text('Continuer'));
 
       verify(() => cubit.updateChildren(lifestyleItems: [_asset])).called(1);
-      verify(
-        () => cubit.saveAndContinue(SellerTunnelStep.lifestyle, {
-          PropertyColumns.noiseLevel: 8,
-          PropertyColumns.overlooking: Overlooking.significant,
-          PropertyColumns.secretNote: 'Marché le dimanche',
-          PropertyColumns.provenance: {
-            PropertyColumns.noiseLevel: 'declared',
-            PropertyColumns.overlooking: 'declared',
-            PropertyColumns.secretNote: 'declared',
-          },
-        }),
-      ).called(1);
+      expect(savedStepPatch(cubit, SellerTunnelStep.lifestyle), {
+        PropertyColumns.noiseLevel: 8,
+        PropertyColumns.overlooking: Overlooking.significant,
+        PropertyColumns.secretNote: 'Marché le dimanche',
+        PropertyColumns.provenance: {
+          PropertyColumns.noiseLevel: 'declared',
+          PropertyColumns.overlooking: 'declared',
+          PropertyColumns.secretNote: 'declared',
+        },
+      });
     });
 
     testWidgets('shows an error when the items cannot be saved', (
@@ -260,7 +258,7 @@ void main() {
         ),
         findsOneWidget,
       );
-      verifyNever(() => cubit.saveAndContinue(any(), any()));
+      verifyNoStepSaved(cubit);
     });
 
     testWidgets('disables the inputs while the tunnel saves', (tester) async {
@@ -295,7 +293,14 @@ void main() {
       );
       expect(
         tester
-            .widget<RealestyTextField>(find.byType(RealestyTextField))
+            .widget<RealestyTextField>(find.byType(RealestyTextField).first)
+            .enabled,
+        isFalse,
+      );
+      // The notes of the step too (EPIC-16).
+      expect(
+        tester
+            .widget<RealestyTextField>(find.byType(RealestyTextField).last)
             .enabled,
         isFalse,
       );

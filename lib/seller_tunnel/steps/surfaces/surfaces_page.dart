@@ -46,15 +46,21 @@ class SurfacesPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) {
-        final tunnel = context.read<SellerTunnelCubit>().state;
-        return SurfacesCubit(
-          propertyRepository: context.read<PropertyRepository>(),
-          propertyId: tunnel.property!.id,
-          rooms: tunnel.rooms,
-        );
-      },
+    final tunnel = context.read<SellerTunnelCubit>().state;
+    // EPIC-16: rooms said on another step join the table « À confirmer ».
+    final trace = StepVoiceFirst.createTrace(tunnel, SellerTunnelStep.surfaces);
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider.value(value: trace),
+        BlocProvider(
+          create: (context) => SurfacesCubit(
+            propertyRepository: context.read<PropertyRepository>(),
+            propertyId: tunnel.property!.id,
+            rooms: tunnel.rooms,
+            pendingRooms: trace.state.prefilledOf(PendingKind.room),
+          ),
+        ),
+      ],
       child: SurfacesView(startDictation: dictationRequested(context)),
     );
   }
@@ -82,6 +88,14 @@ class _SurfacesViewState extends State<SurfacesView> {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted && _voiceAvailable(context)) unawaited(_openDictation());
       });
+    } else {
+      // EPIC-16: no room yet, the dictation opens by itself (voice mode).
+      StepVoiceFirst.schedule(
+        context,
+        _step,
+        () => _openDictation(autoOpened: true),
+        when: context.read<SurfacesCubit>().state.rooms.isEmpty,
+      );
     }
   }
 
@@ -91,14 +105,14 @@ class _SurfacesViewState extends State<SurfacesView> {
 
   /// The rooms dictation (Night sheet; the agent stays silent until the
   /// spoken summary of "Terminer").
-  Future<void> _openDictation() async {
+  Future<void> _openDictation({bool autoOpened = false}) async {
     final l10n = context.l10n;
     final cubit = context.read<SurfacesCubit>();
     final propertyId = context.read<SellerTunnelCubit>().state.property!.id;
     final repository = VoiceServices.of(context).agentRepository!;
-    await showStepVoiceSheet(
+    await StepVoiceFirst.openSheet(
       context,
-      propertyId: propertyId,
+      autoOpened: autoOpened,
       step: AgentStep.rooms,
       form: cubit,
       title: l10n.surfacesVoiceTitle,
@@ -124,19 +138,43 @@ class _SurfacesViewState extends State<SurfacesView> {
                 rooms.every((room) => room.source == RoomSource.plan)
             ? Provenance.document
             : Provenance.declared;
-        unawaited(
-          tunnel.saveAndContinue(_step, {
+        final living = provenanceOf(state.rooms.where((room) => !room.isAnnex));
+        final annex = provenanceOf(state.rooms.where((room) => room.isAnnex));
+        // EPIC-16: the totals are computed from the rooms (read on a plan:
+        // extracted), with the notes of the step.
+        final traced = StepVoiceFirst.save(
+          context,
+          {
             PropertyColumns.livingAreaM2: state.livingArea,
             PropertyColumns.annexAreaM2: state.annexArea,
             PropertyColumns.provenance: property.mergeProvenance({
-              PropertyColumns.livingAreaM2: provenanceOf(
-                state.rooms.where((room) => !room.isAnnex),
-              ),
-              PropertyColumns.annexAreaM2: provenanceOf(
-                state.rooms.where((room) => room.isAnnex),
-              ),
+              PropertyColumns.livingAreaM2: living,
+              PropertyColumns.annexAreaM2: annex,
             }),
-          }),
+          },
+          voiceSource: (column, value, at) => null,
+          kinds: {
+            if (living == Provenance.document)
+              PropertyColumns.livingAreaM2: FieldSourceKind.extracted,
+            if (annex == Provenance.document)
+              PropertyColumns.annexAreaM2: FieldSourceKind.extracted,
+          },
+        );
+        unawaited(
+          tunnel.saveStepAndContinue(
+            _step,
+            traced.patch,
+            resolve: {
+              for (final resolution in {
+                ...traced.resolutions.keys,
+                ...state.pendingResolutions.keys,
+              })
+                resolution: [
+                  ...?traced.resolutions[resolution],
+                  ...?state.pendingResolutions[resolution],
+                ],
+            },
+          ),
         );
       case SurfacesSubmission.failure:
         context.read<SellerTunnelCubit>().updateChildren(
@@ -314,7 +352,11 @@ class _SurfacesViewState extends State<SurfacesView> {
           hint: l10n.tunnelHintVoiceOrScreen,
           label: l10n.surfacesContinue,
           isLoading: busy,
-          onPressed: cubit.submit,
+          onPressed: () => unawaited(
+            cubit.submit(
+              confirmed: context.read<StepTraceCubit>().state.confirmed,
+            ),
+          ),
           onMicPressed: busy || !_voiceAvailable(context)
               ? null
               : () => unawaited(_openDictation()),
@@ -366,6 +408,16 @@ class _SurfacesViewState extends State<SurfacesView> {
                 livingArea: state.livingArea,
                 annexArea: state.hasAnnexes ? state.annexArea : null,
                 dictated: state.dictated,
+                toConfirm: {
+                  for (final MapEntry(key: room, value: pending)
+                      in state.toConfirm.entries)
+                    if (!context
+                        .watch<StepTraceCubit>()
+                        .state
+                        .confirmed
+                        .contains(pending))
+                      room,
+                },
                 requirePhotos: requirePhotos,
                 onEdit: busy ? null : (room) => _editRoom(state, room),
                 onPhotos: busy ? null : (room) => unawaited(_openPhotos(room)),
@@ -394,6 +446,7 @@ class _SurfacesViewState extends State<SurfacesView> {
             height: RealestySpacing.minTouchTarget,
             onPressed: busy ? null : () => _addRoom(state),
           ),
+          StepNotesField(enabled: !busy),
         ],
       ),
     );

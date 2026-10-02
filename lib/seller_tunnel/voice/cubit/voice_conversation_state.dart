@@ -82,6 +82,18 @@ final class VoiceAppliedPill extends Equatable {
   List<Object?> get props => [turnId, key, label, changedLabel];
 }
 
+/// A value said for another step during this sheet session (EPIC-16):
+/// « Noté pour Technique · Construction 1998 ».
+final class VoiceCrossPill extends Equatable {
+  const new({required this.turnId, required this.item});
+
+  final String turnId;
+  final AgentCrossStep item;
+
+  @override
+  List<Object?> get props => [turnId, item];
+}
+
 /// A change waiting for the seller's "Oui" (a pill with Oui / Non).
 final class VoicePendingConfirmation extends Equatable {
   const new({required this.turnId, required this.confirmation});
@@ -93,6 +105,15 @@ final class VoicePendingConfirmation extends Equatable {
   bool get isSummary => confirmation.id == summaryId;
 
   static const summaryId = 'summary';
+
+  /// Prefix of the id of an update of a validated step (EPIC-16):
+  /// `update:<pending answer id>`.
+  static const updatePrefix = 'update:';
+
+  /// The pending answer this confirmation updates, or null.
+  String? get updateOf => confirmation.id.startsWith(updatePrefix)
+      ? confirmation.id.substring(updatePrefix.length)
+      : null;
 
   @override
   List<Object?> get props => [turnId, confirmation];
@@ -111,6 +132,7 @@ final class VoiceConversationState extends Equatable {
     this.applied = const [],
     this.confirmations = const [],
     this.outOfStep = const [],
+    this.crossStep = const [],
     this.turnIds = const [],
     this.sessionStart = 0,
     this.finished = false,
@@ -147,6 +169,9 @@ final class VoiceConversationState extends Equatable {
   /// Answers about other steps ("Construction → Technique").
   final List<AgentOutOfStep> outOfStep;
 
+  /// Values said for other steps, kept as pending answers (EPIC-16).
+  final List<VoiceCrossPill> crossStep;
+
   /// Turns applied to the form in this sheet session, oldest first (the
   /// last one can be undone).
   final List<String> turnIds;
@@ -175,6 +200,7 @@ final class VoiceConversationState extends Equatable {
     List<VoiceAppliedPill>? applied,
     List<VoicePendingConfirmation>? confirmations,
     List<AgentOutOfStep>? outOfStep,
+    List<VoiceCrossPill>? crossStep,
     List<String>? turnIds,
     bool? finished,
   }) {
@@ -190,6 +216,7 @@ final class VoiceConversationState extends Equatable {
       applied: applied ?? this.applied,
       confirmations: confirmations ?? this.confirmations,
       outOfStep: outOfStep ?? this.outOfStep,
+      crossStep: crossStep ?? this.crossStep,
       turnIds: turnIds ?? this.turnIds,
       sessionStart: sessionStart,
       finished: finished ?? this.finished,
@@ -209,6 +236,7 @@ final class VoiceConversationState extends Equatable {
     applied,
     confirmations,
     outOfStep,
+    crossStep,
     turnIds,
     sessionStart,
     finished,

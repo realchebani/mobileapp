@@ -285,16 +285,14 @@ void main() {
         ],
       );
       await tap(tester, find.text('Tout est correct, continuer'));
-      verify(
-        () => cubit.saveAndContinue(SellerTunnelStep.surfaces, {
-          PropertyColumns.livingAreaM2: 30.0,
-          PropertyColumns.annexAreaM2: 0.0,
-          PropertyColumns.provenance: {
-            'living_area_m2': 'document',
-            'annex_area_m2': 'declared',
-          },
-        }),
-      ).called(1);
+      expect(savedStepPatch(cubit, SellerTunnelStep.surfaces), {
+        PropertyColumns.livingAreaM2: 30.0,
+        PropertyColumns.annexAreaM2: 0.0,
+        PropertyColumns.provenance: {
+          'living_area_m2': 'document',
+          'annex_area_m2': 'declared',
+        },
+      });
     });
   });
 }

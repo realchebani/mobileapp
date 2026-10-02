@@ -2,7 +2,7 @@
 import { assert, assertEquals } from "jsr:@std/assert@1";
 import { typo, validateTurn, type ValidationContext } from "../_shared/agent/validate.ts";
 import { answer, f, op, output } from "./agent_helpers.ts";
-import { outputSchema } from "../_shared/agent/schema.ts";
+import { AGENT_STEPS, isStep, outputSchema } from "../_shared/agent/schema.ts";
 
 function ctx(partial: Partial<ValidationContext>): ValidationContext {
   return {
@@ -194,57 +194,9 @@ Deno.test("V2: special situations, « aucune » is exclusive and confirmed", () 
   assertEquals(invented.rejected[0].reason, "not_covered");
 });
 
-Deno.test("V1: ownership and co-owners, always confirmed", () => {
-  const transcript = "nous sommes deux, avec mon frère Marc Durand";
-  const result = validateTurn(
-    output({
-      answers: [answer("ownership_type", "multiple", "nous sommes deux")],
-      entity_ops: [
-        op({
-          entity: "co_owner",
-          fields: [f("first_name", "Marc", "Marc"), f("last_name", "Durand", "Durand")],
-        }),
-        op({ entity: "co_owner", op: "delete", target: "P2" }),
-      ],
-    }),
-    ctx({ step: "owners", transcript, values: { property_type: "maison" } }),
-  );
-  assertEquals(result.patch, { ownership_type: "multiple" });
-  assertEquals(result.entity_ops, []);
-  assertEquals(result.confirmations.length, 1);
-  assertEquals(result.confirmations[0].reason, "co_owner");
-  assertEquals(result.confirmations[0].label_fr, `Marc Durand${NB}?`);
-  assertEquals(result.confirmations[0].patch, { ownership_type: "multiple" });
-  assertEquals(result.confirmations[0].entity_ops[0].values, {
-    first_name: "Marc",
-    last_name: "Durand",
-  });
-  assertEquals(result.rejected.map((r) => r.reason), ["not_allowed"]);
-  // A single owner has no co-owner; digits are not a name.
-  const single = validateTurn(
-    output({
-      entity_ops: [
-        op({
-          entity: "co_owner",
-          fields: [f("first_name", "Marc", "Marc"), f("last_name", "D2", "D2")],
-        }),
-        op({
-          entity: "co_owner",
-          fields: [f("first_name", "Marc", "Marc"), f("last_name", "Durand", "Durand")],
-        }),
-      ],
-    }),
-    ctx({
-      step: "owners",
-      transcript: "Marc D2 Marc Durand",
-      values: { property_type: "maison", ownership_type: "single" },
-    }),
-  );
-  assertEquals(single.rejected.map((r) => r.reason), [
-    "invalid_value",
-    "inconsistent",
-    "inconsistent",
-  ]);
+Deno.test("V1 has no voice (EPIC-16): no owners step, no co-owner entity", () => {
+  assertEquals(isStep("owners"), false);
+  assertEquals(AGENT_STEPS.includes("owners" as never), false);
 });
 
 Deno.test("V4b: EPIC-13 fields for a garage and an outbuilding", () => {
@@ -337,6 +289,8 @@ Deno.test("output schemas per step", () => {
     "reply_fr",
     "answers",
     "entity_ops",
+    "notes",
+    "cross_step",
     "out_of_step",
     "next_field",
     "done",

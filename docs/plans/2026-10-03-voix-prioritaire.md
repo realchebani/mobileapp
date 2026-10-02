@@ -1,6 +1,6 @@
 # EPIC-16 · Voix prioritaire — étude & conception
 
-Statut : **plan rédigé (aucun code)**, questions ouvertes §15. Branche `feat/epic-16-voix-prioritaire`. À coder **après la fusion d’EPIC-15** (« Photos du bien », en cours dans un autre worktree : il modifie V5 / V5c, `rooms`, la fiche pièce, V7 et l’aperçu V8) ; la tranche 0 rebase sur `main` et relit le code fusionné.
+Statut : **codé** (tranches T0 → T16, sauf l’enregistrement du banc sur iPhone et le test de bout en bout sur l’appareil, voir le journal) avec les **choix par défaut** des 14 questions (§15 bis) en attendant le porteur de projet. Branche `feat/epic-16-voix-prioritaire`, après la fusion d’EPIC-15 dans `main`.
 
 Epic : [EPIC-16](../epics/EPIC-16-voix-prioritaire.md). Plans précédents : [EPIC-14 · Voix étendue](2026-10-02-voix-etendue.md) (livré), [EPIC-13 · Multi-biens](2026-10-02-multi-biens.md) (livré), [EPIC-15 · Photos du bien](2026-10-02-photos-du-bien.md) (en cours, worktree `epic-15-photos`).
 
@@ -481,6 +481,42 @@ ARB : lecture-modification-écriture JSON puis `flutter gen-l10n` immédiatement
 
 ---
 
+## 15 bis. Choix par défaut en attendant le porteur de projet
+
+Les 14 questions du §15 n’ont pas encore de réponse : chaque fois, l’option **recommandée (a)** est codée, derrière une constante pour qu’une autre décision soit un changement d’une ligne (serveur : `supabase/functions/_shared/agent/defaults.ts`, `VOICE_DEFAULTS` ; app : `lib/seller_tunnel/voice/voice_defaults.dart`, `VoiceDefaults`).
+
+| Q | Choix codé | Où le changer |
+|---|---|---|
+| 1 | (a) la feuille modale d’EPIC-14 s’ouvre d’elle-même, « Écrire plutôt » la ferme | `VoiceDefaults.voiceFirst` (false = plus d’ouverture automatique, le micro reste) |
+| 2 | (a) écoute automatique à l’ouverture (consentement et micro acquis), pas d’ouverture sur une étape validée sans réponse en attente | `VoiceDefaults.autoListen` (documentaire : la feuille écoute dès son ouverture depuis EPIC-14) ; règles dans `VoiceFirstLauncher.skipReason` |
+| 3 | (a) préférence globale à l’appareil | `VoicePreferences.inputModeKey` (`voice_input_mode`) |
+| 4 | (a) étape validée : confirmation « a → b » dans la feuille (champs, notes), entités « À confirmer » sur l’étape | `VoiceDefaults.updateValidatedSteps` |
+| 5 | (a) carte V7 non bloquante, réponses expirées à l’envoi (déclencheur SQL) | `VoiceDefaults.pendingBlocksSubmission` (documentaire : l’option (b) demande un contrôle dans `DocumentsView._submit`) |
+| 6 / 6 bis | (a) rien de V1, type de bien jamais pré-rempli | `NEVER_PREFILLED` (`steps/index.ts`), V1 hors de `AGENT_STEPS` |
+| 7 | (a) notes de pièce (600) + une note par étape V2, V3, V4b, V5c, V6 (1 000) | `VOICE_DEFAULTS.stepNotes` / `VoiceDefaults.stepNotes` |
+| 8 | (a) colonne `rooms.description` gardée, libellée « Notes complémentaires » | — (migration) |
+| 9 | (a) transcriptions gardées, téléphones / e-mails masqués (`maskContacts`), consigne « aucun nom » dans les notes | `anchors.ts` |
+| 10 | (a) fil et réponses en attente vivent avec le dossier (cascade) | — (migration) |
+| 11 | (a) sources `dicte`, `dicte_autre_etape`, `saisi`, `extrait`, `externe`, `non_trace` | `FieldSourceKind` + `staff_fill_sheet` |
+| 12 | (a) fonctions `staff_*` dans l’éditeur SQL + runbook | `docs/runbooks/fiche-de-remplissage.md` |
+| 13 | (a) confiance 0,5–0,7 gardée, « ? » dans la pastille | `VOICE_DEFAULTS.crossStepMinConfidence` (0.7 = option b) |
+| 14 | (a) catalogue compact des autres étapes dans un 2ᵉ bloc système cacheable | `VOICE_DEFAULTS.crossStepCatalog` |
+
+Autres constantes : `crossStepPrefill` (false = comportement EPIC-14), `crossStepMax` 8, `pendingMax` 100, `VoiceDefaults.offlinePause` 10 min (pas d’ouverture automatique après un échec réseau).
+
+## 16. Écarts au plan constatés au codage (T0 et suivantes)
+
+- **T0** : contrainte `rooms_description_check` (nom confirmé sur la base) ; migration `20261002175436_voix_prioritaire.sql`, après `20261002162210_room_photos.sql`. EPIC-15 : le bouton « Ajouter » des constats photo (`photosSuggestionNote`) devient « Ajouter aux notes » ; `RoomPhotoSuggestions` coupe déjà à `Room.descriptionMaxLength` (600).
+- `pending_answers.changed_fr` (ajouté) : « Prix d’achat : 300 000 € → 320 000 € » calculé par le serveur pour la confirmation de mise à jour.
+- Sortie du modèle : `cross_step.entities: [{entity, fields}]` (au lieu de `rooms` / `estimates` séparés, mêmes règles de champs que `entity_ops`).
+- `agent_record_pending(…, p_source_step, p_rows, p_max)` renvoie `{ids, superseded}` ; au-delà du plafond une ligne reçoit `null` et est rejetée `full`.
+- Le masquage des contacts se fait **avant** le modèle (dès la transcription et sur un transcript tapé), pas seulement au journal.
+- App : `StepTraceCubit` (notes + réponses pré-remplies d’une étape) à côté du cubit de l’étape, `TracedVoiceForm`, `StepVoiceFirst` (création, ouverture automatique, enregistrement avec `field_sources` et résolutions) ; `SellerTunnelCubit.saveStepAndContinue` / `saveStep` (`resolve:`) ; les entités en attente (pièces, estimations, atouts) deviennent des lignes du formulaire de l’étape et sont résolues à « Continuer ».
+- Pastille d’une entité dite pour une étape validée : visible sur l’étape et en V7 (lien « Voir ») ; pas de lien « Voir » dans la feuille.
+- Parité « pré-remplissable » : l’app masque une réponse dont la colonne n’est pas demandée pour le type via `PropertyTypeProfile.prefills` (= colonnes hors `clearedOnSubmit`, déjà en parité avec la fixture des types) ; pas de nouvelle fixture.
+
 ## Journal d’exécution
 
 - 2026-10-03 : plan rédigé (aucun code), EPIC-16 créé ; en attente des arbitrages (§15) et de la fusion d’EPIC-15.
+- 2026-10-02 : codage complet avec les choix par défaut (§15 bis). T0 relecture d’EPIC-15 et du schéma ; T1 migration `voix_prioritaire` (sonde RLS annulée, dry-run, push) ; T2/T4/T5 registre sans `owners`, `crossStepTargets`, sortie `cross_step` / `notes`, validation inter-étapes, `evidence`, `maskContacts`, RPC `agent_record_pending`, catalogue au prompt ; fonctions `agent-transcribe`, `agent-turn`, `agent-speech` redéployées après les tests Deno ; T3 / T6 paquets ; T7 / T8 cœur voix et tunnel ; T9 V1 sans voix ; T10–T14 étapes ; T15 16 phrases ajoutées au banc (`utterances.json`, notation `expected_cross` / `expected_notes`), **enregistrement sur iPhone et rapport à faire** ; T16 docs et runbooks.
+- 2026-10-02 (fin) : vérifications — Flutter 1 338 tests, couverture 100 % des lignes de `lib/`, `property_repository` 146 tests et `agent_repository` 16 tests à 100 %, Deno 184 tests, analyse / bloc lint / format propres, licences propres, build iOS release (development) OK. Rendus 390 px dans le scratchpad `epic-16/`. Reste : banc enregistré sur iPhone (T15), parcours de bout en bout sur l’iPhone (T16), arbitrages des 14 questions.

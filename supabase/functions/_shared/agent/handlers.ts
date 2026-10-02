@@ -7,12 +7,18 @@
 //   bound, STT usage). mode=dictation (V2 address): transcription only,
 //   never sent to the language model nor kept in the journal.
 // - agent-turn: POST {property_id, step, turn_id? | transcript?,
-//   interactive?, draft?, rooms?, estimates?, co_owners_count?,
-//   last_room_ref?, lifestyle_labels?, undone_turn_ids?} → {turn_id,
-//   reply_fr, patch, facts, pending, lifestyle_items, suggestions,
-//   entity_ops, confirmations, out_of_step, corrections, next_field, done}.
-//   Never writes the dossier: the app applies the answer itself (RLS,
-//   lock). A body with only undone_turn_ids marks those turns undone.
+//   interactive?, draft?, rooms?, estimates?, last_room_ref?,
+//   lifestyle_labels?, undone_turn_ids?} → {turn_id, reply_fr, patch,
+//   facts, pending, lifestyle_items, suggestions, entity_ops,
+//   confirmations, out_of_step, corrections, notes, cross_step,
+//   superseded_ids, next_field, done}. Never writes the dossier: the app
+//   applies the answer itself (RLS, lock); what is said for another step is
+//   recorded as pending answers (EPIC-16), confirmed later by the seller.
+//   A body with only undone_turn_ids marks those turns undone.
+//
+// V1 (`owners`) has no voice since EPIC-16: the step is refused (400).
+// Phone numbers and e-mails are masked in every transcript before it is
+// kept or sent to the language model.
 // - agent-speech: POST {turn_id} → the turn's reply as audio
 //   (application/octet-stream, header x-audio-format: mp3 | wav), once.
 
@@ -25,6 +31,7 @@ import {
   repairXingHeader,
   speechFormatFor,
 } from "../openrouter/audio.ts";
+import { maskContacts } from "./anchors.ts";
 import { agentModelFor, type AgentModels, agentProvider } from "./config.ts";
 import { type AgentDb, LIMITS, type PropertyRow, startOfDay, type TurnRow } from "./db.ts";
 import { VOICE_DEFAULTS } from "./defaults.ts";
@@ -33,11 +40,11 @@ import type { RoomRow } from "./rooms.ts";
 import { type AgentStep, isStep, outputSchema, stepSchema, voiceStepsFor } from "./schema.ts";
 import { ROOM_LEVELS } from "./steps/rooms.ts";
 import {
+  type EntitySummaries,
   type EstimateRow,
   formatNumber,
   type ModelOutput,
   parseModelOutput,
-  type ValidatedTurn,
   validateTurn,
 } from "./validate.ts";
 
@@ -45,8 +52,7 @@ import {
 export const ASK_TO_REPEAT =
   "Pardon, je n’ai pas bien saisi. Pouvez-vous répéter, s’il vous plaît ?";
 
-/** What the journal keeps of a V1 turn (names) and of a dictated address. */
-export const IDENTITY_REMOVED = "[identité non conservée]";
+/** What the journal keeps of a dictated address. */
 export const ADDRESS_REMOVED = "[adresse non conservée]";
 
 export interface Deps {
@@ -209,7 +215,7 @@ export async function handleTranscribe(
       await db.updateTurn(turn.id, { error: "stt_failed" }).catch(() => {});
       return upstreamError(error);
     }
-    const transcript = result.text.slice(0, LIMITS.transcriptChars);
+    const transcript = maskContacts(result.text).slice(0, LIMITS.transcriptChars);
     // Journaled even when empty: the audio and its cost count in the quotas.
     // A dictated address is never kept, and its turn can never be answered.
     await db.updateTurn(turn.id, {
@@ -237,7 +243,6 @@ interface TurnBody {
   draft?: unknown;
   rooms?: unknown;
   estimates?: unknown;
-  co_owners_count?: unknown;
   last_room_ref?: unknown;
   lifestyle_labels?: { asset?: unknown; watch_point?: unknown };
   undone_turn_ids?: unknown;
@@ -352,60 +357,12 @@ export function lastRetained(turn: TurnRow | undefined): string[] {
     if (!isRecord(op) || typeof op.label_fr !== "string") continue;
     retained.push(`${op.entity} ${op.op} ${op.target} : ${op.label_fr}`);
   }
+  const cross = Array.isArray(extracted.cross_step) ? extracted.cross_step : [];
+  for (const item of cross) {
+    if (!isRecord(item) || typeof item.label_fr !== "string") continue;
+    retained.push(`cross_step ${item.target_step} : ${item.label_fr}`);
+  }
   return retained.slice(0, 15);
-}
-
-/** [validated] without the names said on V1 (journal of an identity
- * step): counts and reasons stay for the quality follow-up. */
-function withoutIdentity(validated: ValidatedTurn): ValidatedTurn {
-  const anonymous = <T extends { values: Record<string, unknown>; label_fr: string }>(op: T) => ({
-    ...op,
-    values: {},
-    label_fr: IDENTITY_REMOVED,
-  });
-  return {
-    ...validated,
-    entity_ops: validated.entity_ops.map(anonymous),
-    confirmations: validated.confirmations.map((c) => ({
-      ...c,
-      label_fr: c.reason === "co_owner" ? IDENTITY_REMOVED : c.label_fr,
-      entity_ops: c.entity_ops.map(anonymous),
-    })),
-    pending: validated.pending.map((p) =>
-      p.field === "entity" ? { ...p, label_fr: IDENTITY_REMOVED } : p
-    ),
-    rejected: validated.rejected.map((r) =>
-      r.field.startsWith("co_owner") ? { ...r, value: "" } : r
-    ),
-  };
-}
-
-/** [reply] without the names of people said in [transcript] or extracted
- * by the model (V1): they are replaced by « … ». */
-export function redactNames(reply: string, output: ModelOutput, transcript: string): string {
-  const names = new Set<string>();
-  for (const op of output.entity_ops ?? []) {
-    for (const field of op.fields) {
-      for (const word of field.value.split(/[\s'’-]+/)) {
-        if (word.length >= 2) names.add(word);
-      }
-    }
-  }
-  // Capitalised words of the transcript, except a sentence start.
-  transcript.split(/\s+/).forEach((word, i, all) => {
-    const clean = word.replace(/^[^\p{L}]+|[^\p{L}]+$/gu, "");
-    const sentenceStart = i === 0 || /[.!?…]$/.test(all[i - 1]);
-    if (!sentenceStart && clean.length >= 2 && /^\p{Lu}/u.test(clean)) names.add(clean);
-  });
-  let redacted = reply;
-  for (const name of names) {
-    const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    redacted = redacted.replace(
-      new RegExp(`(?<![\\p{L}])${escaped}(?![\\p{L}])`, "giu"),
-      "…",
-    );
-  }
-  return redacted;
 }
 
 function emptyAnswer(turn: { id: string; transcript: string }, reply: string) {
@@ -422,6 +379,9 @@ function emptyAnswer(turn: { id: string; transcript: string }, reply: string) {
     confirmations: [],
     out_of_step: [],
     corrections: [],
+    notes: [],
+    cross_step: [],
+    superseded_ids: [],
     next_field: null,
     done: false,
   };
@@ -482,7 +442,6 @@ export async function handleTurn(
     ? body.undone_turn_ids.filter((id): id is string => typeof id === "string" && UUID.test(id))
       .slice(0, LIMITS.undoneTurns)
     : [];
-  const identity = stepSchema(step).identity === true;
 
   try {
     const property = await draftProperty(db, body.property_id, step);
@@ -517,7 +476,9 @@ export async function handleTurn(
       }
       turn = found;
     } else {
-      const transcript = typeof body.transcript === "string" ? body.transcript.trim() : "";
+      const transcript = typeof body.transcript === "string"
+        ? maskContacts(body.transcript.trim())
+        : "";
       if (!transcript) return failure("bad_request", 400);
       if (transcript.length > LIMITS.transcriptChars) {
         return failure("too_long", 413);
@@ -531,19 +492,6 @@ export async function handleTurn(
       if (!reserved) return failure("quota", 429);
       turn = reserved;
     }
-    // A V1 transcript wiped after a failed agent call can never be sent to
-    // the model: the seller is asked to repeat.
-    if (turn.transcript === IDENTITY_REMOVED) {
-      await db.updateTurn(turn.id, {
-        reply_fr: ASK_TO_REPEAT,
-        extracted: { mode: "identity_retry" },
-        error: null,
-      });
-      return json(emptyAnswer({ id: turn.id, transcript: "" }, ASK_TO_REPEAT));
-    }
-    // A V1 transcript (names) is never kept, whatever happens next.
-    const forget = identity ? { transcript: IDENTITY_REMOVED } : {};
-
     const history = (await db.recentTurns(session.id, LIMITS.historyTurns + 1))
       .filter((t) => t.id !== turn.id)
       .slice(-LIMITS.historyTurns);
@@ -562,7 +510,10 @@ export async function handleTurn(
     const values = { ...property, ...sanitizeDraft(step, body.draft) };
     const rooms = step === "rooms" ? sanitizeRooms(body.rooms) : [];
     const estimates = step === "context" ? sanitizeEstimates(body.estimates) : [];
-    const coOwnersCount = num(body.co_owners_count, 0, 10) ?? 0;
+    const pending = await db.pendingAnswers(property.id);
+    const entities: EntitySummaries = VOICE_DEFAULTS.crossStepPrefill
+      ? await db.entitySummaries(property.id)
+      : { rooms: [], estimates: [] };
     const lastRoomRef = typeof body.last_room_ref === "string" &&
         rooms.some((r) => r.ref === body.last_room_ref)
       ? body.last_room_ref
@@ -579,7 +530,7 @@ export async function handleTurn(
       currentMonth,
       rooms,
       estimates,
-      coOwnersCount,
+      pending,
       lastRetained: lastRetained(history.at(-1)),
     });
     // A truncated or invalid JSON answer (seen with Gemini Flash-Lite) is
@@ -596,13 +547,13 @@ export async function handleTurn(
         chat = await deps.openrouter.chat({
           model,
           messages,
-          jsonSchema: { name: "agent_turn", schema: outputSchema(step) },
+          jsonSchema: { name: "agent_turn", schema: outputSchema(step, values) },
           maxTokens,
           temperature: 0,
           provider: agentProvider(model),
         });
       } catch (error) {
-        await db.updateTurn(turn.id, { error: "agent_failed", ...forget }).catch(() => {});
+        await db.updateTurn(turn.id, { error: "agent_failed" }).catch(() => {});
         console.error(error instanceof Error ? error.message : "agent error");
         return failure("upstream", 502, { turn_id: turn.id });
       }
@@ -626,7 +577,6 @@ export async function handleTurn(
         tokens_out: tokensOut,
         agent_ms: ms,
         cost_usd: (turn.cost_usd ?? 0) + cost,
-        ...forget,
       }).catch(() => {});
       return json(emptyAnswer(turn, ASK_TO_REPEAT));
     }
@@ -641,17 +591,30 @@ export async function handleTurn(
       rooms,
       lastRoomRef,
       estimates,
-      coOwnersCount,
+      pending,
+      entities,
     });
-    const reply = output.reply_fr.slice(0, LIMITS.replyChars) ||
+    const reply = maskContacts(output.reply_fr).slice(0, LIMITS.replyChars) ||
       "Pouvez-vous reformuler, s’il vous plaît ?";
     const done = output.done;
     const nextField = output.next_field === "none" ? null : output.next_field;
+    // What was said for other steps becomes pending answers (one
+    // transaction; beyond the ceiling a row is refused as "full").
+    const recorded = await db.recordPending(property.id, turn.id, step, validated.cross_step);
+    const crossStep = validated.cross_step.map((item, index) => ({
+      id: recorded.ids[index] ?? null,
+      ...item,
+    }));
+    for (const item of crossStep.filter((c) => c.id === null)) {
+      validated.rejected.push({ field: `x:${item.field ?? item.kind}`, value: "", reason: "full" });
+    }
+    const kept = crossStep.filter((c) => c.id !== null);
     await db.updateTurn(turn.id, {
-      // V1: the journal (and the spoken reply) never holds a name.
-      reply_fr: identity ? redactNames(reply, output, turn.transcript) : reply,
+      reply_fr: reply,
       extracted: {
-        ...(identity ? withoutIdentity(validated) : validated),
+        ...validated,
+        cross_step: kept,
+        superseded_ids: recorded.superseded,
         done,
         next_field: nextField,
       },
@@ -661,7 +624,6 @@ export async function handleTurn(
       agent_ms: ms,
       cost_usd: (turn.cost_usd ?? 0) + cost,
       error: null,
-      ...forget,
     });
     await db.updateSession(session.id, {
       next_field: nextField?.slice(0, 60) ?? null,
@@ -680,6 +642,9 @@ export async function handleTurn(
       confirmations: validated.confirmations,
       out_of_step: validated.out_of_step,
       corrections: validated.corrections,
+      notes: validated.notes,
+      cross_step: kept,
+      superseded_ids: recorded.superseded,
       next_field: nextField,
       done,
     });

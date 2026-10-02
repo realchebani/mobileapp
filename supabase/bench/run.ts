@@ -56,11 +56,16 @@ const SAMPLE_REPLIES = [
 
 interface Utterance {
   id: string;
-  step: "technical" | "lifestyle";
+  step: "location" | "context" | "technical" | "rooms" | "lifestyle";
   values: Record<string, unknown>;
   text: string;
   expected: Record<string, unknown>;
   expected_items?: { asset: number; watch_point: number };
+  /** EPIC-16: values said for another step (a column = its value; room,
+   * previous_estimate, lifestyle_item, note = how many). */
+  expected_cross?: Record<string, unknown>;
+  /** EPIC-16: notes of the open step expected. */
+  expected_notes?: number;
 }
 
 const utterances: Utterance[] = JSON.parse(
@@ -291,6 +296,22 @@ async function agentRow(
         );
       }
     }
+    // EPIC-16: pending answers right / false (pre-filled wrongly) and notes.
+    // deno-lint-ignore no-explicit-any
+    const cross = (r.validated?.cross_step ?? []) as any[];
+    let crossCorrect = 0, crossWrong = 0;
+    for (const [key, value] of Object.entries(u.expected_cross ?? {})) {
+      if (["room", "previous_estimate", "lifestyle_item", "note"].includes(key)) {
+        crossCorrect += Math.min(cross.filter((c) => c.kind === key).length, value as number);
+      } else {
+        crossCorrect += cross.some((c) => c.field === key && sameValue(c.value, value)) ? 1 : 0;
+      }
+    }
+    for (const c of cross) {
+      const exp = c.field ? u.expected_cross?.[c.field] : u.expected_cross?.[c.kind];
+      if (exp === undefined || (c.field && !sameValue(c.value, exp))) crossWrong++;
+    }
+    const notes = (r.validated?.notes ?? []).length;
     return {
       id: u.id,
       transcript,
@@ -298,6 +319,11 @@ async function agentRow(
       correct,
       wrong,
       itemsDiff,
+      crossExpected: Object.keys(u.expected_cross ?? {}).length,
+      crossCorrect,
+      crossWrong,
+      notesDiff: Math.abs(notes - (u.expected_notes ?? 0)),
+      cross,
       ms: r.ms,
       cost: r.usage.cost,
       tokensIn: r.usage.promptTokens,

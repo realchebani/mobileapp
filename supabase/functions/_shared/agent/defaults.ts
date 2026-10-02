@@ -5,10 +5,6 @@
 // the ones it needs in lib/seller_tunnel/voice/voice_defaults.dart.
 
 export const VOICE_DEFAULTS = {
-  /** Q1 (b): V1 takes the number of owners and the co-owners' names
-   * (always confirmed, not kept in the journal); false = (a), nothing by
-   * voice on V1 except the ownership type. */
-  coOwnerNames: true,
   /** Q2 (a): the address is dictated (transcription only, never sent to
    * the language model) into the search field. */
   addressDictation: true,
@@ -25,4 +21,25 @@ export const VOICE_DEFAULTS = {
    * audit stays for dwellings); false = (b), voice only for maison /
    * appartement / autre. */
   allTypes: true,
+
+  // EPIC-16 · « Voix prioritaire » (docs/plans/2026-10-03-voix-prioritaire.md
+  // §15, « Choix par défaut en attendant le porteur de projet »). V1 has no
+  // voice at all (owner decision): the `owners` step is gone.
+
+  /** Owner decision: what is said for another step is stored as a pending
+   * answer and pre-filled there « À confirmer »; false = the EPIC-14
+   * behaviour (grey "out of step" pills, nothing kept). */
+  crossStepPrefill: true,
+  /** Q7 (a): « Notes complémentaires » per step (and per room). */
+  stepNotes: true,
+  /** Q13 (a): a pending answer needs this confidence (0,5–0,7 is kept with
+   * a « ? » in its pill); (b) would be 0.7. */
+  crossStepMinConfidence: 0.5,
+  /** Answers for other steps kept from one turn (plan §3.3). */
+  crossStepMax: 8,
+  /** Open pending answers per property (plan §3.3). */
+  pendingMax: 100,
+  /** Q14 (a): the compact catalog of the other steps (fields, formats,
+   * codes of the type) goes into a second cacheable system block. */
+  crossStepCatalog: true,
 } as const;

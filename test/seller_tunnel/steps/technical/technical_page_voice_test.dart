@@ -76,7 +76,7 @@ void main() {
     expect(find.byType(RealestyMicButton), findsOneWidget);
     await tester.tap(guided());
     await tester.pumpAndSettle();
-    verifyNever(() => tunnel.save(any()));
+    verifyNever(() => tunnel.saveStep(any(), resolve: any(named: 'resolve')));
     verify(() => goRouter.go('/vendeur/biens/p/audit/technique-vocal'))
         .called(1);
   });
@@ -86,7 +86,8 @@ void main() {
     await typeYear(tester);
     await tester.tap(guided());
     await tester.pumpAndSettle();
-    verify(() => tunnel.save(any())).called(1);
+    verify(() => tunnel.saveStep(any(), resolve: any(named: 'resolve')))
+        .called(1);
     verify(() => goRouter.go('/vendeur/biens/p/audit/technique-vocal'))
         .called(1);
   });
@@ -100,7 +101,8 @@ void main() {
     await typeYear(tester);
     await tester.tap(guided());
     await tester.pumpAndSettle();
-    verify(() => tunnel.save(any())).called(1);
+    verify(() => tunnel.saveStep(any(), resolve: any(named: 'resolve')))
+        .called(1);
     verifyNever(() => goRouter.go(any()));
   });
 

@@ -3895,13 +3895,13 @@
   "@voiceConsentRetentionTitle": {
     "description": "Consentement voix : titre de la section conservation"
   },
-  "voiceConsentRetention": "L’enregistrement audio n’est jamais conservé, ni sur votre téléphone ni sur nos serveurs. Le texte transcrit et les réponses retenues sont gardés avec votre dossier.",
+  "voiceConsentRetention": "L’enregistrement audio n’est jamais conservé, ni sur votre téléphone ni sur nos serveurs. Vos échanges avec l’assistant (transcriptions et réponses, sans l’audio) sont conservés dans votre dossier pour l’expert qui le certifie ; les numéros de téléphone et e-mails sont masqués.",
   "@voiceConsentRetention": {
-    "description": "Consentement voix : aucune conservation de l’audio"
+    "description": "Consentement voix v4 : ce qui est conservé (fil pour l’expert, contacts masqués)"
   },
-  "voiceConsentIdentity": "Votre téléphone et votre e-mail ne sont jamais envoyés à ces fournisseurs. Seuls les noms des co-propriétaires et l’adresse que vous choisissez de dicter leur sont transmis (l’adresse est seulement transcrite) ; ils ne sont pas conservés dans l’historique de l’agent.",
+  "voiceConsentIdentity": "Les propriétaires se saisissent à l’écran, jamais à la voix. L’adresse que vous choisissez de dicter est seulement transcrite et n’est pas conservée. Les informations que vous donnez pour une autre étape vous sont présentées pour confirmation.",
   "@voiceConsentIdentity": {
-    "description": "Consentement vocal (v3, EPIC-14) : données d’identité envoyées ou non aux fournisseurs d’IA"
+    "description": "Consentement voix v4 : pas de noms (V1 sans voix), adresse non conservée, pré-remplissage confirmé"
   },
   "voiceConsentScreen": "Vous pouvez à tout moment répondre à l’écran à la place.",
   "@voiceConsentScreen": {
@@ -4751,13 +4751,13 @@
   "@voiceSheetMicLabel": {
     "description": "Libellé d’accessibilité du micro qui ouvre la feuille vocale d’une étape"
   },
-  "surfacesDescriptionLabel": "Description (facultatif)",
+  "surfacesDescriptionLabel": "Notes complémentaires (facultatif)",
   "@surfacesDescriptionLabel": {
-    "description": "Fiche pièce (V5c) : libellé du champ de description libre de la pièce"
+    "description": "V5c · fiche pièce : notes complémentaires (colonne rooms.description, 600 caractères)"
   },
-  "surfacesDescriptionHint": "Ouverte sur la cuisine, cheminée, baie vitrée…",
+  "surfacesDescriptionHint": "Cheminée, placards, vue, travaux…",
   "@surfacesDescriptionHint": {
-    "description": "Fiche pièce (V5c) : exemple dans le champ de description"
+    "description": "V5c · fiche pièce : exemple de notes complémentaires"
   },
   "surfacesVoiceTitle": "Dictée des pièces",
   "@surfacesVoiceTitle": {
@@ -4812,18 +4812,6 @@
   "contextVoiceIntro": "Dites-moi le type de bien, l’année et le prix d’achat, la raison de la vente, et si une agence l’a déjà estimé.",
   "@contextVoiceIntro": {
     "description": "V3 : introduction de la feuille vocale de l’étape"
-  },
-  "ownersVoiceTitle": "Propriétaires à la voix",
-  "@ownersVoiceTitle": {
-    "description": "V1 : titre de la feuille vocale de l’étape"
-  },
-  "ownersVoiceIntro": "Êtes-vous seul propriétaire ? Sinon, dites-moi le prénom et le nom des autres propriétaires. Leur téléphone se saisit à l’écran.",
-  "@ownersVoiceIntro": {
-    "description": "V1 : introduction de la feuille vocale (noms des co-propriétaires dictables)"
-  },
-  "ownersVoiceIntroWithoutNames": "Êtes-vous seul propriétaire, ou plusieurs ? Les autres propriétaires se saisissent à l’écran.",
-  "@ownersVoiceIntroWithoutNames": {
-    "description": "V1 : introduction de la feuille vocale (sans dictée des noms)"
   },
   "ownersCoOwnerIncomplete": "À compléter : téléphone",
   "@ownersCoOwnerIncomplete": {
@@ -5158,9 +5146,9 @@
   "@photosSuggestionApply": {
     "description": "EPIC-15 · appliquer une suggestion"
   },
-  "photosSuggestionNote": "Ajouter",
+  "photosSuggestionNote": "Ajouter aux notes",
   "@photosSuggestionNote": {
-    "description": "EPIC-15 · ajouter un constat à la description"
+    "description": "EPIC-15 / EPIC-16 · ajouter un constat aux notes complémentaires de la pièce"
   },
   "photosSuggestionsNone": "Rien à changer : vos réponses correspondent aux photos.",
   "@photosSuggestionsNone": {
@@ -5565,5 +5553,138 @@
   "methodPlanRetry": "Relire le dernier plan",
   "@methodPlanRetry": {
     "description": "V5 · relire le plan déjà envoyé après un échec (EPIC-15)"
+  },
+  "voiceFirstWriteInstead": "Écrire plutôt",
+  "@voiceFirstWriteInstead": {
+    "description": "Voix prioritaire : bouton de l’en-tête de la feuille vocale, passe à l’écrit (mémorisé)"
+  },
+  "voiceFirstAnswerByVoice": "Répondre à la voix",
+  "@voiceFirstAnswerByVoice": {
+    "description": "Voix prioritaire : lien de la barre d’action en mode écrit, repasse en mode voix"
+  },
+  "voiceFirstContinueInWriting": "Continuer à l’écrit",
+  "@voiceFirstContinueInWriting": {
+    "description": "Voix prioritaire : ferme la feuille après plusieurs tours sans rien retenir (préférence inchangée)"
+  },
+  "voiceFirstPrefilledIntro": "J’ai déjà noté : {values}. C’est bien ça ? Dites oui, ou corrigez.",
+  "@voiceFirstPrefilledIntro": {
+    "description": "Voix prioritaire : intro de la feuille quand des valeurs pré-remplies attendent confirmation",
+    "placeholders": {
+      "values": {
+        "type": "String",
+        "example": "Construction 1998, Chauffage gaz"
+      }
+    }
+  },
+  "voiceFirstPrefilledConfirmed": "C’est confirmé.",
+  "@voiceFirstPrefilledConfirmed": {
+    "description": "Voix prioritaire : réplique locale après « oui » aux valeurs pré-remplies"
+  },
+  "voiceFirstMicDisabled": "Micro désactivé : vous pouvez répondre à l’écran.",
+  "@voiceFirstMicDisabled": {
+    "description": "Voix prioritaire : bandeau quand la permission du micro est refusée (une fois par session)"
+  },
+  "voiceStepLocation": "Adresse",
+  "@voiceStepLocation": {
+    "description": "Nom court de l’étape V2 (pastilles « Noté pour … »)"
+  },
+  "voiceStepContext": "Contexte",
+  "@voiceStepContext": {
+    "description": "Nom court de l’étape V3 (pastilles « Noté pour … »)"
+  },
+  "voiceStepTechnical": "Technique",
+  "@voiceStepTechnical": {
+    "description": "Nom court de l’étape V4b (pastilles « Noté pour … »)"
+  },
+  "voiceStepRooms": "Pièces",
+  "@voiceStepRooms": {
+    "description": "Nom court de l’étape V5c (pastilles « Noté pour … »)"
+  },
+  "voiceStepLifestyle": "Cadre de vie",
+  "@voiceStepLifestyle": {
+    "description": "Nom court de l’étape V6 (pastilles « Noté pour … »)"
+  },
+  "prefillNotedFor": "Noté pour {step} · {value}",
+  "@prefillNotedFor": {
+    "description": "Pré-remplissage : pastille d’une information dite pour une autre étape",
+    "placeholders": {
+      "step": {
+        "type": "String",
+        "example": "Technique"
+      },
+      "value": {
+        "type": "String",
+        "example": "Construction 1998"
+      }
+    }
+  },
+  "prefillUpdate": "Mettre à jour {step} · {change} ?",
+  "@prefillUpdate": {
+    "description": "Pré-remplissage : confirmation de mise à jour d’une étape déjà validée",
+    "placeholders": {
+      "step": {
+        "type": "String",
+        "example": "Contexte"
+      },
+      "change": {
+        "type": "String",
+        "example": "Prix d’achat : 300 000 € → 320 000 €"
+      }
+    }
+  },
+  "prefillAddTo": "Ajouter à {step} · {value} ?",
+  "@prefillAddTo": {
+    "description": "Pré-remplissage : confirmation d’ajout à une étape déjà validée (champ vide)",
+    "placeholders": {
+      "step": {
+        "type": "String",
+        "example": "Contexte"
+      },
+      "value": {
+        "type": "String",
+        "example": "Achat 2012"
+      }
+    }
+  },
+  "prefillToConfirm": "À confirmer",
+  "@prefillToConfirm": {
+    "description": "Pré-remplissage : badge d’une valeur dite à une autre étape, pas encore confirmée"
+  },
+  "prefillNotePrefix": "Note : ",
+  "@prefillNotePrefix": {
+    "description": "Pré-remplissage : préfixe d’une note dans sa pastille"
+  },
+  "stepNotesLabel": "Notes complémentaires (facultatif)",
+  "@stepNotesLabel": {
+    "description": "Notes complémentaires d’une étape : libellé du champ"
+  },
+  "stepNotesHint": "Tout ce qui n’a pas de case prévue, pour l’expert",
+  "@stepNotesHint": {
+    "description": "Notes complémentaires d’une étape : indication du champ"
+  },
+  "methodVoiceRecommended": "Recommandé",
+  "@methodVoiceRecommended": {
+    "description": "V5 · badge de la carte « Dicter mes pièces » en mode voix (EPIC-16)"
+  },
+  "documentsPendingTitle": "{count, plural, =1{Information dictée à confirmer (1)} other{Informations dictées à confirmer ({count})}}",
+  "@documentsPendingTitle": {
+    "description": "V7 · carte des réponses dites pour une étape et pas encore confirmées (EPIC-16)",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "documentsPendingHint": "Vous pouvez envoyer votre dossier sans les confirmer : elles ne seront pas appliquées.",
+  "@documentsPendingHint": {
+    "description": "V7 · carte des réponses à confirmer : l’envoi reste possible"
+  },
+  "documentsPendingSee": "Voir",
+  "@documentsPendingSee": {
+    "description": "V7 · carte des réponses à confirmer : ouvrir l’étape concernée"
+  },
+  "summaryStepNotes": "Notes complémentaires",
+  "@summaryStepNotes": {
+    "description": "V8 · aperçu du dossier : notes complémentaires d’une étape ou d’une pièce (EPIC-16)"
   }
 }

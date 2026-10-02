@@ -262,4 +262,35 @@ void main() {
       findsOne,
     );
   });
+
+  testWidgets('EPIC-16: the notes of each step', (tester) async {
+    await pump(
+      tester,
+      const SellerTunnelState(
+        status: SellerTunnelStatus.success,
+        property: Property(
+          id: _id,
+          ownerId: 'u',
+          propertyType: PropertyType.house,
+          stepNotes: {
+            'location': 'Terrain en pente',
+            'context': 'Vendu meublé',
+            'technical': 'Grenier aménageable',
+            'rooms': 'Combles isolés',
+            'lifestyle': 'Marché le samedi',
+          },
+        ),
+      ),
+    );
+    expect(find.text('Notes complémentaires'), findsNWidgets(5));
+    for (final note in [
+      'Terrain en pente',
+      'Vendu meublé',
+      'Grenier aménageable',
+      'Combles isolés',
+      'Marché le samedi',
+    ]) {
+      expect(find.text(note), findsOneWidget);
+    }
+  });
 }

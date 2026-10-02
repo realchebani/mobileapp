@@ -99,8 +99,56 @@ void main() {
     });
   });
 
+  test('EPIC-16: the origin of a saved value is its last turn', () async {
+    final at = DateTime.utc(2026, 10, 2);
+    final form = VoiceFormTest();
+    expect(form.confirmPrefilled(), isFalse);
+    await form.voiceTurnApplied(
+      const AgentTurn(
+        turnId: 't1',
+        transcript: '',
+        reply: '',
+        patch: {
+          'construction_year': 1998,
+          'heating_systems': ['gaz', 'pac'],
+        },
+      ),
+    );
+    await form.voiceTurnApplied(
+      const AgentTurn(
+        turnId: 't2#c1',
+        transcript: '',
+        reply: '',
+        patch: {'construction_year': 1999},
+      ),
+    );
+    expect(
+      form.voiceSourceOf('construction_year', 1999, at),
+      FieldSource(
+        kind: FieldSourceKind.dictated,
+        at: at,
+        turnId: 't2',
+        evidenceKey: 'construction_year',
+      ),
+    );
+    // Changed since: typed.
+    expect(form.voiceSourceOf('construction_year', 2000, at), isNull);
+    // Lists as sets, enums as their value.
+    expect(
+      form.voiceSourceOf('heating_systems', [
+        HeatingSystem.heatPump,
+        HeatingSystem.gas,
+      ], at)?.turnId,
+      't1',
+    );
+    expect(form.voiceSourceOf('roof_year', 2010, at), isNull);
+    expect(sameStoredValue(12.0, 12.001), isTrue);
+    expect(sameStoredValue(['a'], ['a', 'b']), isFalse);
+    expect(sameStoredValue('', null), isTrue);
+  });
+
   test('agentStepOf', () {
-    expect(agentStepOf(SellerTunnelStep.owners), AgentStep.owners);
+    expect(agentStepOf(SellerTunnelStep.owners), isNull);
     expect(agentStepOf(SellerTunnelStep.location), AgentStep.location);
     expect(agentStepOf(SellerTunnelStep.context), AgentStep.context);
     expect(agentStepOf(SellerTunnelStep.technical), AgentStep.technical);

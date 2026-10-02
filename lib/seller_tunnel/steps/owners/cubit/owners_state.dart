@@ -18,7 +18,6 @@ final class OwnersState extends Equatable {
     this.showErrors = false,
     this.submitAttempts = 0,
     this.submittedOwnershipType,
-    this.dictated = const {},
   });
 
   /// Unset until the user picks a card.
@@ -49,17 +48,12 @@ final class OwnersState extends Equatable {
   /// The ownership type when the last submission started: the one saved.
   final OwnershipType? submittedOwnershipType;
 
-  /// What was answered by voice on this visit ("Dicté"): the ownership
-  /// type and the dictated co-owners (`co_owner:<full name>`).
-  final Set<String> dictated;
-
   bool get isMultiple => ownershipType == OwnershipType.multiple;
 
   bool get isSubmitting => submitStatus == OwnersSubmitStatus.inProgress;
 
   /// Whether "Continuer" is enabled: ownership chosen, owner 1 valid and,
-  /// with several owners, at least one co-owner, each complete (a dictated
-  /// co-owner still needs a phone number, typed on screen).
+  /// with several owners, at least one co-owner, each complete.
   bool get isValid =>
       ownershipType != null &&
       owner.isValid(emailRequired: true) &&
@@ -100,7 +94,6 @@ final class OwnersState extends Equatable {
     bool? showErrors,
     int? submitAttempts,
     OwnershipType? submittedOwnershipType,
-    Set<String>? dictated,
   }) {
     return OwnersState(
       ownershipType: ownershipType ?? this.ownershipType,
@@ -113,7 +106,6 @@ final class OwnersState extends Equatable {
       submitAttempts: submitAttempts ?? this.submitAttempts,
       submittedOwnershipType:
           submittedOwnershipType ?? this.submittedOwnershipType,
-      dictated: dictated ?? this.dictated,
     );
   }
 
@@ -128,6 +120,5 @@ final class OwnersState extends Equatable {
     showErrors,
     submitAttempts,
     submittedOwnershipType,
-    dictated,
   ];
 }

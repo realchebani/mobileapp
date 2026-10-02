@@ -18,15 +18,36 @@ part 'property_context_state.dart';
 /// answers and estimate cards.
 class PropertyContextCubit extends Cubit<PropertyContextState>
     with VoiceFormMixin<PropertyContextState> {
+  /// [property] may hold answers pre-filled « À confirmer », and
+  /// [pendingEstimates] the estimates said on another step (EPIC-16): they
+  /// start as cards.
   new({
     required this._propertyRepository,
     required Property property,
     List<PreviousEstimate> estimates = const [],
+    List<PendingAnswer> pendingEstimates = const [],
     DateTime? today,
+    DateTime Function()? clock,
   }) : _propertyId = property.id,
        _saved = estimates,
-       _nextKey = estimates.length + 1,
-       super(_initialState(property, estimates, today ?? DateTime.now()));
+       _pending = {for (final answer in pendingEstimates) answer.id: answer},
+       _clock = clock ?? DateTime.now,
+       _nextKey = estimates.length + pendingEstimates.length + 1,
+       super(
+         _initialState(
+           property,
+           estimates,
+           pendingEstimates,
+           today ?? DateTime.now(),
+         ),
+       );
+
+  /// Pending estimates of the cards, by id.
+  final Map<String, PendingAnswer> _pending;
+  final DateTime Function() _clock;
+
+  /// The turn (and operation) that filled each card by voice, by card key.
+  final Map<int, (String, int)> _origins = {};
 
   final PropertyRepository _propertyRepository;
   final String _propertyId;
@@ -43,11 +64,13 @@ class PropertyContextCubit extends Cubit<PropertyContextState>
   static PropertyContextState _initialState(
     Property property,
     List<PreviousEstimate> estimates,
+    List<PendingAnswer> pending,
     DateTime today,
   ) {
     final purchasePrice = property.purchasePriceEur;
     final previouslyEstimated =
-        property.previouslyEstimated ?? (estimates.isEmpty ? null : true);
+        property.previouslyEstimated ??
+        (estimates.isEmpty && pending.isEmpty ? null : true);
     return PropertyContextState(
       today: today,
       propertyType: property.propertyType,
@@ -72,7 +95,11 @@ class PropertyContextCubit extends Cubit<PropertyContextState>
                 : PropertyContextState.formatMonth(estimate.estimatedMonth!),
             agency: estimate.agencyName ?? '',
           ),
-        if (estimates.isEmpty && (previouslyEstimated ?? false))
+        for (final (index, answer) in pending.indexed)
+          _pendingDraft(estimates.length + index, answer),
+        if (estimates.isEmpty &&
+            pending.isEmpty &&
+            (previouslyEstimated ?? false))
           const EstimateDraft(key: 0),
       ],
     );
@@ -169,7 +196,10 @@ class PropertyContextCubit extends Cubit<PropertyContextState>
 
   /// "Continuer": shows the errors, or saves the previous estimates (the
   /// cards when the answer is "Oui", none otherwise).
-  Future<void> submit() async {
+  ///
+  /// [confirmed]: the pending answers the seller confirmed by « oui »
+  /// (EPIC-16).
+  Future<void> submit({Set<String> confirmed = const {}}) async {
     if (state.submission == PropertyContextSubmission.inProgress) return;
     if (!state.isValid) {
       emit(
@@ -202,10 +232,9 @@ class PropertyContextCubit extends Cubit<PropertyContextState>
       }
       final saved = <PreviousEstimate>[];
       for (final draft in drafts) {
-        final estimate = _estimateOf(draft);
-        final stored = _saved.where(
-          (e) => estimate.id != null && e.id == estimate.id,
-        );
+        final id = _idOf(draft);
+        final stored = _saved.where((e) => id != null && e.id == id);
+        final estimate = _estimateOf(draft, stored.firstOrNull, confirmed);
         if (stored.isNotEmpty && stored.first == estimate) {
           saved.add(stored.first);
           continue;
@@ -226,6 +255,7 @@ class PropertyContextCubit extends Cubit<PropertyContextState>
         state.copyWith(
           estimates: _withIds(drafts),
           savedEstimates: saved,
+          estimateResolutions: _resolutions(drafts, confirmed),
           submission: PropertyContextSubmission.success,
         ),
       );
@@ -334,7 +364,7 @@ class PropertyContextCubit extends Cubit<PropertyContextState>
       for (final draft in state.estimates) 'key:${draft.key}': draft,
     };
     var estimates = [...next.estimates];
-    for (final op in turn.entityOps) {
+    for (final (opIndex, op) in turn.entityOps.indexed) {
       if (op.entity != AgentEntity.previousEstimate) continue;
       final values = op.values;
       final price = values['price_eur'];
@@ -350,6 +380,7 @@ class PropertyContextCubit extends Cubit<PropertyContextState>
             ? draft.month
             : PropertyContextState.formatMonth(month),
         agency: agency ?? draft.agency,
+        pendingId: draft.pendingId,
       );
       if (op.op == AgentEntityOp.create) {
         // An empty card opened by "Oui" is filled first.
@@ -365,6 +396,7 @@ class PropertyContextCubit extends Cubit<PropertyContextState>
           estimates = [...estimates]..[empty] = card;
         }
         dictated.add('estimate:${card.key}');
+        _origins[card.key] = (turn.turnId, opIndex);
         next = next.copyWith(previouslyEstimated: true);
         continue;
       }
@@ -380,12 +412,57 @@ class PropertyContextCubit extends Cubit<PropertyContextState>
       final card = filled(estimates[index]);
       estimates = [...estimates]..[index] = card;
       dictated.add('estimate:${card.key}');
+      _origins[card.key] = (turn.turnId, opIndex);
     }
     // "Oui" without an estimate said opens a first card, like on screen.
     if ((next.previouslyEstimated ?? false) && estimates.isEmpty) {
       estimates = [EstimateDraft(key: _nextKey++)];
     }
     return next.copyWith(estimates: estimates, dictated: dictated);
+  }
+
+  /// The card of an estimate said on another step.
+  static EstimateDraft _pendingDraft(int key, PendingAnswer answer) {
+    final values = answer.values;
+    final price = values['price_eur'];
+    final month = DateTime.tryParse('${values['estimated_month']}');
+    return EstimateDraft(
+      key: key,
+      price: price is num ? frenchNumber(price.toInt()) : '',
+      month: month == null ? '' : PropertyContextState.formatMonth(month),
+      agency: values['agency_name'] as String? ?? '',
+      pendingId: answer.id,
+    );
+  }
+
+  /// Whether [draft] still holds the estimate said on another step.
+  bool _keepsPending(EstimateDraft draft) {
+    final answer = _pending[draft.pendingId];
+    if (answer == null) return false;
+    return _pendingDraft(draft.key, answer) == draft;
+  }
+
+  /// The resolution of the pending estimates once [drafts] are saved:
+  /// kept as said (accepted), changed or removed (rejected).
+  Map<PendingResolution, List<String>> _resolutions(
+    List<EstimateDraft> drafts,
+    Set<String> confirmed,
+  ) {
+    final resolutions = <PendingResolution, List<String>>{};
+    for (final id in _pending.keys) {
+      final draft = drafts.where((d) => d.pendingId == id).firstOrNull;
+      final resolution = draft == null
+          ? PendingResolution.erased
+          : !_keepsPending(draft)
+          ? state.dictated.contains('estimate:${draft.key}')
+                ? PendingResolution.replaced
+                : PendingResolution.modified
+          : confirmed.contains(id)
+          ? PendingResolution.yes
+          : PendingResolution.continueTapped;
+      (resolutions[resolution] ??= []).add(id);
+    }
+    return resolutions;
   }
 
   /// Id of the row of [draft]: loaded, or saved by a previous submission.
@@ -395,14 +472,78 @@ class PropertyContextCubit extends Cubit<PropertyContextState>
     for (final draft in drafts) draft.withId(_idOf(draft)),
   ];
 
-  PreviousEstimate _estimateOf(EstimateDraft draft) {
+  /// The row of [draft]; [stored] is its saved row (kept as is when the
+  /// card did not change), [confirmed] the pending answers confirmed by
+  /// « oui » (EPIC-16: the origin of each value, `field_sources`).
+  PreviousEstimate _estimateOf(
+    EstimateDraft draft,
+    PreviousEstimate? stored,
+    Set<String> confirmed,
+  ) {
     final agency = draft.agency.trim();
-    return PreviousEstimate(
+    final values = PreviousEstimate(
       id: _idOf(draft),
       propertyId: _propertyId,
       priceEur: PropertyContextState.parseDigits(draft.price)!,
       estimatedMonth: PropertyContextState.parseMonth(draft.month),
       agencyName: agency.isEmpty ? null : agency,
+    );
+    if (stored != null &&
+        stored.priceEur == values.priceEur &&
+        stored.estimatedMonth == values.estimatedMonth &&
+        stored.agencyName == values.agencyName) {
+      return stored;
+    }
+    final now = _clock();
+    final pending = _keepsPending(draft) ? _pending[draft.pendingId] : null;
+    final origin = _origins[draft.key];
+    final dictated =
+        state.dictated.contains('estimate:${draft.key}') && origin != null;
+    FieldSource sourceOf(String column) {
+      if (pending != null) {
+        return FieldSource(
+          kind: FieldSourceKind.dictatedElsewhere,
+          at: now,
+          turnId: pending.turnId,
+          pendingId: pending.id,
+          confirmation: confirmed.contains(pending.id)
+              ? FieldConfirmation.yes
+              : FieldConfirmation.continueTapped,
+        );
+      }
+      if (dictated) {
+        final (turnId, index) = origin;
+        final [turn, ...confirmation] = turnId.split('#');
+        return FieldSource(
+          kind: FieldSourceKind.dictated,
+          at: now,
+          turnId: turn,
+          evidenceKey: [...confirmation, 'op:$index.$column'].join('.'),
+        );
+      }
+      return FieldSource.typed(now);
+    }
+
+    final changed = <String>[
+      if (stored?.priceEur != values.priceEur) 'price_eur',
+      if (stored?.estimatedMonth != values.estimatedMonth &&
+          values.estimatedMonth != null)
+        'estimated_month',
+      if (stored?.agencyName != values.agencyName && values.agencyName != null)
+        'agency_name',
+    ];
+    return PreviousEstimate(
+      id: values.id,
+      propertyId: _propertyId,
+      priceEur: values.priceEur,
+      estimatedMonth: values.estimatedMonth,
+      agencyName: values.agencyName,
+      source: pending != null || dictated
+          ? EstimateSource.voice
+          : stored?.source ?? EstimateSource.manual,
+      fieldSources: mergeFieldSourceMaps(stored?.fieldSources ?? const {}, {
+        for (final column in changed) column: sourceOf(column),
+      }),
     );
   }
 }

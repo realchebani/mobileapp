@@ -23,8 +23,31 @@ abstract interface class VoiceForm {
   void undoVoiceTurnsFrom(int index);
 
   /// What the sheet sends with each turn: the draft of the step's columns,
-  /// its rooms, estimates or co-owners.
+  /// its rooms or estimates.
   AgentTurnContext get voiceContext;
+
+  /// « Oui » said while no confirmation is waiting (EPIC-16): confirms the
+  /// values pre-filled « À confirmer » on the step; false when there is
+  /// none.
+  bool confirmPrefilled();
+}
+
+/// Where the voice sheet sends what was said for other steps (EPIC-16):
+/// the tunnel keeps the pending answers and resolves them.
+abstract interface class VoicePendingSink {
+  /// The pending answers recorded by a turn, and those they replaced.
+  void pendingRecorded(List<AgentCrossStep> items, List<String> supersededIds);
+
+  /// Whether [step] was already validated (before the resume point): its
+  /// values are proposed as an update.
+  bool isStepValidated(AgentStep step);
+
+  /// « Oui » to the update of a validated step: saves it at once; false
+  /// when the save failed.
+  Future<bool> acceptPendingUpdate(String id);
+
+  /// « Non » to an update, or the cross of a « Noté pour … » pill.
+  Future<void> rejectPending(String id, {required bool cancelled});
 }
 
 /// [VoiceForm] for a step cubit: implement [applyVoiceTurn] (pure: the
@@ -39,6 +62,27 @@ mixin VoiceFormMixin<S> on Cubit<S> implements VoiceForm {
 
   /// Whether a turn can change the draft now (not while saving).
   bool get acceptsVoice => true;
+
+  @override
+  bool confirmPrefilled() => false;
+
+  /// The origin of [column] when it is saved with [value] (as stored): the
+  /// last turn that gave it, when the value is still the one said (EPIC-16,
+  /// `field_sources`); null when it was typed (or changed since).
+  FieldSource? voiceSourceOf(String column, Object? value, DateTime at) {
+    for (final (turn, _) in _voiceTurns.reversed) {
+      if (!turn.patch.containsKey(column)) continue;
+      if (!sameStoredValue(turn.patch[column], value)) return null;
+      return FieldSource(
+        kind: FieldSourceKind.dictated,
+        at: at,
+        // A confirmed change ("t1#c1") belongs to its agent turn.
+        turnId: turn.turnId.split('#').first,
+        evidenceKey: column,
+      );
+    }
+    return null;
+  }
 
   /// [turn] with its short references (R1, E2…, valid for the draft the
   /// agent saw: [state]) turned into stable ids, so that replaying it
@@ -89,7 +133,7 @@ mixin VoiceFormMixin<S> on Cubit<S> implements VoiceForm {
 
 /// The agent step of a tunnel screen with a voice sheet.
 AgentStep? agentStepOf(SellerTunnelStep step) => switch (step) {
-  SellerTunnelStep.owners => AgentStep.owners,
+  SellerTunnelStep.owners => null,
   SellerTunnelStep.location => AgentStep.location,
   SellerTunnelStep.context => AgentStep.context,
   SellerTunnelStep.technical => AgentStep.technical,
@@ -110,3 +154,15 @@ Object? _encode(Object? value) => switch (value) {
   final DbEnum item => item.value,
   _ => value,
 };
+
+/// Whether two stored values are the same answer: lists as sets, numbers
+/// to the cent, enums as their stored value.
+bool sameStoredValue(Object? a, Object? b) {
+  final left = _encode(a);
+  final right = _encode(b);
+  if (left is List && right is List) {
+    return left.length == right.length && left.every(right.contains);
+  }
+  if (left is num && right is num) return (left - right).abs() < 0.005;
+  return left == right;
+}

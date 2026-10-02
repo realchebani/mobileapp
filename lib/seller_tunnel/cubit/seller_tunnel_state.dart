@@ -19,6 +19,7 @@ final class SellerTunnelState extends Equatable {
     this.rooms = const [],
     this.lifestyleItems = const [],
     this.documents = const [],
+    this.pendingAnswers = const [],
     this.nextStep,
     this.continuedFrom,
     this.notFound = false,
@@ -36,6 +37,9 @@ final class SellerTunnelState extends Equatable {
   final List<Room> rooms;
   final List<LifestyleItem> lifestyleItems;
   final List<PropertyDocument> documents;
+
+  /// Values said by voice for a step and not confirmed yet (EPIC-16).
+  final List<PendingAnswer> pendingAnswers;
 
   /// Screen to open after a successful `saveAndContinue`; only set on that
   /// success state ([copyWith] resets it and [continuedFrom]).
@@ -90,6 +94,59 @@ final class SellerTunnelState extends Equatable {
 
   bool get isSaving => saveStatus == SellerTunnelSaveStatus.inProgress;
 
+  /// Whether [step] was validated (the dossier resumes after it).
+  bool isValidated(SellerTunnelStep step) {
+    final property = this.property;
+    return property != null &&
+        profile.includes(step) &&
+        step.number < property.currentStep;
+  }
+
+  /// The pending answers shown « À confirmer » on [step] (V5 and V5c share
+  /// the rooms); a column this type does not ask, or whose saved value is
+  /// already the one said, is hidden.
+  List<PendingAnswer> pendingFor(SellerTunnelStep step) {
+    final target = pendingTargetOf(step);
+    if (target == null) return const [];
+    return [
+      for (final answer in visiblePending)
+        if (answer.targetStep == target) answer,
+    ];
+  }
+
+  /// Every pending answer still to confirm (V7 card).
+  List<PendingAnswer> get visiblePending {
+    final row = property?.toJson() ?? const <String, Object?>{};
+    return [
+      for (final answer in pendingAnswers)
+        if (answer.kind != PendingKind.field ||
+            (profile.prefills(answer.field!) &&
+                !sameStoredValue(row[answer.field], answer.value)))
+          answer,
+    ];
+  }
+
+  /// The `pending_answers.target_step` of [step], or null (no voice).
+  static String? pendingTargetOf(SellerTunnelStep step) => switch (step) {
+    SellerTunnelStep.location => 'location',
+    SellerTunnelStep.context => 'context',
+    SellerTunnelStep.technical => 'technical',
+    SellerTunnelStep.method || SellerTunnelStep.surfaces => 'rooms',
+    SellerTunnelStep.lifestyle => 'lifestyle',
+    SellerTunnelStep.owners ||
+    SellerTunnelStep.documents ||
+    SellerTunnelStep.submitted => null,
+  };
+
+  /// The tunnel screen of a pending answer's target step.
+  static SellerTunnelStep stepOfTarget(String target) => switch (target) {
+    'location' => SellerTunnelStep.location,
+    'context' => SellerTunnelStep.context,
+    'technical' => SellerTunnelStep.technical,
+    'rooms' => SellerTunnelStep.surfaces,
+    _ => SellerTunnelStep.lifestyle,
+  };
+
   SellerTunnelState copyWith({
     SellerTunnelStatus? status,
     SellerTunnelSaveStatus? saveStatus,
@@ -100,6 +157,7 @@ final class SellerTunnelState extends Equatable {
     List<Room>? rooms,
     List<LifestyleItem>? lifestyleItems,
     List<PropertyDocument>? documents,
+    List<PendingAnswer>? pendingAnswers,
     SellerTunnelStep? nextStep,
     SellerTunnelStep? continuedFrom,
   }) {
@@ -113,6 +171,7 @@ final class SellerTunnelState extends Equatable {
       rooms: rooms ?? this.rooms,
       lifestyleItems: lifestyleItems ?? this.lifestyleItems,
       documents: documents ?? this.documents,
+      pendingAnswers: pendingAnswers ?? this.pendingAnswers,
       nextStep: nextStep,
       continuedFrom: continuedFrom,
     );
@@ -129,6 +188,7 @@ final class SellerTunnelState extends Equatable {
     rooms,
     lifestyleItems,
     documents,
+    pendingAnswers,
     nextStep,
     continuedFrom,
     notFound,

@@ -31,6 +31,11 @@ void main() {
                 coOwner: OwnerDraft(firstName: 'Léa', lastName: 'Roy'),
                 onEdit: null,
               ),
+              const CoOwnerCard(
+                coOwner: OwnerDraft(firstName: 'Jo', lastName: 'Lee'),
+                onEdit: null,
+                incomplete: true,
+              ),
             ],
           ),
         ),
@@ -43,6 +48,7 @@ void main() {
         findsOneWidget,
       );
       expect(find.text('Co-propriétaire'), findsOneWidget);
+      expect(find.text('Jo Lee'), findsOneWidget);
       await tester.tap(find.bySemanticsLabel('Modifier Marc Durand'));
       expect(edited, 1);
     });

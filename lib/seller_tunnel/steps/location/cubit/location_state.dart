@@ -215,6 +215,9 @@ final class LocationState extends Equatable {
     };
   }
 
+  /// The columns of the address (from the address base once chosen).
+  static const List<String> addressColumns = _addressColumns;
+
   static const List<String> _addressColumns = [
     PropertyColumns.addressLabel,
     PropertyColumns.addressHousenumber,

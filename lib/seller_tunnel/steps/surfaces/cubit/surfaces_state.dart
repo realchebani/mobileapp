@@ -16,6 +16,8 @@ final class SurfacesState extends Equatable {
     this.lastDictatedId,
     this.savingRoomId,
     this.photosRoom,
+    this.toConfirm = const {},
+    this.pendingResolutions = const {},
   });
 
   /// The rooms of the table, in order (each has its id, even before it is
@@ -46,6 +48,14 @@ final class SurfacesState extends Equatable {
   /// The stored row of the room whose photos open (after
   /// `SurfacesCubit.preparePhotos`), or null when it could not be written.
   final Room? photosRoom;
+
+  /// The rooms said on another step and not confirmed nor changed yet
+  /// (EPIC-16, « À confirmer »): room id → pending answer id.
+  final Map<String, String> toConfirm;
+
+  /// The pending rooms, resolved by the last submission: closed once the
+  /// step is saved.
+  final Map<PendingResolution, List<String>> pendingResolutions;
 
   /// Photos of all the rooms (EPIC-15).
   int get photosCount => rooms.fold(0, (sum, room) => sum + room.photosCount);
@@ -109,6 +119,8 @@ final class SurfacesState extends Equatable {
     String? Function()? lastDictatedId,
     String? Function()? savingRoomId,
     Room? Function()? photosRoom,
+    Map<String, String>? toConfirm,
+    Map<PendingResolution, List<String>>? pendingResolutions,
   }) {
     return SurfacesState(
       rooms: rooms ?? this.rooms,
@@ -122,6 +134,8 @@ final class SurfacesState extends Equatable {
           : lastDictatedId(),
       savingRoomId: savingRoomId == null ? this.savingRoomId : savingRoomId(),
       photosRoom: photosRoom == null ? this.photosRoom : photosRoom(),
+      toConfirm: toConfirm ?? this.toConfirm,
+      pendingResolutions: pendingResolutions ?? this.pendingResolutions,
     );
   }
 
@@ -136,5 +150,7 @@ final class SurfacesState extends Equatable {
     lastDictatedId,
     savingRoomId,
     photosRoom,
+    toConfirm,
+    pendingResolutions,
   ];
 }
