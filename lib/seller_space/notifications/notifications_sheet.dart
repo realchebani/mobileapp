@@ -17,6 +17,8 @@ Future<void> showNotificationsSheet(BuildContext context) async {
   unawaited(cubit.load());
   final route = await showModalBottomSheet<String>(
     context: context,
+    // Above the tab bar.
+    useRootNavigator: true,
     isScrollControlled: true,
     useSafeArea: true,
     backgroundColor: context.realestyColors.ivoire,

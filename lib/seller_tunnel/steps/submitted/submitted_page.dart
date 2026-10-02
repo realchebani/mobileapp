@@ -1,11 +1,7 @@
-import 'dart:async';
-
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:mobileapp/l10n/l10n.dart';
 import 'package:mobileapp/seller_tunnel/cubit/seller_tunnel_cubit.dart';
-import 'package:mobileapp/seller_tunnel/steps/submitted/cubit/notification_preference_cubit.dart';
-import 'package:mobileapp/seller_tunnel/steps/submitted/data/notification_preference_store.dart';
 import 'package:mobileapp/seller_tunnel/steps/submitted/widgets/ai_estimate_card.dart';
 import 'package:mobileapp/seller_tunnel/steps/submitted/widgets/dossier_summary_sheet.dart';
 import 'package:mobileapp/seller_tunnel/steps/submitted/widgets/submitted_format.dart';
@@ -17,45 +13,13 @@ import 'package:property_repository/property_repository.dart';
 
 /// V8 · Attente de validation expert: confirmation once the dossier is
 /// sent, AI trend (when computed), expert review timeline (from `status`
-/// and `submitted_at`) and notification preference. Read-only: works for
-/// submitted, in_review and certified dossiers.
+/// and `submitted_at`) and a note that the seller is notified in the app.
+/// Read-only: works for submitted, in_review and certified dossiers.
 class SubmittedPage extends StatelessWidget {
-  const new({this.notificationStore, super.key});
-
-  /// Where the notification choice is kept (device preferences by default).
-  final NotificationPreferenceStore? notificationStore;
+  const new({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final tunnel = context.read<SellerTunnelCubit>();
-    final property = tunnel.state.property!;
-    // The dossier can only be written while it is open (RLS); once locked,
-    // the device preference is the only record of the choice.
-    final isOpen =
-        property.status == PropertyStatus.draft ||
-        property.status == PropertyStatus.submitted;
-    return BlocProvider(
-      create: (_) {
-        final cubit = NotificationPreferenceCubit(
-          store: notificationStore ?? NotificationPreferenceStore(),
-          propertyId: property.id,
-          initialValue: property.notifyPush,
-          saveRemote: isOpen
-              ? ({required enabled}) async {
-                  // A failure shows the tunnel save-error snackbar
-                  // (SellerTunnelGate).
-                  await tunnel.save({PropertyColumns.notifyPush: enabled});
-                  return tunnel.state.saveStatus ==
-                      SellerTunnelSaveStatus.success;
-                }
-              : null,
-        );
-        unawaited(cubit.load());
-        return cubit;
-      },
-      child: const SubmittedView(),
-    );
-  }
+  Widget build(BuildContext context) => const SubmittedView();
 }
 
 class SubmittedView extends StatelessWidget {
@@ -253,53 +217,27 @@ class _Card extends StatelessWidget {
   }
 }
 
-/// "Me prévenir par notification": a device preference in v1, see
-/// `NotificationPreferenceStore`. Notifications are in-app only (no push,
-/// no e-mail: decisions 2026-10-01).
+/// The seller is notified in the app (automatic: no setting; no push and no
+/// e-mail, decisions 2026-10-01).
 class _NotificationRow extends StatelessWidget {
   const new();
 
   @override
   Widget build(BuildContext context) {
-    final l10n = context.l10n;
     final c = context.realestyColors;
-    final enabled = context.watch<NotificationPreferenceCubit>().state;
-    return MergeSemantics(
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(
-          minHeight: RealestySpacing.minTouchTarget,
-        ),
-        child: Row(
-          spacing: RealestySpacing.sm,
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    l10n.submittedNotifyTitle,
-                    style: RealestyTextStyles.listTitle.copyWith(
-                      color: c.encre,
-                    ),
-                  ),
-                  Text(
-                    l10n.submittedNotifyInApp,
-                    style: RealestyTextStyles.listSubtitle.copyWith(
-                      color: c.texteDiscret,
-                    ),
-                  ),
-                ],
-              ),
+    return Row(
+      spacing: RealestySpacing.sm,
+      children: [
+        RealestyIcon(RealestyIcons.bell, color: c.vertTexte),
+        Expanded(
+          child: Text(
+            context.l10n.submittedNotifyInApp,
+            style: RealestyTextStyles.listSubtitle.copyWith(
+              color: c.texteDiscret,
             ),
-            Switch(
-              value: enabled,
-              onChanged: (value) => context
-                  .read<NotificationPreferenceCubit>()
-                  .toggled(enabled: value),
-            ),
-          ],
+          ),
         ),
-      ),
+      ],
     );
   }
 }

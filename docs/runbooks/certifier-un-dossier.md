@@ -5,7 +5,7 @@ En attendant le back-office web des experts (EPIC-12), l’équipe Realesty cert
 ## 1. Trouver le dossier
 
 ```sql
-select p.id, p.status, p.submitted_at, p.address_label, p.living_area_m2,
+select p.id, p.owner_id, p.status, p.submitted_at, p.address_label, p.living_area_m2,
        p.ai_estimate_median_eur, pr.first_name
 from public.properties p
 left join public.profiles pr on pr.id = p.owner_id
@@ -113,8 +113,16 @@ select public.staff_attach_valuation_report(
 );
 ```
 
+La fonction refuse un chemin qui ne commence pas par `<owner id>/<property id>/` de l’avis de valeur, ou un fichier absent du bucket : déposer le PDF d’abord, au bon endroit.
+
 Le bouton « Télécharger le rapport (PDF · 11 pages) » apparaît alors sur V9b.
 
 ## Corriger une erreur
 
-Une certification ne se modifie pas depuis l’application. Pour corriger un avis de valeur, mettre à jour la ligne `public.valuations` concernée dans le SQL Editor (l’application lit toujours le plus récent, par `certified_at`). Pour annuler une certification faite par erreur : supprimer la ligne `valuations` et la notification correspondante, puis remettre le dossier à `in_review`.
+Une certification ne se modifie pas depuis l’application. Pour corriger un avis de valeur, mettre à jour la ligne `public.valuations` concernée dans le SQL Editor (l’application lit toujours le plus récent, par `certified_at`).
+
+Pour annuler une certification faite par erreur :
+1. supprimer la ligne `valuations` ;
+2. supprimer le PDF éventuel dans **Storage → valuation-reports** (`<owner id>/<property id>/…`) ;
+3. supprimer les notifications du dossier (`delete from public.notifications where property_id = '<property id>' and kind in ('valuation_certified', 'review_started');`, la seconde seulement si le dossier n’a pas vraiment été pris en examen) ;
+4. remettre le dossier à `in_review` (`update public.properties set status = 'in_review' where id = '<property id>';`).

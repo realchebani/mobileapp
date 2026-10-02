@@ -3,19 +3,15 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:mobileapp/app/app.dart';
 import 'package:mobileapp/seller_tunnel/seller_tunnel.dart';
-import 'package:mobileapp/seller_tunnel/steps/submitted/data/notification_preference_store.dart';
 import 'package:mobileapp/seller_tunnel/steps/submitted/widgets/ai_estimate_card.dart';
 import 'package:mobileapp/seller_tunnel/steps/submitted/widgets/dossier_summary_sheet.dart';
 import 'package:mobileapp/seller_tunnel/steps/submitted/widgets/submitted_timeline.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:property_repository/property_repository.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../helpers/helpers.dart';
 
 const nb = '\u00a0';
-
-class _MockStore extends Mock implements NotificationPreferenceStore;
 
 const _owner = PropertyOwner(
   propertyId: 'property-id',
@@ -26,15 +22,6 @@ const _owner = PropertyOwner(
 );
 
 void main() {
-  late _MockStore store;
-
-  setUp(() {
-    store = _MockStore();
-    when(() => store.read(any())).thenAnswer((_) async => null);
-    when(() => store.write(any(), enabled: any(named: 'enabled')))
-        .thenAnswer((_) async {});
-  });
-
   Future<void> pump(
     WidgetTester tester, {
     Property property = const Property(
@@ -49,7 +36,7 @@ void main() {
   }) async {
     usePhoneSurface();
     await tester.pumpTunnelPage(
-      SubmittedPage(notificationStore: store),
+      const SubmittedPage(),
       sellerTunnelCubit:
           cubit ??
           mockSellerTunnelCubit(
@@ -128,10 +115,10 @@ void main() {
       TimelineNodeState.current,
       TimelineNodeState.todo,
     ]);
-    expect(find.byType(Switch), findsOne);
+    expect(find.text('Vous serez prévenu(e) dans l’application.'), findsOne);
   });
 
-  testWidgets('certified: every step is done, no switch nor AI trend', (
+  testWidgets('certified: every step done, no notice nor AI trend', (
     tester,
   ) async {
     await pump(
@@ -158,7 +145,10 @@ void main() {
       TimelineNodeState.done,
       TimelineNodeState.done,
     ]);
-    expect(find.byType(Switch), findsNothing);
+    expect(
+      find.text('Vous serez prévenu(e) dans l’application.'),
+      findsNothing,
+    );
   });
 
   testWidgets('draft: the dossier is not sent yet', (tester) async {
@@ -171,7 +161,10 @@ void main() {
       TimelineNodeState.todo,
       TimelineNodeState.todo,
     ]);
-    expect(find.byType(Switch), findsNothing);
+    expect(
+      find.text('Vous serez prévenu(e) dans l’application.'),
+      findsNothing,
+    );
   });
 
   testWidgets('formats a UTC submission date in local time', (tester) async {
@@ -274,92 +267,6 @@ void main() {
     expect(find.byType(AiEstimateCard), findsNothing);
   });
 
-  testWidgets('the switch starts from the saved choice and saves changes', (
-    tester,
-  ) async {
-    when(() => store.read('property-id')).thenAnswer((_) async => false);
-    await pump(
-      tester,
-      property: const Property(
-        id: 'property-id',
-        ownerId: 'user-id',
-        status: PropertyStatus.inReview,
-      ),
-    );
-    expect(tester.widget<Switch>(find.byType(Switch)).value, isFalse);
-    await tester.ensureVisible(find.byType(Switch));
-    await tester.tap(find.byType(Switch));
-    await tester.pump();
-    expect(tester.widget<Switch>(find.byType(Switch)).value, isTrue);
-    verify(() => store.write('property-id', enabled: true)).called(1);
-  });
-
-  group('open dossier', () {
-    const submitted = Property(
-      id: 'property-id',
-      ownerId: 'user-id',
-      status: PropertyStatus.submitted,
-    );
-
-    MockSellerTunnelCubit cubitSaving(SellerTunnelSaveStatus result) {
-      var state = const SellerTunnelState(
-        status: SellerTunnelStatus.success,
-        property: submitted,
-        owners: [_owner],
-      );
-      final cubit = mockSellerTunnelCubit(state);
-      when(() => cubit.state).thenAnswer((_) => state);
-      when(() => cubit.save(any())).thenAnswer((_) async {
-        state = state.copyWith(saveStatus: result);
-      });
-      return cubit;
-    }
-
-    testWidgets('the switch also saves notify_push', (tester) async {
-      final cubit = cubitSaving(SellerTunnelSaveStatus.success);
-      await pump(tester, cubit: cubit);
-      await tester.ensureVisible(find.byType(Switch));
-      await tester.tap(find.byType(Switch));
-      await tester.pump();
-      verify(() => cubit.save({PropertyColumns.notifyPush: false})).called(1);
-      verify(() => store.write('property-id', enabled: false)).called(1);
-      expect(tester.widget<Switch>(find.byType(Switch)).value, isFalse);
-    });
-
-    testWidgets('the switch reverts when notify_push cannot be saved', (
-      tester,
-    ) async {
-      final cubit = cubitSaving(SellerTunnelSaveStatus.failure);
-      await pump(tester, cubit: cubit);
-      await tester.ensureVisible(find.byType(Switch));
-      await tester.tap(find.byType(Switch));
-      await tester.pump();
-      expect(tester.widget<Switch>(find.byType(Switch)).value, isTrue);
-      verifyNever(() => store.write(any(), enabled: any(named: 'enabled')));
-    });
-  });
-
-  testWidgets('a locked dossier keeps the choice on the device only', (
-    tester,
-  ) async {
-    final cubit = mockSellerTunnelCubit(
-      const SellerTunnelState(
-        status: SellerTunnelStatus.success,
-        property: Property(
-          id: 'property-id',
-          ownerId: 'user-id',
-          status: PropertyStatus.inReview,
-        ),
-      ),
-    );
-    await pump(tester, cubit: cubit);
-    await tester.ensureVisible(find.byType(Switch));
-    await tester.tap(find.byType(Switch));
-    await tester.pump();
-    verifyNever(() => cubit.save(any()));
-    verify(() => store.write('property-id', enabled: false)).called(1);
-  });
-
   testWidgets('"Aller au tableau de bord" opens the dashboard', (tester) async {
     final goRouter = MockGoRouter();
     when(() => goRouter.go(any())).thenReturn(null);
@@ -379,27 +286,6 @@ void main() {
     await tester.tap(find.bySemanticsLabel('Fermer'));
     await tester.pumpAndSettle();
     expect(find.byType(DossierSummarySheet), findsNothing);
-  });
-
-  testWidgets('uses the device store by default', (tester) async {
-    SharedPreferences.setMockInitialValues({
-      'submitted.notify.property-id': false,
-    });
-    await tester.pumpTunnelPage(
-      const SubmittedPage(),
-      sellerTunnelCubit: mockSellerTunnelCubit(
-        const SellerTunnelState(
-          status: SellerTunnelStatus.success,
-          property: Property(
-            id: 'property-id',
-            ownerId: 'user-id',
-            status: PropertyStatus.inReview,
-          ),
-        ),
-      ),
-    );
-    await tester.pumpAndSettle();
-    expect(tester.widget<Switch>(find.byType(Switch)).value, isFalse);
   });
 
   testWidgets('the summary button label fits with large text on 375', (

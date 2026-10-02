@@ -583,7 +583,7 @@ void main() {
       expect(find.byType(DashboardPage), findsOneWidget);
       expect(find.text('Sophie'), findsOneWidget);
       expect(find.text('525 000 €'), findsOneWidget);
-      final bell = find.bySemanticsLabel('Notifications, 1 non lues');
+      final bell = find.bySemanticsLabel('Notifications, 1 non lue');
       expect(bell, findsOneWidget);
 
       // The notification opens the report and is marked read.

@@ -151,7 +151,7 @@ void main() {
       );
       expect(find.text('Léa'), findsOneWidget);
       expect(find.text('Rapport disponible'), findsOneWidget);
-      expect(find.bySemanticsLabel('Notifications, 1 non lues'), findsOne);
+      expect(find.bySemanticsLabel('Notifications, 1 non lue'), findsOne);
       expect(find.text('525 000 €'), findsOneWidget);
       expect(
         find.text(
@@ -241,6 +241,60 @@ void main() {
     );
     expect(find.text('AE'), findsOneWidget);
     expect(find.textContaining('Tendance IA'), findsNothing);
+  });
+
+  testWidgets('labels several unread notifications', (tester) async {
+    await tester.pumpSellerSpacePage(
+      const DashboardPage(),
+      notificationsCubit: mockNotificationsCubit(
+        NotificationsState(
+          notifications: [
+            testNotification,
+            AppNotification(
+              id: 'other',
+              kind: AppNotificationKind.reviewStarted,
+              title: 'Un expert analyse votre dossier',
+              createdAt: DateTime(2026, 9, 24),
+            ),
+          ],
+        ),
+      ),
+    );
+    expect(find.bySemanticsLabel('Notifications, 2 non lues'), findsOne);
+  });
+
+  group('back to the foreground', () {
+    testWidgets('reloads silently', (tester) async {
+      final tunnel = mockSellerTunnelCubit(certifiedState);
+      when(tunnel.refresh).thenThrow(const PropertyLoadFailure());
+      final valuation = mockValuationCubit(
+        ValuationState(
+          status: ValuationStatus.success,
+          valuation: testValuation,
+        ),
+      );
+      final notifications = mockNotificationsCubit();
+      await tester.pumpSellerSpacePage(
+        const DashboardPage(),
+        sellerTunnelCubit: tunnel,
+        valuationCubit: valuation,
+        notificationsCubit: notifications,
+      );
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await tester.pumpAndSettle();
+      verify(tunnel.refresh).called(1);
+      verify(notifications.load).called(1);
+      verify(() => valuation.load('property-id')).called(1);
+      // No error snackbar for a background reload.
+      expect(find.textContaining('Impossible d’actualiser'), findsNothing);
+
+      // Not after the page is gone.
+      await tester.pumpWidget(const SizedBox());
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      verifyNever(tunnel.refresh);
+    });
   });
 
   group('pull to refresh', () {

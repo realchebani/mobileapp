@@ -2094,10 +2094,6 @@
   "@submittedStepStateTodo": {
     "description": "V8 · frise : état d’une étape (lecteur d’écran)"
   },
-  "submittedNotifyTitle": "Me prévenir par notification",
-  "@submittedNotifyTitle": {
-    "description": "V8 · interrupteur des notifications"
-  },
   "submittedBackToDossier": "Aller au tableau de bord",
   "@submittedBackToDossier": {
     "description": "V8 · bouton principal vers le tableau de bord (V9)"
@@ -2946,7 +2942,7 @@
   "@notificationsButton": {
     "description": "V9 · bouton cloche (lecteur d’écran)"
   },
-  "notificationsButtonUnread": "Notifications, {count} non lues",
+  "notificationsButtonUnread": "{count, plural, =1{Notifications, 1 non lue} other{Notifications, {count} non lues}}",
   "@notificationsButtonUnread": {
     "description": "V9 · bouton cloche avec notifications non lues (lecteur d’écran)",
     "placeholders": {

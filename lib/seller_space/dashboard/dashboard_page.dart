@@ -46,49 +46,53 @@ class DashboardPage extends StatelessWidget {
     final showMarket =
         marketSynthesisAvailable ??
         isRouteAvailable(context, AppRoutes.sellerMarket);
-    return ColoredBox(
-      color: c.ivoire,
-      child: SafeArea(
-        bottom: false,
-        child: RefreshIndicator(
-          color: c.vertTexte,
-          onRefresh: () => _refresh(context),
-          child: ListView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.fromLTRB(
-              RealestySpacing.gutter,
-              RealestySpacing.md,
-              RealestySpacing.gutter,
-              RealestySpacing.xl,
-            ),
-            children: [
-              const _Header(),
-              const SizedBox(height: RealestySpacing.md),
-              ..._spaced([
-                AgentBubble(message: _agentMessage(context.l10n, property)),
-                PropertySummaryCard(property: property),
-                if (certified)
-                  const _CertifiedHero()
-                else
-                  _PendingHero(property: property, showMarket: showMarket),
-                if (certified)
-                  ActionCard(
-                    icon: RealestyIcons.trending,
-                    title: context.l10n.dashboardSellTitle,
-                    subtitle: context.l10n.dashboardSellSubtitle,
-                    variant: ActionCardVariant.accent,
-                    // TODO(EPIC-08): open V10 (formula choice).
-                    onPressed: () => showRealestySnackBar(
-                      context,
-                      context.l10n.dashboardSellSoon,
+    return _ReloadOnResume(
+      // Back from the background: the expert may have certified meanwhile.
+      onResume: () => _refresh(context, reportFailure: false),
+      child: ColoredBox(
+        color: c.ivoire,
+        child: SafeArea(
+          bottom: false,
+          child: RefreshIndicator(
+            color: c.vertTexte,
+            onRefresh: () => _refresh(context),
+            child: ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.fromLTRB(
+                RealestySpacing.gutter,
+                RealestySpacing.md,
+                RealestySpacing.gutter,
+                RealestySpacing.xl,
+              ),
+              children: [
+                const _Header(),
+                const SizedBox(height: RealestySpacing.md),
+                ..._spaced([
+                  AgentBubble(message: _agentMessage(context.l10n, property)),
+                  PropertySummaryCard(property: property),
+                  if (certified)
+                    const _CertifiedHero()
+                  else
+                    _PendingHero(property: property, showMarket: showMarket),
+                  if (certified)
+                    ActionCard(
+                      icon: RealestyIcons.trending,
+                      title: context.l10n.dashboardSellTitle,
+                      subtitle: context.l10n.dashboardSellSubtitle,
+                      variant: ActionCardVariant.accent,
+                      // TODO(EPIC-08): open V10 (formula choice).
+                      onPressed: () => showRealestySnackBar(
+                        context,
+                        context.l10n.dashboardSellSoon,
+                      ),
                     ),
+                  DossierCard(
+                    state: state,
+                    onOpen: () => showDossierSummarySheet(context, state),
                   ),
-                DossierCard(
-                  state: state,
-                  onOpen: () => showDossierSummarySheet(context, state),
-                ),
-              ]),
-            ],
+                ]),
+              ],
+            ),
           ),
         ),
       ),
@@ -111,8 +115,12 @@ class DashboardPage extends StatelessWidget {
       };
 
   /// Reloads the dossier, the notifications and (once certified) the
-  /// valuation; a snackbar tells when the dossier could not be refreshed.
-  static Future<void> _refresh(BuildContext context) async {
+  /// valuation; a snackbar tells when the dossier could not be refreshed
+  /// (only for an explicit pull, when [reportFailure]).
+  static Future<void> _refresh(
+    BuildContext context, {
+    bool reportFailure = true,
+  }) async {
     final tunnel = context.read<SellerTunnelCubit>();
     final valuation = context.read<ValuationCubit>();
     final notifications = context.read<NotificationsCubit>();
@@ -129,10 +137,40 @@ class DashboardPage extends StatelessWidget {
     if (property.status == PropertyStatus.certified) {
       await valuation.load(property.id);
     }
-    if (!refreshed && context.mounted) {
+    if (!refreshed && reportFailure && context.mounted) {
       showRealestySnackBar(context, message, isError: true);
     }
   }
+}
+
+/// Calls [onResume] when the app comes back to the foreground.
+class _ReloadOnResume extends StatefulWidget {
+  const new({required this.onResume, required this.child});
+
+  final VoidCallback onResume;
+  final Widget child;
+
+  @override
+  State<_ReloadOnResume> createState() => _ReloadOnResumeState();
+}
+
+class _ReloadOnResumeState extends State<_ReloadOnResume> {
+  late final AppLifecycleListener _listener;
+
+  @override
+  void initState() {
+    super.initState();
+    _listener = AppLifecycleListener(onResume: () => widget.onResume());
+  }
+
+  @override
+  void dispose() {
+    _listener.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.child;
 }
 
 class _Header extends StatelessWidget {
