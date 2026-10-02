@@ -15,6 +15,7 @@ Statuts : ✅ Terminé · 🚧 En cours · 📋 À faire
 | [EPIC-07](epics/EPIC-07-tableau-de-bord-vendeur.md) | Espace vendeur : tableau de bord & avis de valeur | 🚧 |
 | [EPIC-14](epics/EPIC-14-voix-etendue.md) | Voix étendue à tout le tunnel vendeur (dictée de pièces) | 📋 |
 | [EPIC-13](epics/EPIC-13-multi-biens.md) | Plusieurs biens & lots de vente | 📋 |
+| [EPIC-16](epics/EPIC-16-voix-prioritaire.md) | Voix prioritaire (pré-remplissage inter-étapes, traçabilité expert) | 📋 |
 
 ## Plans d'implémentation
 
@@ -30,6 +31,7 @@ Chaque chantier commence par un plan, versionné dans [`plans/`](plans/) (`AAAA-
 | 2026-10-02 | [Voix étendue à tout le tunnel](plans/2026-10-02-voix-etendue.md) (questions ouvertes, après EPIC-13) | EPIC-14 |
 | 2026-10-02 | [Plusieurs biens & lots de vente](plans/2026-10-02-multi-biens.md) (validé, livré) | EPIC-13 |
 | 2026-10-02 | [Étude : capture visuelle du bien](plans/2026-10-02-capture-visuelle-etude.md) (questions ouvertes) | — |
+| 2026-10-03 | [Voix prioritaire](plans/2026-10-03-voix-prioritaire.md) (questions ouvertes, après EPIC-15) | EPIC-16 |
 
 ## Décisions et backlog
 
