@@ -54,7 +54,7 @@ export const OUTPUT_LIMITS = {
   personalItems: 6,
   personalItemChars: 60,
   planRooms: 40,
-  roomNameChars: 60,
+  roomNameChars: 40,
   minRoomArea: 0.5,
   maxRoomArea: 1000,
   maxTotalArea: 100_000,
@@ -111,8 +111,22 @@ function texts(
   return result;
 }
 
-/** No figure at all in a note (no surface, no dimension, no count). */
-const hasNoDigit = (text: string) => !/\d/.test(text);
+/** Words of a measurement or of a number written in letters: a note
+ * carrying one is dropped (the AI never gives a figure). */
+const MEASUREMENT_WORDS =
+  /(?<![\p{L}\p{N}])(m²|m2|mètres?|metres?|centimètres?|cm|mm|surfaces?|superficies?|hauteurs?|longueurs?|largeurs?|dimensions?|deux|trois|quatre|cinq|six|sept|huit|neuf|dix|onze|douze|treize|quatorze|quinze|seize|vingts?|trente|quarante|cinquante|soixante|cents?|mille)(?![\p{L}\p{N}])/iu;
+
+/** No figure at all in a note (no surface, no dimension, no count, also
+ * in letters). */
+const hasNoDigit = (text: string) => !/\d/.test(text) && !MEASUREMENT_WORDS.test(text);
+
+/** A room name of a plan: letters, digits, spaces, apostrophes and
+ * hyphens only, at most [OUTPUT_LIMITS.roomNameChars] characters. */
+function roomName(value: unknown): string {
+  if (typeof value !== "string") return "";
+  return value.replace(/[^\p{L}\p{N} '’-]/gu, " ").replace(/\s+/g, " ").trim()
+    .slice(0, OUTPUT_LIMITS.roomNameChars).trim();
+}
 
 /** The analysis of a room photo from the model's [content]. */
 export function validateRoomAnalysis(
@@ -172,8 +186,8 @@ export function validatePlanReading(
     for (const item of raw.rooms) {
       if (typeof item !== "object" || item === null) continue;
       const room = item as Record<string, unknown>;
-      const name = typeof room.name === "string" ? room.name.replace(/\s+/g, " ").trim() : "";
-      if (!name || name.length > OUTPUT_LIMITS.roomNameChars) continue;
+      const name = roomName(room.name);
+      if (!name) continue;
       rooms.push({
         name,
         area_m2: area(room.area_m2, OUTPUT_LIMITS.minRoomArea, OUTPUT_LIMITS.maxRoomArea),

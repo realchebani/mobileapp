@@ -12,6 +12,7 @@ import type {
 } from "../_shared/vision/db.ts";
 import { VISION_LIMITS } from "../_shared/vision/db.ts";
 import {
+  CONSENT_VERSION,
   handlePlanReader,
   handleVisionRoom,
   imageType,
@@ -134,9 +135,13 @@ function deps(
 }
 
 function post(body: unknown, method = "POST") {
+  // The app sends the version of the consent the seller accepted.
+  const payload = typeof body === "string"
+    ? body
+    : JSON.stringify({ consent: CONSENT_VERSION, ...(body as Record<string, unknown>) });
   return new Request("https://x/f", {
     method,
-    body: method === "POST" ? (typeof body === "string" ? body : JSON.stringify(body)) : undefined,
+    body: method === "POST" ? payload : undefined,
   });
 }
 
@@ -213,6 +218,24 @@ Deno.test("vision-room checks the request", async () => {
     (await call(handleVisionRoom, post({ photo_id: PHOTO }), deps(db, [])))[1],
     { error: "locked" },
   );
+});
+
+Deno.test("the vision functions need the seller's consent", async () => {
+  const db = new FakeVisionDb();
+  for (const handler of [handleVisionRoom, handlePlanReader]) {
+    for (
+      const body of [
+        JSON.stringify({ photo_id: PHOTO, document_id: PLAN }),
+        JSON.stringify({ photo_id: PHOTO, document_id: PLAN, consent: "v0" }),
+      ]
+    ) {
+      assertEquals(await call(handler, post(body), deps(db, [])), [403, {
+        error: "consent_required",
+      }]);
+    }
+  }
+  assertEquals((await call(handleVisionRoom, post("[1]"), deps(db, [])))[0], 400);
+  assertEquals(db.requests.length, 0);
 });
 
 Deno.test("vision-room enforces the daily quota", async () => {

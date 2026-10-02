@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:mobileapp/seller_tunnel/steps/method/plan/plan_reading_cubit.dart';
 import 'package:mobileapp/seller_tunnel/steps/method/plan/plan_review_page.dart';
 import 'package:mobileapp/seller_tunnel/steps/surfaces/models/room_input.dart';
 import 'package:mobileapp/seller_tunnel/widgets/widgets.dart';
@@ -29,14 +30,20 @@ void main() {
   Future<List<PlanReviewResult?>> pump(
     WidgetTester tester, [
     PlanReading reading = _reading,
+    int existingRooms = 0,
   ]) async {
     usePhoneSurface();
     final results = <PlanReviewResult?>[];
     await tester.pumpApp(
       Builder(
         builder: (context) => TextButton(
-          onPressed: () async =>
-              results.add(await showPlanReview(context, reading)),
+          onPressed: () async => results.add(
+            await showPlanReview(
+              context,
+              reading,
+              existingRooms: existingRooms,
+            ),
+          ),
           child: const Text('go'),
         ),
       ),
@@ -65,7 +72,9 @@ void main() {
       await pump(tester);
       expect(find.text('Pièces lues sur le plan'), findsOneWidget);
       expect(find.text('Garder Séjour'), findsOneWidget);
-      expect(find.text('Extrait d’un document'), findsNWidgets(3));
+      expect(find.text('Extrait d’un document'), findsNWidgets(2));
+      // No printed area: to be typed, a room of the seller.
+      expect(find.text('Déclaré'), findsOneWidget);
       expect(find.text('25,4'), findsOneWidget);
       expect(find.text('Ajouter 3 pièces'), findsOneWidget);
       // The sum (40,4) matches the printed total.
@@ -104,14 +113,21 @@ void main() {
       await tap(tester, find.text('Ajouter 2 pièces'));
       expect(results.single, isA<PlanReviewAccepted>());
       expect((results.single! as PlanReviewAccepted).rooms, const [
-        RoomInput(
-          name: 'Séjour',
-          level: RoomLevel.groundFloor,
-          areaM2: 25.4,
-          isMain: true,
+        PlanRoomInput(
+          RoomInput(
+            name: 'Séjour',
+            level: RoomLevel.groundFloor,
+            areaM2: 25.4,
+            isMain: true,
+          ),
         ),
-        RoomInput(name: 'Chambre 2', level: null, areaM2: 11, isMain: true),
+        // Its area was typed: a room of the seller.
+        PlanRoomInput(
+          RoomInput(name: 'Chambre 2', level: null, areaM2: 11, isMain: true),
+          fromPlan: false,
+        ),
       ]);
+      expect((results.single! as PlanReviewAccepted).replace, isFalse);
     });
 
     testWidgets('the level can be corrected', (tester) async {
@@ -122,9 +138,35 @@ void main() {
       await tap(tester, find.text('Rez-de-chaussée'));
       await tap(tester, find.text('Étage').last);
       await tap(tester, find.text('Ajouter 1 pièce'));
+      final room = (results.single! as PlanReviewAccepted).rooms.single;
+      expect(room.room.level, RoomLevel.firstFloor);
+      expect(room.fromPlan, isFalse);
+    });
+
+    testWidgets('existing rooms: add to them or replace them', (tester) async {
+      final results = await pump(tester, _reading, 2);
+      expect(find.text('VOUS AVEZ DÉJÀ 2 PIÈCES'), findsOneWidget);
+      await tap(tester, find.text('Remplacer mes pièces'));
       expect(
-        (results.single! as PlanReviewAccepted).rooms.single.level,
-        RoomLevel.firstFloor,
+        find.text('Remplacer supprime vos pièces actuelles et leurs photos.'),
+        findsOneWidget,
+      );
+      await tap(tester, find.text('Ajouter à mes pièces'));
+      await tap(tester, find.text('Remplacer mes pièces'));
+      await tap(tester, find.text('Garder Chambre 2'));
+      await tap(tester, find.text('Ajouter 2 pièces'));
+      final accepted = results.single! as PlanReviewAccepted;
+      expect(accepted.replace, isTrue);
+      expect([for (final r in accepted.rooms) r.fromPlan], [true, true]);
+    });
+
+    testWidgets('large text stacks the area and the level', (tester) async {
+      tester.platformDispatcher.textScaleFactorTestValue = 1.3;
+      addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+      await pump(tester);
+      expect(
+        tester.getTopLeft(find.text('Niveau').first).dy,
+        greaterThan(tester.getTopLeft(find.text('Surface').first).dy),
       );
     });
 

@@ -80,7 +80,9 @@ ProcessedPhoto processPhoto(Uint8List bytes, {double? tiltDegrees}) {
     decoded = null;
   }
   if (decoded == null) throw const FormatException('Unreadable photo');
-  final image = _fit(img.bakeOrientation(decoded), PhotoChecks.maxSide);
+  final image = _fit(img.bakeOrientation(decoded), PhotoChecks.maxSide)
+    // Privacy: no EXIF (GPS position, device, date) leaves the phone.
+    ..exif = img.ExifData();
   final small = _fit(image, PhotoChecks.analysisSide);
   final brightness = _brightness(small);
   final sharpness = _sharpness(small);

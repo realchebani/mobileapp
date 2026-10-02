@@ -125,20 +125,26 @@ void main() {
       ];
       await cubit.saveRooms(
         const [
-          RoomInput(
-            name: 'Séjour',
-            level: RoomLevel.groundFloor,
-            areaM2: 25,
-            isMain: true,
+          PlanRoomInput(
+            RoomInput(
+              name: 'Séjour',
+              level: RoomLevel.groundFloor,
+              areaM2: 25,
+              isMain: true,
+            ),
           ),
-          RoomInput(name: 'Garage', level: null, areaM2: 15, isAnnex: true),
+          PlanRoomInput(
+            RoomInput(name: 'Garage', level: null, areaM2: 15, isAnnex: true),
+            fromPlan: false,
+          ),
         ],
         existing: existing,
-        onSaved: saved.add,
+        onRooms: saved.add,
       );
       expect(cubit.state.roomsSaved, isTrue);
       expect(saved, hasLength(2));
       expect(saved.last, [
+        existing.single,
         const Room(
           id: 'room-1',
           propertyId: 'property-id',
@@ -149,6 +155,7 @@ void main() {
           isMain: true,
           source: RoomSource.plan,
         ),
+        // Completed by the seller: typed.
         const Room(
           id: 'room-2',
           propertyId: 'property-id',
@@ -156,12 +163,39 @@ void main() {
           sortOrder: 2,
           areaM2: 15,
           isAnnex: true,
-          source: RoomSource.plan,
         ),
       ]);
+      verifyNever(() => repository.deleteRoom(any()));
     });
 
-    test('a retry writes the same rows again', () async {
+    test('replaces the existing rooms and their photos', () async {
+      when(() => repository.deleteRoomPhotos(any())).thenAnswer((_) async {});
+      when(() => repository.deleteRoom(any())).thenAnswer((_) async {});
+      final cubit = build();
+      final states = <List<Room>>[];
+      const old = Room(
+        id: 'old',
+        propertyId: 'property-id',
+        name: 'Cave',
+        areaM2: 5,
+      );
+      await cubit.saveRooms(
+        const [PlanRoomInput(RoomInput(name: 'A', level: null, areaM2: 10))],
+        existing: const [old],
+        replace: true,
+        onRooms: states.add,
+      );
+      verifyInOrder([
+        () => repository.deleteRoomPhotos('old'),
+        () => repository.deleteRoom('old'),
+      ]);
+      expect(states.first, isEmpty);
+      expect(states.last.single.sortOrder, 0);
+    });
+
+    test('a retry writes the same rows again, never deleting them', () async {
+      when(() => repository.deleteRoomPhotos(any())).thenAnswer((_) async {});
+      when(() => repository.deleteRoom(any())).thenAnswer((_) async {});
       final cubit = build();
       var calls = 0;
       when(() => repository.saveRoom(any())).thenAnswer((invocation) async {
@@ -169,49 +203,80 @@ void main() {
         return invocation.positionalArguments.single as Room;
       });
       const rooms = [
-        RoomInput(name: 'A', level: null, areaM2: 10),
-        RoomInput(name: 'B', level: null, areaM2: 10),
+        PlanRoomInput(RoomInput(name: 'A', level: null, areaM2: 10)),
+        PlanRoomInput(RoomInput(name: 'B', level: null, areaM2: 10)),
       ];
-      final first = <Room>[];
+      var current = <Room>[];
       await cubit.saveRooms(
         rooms,
         existing: const [],
-        onSaved: (rows) => first
-          ..clear()
-          ..addAll(rows),
+        replace: true,
+        onRooms: (rows) => current = rows,
       );
       expect(cubit.state.roomsSaved, isFalse);
       expect(cubit.state.notice, PlanReadingNotice.saveFailed);
-      expect([for (final r in first) r.id], ['room-1']);
-      final second = <Room>[];
+      expect([for (final r in current) r.id], ['room-1']);
       await cubit.saveRooms(
         rooms,
-        existing: const [],
-        onSaved: (rows) => second
-          ..clear()
-          ..addAll(rows),
+        existing: current,
+        replace: true,
+        onRooms: (rows) => current = rows,
       );
       expect(cubit.state.roomsSaved, isTrue);
-      expect([for (final r in second) r.id], ['room-1', 'room-2']);
+      expect([for (final r in current) r.id], ['room-1', 'room-2']);
+      verifyNever(() => repository.deleteRoom(any()));
     });
 
     test('saving is ignored while busy, and stops once closed', () async {
       final gate = Completer<Room>();
       when(() => repository.saveRoom(any())).thenAnswer((_) => gate.future);
       final cubit = build();
-      const rooms = [RoomInput(name: 'A', level: null, areaM2: 10)];
+      const rooms = [
+        PlanRoomInput(RoomInput(name: 'A', level: null, areaM2: 10)),
+      ];
       final saving = cubit.saveRooms(
         rooms,
         existing: const [],
-        onSaved: (_) {},
+        onRooms: (_) {},
       );
-      await cubit.saveRooms(rooms, existing: const [], onSaved: (_) {});
+      await cubit.saveRooms(rooms, existing: const [], onRooms: (_) {});
       await cubit.close();
       gate.complete(
         const Room(id: 'room-1', propertyId: 'p', name: 'A', areaM2: 10),
       );
       await saving;
       expect(cubit.state.roomsSaved, isFalse);
+    });
+
+    test('stops quietly when closed while replacing', () async {
+      final gate = Completer<void>();
+      when(() => repository.deleteRoomPhotos(any()))
+          .thenAnswer((_) => gate.future);
+      when(() => repository.deleteRoom(any())).thenAnswer((_) async {});
+      final cubit = build();
+      final saving = cubit.saveRooms(
+        const [PlanRoomInput(RoomInput(name: 'A', level: null, areaM2: 1))],
+        existing: const [
+          Room(id: 'old', propertyId: 'p', name: 'Cave', areaM2: 5),
+        ],
+        replace: true,
+        onRooms: (_) {},
+      );
+      await cubit.close();
+      gate.complete();
+      await saving;
+      verifyNever(() => repository.saveRoom(any()));
+    });
+
+    test('a failed reading keeps the plan to read again', () async {
+      when(() => repository.readPlan(any())).thenThrow(Exception());
+      final cubit = build();
+      await cubit.read(_plan);
+      expect(cubit.state.retryDocument, _plan);
+      when(() => repository.readPlan(any()))
+          .thenAnswer((_) async => const PlanReading(isFloorPlan: true));
+      await cubit.read(_plan);
+      expect(cubit.state.retryDocument, isNull);
     });
 
     test('inputOf takes the kind of the room read', () {

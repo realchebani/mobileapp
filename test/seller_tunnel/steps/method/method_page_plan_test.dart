@@ -240,6 +240,53 @@ void main() {
       expect(find.textContaining('Limite de lectures de plan'), findsOneWidget);
     });
 
+    testWidgets('a failed reading is read again without a new upload', (
+      tester,
+    ) async {
+      var reads = 0;
+      when(() => repository.readPlan(any())).thenAnswer((_) async {
+        if (reads++ == 0) throw Exception();
+        return const PlanReading(isFloorPlan: false);
+      });
+      await pump(tester);
+      await tap(tester, find.text('Lire un plan'));
+      expect(find.text('Relire le dernier plan'), findsNothing);
+      await tap(tester, find.text('Scanner le plan'));
+      await tester.pump(const Duration(seconds: 5));
+      await tester.pumpAndSettle();
+      await tap(tester, find.text('Lire un plan'));
+      await tap(tester, find.text('Relire le dernier plan'));
+      expect(find.byType(PlanReviewPage), findsOneWidget);
+      verify(
+        () => repository.uploadDocument(
+          ownerId: any(named: 'ownerId'),
+          propertyId: any(named: 'propertyId'),
+          kind: any(named: 'kind'),
+          fileName: any(named: 'fileName'),
+          bytes: any(named: 'bytes'),
+          mimeType: any(named: 'mimeType'),
+        ),
+      ).called(1);
+      verify(() => repository.readPlan('plan-doc')).called(2);
+    });
+
+    testWidgets('the rooms read can replace the existing ones', (tester) async {
+      when(() => repository.deleteRoomPhotos(any())).thenAnswer((_) async {});
+      when(() => repository.deleteRoom(any())).thenAnswer((_) async {});
+      await pump(tester);
+      await tap(tester, find.text('Lire un plan'));
+      await tap(tester, find.text('Scanner le plan'));
+      await tap(tester, find.text('Remplacer mes pièces'));
+      await tap(tester, find.text('Ajouter 1 pièce'));
+      verify(() => repository.deleteRoom('old')).called(1);
+      verify(() => tunnel.updateChildren(rooms: const [])).called(1);
+      verify(
+        () => tunnel.saveAndContinue(SellerTunnelStep.method, {
+          PropertyColumns.measurementMethod: MeasurementMethod.plan,
+        }),
+      ).called(1);
+    });
+
     testWidgets('"Saisir mes pièces" continues by hand', (tester) async {
       await pump(tester);
       await tap(tester, find.text('Lire un plan'));

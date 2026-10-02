@@ -193,6 +193,13 @@ class _RoomPhotosViewState extends State<RoomPhotosView> {
     }
   }
 
+  /// "Désactiver les suggestions de l’IA": the consent is withdrawn.
+  Future<void> _disableAnalysis() async {
+    final cubit = context.read<RoomPhotosCubit>();
+    await PhotoServices.of(context).preferences?.setConsent(given: false);
+    cubit.disableAnalysis();
+  }
+
   Future<void> _enableAnalysis() async {
     final cubit = context.read<RoomPhotosCubit>();
     if (await ensurePhotoAnalysisConsent(context, ask: true)) {
@@ -252,150 +259,166 @@ class _RoomPhotosViewState extends State<RoomPhotosView> {
       photos: state.photos,
       currentKind: RoomPhotoSuggestions.kindOfName(_room.name, l10n),
     );
-    return BlocListener<RoomPhotosCubit, RoomPhotosState>(
-      listenWhen: (previous, current) =>
-          previous.noticeCount != current.noticeCount,
-      listener: (context, state) => showRealestySnackBar(
-        context,
-        _noticeMessage(l10n, state.notice!),
-        isError: true,
+    // The photo buttons do not fit side by side with large text.
+    final stacked = MediaQuery.textScalerOf(context).scale(1) > 1.15;
+    final buttons = [
+      RealestyButton(
+        label: l10n.photosTakePhotos,
+        leadingIcon: RealestyIcons.camera,
+        onPressed: state.canAdd ? () => unawaited(_takePhotos()) : null,
       ),
-      child: TunnelScaffold(
-        spacing: 14,
-        header: _PhotosHeader(
-          title: l10n.photosTitle(_room.name),
-          subtitle: l10n.photosCount(state.photos.length),
-          onBack: state.isBusy ? null : _close,
+      RealestyButton(
+        label: l10n.photosLibrary,
+        variant: RealestyButtonVariant.secondary,
+        leadingIcon: RealestyIcons.upload,
+        onPressed: state.canAdd ? () => unawaited(_pickPhotos()) : null,
+      ),
+    ];
+    // Android back: as the back button, once nothing is being sent.
+    return PopScope<RoomPhotosResult>(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop && !state.isBusy) _close();
+      },
+      child: BlocListener<RoomPhotosCubit, RoomPhotosState>(
+        listenWhen: (previous, current) =>
+            previous.noticeCount != current.noticeCount,
+        listener: (context, state) => showRealestySnackBar(
+          context,
+          _noticeMessage(l10n, state.notice!),
+          isError: true,
         ),
-        actionBar: AgentActionBar(
-          hint: state.isSending ? l10n.photosSendingHint : null,
-          label: l10n.photosDone,
-          isLoading: state.isBusy,
-          onPressed: _close,
-        ),
-        children: [
-          AgentIntro(
-            message: _room.isMain
-                ? l10n.photosIntroMain(_room.name)
-                : l10n.photosIntro(_room.name),
+        child: TunnelScaffold(
+          spacing: 14,
+          header: _PhotosHeader(
+            title: l10n.photosTitle(_room.name),
+            subtitle: l10n.photosCount(state.photos.length),
+            onBack: state.isBusy ? null : _close,
           ),
-          if (!readOnly) ...[
-            const PhotoTipsCard(),
-            Row(
-              spacing: RealestySpacing.xs,
-              children: [
-                Expanded(
-                  child: RealestyButton(
-                    label: l10n.photosTakePhotos,
-                    leadingIcon: RealestyIcons.camera,
-                    onPressed: state.canAdd
-                        ? () => unawaited(_takePhotos())
-                        : null,
-                  ),
-                ),
-                Expanded(
-                  child: RealestyButton(
-                    label: l10n.photosLibrary,
-                    variant: RealestyButtonVariant.secondary,
-                    leadingIcon: RealestyIcons.upload,
-                    onPressed: state.canAdd
-                        ? () => unawaited(_pickPhotos())
-                        : null,
-                  ),
-                ),
-              ],
+          actionBar: AgentActionBar(
+            hint: state.isSending ? l10n.photosSendingHint : null,
+            label: l10n.photosDone,
+            isLoading: state.isBusy,
+            onPressed: _close,
+          ),
+          children: [
+            AgentIntro(
+              message: _room.isMain
+                  ? l10n.photosIntroMain(_room.name)
+                  : l10n.photosIntro(_room.name),
             ),
-          ],
-          switch (state.status) {
-            RoomPhotosStatus.loading => Padding(
-              padding: const EdgeInsets.all(RealestySpacing.lg),
-              child: Center(
-                child: CircularProgressIndicator(color: c.vertTexte),
+            if (!readOnly) ...[
+              const PhotoTipsCard(),
+              if (stacked)
+                Column(spacing: RealestySpacing.xs, children: buttons)
+              else
+                Row(
+                  spacing: RealestySpacing.xs,
+                  children: [
+                    for (final button in buttons) Expanded(child: button),
+                  ],
+                ),
+            ],
+            switch (state.status) {
+              RoomPhotosStatus.loading => Padding(
+                padding: const EdgeInsets.all(RealestySpacing.lg),
+                child: Center(
+                  child: CircularProgressIndicator(color: c.vertTexte),
+                ),
               ),
-            ),
-            RoomPhotosStatus.failure => Column(
-              spacing: RealestySpacing.xs,
-              children: [
-                Text(
-                  l10n.photosLoadError,
-                  textAlign: TextAlign.center,
-                  style: RealestyTextStyles.body.copyWith(color: c.erreur),
+              RoomPhotosStatus.failure => Column(
+                spacing: RealestySpacing.xs,
+                children: [
+                  Text(
+                    l10n.photosLoadError,
+                    textAlign: TextAlign.center,
+                    style: RealestyTextStyles.body.copyWith(color: c.erreur),
+                  ),
+                  RealestyButton(
+                    label: l10n.photosRetry,
+                    variant: RealestyButtonVariant.text,
+                    onPressed: () => unawaited(cubit.load()),
+                  ),
+                ],
+              ),
+              RoomPhotosStatus.ready when state.count == 0 => Text(
+                l10n.photosEmpty,
+                textAlign: TextAlign.center,
+                style: RealestyTextStyles.listSubtitle.copyWith(
+                  color: c.texteDiscret,
                 ),
+              ),
+              RoomPhotosStatus.ready => GridView.count(
+                crossAxisCount: 3,
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                mainAxisSpacing: RealestySpacing.xs,
+                crossAxisSpacing: RealestySpacing.xs,
+                children: [
+                  for (final (index, photo) in state.photos.indexed)
+                    PhotoTile(
+                      key: ValueKey(photo.id),
+                      photo: photo,
+                      isMain: index == 0,
+                      bytes: state.previews[photo.id],
+                      url: state.urls[photo.storagePath],
+                      analyzing: state.analyzing.contains(photo.id),
+                      busy: state.busyIds.contains(photo.id),
+                      onTap: state.busyIds.isEmpty
+                          ? () => unawaited(_openDetail(state, photo))
+                          : null,
+                    ),
+                  for (final pending in state.pending)
+                    PendingPhotoTile(
+                      key: ValueKey(pending.id),
+                      preview: pending.preview,
+                      failed: pending.failed,
+                      onRetry: () => cubit.retry(pending.id),
+                      onDiscard: () => cubit.discard(pending.id),
+                    ),
+                ],
+              ),
+            },
+            if (ready && state.count > 0)
+              Text(
+                l10n.photosLimit(state.count, RoomPhotosCubit.maxPhotos),
+                textAlign: TextAlign.end,
+                style: RealestyTextStyles.caption.copyWith(
+                  color: c.texteDiscret,
+                ),
+              ),
+            if (!readOnly && ready && state.photos.isNotEmpty)
+              if (state.analysisEnabled)
+                PhotoSuggestionsCard(
+                  suggestions: suggestions,
+                  analyzing: state.analyzing.length,
+                  failedCount: state.analysisFailed.length,
+                  appliedCount: _applied,
+                  onApplyKind: (kind) =>
+                      _apply(_room.withKind(kind, l10n, widget.otherNames)),
+                  onApplyCovering: (covering) =>
+                      _apply(_room.withFloorCovering(covering)),
+                  onApplyGlazing: (glazing) =>
+                      _apply(_room.withGlazing(glazing)),
+                  onAddNote: (note) => _apply(_room.withNote(note)),
+                  onRetry: () =>
+                      state.analysisFailed.forEach(cubit.retryAnalysis),
+                )
+              else if (services.analysisAvailable)
                 RealestyButton(
-                  label: l10n.photosRetry,
+                  label: l10n.photosEnableAnalysis,
                   variant: RealestyButtonVariant.text,
-                  onPressed: () => unawaited(cubit.load()),
+                  leadingIcon: RealestyIcons.spark,
+                  onPressed: () => unawaited(_enableAnalysis()),
                 ),
-              ],
-            ),
-            RoomPhotosStatus.ready when state.count == 0 => Text(
-              l10n.photosEmpty,
-              textAlign: TextAlign.center,
-              style: RealestyTextStyles.listSubtitle.copyWith(
-                color: c.texteDiscret,
-              ),
-            ),
-            RoomPhotosStatus.ready => GridView.count(
-              crossAxisCount: 3,
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              mainAxisSpacing: RealestySpacing.xs,
-              crossAxisSpacing: RealestySpacing.xs,
-              children: [
-                for (final (index, photo) in state.photos.indexed)
-                  PhotoTile(
-                    key: ValueKey(photo.id),
-                    photo: photo,
-                    isMain: index == 0,
-                    bytes: state.previews[photo.id],
-                    url: state.urls[photo.storagePath],
-                    analyzing: state.analyzing.contains(photo.id),
-                    busy: state.busyIds.contains(photo.id),
-                    onTap: state.busyIds.isEmpty
-                        ? () => unawaited(_openDetail(state, photo))
-                        : null,
-                  ),
-                for (final pending in state.pending)
-                  PendingPhotoTile(
-                    key: ValueKey(pending.id),
-                    preview: pending.preview,
-                    failed: pending.failed,
-                    onRetry: () => cubit.retry(pending.id),
-                    onDiscard: () => cubit.discard(pending.id),
-                  ),
-              ],
-            ),
-          },
-          if (ready && state.count > 0)
-            Text(
-              l10n.photosLimit(state.count, RoomPhotosCubit.maxPhotos),
-              textAlign: TextAlign.end,
-              style: RealestyTextStyles.caption.copyWith(color: c.texteDiscret),
-            ),
-          if (!readOnly && ready && state.photos.isNotEmpty)
-            if (state.analysisEnabled)
-              PhotoSuggestionsCard(
-                suggestions: suggestions,
-                analyzing: state.analyzing.length,
-                failedCount: state.analysisFailed.length,
-                appliedCount: _applied,
-                onApplyKind: (kind) =>
-                    _apply(_room.withKind(kind, l10n, widget.otherNames)),
-                onApplyCovering: (covering) =>
-                    _apply(_room.withFloorCovering(covering)),
-                onApplyGlazing: (glazing) => _apply(_room.withGlazing(glazing)),
-                onAddNote: (note) => _apply(_room.withNote(note)),
-                onRetry: () =>
-                    state.analysisFailed.forEach(cubit.retryAnalysis),
-              )
-            else if (services.analysisAvailable)
+            if (!readOnly && state.analysisEnabled)
               RealestyButton(
-                label: l10n.photosEnableAnalysis,
+                label: l10n.photosDisableAnalysis,
                 variant: RealestyButtonVariant.text,
-                leadingIcon: RealestyIcons.spark,
-                onPressed: () => unawaited(_enableAnalysis()),
+                onPressed: () => unawaited(_disableAnalysis()),
               ),
-        ],
+          ],
+        ),
       ),
     );
   }

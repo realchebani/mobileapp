@@ -139,9 +139,11 @@ class RoomPhotosCubit extends Cubit<RoomPhotosState> {
     _enqueue(id, null);
   }
 
-  /// Gives up the photo [id] whose upload failed.
+  /// Gives up the photo [id] whose upload failed; its row and file are
+  /// deleted in case the upload succeeded after all (lost answer).
   void discard(String id) {
     if (_pending(id)?.failed != true) return;
+    unawaited(_repository.discardRoomPhoto(_photoOf(id)));
     emit(
       state.copyWith(
         pending: [
@@ -201,16 +203,8 @@ class RoomPhotosCubit extends Cubit<RoomPhotosState> {
       }
     }
     final processed = pending.processed!;
-    final photo = RoomPhoto(
-      id: id,
-      propertyId: _propertyId,
-      roomId: _roomId,
-      storagePath: PropertyRepository.roomPhotoPath(
-        ownerId: _ownerId,
-        propertyId: _propertyId,
-        roomId: _roomId,
-        photoId: id,
-      ),
+    final photo = _photoOf(
+      id,
       width: processed.width,
       height: processed.height,
       sizeBytes: processed.bytes.length,
@@ -251,11 +245,69 @@ class RoomPhotosCubit extends Cubit<RoomPhotosState> {
     } on Object catch (error, stackTrace) {
       if (isClosed) return;
       addError(error, stackTrace);
+      // The answer may have been lost (timeout): the photo is then stored.
+      final stored = await _stored(id);
+      if (isClosed) return;
+      if (stored != null) {
+        emit(
+          state.copyWith(
+            photos: [...state.photos, stored],
+            previews: {...state.previews, id: processed.bytes},
+            pending: [
+              for (final p in state.pending)
+                if (p.id != id) p,
+            ],
+          ),
+        );
+        if (state.analysisEnabled) _enqueueAnalysis(stored);
+        return;
+      }
       final current = _pending(id);
       if (current != null) _replacePending(current.copyWith(failed: true));
       emit(state.copyWith(notice: RoomPhotosNotice.uploadFailed));
     }
   }
+
+  /// The photo [id] as stored, or null (not stored, or unknown).
+  Future<RoomPhoto?> _stored(String id) async {
+    try {
+      final photos = await _repository
+          .getRoomPhotos(_propertyId, roomId: _roomId)
+          .timeout(_timeout);
+      return photos.where((photo) => photo.id == id).firstOrNull;
+    } on Object catch (error, stackTrace) {
+      if (!isClosed) addError(error, stackTrace);
+      return null;
+    }
+  }
+
+  RoomPhoto _photoOf(
+    String id, {
+    int? width,
+    int? height,
+    int? sizeBytes,
+    int sortOrder = 0,
+    PhotoSource source = PhotoSource.camera,
+    PhotoQuality? quality,
+    DateTime? takenAt,
+  }) => RoomPhoto(
+    id: id,
+    propertyId: _propertyId,
+    roomId: _roomId,
+    storagePath: PropertyRepository.roomPhotoPath(
+      ownerId: _ownerId,
+      propertyId: _propertyId,
+      roomId: _roomId,
+      photoId: id,
+    ),
+    width: width,
+    height: height,
+    sizeBytes: sizeBytes,
+    sortOrder: sortOrder,
+    source: source,
+    quality: quality,
+    takenAt: takenAt,
+  );
 
   int _nextSortOrder() => state.photos.isEmpty
       ? 0
@@ -325,6 +377,19 @@ class RoomPhotosCubit extends Cubit<RoomPhotosState> {
     _analyzeMissing();
   }
 
+  /// The seller withdrew the consent: no more photo is sent to the vision
+  /// AI (the analyses already stored stay for the expert).
+  void disableAnalysis() {
+    if (isClosed || !state.analysisEnabled) return;
+    emit(
+      state.copyWith(
+        analysisEnabled: false,
+        analyzing: const {},
+        analysisFailed: const {},
+      ),
+    );
+  }
+
   /// Analyses again the photo [id] whose analysis failed.
   void retryAnalysis(String id) {
     final photo = state.photos.where((p) => p.id == id).firstOrNull;
@@ -352,6 +417,7 @@ class RoomPhotosCubit extends Cubit<RoomPhotosState> {
   Future<void> _analyze(String id) async {
     if (isClosed) return;
     final done = {...state.analyzing}..remove(id);
+    if (!state.analysisEnabled) return;
     if (_quotaReached || !state.photos.any((p) => p.id == id)) {
       emit(
         state.copyWith(

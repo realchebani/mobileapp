@@ -23,6 +23,8 @@ Légende : ✅ fait · 🚧 partiel · 📋 à faire
 
 ## US-15.3 · Suggestions de l’IA avec consentement ✅
 *En tant que vendeur, je veux que l’app me propose le type de pièce, le revêtement et le vitrage à partir de mes photos, sans rien imposer.*
+- ✅ Je peux retirer mon accord à tout moment (« Désactiver les suggestions de l’IA », Compte) ; le serveur refuse toute analyse sans accord.
+- ✅ La position GPS et l’appareil (EXIF) ne quittent jamais le téléphone.
 - ✅ À la première photo, un écran explique l’analyse (fournisseur via OpenRouter, sans conservation ni entraînement, jamais de mesure) ; je peux accepter ou refuser, et changer d’avis plus tard.
 - ✅ Avec mon accord, chaque photo est analysée une fois : type de pièce, revêtement, vitrage, constats (sans chiffre), objets personnels à ranger, personne visible.
 - ✅ Les suggestions s’appliquent seulement si je tape « Appliquer » / « Ajouter à la description » ; elles reviennent dans la fiche de la pièce et sont enregistrées avec « Continuer » comme mes réponses.
@@ -34,7 +36,8 @@ Légende : ✅ fait · 🚧 partiel · 📋 à faire
 - ✅ V5 propose « Lire un plan » (scanner ou photothèque) ; la carte « Scanner avec la caméra » a disparu.
 - ✅ L’IA ne relève que les pièces et surfaces imprimées sur le plan ; une surface absente reste vide.
 - ✅ Je vérifie chaque ligne (garder ou non, corriger le nom, le niveau, la surface) ; un écart entre la somme et le total imprimé est signalé.
-- ✅ Les pièces gardées arrivent dans V5c avec l’étiquette « Extrait d’un document » (`source = plan`) ; le plan est aussi rangé dans les documents (V7).
+- ✅ Si j’ai déjà des pièces, je choisis de les compléter ou de les remplacer ; une lecture ratée se relance sans renvoyer le plan.
+- ✅ Les pièces gardées telles qu’imprimées arrivent dans V5c avec l’étiquette « Plan » / « Extrait d’un document » (`source = plan`), celles que j’ai corrigées sont « Déclaré » ; le plan est aussi rangé dans les documents (V7).
 - ✅ Sans consentement à l’IA, le plan est seulement déposé pour l’expert.
 
 ## US-15.5 · Une photo par pièce principale pour envoyer le dossier ✅

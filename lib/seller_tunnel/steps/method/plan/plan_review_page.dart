@@ -14,11 +14,13 @@ sealed class PlanReviewResult {
   const new();
 }
 
-/// Add these rooms to V5c.
+/// Add these rooms to V5c, or put them in place of the existing ones
+/// ([replace]).
 final class PlanReviewAccepted extends PlanReviewResult {
-  const new(this.rooms);
+  const new(this.rooms, {this.replace = false});
 
-  final List<RoomInput> rooms;
+  final List<PlanRoomInput> rooms;
+  final bool replace;
 }
 
 /// Type the rooms instead ("Saisir mes pièces").
@@ -27,34 +29,46 @@ final class PlanReviewManual extends PlanReviewResult {
 }
 
 /// Opens the review of [reading] (full screen); null when the seller goes
-/// back.
+/// back. With [existingRooms], the seller chooses to add the rooms read or
+/// to replace the existing ones.
 Future<PlanReviewResult?> showPlanReview(
   BuildContext context,
-  PlanReading reading,
-) {
+  PlanReading reading, {
+  int existingRooms = 0,
+}) {
   return Navigator.of(context).push<PlanReviewResult>(
     MaterialPageRoute(
       fullscreenDialog: true,
-      builder: (_) => PlanReviewPage(reading: reading),
+      builder: (_) =>
+          PlanReviewPage(reading: reading, existingRooms: existingRooms),
     ),
   );
 }
 
 class _Line {
-  new(PlanRoom room)
-    : input = PlanReadingCubit.inputOf(room),
-      name = TextEditingController(text: room.name),
+  new(this.read)
+    : input = PlanReadingCubit.inputOf(read),
+      name = TextEditingController(text: read.name),
       area = TextEditingController(
-        text: room.areaM2 == null ? '' : RoomArea.input(room.areaM2!),
+        text: read.areaM2 == null ? '' : RoomArea.input(read.areaM2!),
       ),
-      level = room.level;
+      level = read.level;
 
+  /// As read on the plan.
+  final PlanRoom read;
   final RoomInput input;
   final TextEditingController name;
   final TextEditingController area;
   final GlobalKey key = GlobalKey();
   RoomLevel? level;
   bool keep = true;
+
+  /// Whether the seller corrected or completed what was read.
+  bool get edited =>
+      name.text.trim() != read.name ||
+      level != read.level ||
+      read.areaM2 == null ||
+      RoomArea.parse(area.text) != read.areaM2;
 
   void dispose() {
     name.dispose();
@@ -67,9 +81,12 @@ class _Line {
 /// line; the printed total compared with the sum. Only printed areas were
 /// read: a missing one must be typed (or the line unticked).
 class PlanReviewPage extends StatefulWidget {
-  const new({required this.reading, super.key});
+  const new({required this.reading, this.existingRooms = 0, super.key});
 
   final PlanReading reading;
+
+  /// Rooms already in the dossier: add to them, or replace them.
+  final int existingRooms;
 
   @override
   State<PlanReviewPage> createState() => _PlanReviewPageState();
@@ -80,6 +97,7 @@ class _PlanReviewPageState extends State<PlanReviewPage> {
     for (final room in widget.reading.rooms) _Line(room),
   ];
   bool _submitted = false;
+  bool _replace = false;
 
   @override
   void dispose() {
@@ -128,14 +146,17 @@ class _PlanReviewPageState extends State<PlanReviewPage> {
       PlanReviewAccepted([
         for (final line in _lines)
           if (line.keep)
-            RoomInput(
-              name: line.name.text.trim(),
-              level: line.level,
-              areaM2: RoomArea.round(RoomArea.parse(line.area.text)!),
-              isMain: line.input.isMain,
-              isAnnex: line.input.isAnnex,
+            PlanRoomInput(
+              RoomInput(
+                name: line.name.text.trim(),
+                level: line.level,
+                areaM2: RoomArea.round(RoomArea.parse(line.area.text)!),
+                isMain: line.input.isMain,
+                isAnnex: line.input.isAnnex,
+              ),
+              fromPlan: !line.edited,
             ),
-      ]),
+      ], replace: _replace),
     );
   }
 
@@ -215,6 +236,30 @@ class _PlanReviewPageState extends State<PlanReviewPage> {
                 : InlineBannerVariant.warning,
             icon: RealestyIcons.plan,
           ),
+        if (!empty && widget.existingRooms > 0) ...[
+          SectionLabel(l10n.planReviewChoiceTitle(widget.existingRooms)),
+          Wrap(
+            spacing: RealestySpacing.xs,
+            runSpacing: RealestySpacing.xs,
+            children: [
+              RealestyChoiceChip(
+                label: l10n.planReviewAddToRooms,
+                selected: !_replace,
+                onSelected: (_) => setState(() => _replace = false),
+              ),
+              RealestyChoiceChip(
+                label: l10n.planReviewReplaceRooms,
+                selected: _replace,
+                onSelected: (_) => setState(() => _replace = true),
+              ),
+            ],
+          ),
+          if (_replace)
+            InlineBanner(
+              message: l10n.planReviewReplaceWarning,
+              icon: RealestyIcons.warning,
+            ),
+        ],
         for (final line in _lines)
           _LineCard(
             key: line.key,
@@ -253,6 +298,27 @@ class _LineCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final c = context.realestyColors;
+    final area = RealestyTextField(
+      label: l10n.planReviewAreaLabel,
+      controller: line.area,
+      suffixText: 'm²',
+      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+      onChanged: (_) => onChanged(),
+      errorText: areaError,
+    );
+    final level = RealestySelect<RoomLevel>(
+      label: l10n.planReviewLevelLabel,
+      value: line.level,
+      hint: l10n.surfacesNotSpecified,
+      options: [
+        for (final level in RoomLevel.values)
+          RealestySelectOption(value: level, label: level.label(l10n)),
+      ],
+      onChanged: (level) {
+        line.level = level;
+        onChanged();
+      },
+    );
     return Container(
       padding: const EdgeInsets.all(RealestySpacing.sm),
       decoration: BoxDecoration(
@@ -264,21 +330,19 @@ class _LineCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         spacing: RealestySpacing.xs,
         children: [
-          Row(
-            spacing: RealestySpacing.xs,
-            children: [
-              Expanded(
-                child: RealestyCheckbox(
-                  value: line.keep,
-                  label: l10n.planReviewKeep(line.name.text.trim()),
-                  onChanged: (value) {
-                    line.keep = value;
-                    onChanged();
-                  },
-                ),
-              ),
-              const ProvenanceTag(ProvenanceKind.document),
-            ],
+          Align(
+            alignment: Alignment.centerLeft,
+            child: ProvenanceTag(
+              line.edited ? ProvenanceKind.declared : ProvenanceKind.document,
+            ),
+          ),
+          RealestyCheckbox(
+            value: line.keep,
+            label: l10n.planReviewKeep(line.name.text.trim()),
+            onChanged: (value) {
+              line.keep = value;
+              onChanged();
+            },
           ),
           if (line.keep) ...[
             RealestyTextField(
@@ -288,42 +352,18 @@ class _LineCard extends StatelessWidget {
               onChanged: (_) => onChanged(),
               errorText: nameError,
             ),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              spacing: RealestySpacing.xs,
-              children: [
-                Expanded(
-                  child: RealestyTextField(
-                    label: l10n.planReviewAreaLabel,
-                    controller: line.area,
-                    suffixText: 'm²',
-                    keyboardType: const TextInputType.numberWithOptions(
-                      decimal: true,
-                    ),
-                    onChanged: (_) => onChanged(),
-                    errorText: areaError,
-                  ),
-                ),
-                Expanded(
-                  child: RealestySelect<RoomLevel>(
-                    label: l10n.planReviewLevelLabel,
-                    value: line.level,
-                    hint: l10n.surfacesNotSpecified,
-                    options: [
-                      for (final level in RoomLevel.values)
-                        RealestySelectOption(
-                          value: level,
-                          label: level.label(l10n),
-                        ),
-                    ],
-                    onChanged: (level) {
-                      line.level = level;
-                      onChanged();
-                    },
-                  ),
-                ),
-              ],
-            ),
+            if (MediaQuery.textScalerOf(context).scale(1) > 1.15) ...[
+              area,
+              level,
+            ] else
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                spacing: RealestySpacing.xs,
+                children: [
+                  Expanded(child: area),
+                  Expanded(child: level),
+                ],
+              ),
           ],
         ],
       ),

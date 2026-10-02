@@ -1111,5 +1111,14 @@
   "submittedSummaryPhotosCount": "{count, plural, =0{Ninguna foto} =1{1 foto} other{{count} fotos}}",
   "submittedSummaryRoomPhotos": "Fotos · {room}",
   "documentsActionHintPhotos": "Se necesita una foto de cada estancia principal para el envío",
-  "surfacesPlanTag": "Plano"
+  "surfacesPlanTag": "Plano",
+  "photosDisableAnalysis": "Desactivar las sugerencias de la IA",
+  "accountPhotoAnalysis": "Sugerencias de la IA en las fotos",
+  "accountPhotoAnalysisOn": "Activadas · toque para desactivarlas",
+  "accountPhotoAnalysisOff": "Desactivadas · toque para activarlas",
+  "planReviewChoiceTitle": "Ya tiene {count, plural, =1{1 estancia} other{{count} estancias}}",
+  "planReviewAddToRooms": "Añadir a mis estancias",
+  "planReviewReplaceRooms": "Sustituir mis estancias",
+  "planReviewReplaceWarning": "Sustituir elimina sus estancias actuales y sus fotos.",
+  "methodPlanRetry": "Volver a leer el último plano"
 }

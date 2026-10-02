@@ -662,6 +662,10 @@ class PropertyRepository {
   /// Name of the Edge Function reading a floor plan.
   static const planReaderFunction = 'plan-reader';
 
+  /// Version of the consent to the vision AI the seller accepted in the
+  /// app; the vision functions refuse a request without it.
+  static const visionConsent = 'photo_analysis_v1';
+
   /// Where the photo [photoId] of the room [roomId] is stored.
   static String roomPhotoPath({
     required String ownerId,
@@ -700,7 +704,9 @@ class PropertyRepository {
   /// earlier answer was lost) is returned as is. Throws
   /// [DocumentUploadFailure] when the upload fails, [RoomPhotoLimitFailure]
   /// when the room or the property has too many photos and
-  /// [PropertySaveFailure] when recording fails (the file is then removed).
+  /// [PropertySaveFailure] when recording fails. The file is removed only
+  /// when the database refused the row (an answer lost on the network may
+  /// hide a row that was recorded: see [discardRoomPhoto]).
   Future<RoomPhoto> uploadRoomPhoto(
     RoomPhoto photo, {
     required Uint8List bytes,
@@ -731,10 +737,12 @@ class PropertyRepository {
         final same = stored?.where((p) => p.id == photo.id);
         if (same != null && same.isNotEmpty) return same.first;
       }
-      try {
-        await bucket.remove([photo.storagePath]);
-      } on Object {
-        // Best effort: an orphan file only wastes storage.
+      if (error is PostgrestException) {
+        try {
+          await bucket.remove([photo.storagePath]);
+        } on Object {
+          // Best effort: an orphan file only wastes storage.
+        }
       }
       Error.throwWithStackTrace(
         error is PostgrestException &&
@@ -761,6 +769,21 @@ class PropertyRepository {
       await _client.storage.from(documentsBucket).remove([photo.storagePath]);
     } on Object catch (error, stackTrace) {
       Error.throwWithStackTrace(PropertyDeleteFailure(error), stackTrace);
+    }
+  }
+
+  /// Gives up [photo], whose upload failed or was not confirmed: its row if
+  /// it was recorded anyway, and its file (best effort, never throws).
+  Future<void> discardRoomPhoto(RoomPhoto photo) async {
+    try {
+      await _client.from(_roomPhotos).delete().eq('id', photo.id);
+    } on Object {
+      // Best effort: the row may not exist.
+    }
+    try {
+      await _client.storage.from(documentsBucket).remove([photo.storagePath]);
+    } on Object {
+      // Best effort: an orphan file only wastes storage.
     }
   }
 
@@ -862,7 +885,10 @@ class PropertyRepository {
     Map<String, Object?> body,
   ) async {
     try {
-      final response = await _client.functions.invoke(function, body: body);
+      final response = await _client.functions.invoke(
+        function,
+        body: {...body, 'consent': visionConsent},
+      );
       return response.data as Map<String, dynamic>;
     } on Object catch (error, stackTrace) {
       Error.throwWithStackTrace(

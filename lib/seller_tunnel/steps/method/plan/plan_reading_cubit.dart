@@ -23,12 +23,27 @@ typedef PlanImageEncoder = Future<Uint8List> Function(Uint8List image);
 Future<Uint8List> encodePlanImage(Uint8List image) =>
     Isolate.run(() => compressPage(image, (maxSide: 2400, quality: 85)));
 
+/// A room of the plan the seller kept: [fromPlan] when its name, level and
+/// area are those read on the plan (`source = plan`, « Extrait d’un
+/// document »), false once corrected or completed by the seller (typed:
+/// `source = manual`, « Déclaré »).
+final class PlanRoomInput extends Equatable {
+  const new(this.room, {this.fromPlan = true});
+
+  final RoomInput room;
+  final bool fromPlan;
+
+  @override
+  List<Object?> get props => [room, fromPlan];
+}
+
 final class PlanReadingState extends Equatable {
   const new({
     this.status = PlanReadingStatus.idle,
     this.document,
     this.reading,
     this.roomsSaved = false,
+    this.retryDocument,
     this.notice,
     this.noticeCount = 0,
   });
@@ -46,6 +61,10 @@ final class PlanReadingState extends Equatable {
   /// Whether the last [PlanReadingCubit.saveRooms] wrote every room.
   final bool roomsSaved;
 
+  /// The plan stored whose reading failed: read again without a new
+  /// upload ("Relire le dernier plan").
+  final PropertyDocument? retryDocument;
+
   final PlanReadingNotice? notice;
   final int noticeCount;
 
@@ -56,12 +75,14 @@ final class PlanReadingState extends Equatable {
     PropertyDocument? Function()? document,
     PlanReading? Function()? reading,
     bool? roomsSaved,
+    PropertyDocument? Function()? retryDocument,
     PlanReadingNotice? notice,
   }) => PlanReadingState(
     status: status,
     document: document == null ? this.document : document(),
     reading: reading == null ? this.reading : reading(),
     roomsSaved: roomsSaved ?? this.roomsSaved,
+    retryDocument: retryDocument == null ? this.retryDocument : retryDocument(),
     notice: notice ?? this.notice,
     noticeCount: notice == null ? noticeCount : noticeCount + 1,
   );
@@ -72,6 +93,7 @@ final class PlanReadingState extends Equatable {
     document,
     reading,
     roomsSaved,
+    retryDocument,
     notice,
     noticeCount,
   ];
@@ -159,7 +181,11 @@ class PlanReadingCubit extends Cubit<PlanReadingState> {
           .timeout(readTimeout);
       if (isClosed) return;
       emit(
-        state.copyWith(status: PlanReadingStatus.idle, reading: () => reading),
+        state.copyWith(
+          status: PlanReadingStatus.idle,
+          reading: () => reading,
+          retryDocument: () => null,
+        ),
       );
     } on Object catch (error, stackTrace) {
       if (isClosed) return;
@@ -167,6 +193,7 @@ class PlanReadingCubit extends Cubit<PlanReadingState> {
       emit(
         state.copyWith(
           status: PlanReadingStatus.idle,
+          retryDocument: () => document,
           notice: error is VisionQuotaFailure
               ? PlanReadingNotice.quota
               : PlanReadingNotice.readFailed,
@@ -175,23 +202,44 @@ class PlanReadingCubit extends Cubit<PlanReadingState> {
     }
   }
 
-  /// Writes [rooms] after the [existing] ones (`source = plan`), each
-  /// recorded as soon as it is written: [onSaved] receives the rows stored
-  /// so far. Then [PlanReadingState.roomsSaved] tells whether every room
-  /// was written.
+  /// Writes [rooms] after the [existing] rooms of the dossier, or in
+  /// their place when [replace] (the existing rooms and their photos are
+  /// deleted first). Each change is recorded at once: [onRooms] receives
+  /// the rooms of the dossier as stored so far. Then
+  /// [PlanReadingState.roomsSaved] tells whether everything was written.
   Future<void> saveRooms(
-    List<RoomInput> rooms, {
+    List<PlanRoomInput> rooms, {
     required List<Room> existing,
-    required void Function(List<Room> saved) onSaved,
+    required void Function(List<Room> rooms) onRooms,
+    bool replace = false,
   }) async {
     if (state.isBusy) return;
     emit(state.copyWith(status: PlanReadingStatus.saving, roomsSaved: false));
     while (_roomIds.length < rooms.length) {
       _roomIds.add(_generateId());
     }
-    final saved = <Room>[];
+    var current = [...existing];
     try {
-      for (final (index, input) in rooms.indexed) {
+      if (replace) {
+        for (final room in existing) {
+          // A room of this plan written by an earlier try stays.
+          if (_roomIds.contains(room.id)) continue;
+          await _repository.deleteRoomPhotos(room.id!).timeout(_timeout);
+          await _repository.deleteRoom(room.id!).timeout(_timeout);
+          current = [
+            for (final other in current)
+              if (other.id != room.id) other,
+          ];
+          onRooms(List.unmodifiable(current));
+          if (isClosed) return;
+        }
+      }
+      final others = [
+        for (final room in current)
+          if (!_roomIds.contains(room.id)) room,
+      ];
+      for (final (index, planRoom) in rooms.indexed) {
+        final input = planRoom.room;
         final room = await _repository
             .saveRoom(
               Room(
@@ -199,16 +247,20 @@ class PlanReadingCubit extends Cubit<PlanReadingState> {
                 propertyId: _property.id,
                 name: input.name,
                 level: input.level,
-                sortOrder: existing.length + index,
+                sortOrder: others.length + index,
                 areaM2: input.areaM2,
                 isMain: input.isMain && !input.isAnnex,
                 isAnnex: input.isAnnex,
-                source: RoomSource.plan,
+                source: planRoom.fromPlan ? RoomSource.plan : RoomSource.manual,
               ),
             )
             .timeout(_timeout);
-        saved.add(room);
-        onSaved(List.unmodifiable(saved));
+        current = [
+          for (final other in current)
+            if (other.id != room.id) other,
+          room,
+        ];
+        onRooms(List.unmodifiable(current));
         if (isClosed) return;
       }
       emit(state.copyWith(status: PlanReadingStatus.idle, roomsSaved: true));

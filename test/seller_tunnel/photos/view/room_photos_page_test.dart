@@ -59,6 +59,7 @@ void main() {
       ),
     );
     when(() => repository.deleteRoomPhoto(any())).thenAnswer((_) async {});
+    when(() => repository.discardRoomPhoto(any())).thenAnswer((_) async {});
     when(() => repository.reorderRoomPhotos(any())).thenAnswer(
       (invocation) async => [
         for (final (i, p)
@@ -481,6 +482,36 @@ void main() {
       await tester.pumpAndSettle();
       await tap(tester, find.bySemanticsLabel('Retour aux pièces'));
       expect(find.byType(RoomPhotosPage), findsNothing);
+    });
+
+    testWidgets('the vision AI can be turned off', (tester) async {
+      stored = [testRoomPhoto('a')];
+      final services = await testPhotoServices(
+        consent: PhotoAnalysisConsent.given,
+      );
+      await pump(tester, services: services);
+      await tap(tester, find.text('Désactiver les suggestions de l’IA'));
+      expect(services.preferences!.consent, PhotoAnalysisConsent.declined);
+      expect(find.text('Suggestions de l’IA'), findsNothing);
+      expect(find.text('Activer les suggestions de l’IA'), findsOneWidget);
+    });
+
+    testWidgets('the system back closes like the back button', (tester) async {
+      final results = await pump(tester);
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+      expect(find.byType(RoomPhotosPage), findsNothing);
+      expect(results, [const RoomPhotosResult(photosCount: 0)]);
+    });
+
+    testWidgets('large text stacks the photo buttons', (tester) async {
+      tester.platformDispatcher.textScaleFactorTestValue = 1.3;
+      addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+      await pump(tester);
+      expect(
+        tester.getTopLeft(find.text('Photothèque')).dy,
+        greaterThan(tester.getTopLeft(find.text('Photographier')).dy),
+      );
     });
 
     testWidgets('the limit of 12 photos disables the buttons', (tester) async {

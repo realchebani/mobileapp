@@ -37,17 +37,26 @@ export interface VisionDeps {
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-/** The id [key] of the JSON body, or an error response. */
+/** Version of the consent screen of the app the seller accepted: the
+ * images are only sent to a model with it (`consent` of the body). */
+export const CONSENT_VERSION = "photo_analysis_v1";
+
+/** The id [key] of the JSON body, or an error response; 403 without the
+ * seller's consent to the vision AI. */
 async function bodyId(request: Request, key: string): Promise<string | Response> {
   const body = await readCapped(request, VISION_LIMITS.bodyBytes);
   if (!body) return failure("too_long", 413);
-  let value: unknown;
+  let parsed: Record<string, unknown> | null;
   try {
-    value = JSON.parse(new TextDecoder().decode(body))?.[key];
+    const value = JSON.parse(new TextDecoder().decode(body));
+    parsed = isRecord(value) ? value : null;
   } catch {
     return failure("bad_request", 400);
   }
-  return typeof value === "string" && UUID.test(value) ? value : failure("bad_request", 400);
+  const value = parsed?.[key];
+  if (typeof value !== "string" || !UUID.test(value)) return failure("bad_request", 400);
+  if (parsed?.consent !== CONSENT_VERSION) return failure("consent_required", 403);
+  return value;
 }
 
 /** The MIME type of a JPEG or PNG image (magic bytes), else null. */

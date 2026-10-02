@@ -45,7 +45,7 @@ Migration `*_room_photos.sql` (additive uniquement).
 - **`rooms.photos_count`** tenu par la base : trigger après insertion / suppression sur `room_photos` + trigger avant écriture sur `rooms` qui recalcule le nombre (la valeur envoyée par l’app est ignorée : un upsert de V5c ne peut pas l’écraser).
 - **RLS** : lecture par le propriétaire du bien ; insertion / mise à jour / suppression seulement si le bien est `draft` ou `submitted` (même verrou que les autres tables enfants). Droits : `select, delete` ; `insert` colonne par colonne (sans `analysis`) ; `update (sort_order)`.
 - **Storage** : même bucket privé `property-documents` (20 Mo, JPEG accepté) ; ses politiques existantes (`lock_document_files`) vérifient déjà le dossier `<uid>` et le bien ouvert (2ᵉ segment) : aucune politique Storage nouvelle. `PropertyRepository.deleteProperty` supprime aussi les photos (sous-dossiers non listés par Storage).
-- `property_documents` : le plan lu en V5 est un document `kind = plan` (image JPEG/PNG) ; l’Edge Function écrit son résultat dans `extracted` et `status = analyzed` (colonnes déjà réservées au backend). Il apparaît donc aussi en V7.
+- `property_documents` : le plan lu en V5 est un document `kind = plan` (image JPEG/PNG) ; l’Edge Function écrit son résultat dans `extracted.plan_reading` (colonne réservée au backend) ; `status` reste `received` (« Analysé » est réservé à l’expert). Il apparaît donc aussi en V7.
 
 ### 2.2 Journal et quotas IA : `vision_requests`
 
@@ -71,6 +71,7 @@ Code commun `supabase/functions/_shared/vision/` (config, client base de donnée
 | `plan-reader` | `{document_id}` | `{reading}` | Document `plan` image du bien brouillon ; l’IA ne renvoie **que** ce qui est imprimé : pièces (`name`, `area_m2` ou `null`, `level` si indiqué, `kind`), `printed_total_m2` ; contrôles : 40 pièces max, surfaces entre 0,5 et 1 000 m², somme comparée au total imprimé (écart > 5 % ⇒ avertissement). PDF : non lu en v1 (415, le vendeur photographie le plan). |
 
 - Modèle : secret `OPENROUTER_MODEL_VISION` (défaut `google/gemini-3.5-flash-lite`, le moins cher du banc vocal, multimodal), optionnellement `OPENROUTER_MODEL_PLAN` ; fournisseur `data_collection: deny`. Clé `OPENROUTER_API_KEY` (jamais dans l’app).
+- **Consentement exigé côté serveur** : l’app envoie `consent: "photo_analysis_v1"` (version de l’écran accepté) ; sans lui, 403 `consent_required`. Le texte visible dans l’image est une donnée, jamais une instruction (consigne des prompts). Constats et objets : tout texte contenant un chiffre, un nombre écrit en lettres ou un mot de mesure (m², mètre, surface, hauteur…) est écarté. Noms de pièces d’un plan : lettres, chiffres, espaces, apostrophes et traits d’union, 40 caractères au plus.
 - Les fonctions **n’écrivent jamais le dossier** (pièces, propriété) : seulement `room_photos.analysis`, `property_documents.extracted/status` et le journal. Le vendeur accepte chaque suggestion dans l’app.
 - Codes d’erreur : `unauthorized` 401, `not_found` 404, `locked` 409, `quota` 429, `unsupported` 415, `upstream` 502.
 - Coût estimé : ≈ 1 500 jetons par photo (image 2 048 px) ⇒ < 0,001 $ par photo, < 0,05 $ par bien ; plan ≈ 0,001 $.
@@ -79,7 +80,7 @@ Code commun `supabase/functions/_shared/vision/` (config, client base de donnée
 
 ### 4.1 V5 · Méthode de relevé
 - Carte « Scanner avec la caméra » **supprimée**.
-- Carte « Lire un plan » (ex-« Importer ou photographier un plan ») active : feuille « Scanner le plan » (VisionKit, 1 page) / « Choisir une photo » ; la note sous les cartes parle désormais des pièces lues sur un plan (plus de mesure au téléphone) ; consentement IA s’il n’a pas été donné (refus ⇒ le plan est seulement déposé pour l’expert, saisie manuelle) ; envoi comme document `plan`, lecture, puis **écran de vérification du plan** (V5-plan) : une ligne par pièce lue (nom, niveau, surface éditable ; case « Garder »), avertissement si la somme ne correspond pas au total imprimé, « Ajouter N pièces » ⇒ pièces écrites (`source = plan`, UUID choisis par l’app), `measurement_method = plan`, ouverture de V5c.
+- Carte « Lire un plan » (ex-« Importer ou photographier un plan ») active : feuille « Scanner le plan » (VisionKit, 1 page) / « Choisir une photo » ; la note sous les cartes parle désormais des pièces lues sur un plan (plus de mesure au téléphone) ; consentement IA s’il n’a pas été donné (refus ⇒ le plan est seulement déposé pour l’expert, saisie manuelle) ; envoi comme document `plan`, lecture, puis **écran de vérification du plan** (V5-plan) : une ligne par pièce lue (nom, niveau, surface éditable ; case « Garder »), avertissement si la somme ne correspond pas au total imprimé, « Ajouter N pièces » ⇒ pièces écrites (UUID choisis par l’app ; `source = plan` et « Extrait d’un document » seulement pour une ligne gardée telle qu’imprimée, `source = manual` / « Déclaré » dès que le vendeur corrige ou complète la ligne), `measurement_method = plan`, ouverture de V5c. Si le bien a déjà des pièces : « Ajouter à mes pièces » ou « Remplacer mes pièces » (les pièces existantes et leurs photos sont supprimées, avec avertissement). Une lecture ratée se relance par « Relire le dernier plan » sans nouvel envoi (le serveur ne relit pas un plan déjà lu).
 
 ### 4.2 V5c · Récapitulatif des surfaces (+ photos)
 - Chaque ligne : bouton photo avec le nombre de photos ; pièce principale sans photo signalée (« Photo requise ») ; étiquette « Plan » (couleurs de la provenance « Extrait d’un document », rappelée en tête du tableau) pour une pièce lue sur le plan ; une pièce du plan dont le nom ou la surface est corrigé devient saisie (`source = manual`). La surface habitable (ou des annexes) a la provenance `document` quand toutes ses pièces viennent du plan, `declared` sinon.
@@ -87,13 +88,18 @@ Code commun `supabase/functions/_shared/vision/` (config, client base de donnée
 - Fiche pièce (édition) : bouton « Photos de la pièce (N) » ; suppression d’une pièce avec photos : avertissement, photos supprimées avec la pièce à l’enregistrement.
 - Ouvrir les photos d’une pièce non encore enregistrée l’enregistre d’abord (upsert par id, enregistré aussitôt dans le tunnel).
 
+### 4.2 bis Vie privée
+- Les métadonnées EXIF (position GPS, appareil, date) sont retirées sur le téléphone avant l’envoi : photos de l’appareil et de la photothèque, plans et pages scannées (`processPhoto`, `compressPage`).
+- Le consentement à l’IA se retire à tout moment : « Désactiver les suggestions de l’IA » (écran des photos) et Compte › « Suggestions de l’IA sur les photos ».
+
 ### 4.3 Photos de la pièce (nouvel écran, réutilisable)
 - En-tête « Photos · Séjour », rappel « Pièce principale : au moins une photo ».
 - Conseils : angle de la pièce, téléphone droit à hauteur de poitrine, lumière, **personne dans le champ**, montrer aussi les défauts (fissures, humidité) pour l’expert.
 - Grille des photos (miniatures par URL signée), état d’envoi / d’analyse, badges « Personne visible », « Floue », « Sombre », « Penchée » ; détail d’une photo (feuille) : grande image, contrôles, notes de l’IA, « Mettre en premier », « Supprimer ».
 - « Photographier » (écran caméra) et « Photothèque » (sélection multiple). Le consentement à l’IA est demandé à la première photo (une seule fois ; refus mémorisé).
 - Carte **Suggestions de l’IA** (si consentement) : type de pièce, revêtement, vitrage (« Appliquer »), constats (« Ajouter à la description »), objets personnels à ranger avant l’annonce. Les valeurs appliquées reviennent dans le formulaire de la pièce de V5c (enregistrées avec « Continuer ») : ce sont des réponses du vendeur (« Déclaré ») ; la proposition de l’IA reste dans `room_photos.analysis` pour l’expert.
-- Lien « Activer les suggestions de l’IA » quand le consentement a été refusé.
+- Lien « Activer les suggestions de l’IA » quand le consentement a été refusé, « Désactiver les suggestions de l’IA » quand il est donné.
+- Envoi : un échec dont la réponse a pu se perdre (délai dépassé) est vérifié en relisant les photos de la pièce ; le fichier n’est supprimé côté serveur que si la base a refusé la ligne ; « Retirer » une photo non envoyée supprime sa ligne (par id) et son fichier au cas où. Retour système Android : comme le bouton retour, une fois les envois terminés.
 
 ### 4.4 Prise de vue (nouvel écran)
 - Aperçu `camera` plein écran, grille des tiers, **niveau** (accéléromètre, `sensors_plus`), bandeau « Personne dans le champ · Allumez et ouvrez les rideaux », déclencheur, compteur, « Terminé ».
@@ -126,6 +132,9 @@ Code commun `supabase/functions/_shared/vision/` (config, client base de donnée
 | 9 | Tests 100 %, analyse, licences, build iOS, rendus | ✅ |
 
 ## 6. Hors périmètre / backlog
+- Changer l’ordre des photos en une seule requête (RPC) au lieu d’une requête par photo modifiée (≤ 12).
+- Empêcher côté serveur la suppression de la dernière photo d’une pièce principale d’un dossier envoyé (aujourd’hui : l’app ne permet plus de modifier un dossier envoyé).
+- Retirer aussi l’EXIF des documents importés tels quels en V7 (hors photos de pièces et plans).
 - Floutage automatique des visages (Apple Vision ou ML Kit) — après les tests.
 - Lecture des plans PDF ; plans sur plusieurs pages en une fois.
 - Banc d’essai du modèle de vision sur 30 photos réelles (comme pour la voix), boîtes englobantes des objets personnels.
@@ -136,3 +145,4 @@ Code commun `supabase/functions/_shared/vision/` (config, client base de donnée
 - 2026-10-02 — Migration `20261002162210_room_photos` : sonde RLS dans une transaction annulée (21 contrôles : dossier de l’utilisateur et du bien, pièce du même bien, `analysis` non modifiable par l’app, 12 photos max, compteur `photos_count` tenu même après un upsert de V5c, verrou `in_review`, cascade à la suppression d’une pièce, journal et quota réservés au service role), dry-run puis push.
 - 2026-10-02 — `_shared/vision`, `vision-room`, `plan-reader` : 25 tests Deno (validation, handlers avec base et OpenRouter factices) ; déployées. Essai de bout en bout avec un utilisateur jetable (`epic15-e2e@realesty.fr`) : photo analysée en ≈ 3,5 s pour 0,00073 $ (réponse en cache au 2ᵉ appel) ; plan de test lu en ≈ 4,5 s pour 0,0013 $ (6 pièces, WC sans surface laissé vide, total 64 m² retrouvé).
 - 2026-10-02 — Dépôt (`PropertyRepository` : photos, URLs signées, analyses, lecture de plan, suppression des photos avec le bien), écrans (Photos de la pièce, Prise de vue, Consentement, Pièces lues sur le plan), V5 / V5c / V7 / V8, runbook ; tests à 100 % (app et paquet), analyse, bloc lint, format, licences OK ; rendus dans `scratchpad/epic15/shots/`.
+- 2026-10-02 — Corrections après vérification : EXIF retiré avant l’envoi (photos, plans, pages scannées ; test sans GPS ni appareil), consentement exigé par les fonctions (403 sans lui) et retirable (écran des photos, Compte), prompts et filtres durcis (texte de l’image = donnée, nombres en lettres et mots de mesure, noms de pièces nettoyés), provenance ligne par ligne du plan, « Remplacer mes pièces », « Relire le dernier plan », envoi perdu vérifié / fichier conservé / « Retirer » par id, retour Android, mise en page en grand texte. Fonctions redéployées ; essai de bout en bout refait (403 sans consentement).

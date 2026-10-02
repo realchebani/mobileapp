@@ -275,6 +275,36 @@ void main() {
     });
   });
 
+  test('uploadRoomPhoto keeps the file when the answer is lost', () async {
+    respond = (request) {
+      if (isStorage(request)) return json({'Key': path});
+      throw http.ClientException('connection reset');
+    };
+    await expectLater(
+      repository.uploadRoomPhoto(photo, bytes: bytes),
+      failure<PropertySaveFailure>(),
+    );
+    expect(requests.where((r) => r.method == 'DELETE'), isEmpty);
+  });
+
+  group('discardRoomPhoto', () {
+    test('deletes the row by id and the file', () async {
+      respond = (request) => json(<Object>[]);
+      await repository.discardRoomPhoto(photo);
+      final [row, file] = requests;
+      expect(row.url.queryParameters['id'], 'eq.$photoId');
+      expect(jsonDecode(file.body), {
+        'prefixes': [path],
+      });
+    });
+
+    test('never throws', () async {
+      respond = (_) => error();
+      await repository.discardRoomPhoto(photo);
+      expect(requests, hasLength(2));
+    });
+  });
+
   group('deleteRoomPhoto', () {
     test('deletes the row then the file', () async {
       respond = (request) => isStorage(request)
@@ -400,7 +430,10 @@ void main() {
       expect(analysis.roomKind, 'kitchen');
       final request = requests.single;
       expect(request.url.path, '/functions/v1/vision-room');
-      expect(jsonDecode(request.body), {'photo_id': photoId});
+      expect(jsonDecode(request.body), {
+        'photo_id': photoId,
+        'consent': 'photo_analysis_v1',
+      });
     });
 
     test('readPlan invokes plan-reader', () async {
@@ -411,7 +444,10 @@ void main() {
       final reading = await repository.readPlan('doc');
       expect(reading.isFloorPlan, isTrue);
       expect(requests.single.url.path, '/functions/v1/plan-reader');
-      expect(jsonDecode(requests.single.body), {'document_id': 'doc'});
+      expect(jsonDecode(requests.single.body), {
+        'document_id': 'doc',
+        'consent': 'photo_analysis_v1',
+      });
     });
 
     test('maps the quota and the other errors', () async {

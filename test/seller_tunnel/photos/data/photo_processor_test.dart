@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:image/image.dart' as img;
 import 'package:mobileapp/seller_tunnel/photos/data/photo_processor.dart';
+import 'package:mobileapp/seller_tunnel/steps/documents/data/scan_pdf_builder.dart';
 import 'package:property_repository/property_repository.dart';
 
 /// A [width] × [height] JPEG: a checkerboard of [size] px squares (sharp)
@@ -79,6 +80,41 @@ void main() {
         () => processPhoto(Uint8List.fromList(List.filled(64, 7))),
         throwsFormatException,
       );
+    });
+  });
+
+  group('privacy', () {
+    /// A JPEG carrying a GPS position and the device make.
+    Uint8List located() {
+      final image = img.Image(width: 64, height: 48);
+      image.exif.imageIfd
+        ..make = 'Apple'
+        ..model = 'iPhone 14 Plus';
+      image.exif.gpsIfd
+        ..gpsLatitude = 45.7
+        ..gpsLongitude = 4.75;
+      final jpeg = img.encodeJpg(image);
+      final check = img.decodeJpg(jpeg)!;
+      expect(check.exif.gpsIfd.hasGPSLatitude, isTrue);
+      expect(check.exif.imageIfd.make, 'Apple');
+      return jpeg;
+    }
+
+    void expectNoMetadata(Uint8List jpeg) {
+      final decoded = img.decodeJpg(jpeg)!;
+      expect(decoded.exif.gpsIfd.hasGPSLatitude, isFalse);
+      expect(decoded.exif.gpsIfd.hasGPSLongitude, isFalse);
+      expect(decoded.exif.imageIfd.make, isNull);
+      expect(decoded.exif.imageIfd.model, isNull);
+      expect(decoded.exif.isEmpty, isTrue);
+    }
+
+    test('a photo keeps no GPS position nor device', () {
+      expectNoMetadata(processPhoto(located()).bytes);
+    });
+
+    test('a plan or scanned page keeps none either', () {
+      expectNoMetadata(compressPage(located(), (maxSide: 2400, quality: 85)));
     });
   });
 

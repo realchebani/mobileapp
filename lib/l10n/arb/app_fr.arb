@@ -5524,5 +5524,46 @@
   "surfacesPlanTag": "Plan",
   "@surfacesPlanTag": {
     "description": "V5c · étiquette d’une pièce lue sur le plan (provenance « Extrait d’un document », EPIC-15)"
+  },
+  "photosDisableAnalysis": "Désactiver les suggestions de l’IA",
+  "@photosDisableAnalysis": {
+    "description": "EPIC-15 · retirer le consentement à l’IA de vision"
+  },
+  "accountPhotoAnalysis": "Suggestions de l’IA sur les photos",
+  "@accountPhotoAnalysis": {
+    "description": "Compte · consentement à l’IA de vision (EPIC-15)"
+  },
+  "accountPhotoAnalysisOn": "Activées · touchez pour les désactiver",
+  "@accountPhotoAnalysisOn": {
+    "description": "Compte · IA de vision acceptée (EPIC-15)"
+  },
+  "accountPhotoAnalysisOff": "Désactivées · touchez pour les activer",
+  "@accountPhotoAnalysisOff": {
+    "description": "Compte · IA de vision refusée ou pas encore demandée (EPIC-15)"
+  },
+  "planReviewChoiceTitle": "Vous avez déjà {count, plural, =1{1 pièce} other{{count} pièces}}",
+  "@planReviewChoiceTitle": {
+    "description": "V5 · plan · choix ajouter ou remplacer (EPIC-15)",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "planReviewAddToRooms": "Ajouter à mes pièces",
+  "@planReviewAddToRooms": {
+    "description": "V5 · plan · ajouter les pièces lues (EPIC-15)"
+  },
+  "planReviewReplaceRooms": "Remplacer mes pièces",
+  "@planReviewReplaceRooms": {
+    "description": "V5 · plan · remplacer les pièces existantes (EPIC-15)"
+  },
+  "planReviewReplaceWarning": "Remplacer supprime vos pièces actuelles et leurs photos.",
+  "@planReviewReplaceWarning": {
+    "description": "V5 · plan · avertissement du remplacement (EPIC-15)"
+  },
+  "methodPlanRetry": "Relire le dernier plan",
+  "@methodPlanRetry": {
+    "description": "V5 · relire le plan déjà envoyé après un échec (EPIC-15)"
   }
 }

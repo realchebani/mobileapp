@@ -6,6 +6,8 @@ import 'package:mobileapp/l10n/l10n.dart';
 import 'package:mobileapp/profile/profile.dart';
 import 'package:mobileapp/seller_space/widgets/seller_space_header.dart';
 import 'package:mobileapp/seller_tunnel/cubit/seller_tunnel_cubit.dart';
+import 'package:mobileapp/seller_tunnel/photos/photo_services.dart';
+import 'package:mobileapp/seller_tunnel/photos/view/photo_consent_page.dart';
 import 'package:mobileapp/ui/ui.dart';
 import 'package:property_repository/property_repository.dart';
 
@@ -99,8 +101,10 @@ class AccountPage extends StatelessWidget {
                   title: l10n.accountLanguage,
                   subtitle: l10n.accountLanguageValue,
                   leadingIcon: RealestyIcons.chat,
-                  showDivider: false,
+                  showDivider: PhotoServices.of(context).analysisAvailable,
                 ),
+                if (PhotoServices.of(context).analysisAvailable)
+                  const _PhotoAnalysisItem(),
               ],
             ),
             const SizedBox(height: RealestySpacing.md),
@@ -172,6 +176,44 @@ class _Section extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// "Suggestions de l’IA sur les photos" (EPIC-15): withdraws the consent
+/// to the vision AI, or asks it again.
+class _PhotoAnalysisItem extends StatefulWidget {
+  const new();
+
+  @override
+  State<_PhotoAnalysisItem> createState() => _PhotoAnalysisItemState();
+}
+
+class _PhotoAnalysisItemState extends State<_PhotoAnalysisItem> {
+  Future<void> _toggle() async {
+    final preferences = PhotoServices.of(context).preferences!;
+    if (preferences.consent == PhotoAnalysisConsent.given) {
+      await preferences.setConsent(given: false);
+    } else {
+      await ensurePhotoAnalysisConsent(context, ask: true);
+    }
+    if (mounted) setState(() {});
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final given =
+        PhotoServices.of(context).preferences!.consent ==
+        PhotoAnalysisConsent.given;
+    return RealestyListItem(
+      title: l10n.accountPhotoAnalysis,
+      subtitle: given
+          ? l10n.accountPhotoAnalysisOn
+          : l10n.accountPhotoAnalysisOff,
+      leadingIcon: RealestyIcons.camera,
+      showDivider: false,
+      onTap: _toggle,
     );
   }
 }

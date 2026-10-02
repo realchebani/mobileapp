@@ -53,8 +53,9 @@ class MethodPage extends StatelessWidget {
   }
 }
 
-/// Where the photo of the plan comes from.
-enum PlanSource { scan, library }
+/// Where the photo of the plan comes from ([retry]: the plan stored whose
+/// reading failed).
+enum PlanSource { scan, library, retry }
 
 class MethodView extends StatelessWidget {
   const new({super.key});
@@ -99,47 +100,58 @@ class MethodView extends StatelessWidget {
     final tunnel = context.read<SellerTunnelCubit>();
     final cubit = context.read<PlanReadingCubit>();
     final picker = context.read<DocumentPicker>();
-    final source = await _showPlanSourceSheet(context);
+    final retry = cubit.state.retryDocument;
+    final source = await _showPlanSourceSheet(context, retry: retry != null);
     if (source == null || !context.mounted) return;
-    final Uint8List? image;
-    try {
-      image = switch (source) {
-        PlanSource.scan => await (await picker.scanPages(
-          maxPages: 1,
-        ))?.firstOrNull?.readAsBytes(),
-        PlanSource.library => await (await picker.pick(
-          DocumentSource.photos,
-        ))?.readAsBytes(),
-      };
-    } on Object catch (error) {
-      if (context.mounted) {
-        showRealestySnackBar(
-          context,
-          error is DocumentAccessDenied
-              ? l10n.methodPlanAccessDenied
-              : l10n.methodPlanUploadError,
-          isError: true,
-        );
+    final PropertyDocument document;
+    if (source == PlanSource.retry) {
+      // The plan already stored: read again, no new upload.
+      document = retry!;
+    } else {
+      final Uint8List? image;
+      try {
+        image = switch (source) {
+          PlanSource.scan => await (await picker.scanPages(
+            maxPages: 1,
+          ))?.firstOrNull?.readAsBytes(),
+          _ => await (await picker.pick(DocumentSource.photos))?.readAsBytes(),
+        };
+      } on Object catch (error) {
+        if (context.mounted) {
+          showRealestySnackBar(
+            context,
+            error is DocumentAccessDenied
+                ? l10n.methodPlanAccessDenied
+                : l10n.methodPlanUploadError,
+            isError: true,
+          );
+        }
+        return;
       }
-      return;
-    }
-    if (image == null || !context.mounted) return;
-    final consent = await ensurePhotoAnalysisConsent(context, ask: true);
-    await cubit.store(image);
-    final document = cubit.state.document;
-    if (document == null || !context.mounted) return;
-    tunnel.updateChildren(documents: [...tunnel.state.documents, document]);
-    if (!consent) {
-      showRealestySnackBar(context, l10n.methodPlanSavedNoAi);
-      await tunnel.saveAndContinue(_step, {
-        PropertyColumns.measurementMethod: MeasurementMethod.plan,
-      });
-      return;
+      if (image == null || !context.mounted) return;
+      final consent = await ensurePhotoAnalysisConsent(context, ask: true);
+      await cubit.store(image);
+      final stored = cubit.state.document;
+      if (stored == null || !context.mounted) return;
+      tunnel.updateChildren(documents: [...tunnel.state.documents, stored]);
+      if (!consent) {
+        showRealestySnackBar(context, l10n.methodPlanSavedNoAi);
+        await tunnel.saveAndContinue(_step, {
+          PropertyColumns.measurementMethod: MeasurementMethod.plan,
+        });
+        return;
+      }
+      document = stored;
     }
     await cubit.read(document);
     final reading = cubit.state.reading;
     if (reading == null || !context.mounted) return;
-    final result = await showPlanReview(context, reading);
+    final existing = tunnel.state.rooms;
+    final result = await showPlanReview(
+      context,
+      reading,
+      existingRooms: existing.length,
+    );
     switch (result) {
       case null:
         return;
@@ -147,18 +159,12 @@ class MethodView extends StatelessWidget {
         await tunnel.saveAndContinue(_step, {
           PropertyColumns.measurementMethod: MeasurementMethod.manual,
         });
-      case PlanReviewAccepted(:final rooms):
-        final existing = tunnel.state.rooms;
+      case PlanReviewAccepted(:final rooms, :final replace):
         await cubit.saveRooms(
           rooms,
-          existing: existing,
-          onSaved: (saved) => tunnel.updateChildren(
-            rooms: [
-              for (final room in existing)
-                if (!saved.any((s) => s.id == room.id)) room,
-              ...saved,
-            ],
-          ),
+          existing: tunnel.state.rooms,
+          replace: replace,
+          onRooms: (rooms) => tunnel.updateChildren(rooms: rooms),
         );
         if (!cubit.state.roomsSaved) return;
         await tunnel.saveAndContinue(_step, {
@@ -167,7 +173,10 @@ class MethodView extends StatelessWidget {
     }
   }
 
-  static Future<PlanSource?> _showPlanSourceSheet(BuildContext context) {
+  static Future<PlanSource?> _showPlanSourceSheet(
+    BuildContext context, {
+    bool retry = false,
+  }) {
     final l10n = context.l10n;
     return showModalBottomSheet<PlanSource>(
       context: context,
@@ -186,6 +195,12 @@ class MethodView extends StatelessWidget {
             title: l10n.methodPlanLibrary,
             icon: RealestyIcons.camera,
           ),
+          if (retry)
+            DocumentOption(
+              value: PlanSource.retry,
+              title: l10n.methodPlanRetry,
+              icon: RealestyIcons.swap,
+            ),
         ],
       ),
     );

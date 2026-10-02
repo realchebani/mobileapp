@@ -38,6 +38,7 @@ void main() {
     when(() => repository.analyzeRoomPhoto(any()))
         .thenAnswer((_) async => const RoomPhotoAnalysis(roomKind: 'kitchen'));
     when(() => repository.deleteRoomPhoto(any())).thenAnswer((_) async {});
+    when(() => repository.discardRoomPhoto(any())).thenAnswer((_) async {});
     when(() => repository.reorderRoomPhotos(any())).thenAnswer(
       (invocation) async => [
         for (final (i, p)
@@ -196,6 +197,58 @@ void main() {
       await settle();
       expect(cubit.state.pending, isEmpty);
       expect(cubit.state.photos.single.id, 'p1');
+    });
+
+    test('a lost answer: the photo stored anyway is kept', () async {
+      final cubit = build(analysis: true);
+      await cubit.load();
+      when(() => repository.uploadRoomPhoto(any(), bytes: any(named: 'bytes')))
+          .thenThrow(TimeoutException('lost'));
+      when(() => repository.getRoomPhotos(any(), roomId: any(named: 'roomId')))
+          .thenAnswer((_) async => [testRoomPhoto('p1')]);
+      cubit.addFromCamera(processedPhoto());
+      await settle();
+      expect(cubit.state.pending, isEmpty);
+      expect(cubit.state.photos.single.id, 'p1');
+      expect(cubit.state.notice, isNull);
+      verify(() => repository.analyzeRoomPhoto('p1')).called(1);
+    });
+
+    test('a failed reload after a failed upload keeps it to retry', () async {
+      final cubit = build();
+      await cubit.load();
+      when(() => repository.uploadRoomPhoto(any(), bytes: any(named: 'bytes')))
+          .thenThrow(Exception());
+      when(() => repository.getRoomPhotos(any(), roomId: any(named: 'roomId')))
+          .thenThrow(Exception());
+      cubit.addFromCamera(processedPhoto());
+      await settle();
+      expect(cubit.state.pending.single.failed, isTrue);
+      cubit.discard('p1');
+      verify(
+        () => repository.discardRoomPhoto(
+          any(that: isA<RoomPhoto>().having((p) => p.id, 'id', 'p1')),
+        ),
+      ).called(1);
+    });
+
+    test('stops analysing once the consent is withdrawn', () async {
+      when(() => repository.getRoomPhotos(any(), roomId: any(named: 'roomId')))
+          .thenAnswer((_) async => [testRoomPhoto('a'), testRoomPhoto('b')]);
+      final gate = Completer<RoomPhotoAnalysis>();
+      when(() => repository.analyzeRoomPhoto('a'))
+          .thenAnswer((_) => gate.future);
+      final cubit = build(analysis: true);
+      await cubit.load();
+      await settle();
+      cubit
+        ..disableAnalysis()
+        ..disableAnalysis();
+      expect(cubit.state.analysisEnabled, isFalse);
+      expect(cubit.state.analyzing, isEmpty);
+      gate.complete(const RoomPhotoAnalysis());
+      await settle();
+      verifyNever(() => repository.analyzeRoomPhoto('b'));
     });
 
     test('a pending photo cannot be discarded while it is sent', () async {

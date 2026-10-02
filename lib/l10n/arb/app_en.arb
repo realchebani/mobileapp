@@ -1111,5 +1111,14 @@
   "submittedSummaryPhotosCount": "{count, plural, =0{No photo} =1{1 photo} other{{count} photos}}",
   "submittedSummaryRoomPhotos": "Photos · {room}",
   "documentsActionHintPhotos": "A photo of each main room is required to send",
-  "surfacesPlanTag": "Plan"
+  "surfacesPlanTag": "Plan",
+  "photosDisableAnalysis": "Turn off the AI suggestions",
+  "accountPhotoAnalysis": "AI suggestions on the photos",
+  "accountPhotoAnalysisOn": "On · tap to turn them off",
+  "accountPhotoAnalysisOff": "Off · tap to turn them on",
+  "planReviewChoiceTitle": "You already have {count, plural, =1{1 room} other{{count} rooms}}",
+  "planReviewAddToRooms": "Add to my rooms",
+  "planReviewReplaceRooms": "Replace my rooms",
+  "planReviewReplaceWarning": "Replacing deletes your current rooms and their photos.",
+  "methodPlanRetry": "Read the last plan again"
 }
