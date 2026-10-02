@@ -23,11 +23,17 @@ enum RoomPhotosNotice {
   /// Deleting a photo failed.
   deleteFailed,
 
+  /// The last photo of a main room of a sent dossier cannot be deleted.
+  lastPhotoRequired,
+
   /// Changing the order failed.
   reorderFailed,
 
   /// The daily quota of the vision AI is used up.
   analysisQuota,
+
+  /// The photo is already being analysed (another request).
+  analysisBusy,
 }
 
 /// A photo being prepared or sent (or whose upload failed).

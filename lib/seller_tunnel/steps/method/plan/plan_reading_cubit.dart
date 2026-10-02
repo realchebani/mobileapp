@@ -13,7 +13,7 @@ import 'package:property_repository/property_repository.dart';
 enum PlanReadingStatus { idle, uploading, reading, saving }
 
 /// What went wrong, told once (a snackbar).
-enum PlanReadingNotice { uploadFailed, readFailed, quota, saveFailed }
+enum PlanReadingNotice { uploadFailed, readFailed, quota, busy, saveFailed }
 
 /// Turns a photo of a plan into the JPEG sent to the vision AI (upright,
 /// reduced, readable).
@@ -194,9 +194,11 @@ class PlanReadingCubit extends Cubit<PlanReadingState> {
         state.copyWith(
           status: PlanReadingStatus.idle,
           retryDocument: () => document,
-          notice: error is VisionQuotaFailure
-              ? PlanReadingNotice.quota
-              : PlanReadingNotice.readFailed,
+          notice: switch (error) {
+            VisionQuotaFailure() => PlanReadingNotice.quota,
+            VisionBusyFailure() => PlanReadingNotice.busy,
+            _ => PlanReadingNotice.readFailed,
+          },
         ),
       );
     }

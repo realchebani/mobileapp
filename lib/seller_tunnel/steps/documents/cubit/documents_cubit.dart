@@ -3,6 +3,7 @@ import 'dart:typed_data';
 
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
+import 'package:mobileapp/seller_tunnel/photos/data/photo_processor.dart';
 import 'package:mobileapp/seller_tunnel/steps/documents/data/document_picker.dart';
 import 'package:mobileapp/seller_tunnel/steps/documents/models/document_checklist.dart';
 import 'package:property_repository/property_repository.dart';
@@ -13,7 +14,9 @@ part 'documents_state.dart';
 typedef DocumentUrlOpener = Future<bool> Function(Uri uri);
 
 /// V7 · Le Vault documents: picks, uploads (also the PDFs of the scans),
-/// opens and deletes the documents of the dossier.
+/// opens and deletes the documents of the dossier. The metadata of an
+/// imported image (GPS position, device…) is removed before the upload
+/// ([PhotoProcessor.stripMetadata]); a PDF is never changed.
 ///
 /// The view reports [DocumentsState.documents] to the tunnel cubit when they
 /// change, and submits the dossier through it.
@@ -25,8 +28,10 @@ class DocumentsCubit extends Cubit<DocumentsState> {
     required Property property,
     List<PropertyDocument> documents = const [],
     List<Room> rooms = const [],
+    PhotoProcessor? photoProcessor,
     this._timeout = defaultTimeout,
-  }) : super(
+  }) : _photoProcessor = photoProcessor ?? const IsolatePhotoProcessor(),
+       super(
          DocumentsState(property: property, documents: documents, rooms: rooms),
        );
 
@@ -52,6 +57,7 @@ class DocumentsCubit extends Cubit<DocumentsState> {
   final PropertyRepository _propertyRepository;
   final DocumentPicker _documentPicker;
   final DocumentUrlOpener _openUrl;
+  final PhotoProcessor _photoProcessor;
   final Duration _timeout;
 
   /// Lifetime of the URLs opening the documents.
@@ -123,10 +129,15 @@ class DocumentsCubit extends Cubit<DocumentsState> {
         _notify(DocumentsNotice.fileTooLarge);
         return null;
       }
+      final bytes = await _withoutMetadata(await file.readAsBytes(), mimeType);
+      if (bytes == null) {
+        _notify(DocumentsNotice.metadataUnremovable);
+        return null;
+      }
       return PickedDocument(
         fileName: _fileNameOf(file),
         mimeType: mimeType,
-        bytes: await file.readAsBytes(),
+        bytes: bytes,
       );
     } on DocumentAccessDenied catch (error, stackTrace) {
       addError(error, stackTrace);
@@ -136,6 +147,19 @@ class DocumentsCubit extends Cubit<DocumentsState> {
       _notify(DocumentsNotice.pickFailed);
     }
     return null;
+  }
+
+  /// [bytes] without the metadata of an image (privacy: GPS position,
+  /// device…), or null when it cannot be removed (the file must not be
+  /// uploaded; the error is reported). A PDF is never changed.
+  Future<Uint8List?> _withoutMetadata(Uint8List bytes, String mimeType) async {
+    if (mimeType == 'application/pdf') return bytes;
+    try {
+      return await _photoProcessor.stripMetadata(bytes);
+    } on FormatException catch (error, stackTrace) {
+      addError(error, stackTrace);
+      return null;
+    }
   }
 
   /// "Envoyer" was tapped while documents needed to send are missing:

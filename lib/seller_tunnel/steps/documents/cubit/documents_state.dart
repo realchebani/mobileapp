@@ -8,6 +8,10 @@ enum DocumentsNotice {
   /// The file is not a PDF, JPG, PNG or HEIC.
   unsupportedType,
 
+  /// The metadata of the image (GPS position…) cannot be removed: the
+  /// file is not uploaded.
+  metadataUnremovable,
+
   /// Access to the camera or the photos was denied.
   accessDenied,
 

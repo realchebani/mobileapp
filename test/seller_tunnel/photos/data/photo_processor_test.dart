@@ -116,6 +116,56 @@ void main() {
     test('a plan or scanned page keeps none either', () {
       expectNoMetadata(compressPage(located(), (maxSide: 2400, quality: 85)));
     });
+
+    test('an image that cannot be parsed is re-encoded without metadata', () {
+      final source = located();
+      final appEnd = 4 + ((source[4] << 8) | source[5]);
+      // A stray byte after the JFIF segment: the lossless walk refuses it.
+      final odd = Uint8List.fromList([
+        ...source.sublist(0, appEnd),
+        0,
+        ...source.sublist(appEnd),
+      ]);
+      expect(() => stripImageMetadata(odd), throwsFormatException);
+      final cleaned = cleanDocumentImage(odd);
+      expectNoMetadata(cleaned);
+      expect(img.decodeJpg(cleaned)!.width, 64);
+
+      final png = img.encodePng(img.Image(width: 3, height: 2));
+      final cut = Uint8List.fromList(png.sublist(0, png.length - 2));
+      expect(() => stripImageMetadata(cut), throwsFormatException);
+      final repaired = cleanDocumentImage(cut);
+      expect(repaired.sublist(0, 4), [0x89, 0x50, 0x4E, 0x47]);
+      expect(img.decodePng(repaired)!.width, 3);
+    });
+
+    test('an image that can be neither parsed nor decoded is refused', () {
+      for (final bytes in [
+        [0xFF, 0xD8, 0xFF, 0xD9],
+        [0xFF, 0xD8, 0xFF, 0xE1, 0, 40],
+      ]) {
+        expect(
+          () => cleanDocumentImage(Uint8List.fromList(bytes)),
+          throwsFormatException,
+        );
+      }
+    });
+
+    test(
+      'an imported document keeps none, losslessly, in the background',
+      () async {
+        const processor = IsolatePhotoProcessor();
+        final source = located();
+        final cleaned = await processor.stripMetadata(source);
+        expectNoMetadata(cleaned);
+        expect(
+          img.decodeJpg(cleaned)!.getPixel(10, 10),
+          img.decodeJpg(source)!.getPixel(10, 10),
+        );
+        final pdf = Uint8List.fromList('%PDF-1.7'.codeUnits);
+        expect(await processor.stripMetadata(pdf), same(pdf));
+      },
+    );
   });
 
   test('IsolatePhotoProcessor processes in the background', () async {

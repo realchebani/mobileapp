@@ -389,3 +389,4 @@ Contrôle : chaque tranche vérifiée par un agent indépendant (tests, revue, r
 - Q10 V2 : suggestion **« Même adresse que… »**, parcelles à confirmer.
 - Q11 Limite : **5 biens au total par vendeur pendant la phase de test**.
 - Q12 Lot à des adresses différentes : **aucun contrôle**.
+- 2026-10-02 : durcissement — contrôle des fichiers orphelins (risque §12) : fonction `staff_orphan_files` (migration `20261002202107_photos_hardening`) et procédure de ménage manuel dans `docs/runbooks/certifier-un-dossier.md` §5.

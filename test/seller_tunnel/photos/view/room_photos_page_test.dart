@@ -364,6 +364,22 @@ void main() {
       expect(find.text('1 photo n’a pas pu être analysée.'), findsNothing);
     });
 
+    testWidgets('tells when the photo is already being analysed', (
+      tester,
+    ) async {
+      stored = [testRoomPhoto('a')];
+      when(() => repository.analyzeRoomPhoto(any()))
+          .thenThrow(const VisionBusyFailure('x'));
+      final services = await testPhotoServices(
+        consent: PhotoAnalysisConsent.given,
+      );
+      await pump(tester, services: services);
+      expect(
+        find.text('Analyse déjà en cours, réessayez dans un instant.'),
+        findsOneWidget,
+      );
+    });
+
     testWidgets('tells when the analysis quota is reached', (tester) async {
       stored = [testRoomPhoto('a')];
       when(() => repository.analyzeRoomPhoto(any()))
@@ -424,6 +440,26 @@ void main() {
       expect(find.text('Aucun défaut détecté.'), findsOneWidget);
       await tap(tester, find.bySemanticsLabel('Fermer'));
       expect(find.byType(PhotoTile), findsOneWidget);
+    });
+
+    testWidgets('the last photo of a main room of a sent dossier stays', (
+      tester,
+    ) async {
+      stored = [testRoomPhoto('a')];
+      when(() => repository.deleteRoomPhoto(any()))
+          .thenThrow(const RoomPhotoRequiredFailure('x'));
+      await pump(tester);
+      await tap(tester, find.byType(PhotoTile).first);
+      await tap(tester, find.text('Supprimer la photo'));
+      expect(find.byType(PhotoTile), findsOneWidget);
+      expect(
+        find.text(
+          'Cette pièce principale doit garder au moins une photo : '
+                  'ajoutez-en une autre avant de supprimer celle-ci.'
+              .replaceAll(' :', '$_nbsp:'),
+        ),
+        findsOneWidget,
+      );
     });
 
     testWidgets('a failed upload can be retried or removed', (tester) async {

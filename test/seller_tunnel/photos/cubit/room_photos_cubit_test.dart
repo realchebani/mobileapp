@@ -297,6 +297,12 @@ void main() {
       await cubit.delete(b);
       expect(cubit.state.photos, [b]);
       expect(cubit.state.notice, RoomPhotosNotice.deleteFailed);
+
+      when(() => repository.deleteRoomPhoto(any()))
+          .thenThrow(const RoomPhotoRequiredFailure('x'));
+      await cubit.delete(b);
+      expect(cubit.state.photos, [b]);
+      expect(cubit.state.notice, RoomPhotosNotice.lastPhotoRequired);
     });
 
     test('puts a photo first, or tells it failed', () async {
@@ -345,6 +351,18 @@ void main() {
       expect(cubit.state.analysisFailed, isEmpty);
       expect(cubit.state.photos.single.analysis?.peopleVisible, isTrue);
       verify(() => repository.analyzeRoomPhoto('a')).called(2);
+    });
+
+    test('tells when the photo is already being analysed', () async {
+      when(() => repository.getRoomPhotos(any(), roomId: any(named: 'roomId')))
+          .thenAnswer((_) async => [testRoomPhoto('a')]);
+      when(() => repository.analyzeRoomPhoto(any()))
+          .thenThrow(const VisionBusyFailure('x'));
+      final cubit = build(analysis: true);
+      await cubit.load();
+      await settle();
+      expect(cubit.state.notice, RoomPhotosNotice.analysisBusy);
+      expect(cubit.state.analysisFailed, {'a'});
     });
 
     test('stops analysing once the quota is used up', () async {

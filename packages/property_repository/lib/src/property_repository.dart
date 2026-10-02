@@ -112,12 +112,30 @@ final class RoomPhotoLimitFailure extends PropertyFailure {
   String get _name => 'RoomPhotoLimitFailure';
 }
 
+/// Thrown when deleting the last photo of a main room of a submitted
+/// dossier (enforced by the database: the dossier was sent with it).
+final class RoomPhotoRequiredFailure extends PropertyFailure {
+  const new([super.error]);
+
+  @override
+  String get _name => 'RoomPhotoRequiredFailure';
+}
+
 /// Thrown when the daily quota of the vision AI is used up (HTTP 429).
 final class VisionQuotaFailure extends PropertyFailure {
   const new([super.error]);
 
   @override
   String get _name => 'VisionQuotaFailure';
+}
+
+/// Thrown when the same photo or plan is already being analysed by
+/// another request (HTTP 409 `busy`): try again in a moment.
+final class VisionBusyFailure extends PropertyFailure {
+  const new([super.error]);
+
+  @override
+  String get _name => 'VisionBusyFailure';
 }
 
 /// Thrown when the vision AI cannot answer (analysis of a photo, reading
@@ -797,7 +815,9 @@ class PropertyRepository {
   /// Deletes [photo]: its row, then its file — only when the row was
   /// actually deleted (a locked dossier keeps its photos).
   ///
-  /// Throws [PropertyDeleteFailure] on error.
+  /// Throws [RoomPhotoRequiredFailure] when [photo] is the last photo of a
+  /// main room of a submitted dossier and [PropertyDeleteFailure] on any
+  /// other error.
   Future<void> deleteRoomPhoto(RoomPhoto photo) async {
     try {
       final deleted = await _client
@@ -808,7 +828,12 @@ class PropertyRepository {
       if (deleted.isEmpty) return;
       await _client.storage.from(documentsBucket).remove([photo.storagePath]);
     } on Object catch (error, stackTrace) {
-      Error.throwWithStackTrace(PropertyDeleteFailure(error), stackTrace);
+      Error.throwWithStackTrace(
+        error is PostgrestException && error.message == 'room_photo_required'
+            ? RoomPhotoRequiredFailure(error)
+            : PropertyDeleteFailure(error),
+        stackTrace,
+      );
     }
   }
 
@@ -847,26 +872,27 @@ class PropertyRepository {
     }
   }
 
-  /// Stores the order of [photos] (their position in the list); returns
-  /// them with their new `sort_order`. Only the photos whose order changes
-  /// are written.
+  /// Stores the order of [photos] (EVERY photo of one room, their position
+  /// in the list; the server refuses a partial list) in one transaction
+  /// (RPC `reorder_room_photos`: all or nothing); returns the photos of
+  /// the room in their new order. Nothing is written when the order does
+  /// not change.
   ///
   /// Throws [PropertySaveFailure] on error.
   Future<List<RoomPhoto>> reorderRoomPhotos(List<RoomPhoto> photos) async {
+    if (photos.indexed.every((entry) => entry.$2.sortOrder == entry.$1)) {
+      return photos;
+    }
     try {
+      final rows = await _client.rpc<List<dynamic>>(
+        'reorder_room_photos',
+        params: {
+          'p_room_id': photos.first.roomId,
+          'p_photo_ids': [for (final photo in photos) photo.id],
+        },
+      );
       return [
-        for (final (index, photo) in photos.indexed)
-          if (photo.sortOrder == index)
-            photo
-          else
-            RoomPhoto.fromJson(
-              await _client
-                  .from(_roomPhotos)
-                  .update({'sort_order': index})
-                  .eq('id', photo.id)
-                  .select()
-                  .single(),
-            ),
+        for (final row in rows) RoomPhoto.fromJson(row as Map<String, dynamic>),
       ];
     } on Object catch (error, stackTrace) {
       Error.throwWithStackTrace(PropertySaveFailure(error), stackTrace);
@@ -899,8 +925,9 @@ class PropertyRepository {
   /// Asks the vision AI to analyse the photo [photoId] (once: a stored
   /// analysis is returned as is) and returns its suggestions.
   ///
-  /// Throws [VisionQuotaFailure] when the daily quota is used up and
-  /// [VisionRequestFailure] on any other error.
+  /// Throws [VisionQuotaFailure] when the daily quota is used up,
+  /// [VisionBusyFailure] when the photo is being analysed by another
+  /// request and [VisionRequestFailure] on any other error.
   Future<RoomPhotoAnalysis> analyzeRoomPhoto(String photoId) async {
     final data = await _invokeVision(visionRoomFunction, {'photo_id': photoId});
     return RoomPhotoAnalysis.fromJson(
@@ -911,8 +938,9 @@ class PropertyRepository {
   /// Asks the vision AI to read the floor plan [documentId] (a `plan`
   /// document, JPEG or PNG) and returns the rooms printed on it.
   ///
-  /// Throws [VisionQuotaFailure] when the daily quota is used up and
-  /// [VisionRequestFailure] on any other error.
+  /// Throws [VisionQuotaFailure] when the daily quota is used up,
+  /// [VisionBusyFailure] when the plan is being read by another request
+  /// and [VisionRequestFailure] on any other error.
   Future<PlanReading> readPlan(String documentId) async {
     final data = await _invokeVision(planReaderFunction, {
       'document_id': documentId,
@@ -931,12 +959,12 @@ class PropertyRepository {
       );
       return response.data as Map<String, dynamic>;
     } on Object catch (error, stackTrace) {
-      Error.throwWithStackTrace(
-        error is FunctionException && error.status == 429
-            ? VisionQuotaFailure(error)
-            : VisionRequestFailure(error),
-        stackTrace,
-      );
+      Error.throwWithStackTrace(switch (error) {
+        FunctionException(status: 429) => VisionQuotaFailure(error),
+        FunctionException(status: 409, details: {'error': 'busy'}) =>
+          VisionBusyFailure(error),
+        _ => VisionRequestFailure(error),
+      }, stackTrace);
     }
   }
 

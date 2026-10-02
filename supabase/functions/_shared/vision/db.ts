@@ -39,6 +39,10 @@ export interface RequestUpdate {
 /** A downloaded file: its bytes, or why it cannot be used. */
 export type Download = Uint8Array | "missing" | "too_large";
 
+/** A reserved request (its journal id), or why none was reserved: the
+ * daily quota is used up, or the same photo / plan is being analysed. */
+export type Reservation = { id: string } | "quota" | "busy";
+
 export interface VisionDb {
   /** The caller's photo (RLS), or null. */
   photo(id: string): Promise<PhotoRow | null>;
@@ -47,21 +51,23 @@ export interface VisionDb {
   /** The file at [path] of the documents bucket, read with the caller's
    * rights, up to [maxBytes]. */
   download(path: string, maxBytes: number): Promise<Download>;
-  /** Checks the caller's daily quota of [kind] and records a request
-   * atomically; null when the quota is used up. */
+  /** Checks that [targetId] is not being analysed and the caller's daily
+   * quota of [kind], and records a request, atomically. */
   reserve(
     kind: VisionKind,
     propertyId: string,
     targetId: string,
     since: Date,
-  ): Promise<string | null>;
+  ): Promise<Reservation>;
   /** Completes the journal row of a request. */
   finish(requestId: string, update: RequestUpdate): Promise<void>;
-  /** Stores the analysis of a photo (service role). */
-  saveAnalysis(photo: PhotoRow, analysis: RoomPhotoAnalysis): Promise<void>;
+  /** Stores the analysis of a photo (service role) if its property is
+   * still a draft at write time; false otherwise (nothing written). */
+  saveAnalysis(photo: PhotoRow, analysis: RoomPhotoAnalysis): Promise<boolean>;
   /** Stores the reading of a plan in `extracted.plan_reading`, keeping the
-   * other keys (service role). */
-  saveReading(document: DocumentRow, reading: PlanReading): Promise<void>;
+   * other keys (service role), if its property is still a draft at write
+   * time; false otherwise. */
+  saveReading(document: DocumentRow, reading: PlanReading): Promise<boolean>;
 }
 
 /** Limits (plan §2.2). */
@@ -75,6 +81,15 @@ export const VISION_LIMITS = {
   /** Tokens of an answer. */
   roomMaxTokens: 700,
   planMaxTokens: 3_000,
+  /** A request in progress for the same target younger than this blocks
+   * a new one (older ones are considered dead): photos, then plans (longer
+   * answers; an Edge Function runs at most 150 s). */
+  busySeconds: 120,
+  planBusySeconds: 180,
+  /** How long a request waits for the result of the same analysis in
+   * progress, and how often it looks. */
+  busyWaitMs: 20_000,
+  busyPollMs: 1_000,
 };
 
 /** Start of the current day (UTC) for the daily quotas. */

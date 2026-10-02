@@ -333,6 +333,16 @@ void main() {
         failure<PropertyDeleteFailure>(),
       );
     });
+
+    test('throws RoomPhotoRequiredFailure for the last photo of a main '
+        'room of a submitted dossier', () async {
+      respond = (_) => error(message: 'room_photo_required', code: 'P0001');
+      await expectLater(
+        repository.deleteRoomPhoto(photo),
+        failure<RoomPhotoRequiredFailure>(),
+      );
+      expect(requests, hasLength(1));
+    });
   });
 
   group('deleteRoomPhotos', () {
@@ -366,22 +376,27 @@ void main() {
   });
 
   group('reorderRoomPhotos', () {
-    test('writes only the photos whose order changes', () async {
+    test('writes the whole order in one call, only when it changes', () async {
       final first = photo.withSortOrder(0);
       final moved = RoomPhoto.fromJson(Map.of(photoRow)..['id'] = 'b');
       respond = (_) => json([
-        {...photoRow, 'id': 'b', 'sort_order': 1},
+        {...photoRow, 'id': 'b', 'sort_order': 0},
+        {...photoRow, 'sort_order': 1},
       ]);
-      // `moved` is at sort_order 1 already: nothing to write.
+      // Already in this order: nothing to write.
       expect(await repository.reorderRoomPhotos([first, moved]), [
         first,
         moved,
       ]);
       expect(requests, isEmpty);
       final reordered = await repository.reorderRoomPhotos([moved, first]);
-      expect(requests, hasLength(2));
-      expect(jsonDecode(requests.first.body), {'sort_order': 0});
-      expect(reordered, hasLength(2));
+      final call = requests.single;
+      expect(call.url.path, '/rest/v1/rpc/reorder_room_photos');
+      expect(jsonDecode(call.body), {
+        'p_room_id': roomId,
+        'p_photo_ids': ['b', photoId],
+      });
+      expect(reordered, [moved.withSortOrder(0), photo.withSortOrder(1)]);
     });
 
     test('throws PropertySaveFailure', () async {
@@ -461,6 +476,16 @@ void main() {
         repository.readPlan('doc'),
         failure<VisionRequestFailure>(),
       );
+      respond = (_) => json({'error': 'busy'}, status: 409);
+      await expectLater(
+        repository.readPlan('doc'),
+        failure<VisionBusyFailure>(),
+      );
+      respond = (_) => json({'error': 'locked'}, status: 409);
+      await expectLater(
+        repository.analyzeRoomPhoto(photoId),
+        failure<VisionRequestFailure>(),
+      );
     });
 
     test('failures have a readable toString', () {
@@ -468,7 +493,12 @@ void main() {
         const RoomPhotoLimitFailure('x').toString(),
         'RoomPhotoLimitFailure(x)',
       );
+      expect(
+        const RoomPhotoRequiredFailure('x').toString(),
+        'RoomPhotoRequiredFailure(x)',
+      );
       expect(const VisionQuotaFailure('x').toString(), 'VisionQuotaFailure(x)');
+      expect(const VisionBusyFailure('x').toString(), 'VisionBusyFailure(x)');
       expect(
         const VisionRequestFailure('x').toString(),
         'VisionRequestFailure(x)',

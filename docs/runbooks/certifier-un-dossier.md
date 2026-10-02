@@ -42,6 +42,10 @@ group by 1, 2, 3 order by 3 desc;
 
 Changer de modèle sans nouvelle version de l’app : `supabase secrets set OPENROUTER_MODEL_VISION=<modèle>` (photos) et, au besoin, `OPENROUTER_MODEL_PLAN=<modèle>` (plans).
 
+Valeurs de `vision_requests.error` : `null` (réussi), `locked` (dossier envoyé pendant l’analyse : payé mais non enregistré), `duplicate` (résultat déjà enregistré par un autre appel : aucun appel au modèle), `in_progress` (en cours, ou appel interrompu : au-delà de 2 minutes — 3 pour un plan — une nouvelle analyse de la même cible est permise), `invalid_output`, `upstream`, `failed`, `missing_file`, `too_large`, `unsupported`. Deux appels simultanés pour la même photo (ou le même plan) ne coûtent qu’une analyse : le second attend le résultat du premier (20 s au plus, puis 409 `busy`).
+
+Une fois le dossier envoyé (`submitted`), le vendeur ne peut plus supprimer la **dernière photo d’une pièce principale** (déclencheur `room_photos_keep_main_photo`, erreur `room_photo_required`) ; l’équipe le peut depuis le SQL Editor (sans JWT), par exemple pour retirer une photo où une personne est visible — prévenir alors le vendeur.
+
 ## 1 ter. Relire la fiche de remplissage (EPIC-16)
 
 Avant de certifier, relire d’où vient chaque valeur (dicté, dit à une autre étape, saisi, extrait, externe), la phrase d’origine et les valeurs « à vérifier », puis, si besoin, le fil de conversation : [fiche-de-remplissage.md](fiche-de-remplissage.md).
@@ -156,6 +160,26 @@ select public.staff_attach_valuation_report(
 La fonction refuse un chemin qui ne commence pas par `<owner id>/<property id>/` de l’avis de valeur, ou un fichier absent du bucket : déposer le PDF d’abord, au bon endroit.
 
 Le bouton « Télécharger le rapport (PDF · 11 pages) » apparaît alors sur V9b.
+
+## 5. Fichiers orphelins (ménage du stockage, facultatif)
+
+Un fichier du bucket `property-documents` peut rester sans ligne en base : envoi dont la ligne a été refusée et dont la suppression a échoué, suppression d’une photo ou d’un document dont le fichier n’a pas pu être effacé, bien supprimé pendant une coupure réseau. Ces fichiers ne sont visibles par personne dans l’app, mais ce sont des données personnelles (pièces d’identité, photos) : faire le ménage **une fois par mois** environ.
+
+1. Lister les orphelins (SQL Editor, rôle service ; les fichiers de moins de 24 h sont ignorés, un envoi peut être en cours) :
+
+```sql
+select path, size_bytes, created_at, property_exists
+from public.staff_orphan_files()  -- ou staff_orphan_files(interval '7 days')
+order by created_at;
+```
+
+`property_exists = false` : le bien n’existe plus (brouillon supprimé) ; `true` : fichier d’un bien existant sans document ni photo correspondant (`property_documents`, plans compris, et `room_photos`). La fonction ne supprime rien.
+
+2. Vérifier la liste (un fichier d’un bien en examen ou certifié se regarde avant d’être supprimé), puis supprimer les fichiers **par l’API Storage** — jamais par `delete from storage.objects`, qui laisserait le fichier en place :
+   - tableau de bord : **Storage → property-documents**, sélectionner les fichiers, « Delete » ;
+   - ou en ligne de commande, depuis le dépôt lié : `supabase storage rm --linked --experimental "ss:///property-documents/<path>" …` (un chemin par fichier listé).
+
+3. Relancer la requête : elle ne doit plus renvoyer ces chemins.
 
 ## Corriger une erreur
 

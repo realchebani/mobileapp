@@ -6,6 +6,7 @@ import 'package:mobileapp/l10n/l10n.dart';
 import 'package:mobileapp/seller_tunnel/cubit/seller_properties_cubit.dart';
 import 'package:mobileapp/seller_tunnel/cubit/seller_tunnel_cubit.dart';
 import 'package:mobileapp/seller_tunnel/models/seller_tunnel_step.dart';
+import 'package:mobileapp/seller_tunnel/photos/photo_services.dart';
 import 'package:mobileapp/seller_tunnel/steps/documents/cubit/documents_cubit.dart';
 import 'package:mobileapp/seller_tunnel/steps/documents/data/document_picker.dart';
 import 'package:mobileapp/seller_tunnel/steps/documents/data/scan_pdf_builder.dart';
@@ -66,6 +67,7 @@ class DocumentsPage extends StatelessWidget {
             property: tunnel.property!,
             documents: tunnel.documents,
             rooms: tunnel.rooms,
+            photoProcessor: PhotoServices.of(context).photoProcessor,
           );
         },
         child: const DocumentsView(),
@@ -215,6 +217,8 @@ class _DocumentsViewState extends State<DocumentsView> {
   ) => switch (notice) {
     DocumentsNotice.fileTooLarge => l10n.documentsNoticeTooLarge,
     DocumentsNotice.unsupportedType => l10n.documentsNoticeUnsupportedType,
+    DocumentsNotice.metadataUnremovable =>
+      l10n.documentsNoticeMetadataUnremovable,
     DocumentsNotice.accessDenied => l10n.documentsNoticeAccessDenied,
     DocumentsNotice.pickFailed => l10n.documentsNoticePickFailed,
     DocumentsNotice.uploadFailed => l10n.documentsNoticeUploadFailed,

@@ -4,7 +4,10 @@ import 'dart:typed_data';
 
 import 'package:equatable/equatable.dart';
 import 'package:image/image.dart' as img;
+import 'package:mobileapp/seller_tunnel/photos/data/image_metadata.dart';
 import 'package:property_repository/property_repository.dart';
+
+export 'package:mobileapp/seller_tunnel/photos/data/image_metadata.dart';
 
 /// A photo ready to upload: upright JPEG, its size and the checks made on
 /// the device.
@@ -33,6 +36,14 @@ abstract interface class PhotoProcessor {
   ///
   /// Throws a [FormatException] when the image cannot be read.
   Future<ProcessedPhoto> process(Uint8List bytes, {double? tiltDegrees});
+
+  /// [bytes] (a document file) without the metadata of an image (GPS
+  /// position, device…): see [cleanDocumentImage]. Anything that is not a
+  /// JPEG, PNG or HEIF image (a PDF…) is returned as is.
+  ///
+  /// Throws a [FormatException] when the metadata cannot be removed: the
+  /// file must then not be uploaded.
+  Future<Uint8List> stripMetadata(Uint8List bytes);
 }
 
 /// [PhotoProcessor] running [processPhoto] in a background isolate.
@@ -42,6 +53,42 @@ final class IsolatePhotoProcessor implements PhotoProcessor {
   @override
   Future<ProcessedPhoto> process(Uint8List bytes, {double? tiltDegrees}) =>
       Isolate.run(() => processPhoto(bytes, tiltDegrees: tiltDegrees));
+
+  @override
+  Future<Uint8List> stripMetadata(Uint8List bytes) async =>
+      isMetadataImage(bytes)
+      ? await Isolate.run(() => cleanDocumentImage(bytes))
+      : bytes;
+}
+
+/// [bytes] of an image imported as a document without its metadata:
+/// losslessly ([stripImageMetadata]) when it can be parsed safely, else
+/// decoded and re-encoded (upright; JPEG quality 90, or PNG for a PNG),
+/// which keeps no metadata.
+///
+/// Throws a [FormatException] when neither works (e.g. an unusual HEIC,
+/// which cannot be decoded on the device).
+Uint8List cleanDocumentImage(Uint8List bytes) {
+  try {
+    return stripImageMetadata(bytes);
+  } on FormatException {
+    img.Image? decoded;
+    try {
+      decoded = img.decodeImage(bytes);
+    } on Object {
+      // The decoders throw range errors on truncated data.
+      decoded = null;
+    }
+    if (decoded == null) {
+      throw const FormatException('The image metadata cannot be removed');
+    }
+    final image = img.bakeOrientation(decoded)
+      ..exif = img.ExifData()
+      ..textData = null;
+    return bytes[0] == 0x89
+        ? img.encodePng(image)
+        : img.encodeJpg(image, quality: PhotoChecks.documentJpegQuality);
+  }
 }
 
 /// Thresholds of the on-device checks (v1, to calibrate on real photos:
@@ -52,6 +99,10 @@ abstract final class PhotoChecks {
 
   /// JPEG quality of the uploaded photos.
   static const jpegQuality = 85;
+
+  /// JPEG quality of a document image that had to be re-encoded to lose
+  /// its metadata ([cleanDocumentImage]).
+  static const documentJpegQuality = 90;
 
   /// Width of the reduced grey image used by the checks.
   static const analysisSide = 512;

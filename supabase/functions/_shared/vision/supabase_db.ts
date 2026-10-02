@@ -2,10 +2,19 @@
 // properties) and its files are read with the CALLER's JWT, so RLS and the
 // Storage policies decide what they may see. The journal (vision_requests)
 // and the analysis columns are written with the service role, always
-// scoped to the verified caller.
+// scoped to the verified caller, through SQL functions that re-check at
+// write time that the dossier is still a draft (photos_hardening).
 
 import { createClient, type SupabaseClient } from "npm:@supabase/supabase-js@2";
-import type { DocumentRow, Download, PhotoRow, RequestUpdate, VisionDb, VisionKind } from "./db.ts";
+import type {
+  DocumentRow,
+  Download,
+  PhotoRow,
+  RequestUpdate,
+  Reservation,
+  VisionDb,
+  VisionKind,
+} from "./db.ts";
 import { VISION_LIMITS } from "./db.ts";
 import type { PlanReading, RoomPhotoAnalysis } from "./validate.ts";
 
@@ -91,17 +100,20 @@ export class SupabaseVisionDb implements VisionDb {
     propertyId: string,
     targetId: string,
     since: Date,
-  ): Promise<string | null> {
-    const { data, error } = await this.service.rpc("vision_reserve_request", {
+  ): Promise<Reservation> {
+    const { data, error } = await this.service.rpc("vision_reserve_target", {
       p_owner_id: this.userId,
       p_property_id: propertyId,
       p_kind: kind,
       p_target_id: targetId,
       p_since: since.toISOString(),
       p_max: kind === "plan" ? VISION_LIMITS.plansPerDay : VISION_LIMITS.photosPerDay,
+      p_busy_seconds: kind === "plan" ? VISION_LIMITS.planBusySeconds : VISION_LIMITS.busySeconds,
     });
     fail(error);
-    return typeof data === "string" ? data : null;
+    const row = (data as { request_id: string | null; outcome: string }[] | null)?.[0];
+    if (row?.outcome === "busy") return "busy";
+    return row?.outcome === "reserved" && row.request_id ? { id: row.request_id } : "quota";
   }
 
   async finish(requestId: string, update: RequestUpdate): Promise<void> {
@@ -110,20 +122,24 @@ export class SupabaseVisionDb implements VisionDb {
     fail(error);
   }
 
-  async saveAnalysis(photo: PhotoRow, analysis: RoomPhotoAnalysis): Promise<void> {
-    const { error } = await this.service.from("room_photos").update({ analysis })
-      .eq("id", photo.id).eq("property_id", photo.property_id);
+  async saveAnalysis(photo: PhotoRow, analysis: RoomPhotoAnalysis): Promise<boolean> {
+    const { data, error } = await this.service.rpc("vision_save_photo_analysis", {
+      p_owner_id: this.userId,
+      p_photo_id: photo.id,
+      p_analysis: analysis,
+    });
     fail(error);
+    return data === true;
   }
 
-  async saveReading(document: DocumentRow, reading: PlanReading): Promise<void> {
-    const extracted = typeof document.extracted === "object" && document.extracted !== null &&
-        !Array.isArray(document.extracted)
-      ? document.extracted as Record<string, unknown>
-      : {};
-    const { error } = await this.service.from("property_documents")
-      .update({ extracted: { ...extracted, plan_reading: reading } })
-      .eq("id", document.id).eq("property_id", document.property_id);
+  async saveReading(document: DocumentRow, reading: PlanReading): Promise<boolean> {
+    // Merged with the other keys of `extracted` in the database.
+    const { data, error } = await this.service.rpc("vision_save_plan_reading", {
+      p_owner_id: this.userId,
+      p_document_id: document.id,
+      p_reading: reading,
+    });
     fail(error);
+    return data === true;
   }
 }

@@ -52,6 +52,14 @@ class FakeVisionDb implements VisionDb {
   analyses: RoomPhotoAnalysis[] = [];
   readings: PlanReading[] = [];
   failSave = false;
+  /** The dossier was sent while the model was answering. */
+  lockedAtWrite = false;
+  /** Another request is analysing the same target. */
+  busy = false;
+  /** Runs once the request is reserved (another request finishing). */
+  onReserve?: () => void;
+  /** The journal cannot be completed. */
+  failFinish = false;
 
   photo(id: string) {
     return Promise.resolve(this.photos.get(id) ?? null);
@@ -66,23 +74,28 @@ class FakeVisionDb implements VisionDb {
   reserve(kind: VisionKind, propertyId: string, targetId: string, since: Date) {
     assertEquals(propertyId, PROPERTY);
     assertEquals(since.toISOString(), "2026-10-02T00:00:00.000Z");
-    if (this.quotaLeft === 0) return Promise.resolve(null);
+    if (this.busy) return Promise.resolve("busy" as const);
+    if (this.quotaLeft === 0) return Promise.resolve("quota" as const);
     this.quotaLeft--;
     this.requests.push({ kind, target: targetId, error: "in_progress" });
-    return Promise.resolve(`r${this.requests.length}`);
+    this.onReserve?.();
+    return Promise.resolve({ id: `r${this.requests.length}` });
   }
   finish(requestId: string, update: RequestUpdate) {
+    if (this.failFinish) return Promise.reject(new Error("db: down"));
     Object.assign(this.requests[Number(requestId.slice(1)) - 1], update);
     return Promise.resolve();
   }
   saveAnalysis(_photo: PhotoRow, analysis: RoomPhotoAnalysis) {
     if (this.failSave) return Promise.reject(new Error("db: denied"));
+    if (this.lockedAtWrite) return Promise.resolve(false);
     this.analyses.push(analysis);
-    return Promise.resolve();
+    return Promise.resolve(true);
   }
   saveReading(_document: DocumentRow, reading: PlanReading) {
+    if (this.lockedAtWrite) return Promise.resolve(false);
     this.readings.push(reading);
-    return Promise.resolve();
+    return Promise.resolve(true);
   }
 }
 
@@ -118,8 +131,10 @@ function deps(
   db: FakeVisionDb | null,
   answers: (Response | Error)[],
   bodies: Body[] = [],
+  sleep?: (ms: number) => Promise<void>,
 ): VisionDeps {
   return {
+    sleep,
     db,
     openrouter: new OpenRouterClient({
       apiKey: "k",
@@ -367,4 +382,158 @@ Deno.test("plan-reader enforces the quota and reports failures", async () => {
     ))[0],
     502,
   );
+});
+
+Deno.test("vision-room does not store an analysis once the dossier is sent", async () => {
+  const db = new FakeVisionDb();
+  db.lockedAtWrite = true;
+  const [status, body] = await call(
+    handleVisionRoom,
+    post({ photo_id: PHOTO }),
+    deps(db, [chat(ROOM_ANSWER)]),
+  );
+  assertEquals([status, body], [409, { error: "locked" }]);
+  assertEquals(db.analyses.length, 0);
+  assertEquals(db.requests[0].error, "locked");
+  assertEquals(db.requests[0].cost_usd, 0.0004);
+});
+
+Deno.test("plan-reader does not store a reading once the dossier is sent", async () => {
+  const db = new FakeVisionDb();
+  db.lockedAtWrite = true;
+  const [status, body] = await call(
+    handlePlanReader,
+    post({ document_id: PLAN }),
+    deps(db, [chat(PLAN_ANSWER)]),
+  );
+  assertEquals([status, body], [409, { error: "locked" }]);
+  assertEquals(db.readings.length, 0);
+  assertEquals(db.requests[0].error, "locked");
+});
+
+Deno.test("vision-room waits for the same analysis in progress", async () => {
+  const db = new FakeVisionDb();
+  db.busy = true;
+  const waits: number[] = [];
+  const sleep = (ms: number) => {
+    waits.push(ms);
+    // The other request stores its analysis during the third wait.
+    if (waits.length === 3) db.photos.get(PHOTO)!.analysis = { version: 1, room_kind: "kitchen" };
+    return Promise.resolve();
+  };
+  const [status, body] = await call(
+    handleVisionRoom,
+    post({ photo_id: PHOTO }),
+    deps(db, [], [], sleep),
+  );
+  assertEquals([status, body], [200, {
+    analysis: { version: 1, room_kind: "kitchen" },
+    cached: true,
+  }]);
+  assertEquals(waits, [
+    VISION_LIMITS.busyPollMs,
+    VISION_LIMITS.busyPollMs,
+    VISION_LIMITS.busyPollMs,
+  ]);
+  assertEquals(db.requests.length, 0);
+});
+
+Deno.test("the vision functions give up waiting for another analysis", async () => {
+  for (
+    const [handler, body] of [
+      [handleVisionRoom, { photo_id: PHOTO }],
+      [handlePlanReader, { document_id: PLAN }],
+    ] as const
+  ) {
+    const db = new FakeVisionDb();
+    db.busy = true;
+    let waits = 0;
+    const sleep = () => {
+      waits++;
+      return Promise.resolve();
+    };
+    assertEquals(await call(handler, post(body), deps(db, [], [], sleep)), [409, {
+      error: "busy",
+    }]);
+    assertEquals(waits, VISION_LIMITS.busyWaitMs / VISION_LIMITS.busyPollMs);
+  }
+});
+
+Deno.test("plan-reader waits for the same reading in progress", async () => {
+  const db = new FakeVisionDb();
+  db.busy = true;
+  const sleep = () => {
+    db.documents.get(PLAN)!.extracted = { other: 1, plan_reading: { version: 1, rooms: [] } };
+    return Promise.resolve();
+  };
+  const [status, body] = await call(
+    handlePlanReader,
+    post({ document_id: PLAN }),
+    deps(db, [], [], sleep),
+  );
+  assertEquals([status, body], [200, { reading: { version: 1, rooms: [] }, cached: true }]);
+});
+
+Deno.test("a vanished photo or plan is not awaited forever", async () => {
+  const db = new FakeVisionDb();
+  db.busy = true;
+  const sleep = () => {
+    db.photos.clear();
+    db.documents.clear();
+    return Promise.resolve();
+  };
+  assertEquals(
+    (await call(handleVisionRoom, post({ photo_id: PHOTO }), deps(db, [], [], sleep)))[0],
+    409,
+  );
+  const other = new FakeVisionDb();
+  other.busy = true;
+  const clear = () => {
+    other.documents.clear();
+    return Promise.resolve();
+  };
+  assertEquals(
+    (await call(handlePlanReader, post({ document_id: PLAN }), deps(other, [], [], clear)))[0],
+    409,
+  );
+});
+
+Deno.test("an analysis stored just before the reservation is not redone", async () => {
+  const db = new FakeVisionDb();
+  db.onReserve = () => db.photos.get(PHOTO)!.analysis = { version: 1, room_kind: "bedroom" };
+  const [status, body] = await call(handleVisionRoom, post({ photo_id: PHOTO }), deps(db, []));
+  assertEquals([status, body], [200, {
+    analysis: { version: 1, room_kind: "bedroom" },
+    cached: true,
+  }]);
+  assertEquals(db.requests[0].error, "duplicate");
+  const plans = new FakeVisionDb();
+  plans.onReserve = () =>
+    plans.documents.get(PLAN)!.extracted = { plan_reading: { version: 1, rooms: [] } };
+  const [code, reading] = await call(
+    handlePlanReader,
+    post({ document_id: PLAN }),
+    deps(plans, []),
+  );
+  assertEquals([code, reading.cached], [200, true]);
+});
+
+Deno.test("a stored analysis is returned even if the journal fails", async () => {
+  const db = new FakeVisionDb();
+  db.failFinish = true;
+  const [status, body] = await call(
+    handleVisionRoom,
+    post({ photo_id: PHOTO }),
+    deps(db, [chat(ROOM_ANSWER)]),
+  );
+  assertEquals([status, body.cached], [200, false]);
+  assertEquals(db.analyses.length, 1);
+});
+
+Deno.test("a failed download closes the journal row", async () => {
+  const db = new FakeVisionDb();
+  db.download = () => Promise.reject(new Error("storage: down"));
+  const [status] = await call(handleVisionRoom, post({ photo_id: PHOTO }), deps(db, []));
+  assertEquals(status, 502);
+  assertEquals(db.requests[0].error, "failed");
 });
