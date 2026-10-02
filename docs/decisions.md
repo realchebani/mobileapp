@@ -4,6 +4,7 @@ Journal des arbitrages du porteur de projet, du plus récent au plus ancien. Cha
 
 | Date | Décision | Contexte |
 |---|---|---|
+| 2026-10-02 | **Connexion de test en développement uniquement** (e-mail + mot de passe d’un compte de test, bouton discret « Connexion de test (dev) » sur 01) pour contourner la limite d’envoi d’e-mails ; **mot de passe hors dépôt** (`config/development.local.json`, ignoré par git) | EPIC-03 |
 | 2026-10-02 | Voix : **les modèles les moins chers d'abord, à réévaluer après la phase de test** — STT Whisper Large v3 Turbo, agent **Gemini 3.5 Flash-Lite** (au lieu de Claude), TTS Kokoro (voix ff_siwis) ; migration `agent_conversations` **pas encore poussée** | EPIC-06 |
 | 2026-10-02 | **À valider** : avis de valeur et notifications dans un nouveau paquet `sale_repository` ; fiche technique de V9b saisie par l’expert (avec provenance) plutôt que déduite du dossier ; « Mettre en vente » visible avec un message « bientôt » jusqu’à EPIC-08 | EPIC-07 |
 | 2026-10-02 | Recherche des ventes comparables : **la fraîcheur prime** — on garde les 2 dernières années et on **élargit d'abord la zone** (500 m → 1 → 2 → 5 → 10 → 20 km, communes voisines), la période (3 puis 5 ans) seulement si le plus grand rayon reste trop pauvre ; objectif ~10 ventes, pas d'estimation sous 5 ; l'indice de confiance reflète rayon et période ; V8 / V8b signalent une recherche élargie | EPIC-05 |

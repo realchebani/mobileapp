@@ -42,6 +42,8 @@
   "loginTitle": "Bienvenido",
   "loginSubtitle": "Vende o compra con un expediente auditado por la IA y validado por un experto inmobiliario.",
   "loginEmailButton": "Continuar con un correo",
+  "loginDevTestButton": "Inicio de sesión de prueba (dev)",
+  "loginDevTestInvalidCredentials": "Credenciales de prueba rechazadas. Revise config/development.local.json.",
   "loginEmailTitle": "Inicio de sesión por correo",
   "loginEmailSubtitle": "Introduce tu dirección: te enviamos un enlace de acceso seguro. Sin contraseñas que recordar.",
   "loginEmailLabel": "Correo electrónico",

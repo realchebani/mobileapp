@@ -50,6 +50,8 @@ flutter test test/app/router/app_redirect_test.dart --plain-name "<test name>"
 # Install on the owner's iPhone (free Personal Team 73QD6VU5LA, set as DEVELOPMENT_TEAM in ios/Runner.xcodeproj).
 # Use --release: iOS debug builds can't be opened from the home screen without a debugger attached.
 flutter build ios --flavor development --target lib/main_development.dart --dart-define-from-file=config/development.json --release
+# Same, with the dev test sign-in (gitignored config/development.local.json, see Supabase > Auth):
+flutter build ios --flavor development --target lib/main_development.dart --dart-define-from-file=config/development.json --dart-define-from-file=config/development.local.json --release
 xcrun devicectl list devices   # find the device UDID
 xcrun devicectl device install app --device <UDID> build/ios/iphoneos/Runner.app
 # If signing reports "no devices"/"no profiles", create the profile once with:
@@ -105,6 +107,7 @@ flutter gen-l10n --arb-dir="lib/l10n/arb"
 - The app reads `SUPABASE_URL` / `SUPABASE_PUBLISHABLE_KEY` via `String.fromEnvironment`, from `config/<flavor>.json` passed with `--dart-define-from-file` (already set in `.vscode/launch.json`); `Supabase.initialize` runs in `bootstrap()`. Only the publishable key belongs in the app, never the secret/service_role key.
 - `supabase/config.toml` mirrors the remote settings: change it, then `supabase config push` (it shows a diff and prompts per service; check the diff doesn't revert dashboard settings). Schema changes go in `supabase/migrations/` (`supabase migration new <name>`, `supabase db push`). Docker isn't installed, so there's no local stack: work against the remote project.
 - Auth: magic link. Allowed redirect URLs are `fr.realesty.mobile{.dev,.stg,}://login-callback`, one per flavor (URL scheme = bundle ID via `CFBundleURLTypes`, and `AUTH_REDIRECT_URL` in `config/<flavor>.json`). The link must be opened on the device that requested it (PKCE). Free tier + default email provider: email templates can't be customized (the French templates in `supabase/templates/` are commented out in config.toml until a custom SMTP is set), and sending is heavily rate-limited to the org's team members.
+- Dev test sign-in: in the development flavor only, 01 shows a discreet "Connexion de test (dev)" button (`DevTestLoginButton`, `AuthRepository.signInWithPassword`) when `DEV_TEST_EMAIL` and `DEV_TEST_PASSWORD` are both set. They live in the gitignored `config/development.local.json` (`{"DEV_TEST_EMAIL": "…", "DEV_TEST_PASSWORD": "…"}`, an existing Supabase user with a password), passed with an extra `--dart-define-from-file=config/development.local.json` to `flutter run`/`flutter build` (not in `.vscode/launch.json`: the file may not exist). Never commit these credentials.
 
 ## Localization
 

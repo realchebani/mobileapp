@@ -88,6 +88,28 @@ void main() {
       expect(find.text(expiredMessage), findsOneWidget);
     });
 
+    testWidgets('hides the test sign-in without credentials', (tester) async {
+      await pump(tester);
+
+      expect(find.byType(DevTestLoginButton), findsNothing);
+      expect(find.text('Connexion de test (dev)'), findsNothing);
+    });
+
+    testWidgets('shows the test sign-in with credentials', (tester) async {
+      await tester.pumpApp(
+        const LoginView(
+          devTestCredentials: DevTestCredentials(
+            email: 'dev@example.com',
+            password: 'secret',
+          ),
+        ),
+        loginCubit: loginCubit,
+        goRouter: goRouter,
+      );
+
+      expect(find.text('Connexion de test (dev)'), findsOneWidget);
+    });
+
     testWidgets('ignores other failures', (tester) async {
       when(() => loginCubit.state).thenReturn(
         const LoginState(

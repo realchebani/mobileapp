@@ -173,6 +173,14 @@
   "@loginEmailButton": {
     "description": "Connexion (01) : bouton vers la connexion par e-mail"
   },
+  "loginDevTestButton": "Connexion de test (dev)",
+  "@loginDevTestButton": {
+    "description": "Connexion (01) : bouton discret de connexion au compte de test (flavor development uniquement)"
+  },
+  "loginDevTestInvalidCredentials": "Identifiants de test refusés. Vérifiez config/development.local.json.",
+  "@loginDevTestInvalidCredentials": {
+    "description": "Connexion (01) : erreur quand les identifiants du compte de test sont refusés (développement)"
+  },
   "loginEmailTitle": "Connexion par e-mail",
   "@loginEmailTitle": {
     "description": "Connexion par e-mail (01b) : titre"
