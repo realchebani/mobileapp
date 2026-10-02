@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'package:mobileapp/seller_tunnel/models/seller_tunnel_step.dart';
+import 'package:mobileapp/seller_tunnel/voice/voice_defaults.dart';
 import 'package:property_repository/property_repository.dart';
 
 /// What V3 asks to qualify the type of property.
@@ -80,7 +81,7 @@ final class PropertyTypeProfile extends Equatable {
   const new _({
     required this.type,
     required this.steps,
-    required this.voice,
+    required this.voiceAudit,
     required this.estimate,
     required this.asksSelfBuilt,
     required this.detail,
@@ -110,8 +111,34 @@ final class PropertyTypeProfile extends Equatable {
   /// The screens of the tunnel for this type, in order (V8 excluded).
   final List<SellerTunnelStep> steps;
 
-  /// Whether the voice agent is offered (V4, V6 mic).
-  final bool voice;
+  /// Whether the V4 "Night" voice audit is offered (dwellings).
+  final bool voiceAudit;
+
+  /// The screens with a voice sheet for this type (EPIC-14, plan §2.8):
+  /// every step with dictable answers, V7 never. The Edge Functions follow
+  /// the same table (`voiceStepsFor`, parity fixture).
+  Set<SellerTunnelStep> get voiceSteps =>
+      voiceStepsWith(allTypes: VoiceDefaults.allTypes);
+
+  /// [voiceSteps] when the step sheets are offered for every type
+  /// ([allTypes], owner decision Q12) or only for the V4 audit types.
+  Set<SellerTunnelStep> voiceStepsWith({required bool allTypes}) => {
+    if (allTypes || voiceAudit)
+      for (final step in steps)
+        if (_voicedSteps.contains(step)) step,
+  };
+
+  /// Whether [step] has a voice sheet for this type.
+  bool hasVoice(SellerTunnelStep step) => voiceSteps.contains(step);
+
+  static const Set<SellerTunnelStep> _voicedSteps = {
+    SellerTunnelStep.owners,
+    SellerTunnelStep.location,
+    SellerTunnelStep.context,
+    SellerTunnelStep.technical,
+    SellerTunnelStep.surfaces,
+    SellerTunnelStep.lifestyle,
+  };
 
   /// Whether the non-certified estimate covers this type (EPIC-05; garages
   /// and outbuildings from single outbuilding sales, owner decision Q5).
@@ -346,7 +373,7 @@ final class PropertyTypeProfile extends Equatable {
   static const _undecided = PropertyTypeProfile._(
     type: null,
     steps: _allSteps,
-    voice: true,
+    voiceAudit: true,
     estimate: false,
     asksSelfBuilt: true,
     detail: PropertyTypeDetail.none,
@@ -360,7 +387,7 @@ final class PropertyTypeProfile extends Equatable {
   static const _house = PropertyTypeProfile._(
     type: PropertyType.house,
     steps: _allSteps,
-    voice: true,
+    voiceAudit: true,
     estimate: true,
     asksSelfBuilt: true,
     detail: PropertyTypeDetail.none,
@@ -376,7 +403,7 @@ final class PropertyTypeProfile extends Equatable {
   static const _apartment = PropertyTypeProfile._(
     type: PropertyType.apartment,
     steps: _allSteps,
-    voice: true,
+    voiceAudit: true,
     estimate: true,
     asksSelfBuilt: true,
     detail: PropertyTypeDetail.none,
@@ -401,7 +428,7 @@ final class PropertyTypeProfile extends Equatable {
   static const _land = PropertyTypeProfile._(
     type: PropertyType.land,
     steps: _withoutRooms,
-    voice: false,
+    voiceAudit: false,
     estimate: false,
     asksSelfBuilt: false,
     detail: PropertyTypeDetail.landKind,
@@ -423,7 +450,7 @@ final class PropertyTypeProfile extends Equatable {
   static const _parking = PropertyTypeProfile._(
     type: PropertyType.parking,
     steps: _short,
-    voice: false,
+    voiceAudit: false,
     estimate: true,
     asksSelfBuilt: false,
     detail: PropertyTypeDetail.parkingKind,
@@ -445,7 +472,7 @@ final class PropertyTypeProfile extends Equatable {
   static const _outbuilding = PropertyTypeProfile._(
     type: PropertyType.outbuilding,
     steps: _short,
-    voice: false,
+    voiceAudit: false,
     estimate: true,
     asksSelfBuilt: true,
     detail: PropertyTypeDetail.otherText,
@@ -468,7 +495,7 @@ final class PropertyTypeProfile extends Equatable {
   static const _commercial = PropertyTypeProfile._(
     type: PropertyType.commercial,
     steps: _withoutRooms,
-    voice: false,
+    voiceAudit: false,
     estimate: false,
     asksSelfBuilt: false,
     detail: PropertyTypeDetail.commercialUse,
@@ -492,7 +519,7 @@ final class PropertyTypeProfile extends Equatable {
   static const _building = PropertyTypeProfile._(
     type: PropertyType.building,
     steps: _withoutRooms,
-    voice: false,
+    voiceAudit: false,
     estimate: false,
     asksSelfBuilt: false,
     detail: PropertyTypeDetail.unitsCount,
@@ -519,7 +546,7 @@ final class PropertyTypeProfile extends Equatable {
     type: PropertyType.other,
     roomsOptional: true,
     steps: _allSteps,
-    voice: true,
+    voiceAudit: true,
     estimate: false,
     asksSelfBuilt: true,
     detail: PropertyTypeDetail.otherText,

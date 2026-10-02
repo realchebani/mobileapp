@@ -50,7 +50,7 @@ class VoiceAuditPage extends StatelessWidget {
     final property = context.read<SellerTunnelCubit>().state.property!;
     // Types without voice (land, garage…): V4b asks on screen.
     final profile = context.read<SellerTunnelCubit>().state.profile;
-    if (!services.isAvailable || !profile.voice) {
+    if (!services.isAvailable || !profile.voiceAudit) {
       return const _ScreenModeRedirect();
     }
     final intro = context.l10n.voiceAuditIntro;

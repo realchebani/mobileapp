@@ -1,11 +1,124 @@
 {
-  "_comment": "EPIC-13 parity fixture: per property type, whether the voice agent serves it and whether the non-certified estimate covers it. Read by the Edge Function tests (tests/property_type_parity_test.ts) and by the app (test/seller_tunnel/models/property_type_profile_test.dart).",
-  "maison": { "voice": true, "estimate": true },
-  "appartement": { "voice": true, "estimate": true },
-  "terrain": { "voice": false, "estimate": false },
-  "stationnement": { "voice": false, "estimate": true },
-  "dependance": { "voice": false, "estimate": true },
-  "local_commercial": { "voice": false, "estimate": false },
-  "immeuble": { "voice": false, "estimate": false },
-  "autre": { "voice": true, "estimate": false }
+  "_comment": "Parity fixture (EPIC-13, EPIC-14): per property type, whether the V4 voice audit serves it, the voiced steps (agent step names; rooms = V5c), the V4b technical columns, and whether the non-certified estimate covers it. Read by the Edge Function tests (tests/property_type_parity_test.ts) and by the app (test/seller_tunnel/models/property_type_profile_test.dart).",
+  "maison": {
+    "voice_audit": true,
+    "voice_steps": ["owners", "location", "context", "technical", "rooms", "lifestyle"],
+    "technical": [
+      "construction_year",
+      "orientation",
+      "living_area_m2",
+      "living_room_area_m2",
+      "rooms_count",
+      "bedrooms_count",
+      "levels",
+      "wall_material",
+      "adjacency",
+      "roof_type",
+      "roof_year",
+      "heating_systems",
+      "heat_pump_type",
+      "heat_pump_year",
+      "sanitation",
+      "outdoor_equipment",
+      "pool_type",
+      "pool_length_m",
+      "pool_width_m"
+    ],
+    "estimate": true
+  },
+  "appartement": {
+    "voice_audit": true,
+    "voice_steps": ["owners", "location", "context", "technical", "rooms", "lifestyle"],
+    "technical": [
+      "construction_year",
+      "orientation",
+      "living_area_m2",
+      "living_room_area_m2",
+      "rooms_count",
+      "bedrooms_count",
+      "wall_material",
+      "heating_systems",
+      "heat_pump_type",
+      "heat_pump_year",
+      "sanitation",
+      "outdoor_equipment",
+      "pool_type",
+      "pool_length_m",
+      "pool_width_m"
+    ],
+    "estimate": true
+  },
+  "terrain": {
+    "voice_audit": false,
+    "voice_steps": ["owners", "location", "context", "technical", "lifestyle"],
+    "technical": ["sanitation", "outdoor_equipment", "pool_type", "pool_length_m", "pool_width_m"],
+    "estimate": false
+  },
+  "stationnement": {
+    "voice_audit": false,
+    "voice_steps": ["owners", "location", "context", "technical"],
+    "technical": ["usable_area_m2", "parking_level", "parking_features"],
+    "estimate": true
+  },
+  "dependance": {
+    "voice_audit": false,
+    "voice_steps": ["owners", "location", "context", "technical"],
+    "technical": ["usable_area_m2", "construction_year", "parking_features"],
+    "parking_features": ["electricite", "eau"],
+    "estimate": true
+  },
+  "local_commercial": {
+    "voice_audit": false,
+    "voice_steps": ["owners", "location", "context", "technical", "lifestyle"],
+    "technical": [
+      "usable_area_m2",
+      "construction_year",
+      "heating_systems",
+      "heat_pump_type",
+      "heat_pump_year"
+    ],
+    "neighbourhood": false,
+    "estimate": false
+  },
+  "immeuble": {
+    "voice_audit": false,
+    "voice_steps": ["owners", "location", "context", "technical", "lifestyle"],
+    "technical": [
+      "construction_year",
+      "wall_material",
+      "roof_type",
+      "roof_year",
+      "heating_systems",
+      "heat_pump_type",
+      "heat_pump_year",
+      "sanitation"
+    ],
+    "estimate": false
+  },
+  "autre": {
+    "voice_audit": true,
+    "voice_steps": ["owners", "location", "context", "technical", "rooms", "lifestyle"],
+    "technical": [
+      "construction_year",
+      "orientation",
+      "living_area_m2",
+      "living_room_area_m2",
+      "rooms_count",
+      "bedrooms_count",
+      "levels",
+      "wall_material",
+      "adjacency",
+      "roof_type",
+      "roof_year",
+      "heating_systems",
+      "heat_pump_type",
+      "heat_pump_year",
+      "sanitation",
+      "outdoor_equipment",
+      "pool_type",
+      "pool_length_m",
+      "pool_width_m"
+    ],
+    "estimate": false
+  }
 }

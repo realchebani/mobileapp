@@ -97,6 +97,7 @@ final class PropertyContextState extends Equatable {
     this.showErrors = false,
     this.submitAttempts = 0,
     this.submission = PropertyContextSubmission.idle,
+    this.dictated = const {},
   });
 
   /// Earliest purchase year or estimate month accepted.
@@ -158,6 +159,10 @@ final class PropertyContextState extends Equatable {
   final int submitAttempts;
 
   final PropertyContextSubmission submission;
+
+  /// Columns (and `estimate:<key>` cards) answered by voice on this visit
+  /// ("Dicté").
+  final Set<String> dictated;
 
   /// How the tunnel adapts to the selected type.
   PropertyTypeProfile get profile => PropertyTypeProfile.of(propertyType);
@@ -304,6 +309,7 @@ final class PropertyContextState extends Equatable {
     bool? showErrors,
     int? submitAttempts,
     PropertyContextSubmission? submission,
+    Set<String>? dictated,
   }) {
     return PropertyContextState(
       today: today,
@@ -323,6 +329,7 @@ final class PropertyContextState extends Equatable {
       showErrors: showErrors ?? this.showErrors,
       submitAttempts: submitAttempts ?? this.submitAttempts,
       submission: submission ?? this.submission,
+      dictated: dictated ?? this.dictated,
     );
   }
 
@@ -345,5 +352,6 @@ final class PropertyContextState extends Equatable {
     showErrors,
     submitAttempts,
     submission,
+    dictated,
   ];
 }

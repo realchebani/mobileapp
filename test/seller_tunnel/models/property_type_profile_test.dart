@@ -18,9 +18,47 @@ void main() {
       ) as Map<String, dynamic>;
       for (final type in PropertyType.values) {
         final row = fixture[type.value] as Map<String, dynamic>;
-        expect(of(type).voice, row['voice'], reason: type.value);
-        expect(of(type).estimate, row['estimate'], reason: type.value);
+        final profile = of(type);
+        expect(profile.voiceAudit, row['voice_audit'], reason: type.value);
+        expect(profile.estimate, row['estimate'], reason: type.value);
+        // EPIC-14: the voiced steps (agent step names, rooms = V5c).
+        expect(
+          [
+            for (final step in profile.voiceSteps)
+              if (step == SellerTunnelStep.surfaces) 'rooms' else step.segment,
+          ],
+          [
+            for (final step in row['voice_steps'] as List)
+              switch (step) {
+                'owners' => SellerTunnelStep.owners.segment,
+                'location' => SellerTunnelStep.location.segment,
+                'context' => SellerTunnelStep.context.segment,
+                'technical' => SellerTunnelStep.technical.segment,
+                'lifestyle' => SellerTunnelStep.lifestyle.segment,
+                _ => step,
+              },
+          ],
+          reason: type.value,
+        );
+        // The V4b columns the agent may fill.
+        expect(
+          {for (final field in profile.technicalFields) ...field.columns},
+          {...row['technical'] as List},
+          reason: type.value,
+        );
+        expect(
+          profile.hasVoice(SellerTunnelStep.documents),
+          isFalse,
+          reason: type.value,
+        );
       }
+      expect(of(null).voiceSteps, hasLength(6));
+      // Q12 (b): voice only where the V4 audit is offered.
+      expect(of(PropertyType.land).voiceStepsWith(allTypes: false), isEmpty);
+      expect(
+        of(PropertyType.house).voiceStepsWith(allTypes: false),
+        hasLength(6),
+      );
       expect(of(null), of(null));
       expect(of(PropertyType.house).props, [PropertyType.house]);
     });
@@ -77,7 +115,9 @@ void main() {
       expect(garage.resumeAt(5), SellerTunnelStep.documents);
       expect(garage.includes(SellerTunnelStep.method), isFalse);
       expect(garage.includes(SellerTunnelStep.submitted), isTrue);
-      expect(garage.voice, isFalse);
+      expect(garage.voiceAudit, isFalse);
+      expect(garage.hasVoice(SellerTunnelStep.technical), isTrue);
+      expect(garage.hasVoice(SellerTunnelStep.lifestyle), isFalse);
       expect(garage.estimate, isTrue);
       expect(garage.detail, PropertyTypeDetail.parkingKind);
       expect(garage.parkingFeatureChoices, ParkingFeature.values);

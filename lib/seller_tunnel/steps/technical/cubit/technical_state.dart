@@ -48,14 +48,16 @@ final class TechnicalState extends Equatable {
     this.showErrors = false,
     this.submitAttempts = 0,
     this.saveRequests = 0,
+    this.dictated = const {},
   });
 
-  /// Answers saved in the dossier.
-  factory fromProperty(Property property, DateTime today) {
+  /// Answers saved in the dossier ([property]); [saved] is the dossier as
+  /// saved when [property] holds unsaved answers (a voice turn).
+  factory fromProperty(Property property, DateTime today, {Property? saved}) {
     final length = property.poolLengthM;
     final width = property.poolWidthM;
     return TechnicalState(
-      property: property,
+      property: saved ?? property,
       today: today,
       constructionYear: property.constructionYear?.toString() ?? '',
       exposure: parseDbEnum(Exposure.values, property.orientation),
@@ -153,6 +155,9 @@ final class TechnicalState extends Equatable {
 
   /// Incremented on each accepted submission (the view then saves [patch]).
   final int saveRequests;
+
+  /// Columns answered by voice on this visit ("Dicté").
+  final Set<String> dictated;
 
   PropertyType? get propertyType => property.propertyType;
 
@@ -452,6 +457,7 @@ final class TechnicalState extends Equatable {
     bool? showErrors,
     int? submitAttempts,
     int? saveRequests,
+    Set<String>? dictated,
   }) {
     return TechnicalState(
       property: property,
@@ -480,6 +486,7 @@ final class TechnicalState extends Equatable {
       showErrors: showErrors ?? this.showErrors,
       submitAttempts: submitAttempts ?? this.submitAttempts,
       saveRequests: saveRequests ?? this.saveRequests,
+      dictated: dictated ?? this.dictated,
     );
   }
 
@@ -511,5 +518,6 @@ final class TechnicalState extends Equatable {
     showErrors,
     submitAttempts,
     saveRequests,
+    dictated,
   ];
 }

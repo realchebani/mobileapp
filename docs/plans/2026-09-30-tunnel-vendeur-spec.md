@@ -202,6 +202,7 @@ Layout:
 4. Info note (Surface 2 radius 12, info icon): `Les mesures réalisées au téléphone sont estimatives. Elles sont distinguées des surfaces issues d’un plan et vérifiées par l’expert.`
 Input: measurement_method (single tap) ∈ scan / plan / manual.
 v1: show only "Saisir manuellement" active; plan option = plain upload stored for the expert (no extraction) then manual table; camera card hidden or badged "Bientôt" (decision).
+EPIC-14 (voice available): extra card `Dicter mes pièces` (mic icon) — `Décrivez chaque pièce à voix haute : nom, surface, niveau, sol, vitrage.` → saves `measurement_method = manual` and opens V5c with the rooms dictation (`?dictee=1`).
 
 ### V5b · Scan pièce par pièce (`ScanPiece.dc.html`) — CAMERA, DEFER
 Night camera screen. Top 470px camera feed with AR measurement dots (Lueur) and unmeasured points (white ring). Overlay header: dark close (aria `Fermer` → V5), caption `Pièce 3 sur 9 · Rez-de-chaussée`, title `Séjour`, dark button aria `Recommencer la pièce` (refresh icon). Live chips: `38,5 m²` (Lueur, check) and `HSP 2,50 m` (Nuit 3). AgentBubble(onDark): `Superbe séjour ! Tournez lentement vers la baie vitrée côté piscine : la lumière est idéale pour la photo.`
@@ -219,7 +220,8 @@ Layout:
 6. `RealestyButton.text` plus `Ajouter une pièce`.
 7. AgentActionBar `Répondez à la voix ou à l’écran` / `Tout est correct, continuer`.
 
-Room edit/add (not designed → bottom sheet): fields `Nom` (text, with quick chips: Entrée, Séjour, Cuisine, Chambre, Salle de bain, Salle d’eau, WC, Bureau, Cellier, Dégagement, Garage, Autre), `Niveau` (select: Sous-sol, Rez-de-chaussée, Étage, Étage 2, Combles), `Surface` decimal m² (0.5..500, required), `Revêtement de sol` select (optional), `Vitrage` select (optional), delete action. Validation: ≥1 room to continue. On continue, write total to property.living_area_m2 (provenance Déclaré for manual, Estimé IA/"Mesures estimatives" for scan).
+Room edit/add (not designed → bottom sheet): fields `Nom` (text, with quick chips: Entrée, Séjour, Cuisine, Chambre, Salle de bain, Salle d’eau, WC, Bureau, Cellier, Dégagement, Garage, Autre), `Niveau` (select: Sous-sol, Rez-de-chaussée, Étage, Étage 2, Combles), `Surface` decimal m² (0.5..500, required), `Revêtement de sol` select (optional), `Vitrage` select (optional), `Description (facultatif)` multiline ≤ 300 (EPIC-14, `rooms.description`; shown as a truncated line under the room name in the table and in the V8 data preview), delete action.
+EPIC-14 rooms dictation (mic of the action bar): Night sheet `Dictée des pièces` (small orb, silent agent + vibration per turn, `Pièces dictées` list with the running `{area} m² habitables · {n} pièces`); `Terminer` → spoken summary `J’ai noté {n} pièces pour {area} m² habitables. Est-ce correct ?` (Oui / Non). Dictated rooms: `source = voice`, tag `Dicté` until "Continuer". Validation: ≥1 room to continue. On continue, write total to property.living_area_m2 (provenance Déclaré for manual, Estimé IA/"Mesures estimatives" for scan).
 
 ### V6 · Audit vocal de vie (`AuditVie.dc.html`)
 Purpose: life quality: strengths, watch-points, noise, overlooking, secret note. Progress 6/7, pill `Vocal` (despite screen form). Out `Continuer` → V7.

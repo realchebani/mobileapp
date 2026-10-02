@@ -15,6 +15,7 @@ final class LifestyleState extends Equatable {
     this.submission = LifestyleSubmission.idle,
     this.savedItems = const [],
     this.secretNoteSuggestion,
+    this.dictated = const {},
   });
 
   final List<LifestyleItemDraft> assets;
@@ -37,6 +38,9 @@ final class LifestyleState extends Equatable {
   /// A secret note proposed by the voice agent: shown as a suggestion,
   /// never written unless the seller uses it.
   final String? secretNoteSuggestion;
+
+  /// Columns answered by voice on this visit ("Dicté").
+  final Set<String> dictated;
 
   bool get isSubmitting => submission == LifestyleSubmission.inProgress;
 
@@ -81,6 +85,7 @@ final class LifestyleState extends Equatable {
     LifestyleSubmission? submission,
     List<LifestyleItem>? savedItems,
     String? Function()? secretNoteSuggestion,
+    Set<String>? dictated,
   }) {
     return LifestyleState(
       assets: assets ?? this.assets,
@@ -93,6 +98,7 @@ final class LifestyleState extends Equatable {
       secretNoteSuggestion: secretNoteSuggestion == null
           ? this.secretNoteSuggestion
           : secretNoteSuggestion(),
+      dictated: dictated ?? this.dictated,
     );
   }
 
@@ -106,5 +112,6 @@ final class LifestyleState extends Equatable {
     submission,
     savedItems,
     secretNoteSuggestion,
+    dictated,
   ];
 }

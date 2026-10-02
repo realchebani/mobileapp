@@ -1,4 +1,10 @@
 export 'cubit/voice_conversation_cubit.dart';
+export 'cubit/voice_dictation_cubit.dart';
+export 'models/local_voice_commands.dart';
 export 'view/voice_consent_page.dart';
+export 'voice_defaults.dart';
+export 'voice_form.dart';
 export 'voice_services.dart';
+export 'widgets/step_voice_sheet.dart';
+export 'widgets/voice_dictation_sheet.dart';
 export 'widgets/voice_widgets.dart';

@@ -163,6 +163,21 @@ export class SupabaseAgentDb implements AgentDb {
     fail(error);
   }
 
+  async markUndone(propertyId: string, ids: string[]): Promise<number> {
+    if (ids.length === 0) return 0;
+    const sessions = await this.service.from("agent_sessions").select("id")
+      .eq("property_id", propertyId).eq("owner_id", this.userId);
+    fail(sessions.error);
+    const sessionIds = ((sessions.data ?? []) as { id: string }[]).map((s) => s.id);
+    if (sessionIds.length === 0) return 0;
+    const { data, error } = await this.service.from("agent_turns")
+      .update({ undone: true })
+      .in("id", ids).in("session_id", sessionIds).eq("owner_id", this.userId)
+      .select("id");
+    fail(error);
+    return (data ?? []).length;
+  }
+
   async usageSince(since: Date): Promise<DailyUsage> {
     const { data, error } = await this.service.from("agent_turns")
       .select("audio_seconds").eq("owner_id", this.userId)

@@ -12,6 +12,8 @@ final class SurfacesState extends Equatable {
     this.showErrors = false,
     this.submitAttempts = 0,
     this.submission = SurfacesSubmission.idle,
+    this.dictated = const {},
+    this.lastDictatedId,
   });
 
   /// The rooms of the table, in order (each has its id, even before it is
@@ -29,6 +31,18 @@ final class SurfacesState extends Equatable {
   final int submitAttempts;
 
   final SurfacesSubmission submission;
+
+  /// Ids of the rooms created or changed by voice on this visit ("Dicté").
+  final Set<String> dictated;
+
+  /// The room dictated last ("la dernière").
+  final String? lastDictatedId;
+
+  /// The rooms dictated on this visit, in table order.
+  List<Room> get dictatedRooms => [
+    for (final room in rooms)
+      if (dictated.contains(room.id)) room,
+  ];
 
   bool get isSubmitting => submission == SurfacesSubmission.inProgress;
 
@@ -66,6 +80,8 @@ final class SurfacesState extends Equatable {
     bool? showErrors,
     int? submitAttempts,
     SurfacesSubmission? submission,
+    Set<String>? dictated,
+    String? Function()? lastDictatedId,
   }) {
     return SurfacesState(
       rooms: rooms ?? this.rooms,
@@ -73,6 +89,10 @@ final class SurfacesState extends Equatable {
       showErrors: showErrors ?? this.showErrors,
       submitAttempts: submitAttempts ?? this.submitAttempts,
       submission: submission ?? this.submission,
+      dictated: dictated ?? this.dictated,
+      lastDictatedId: lastDictatedId == null
+          ? this.lastDictatedId
+          : lastDictatedId(),
     );
   }
 
@@ -83,5 +103,7 @@ final class SurfacesState extends Equatable {
     showErrors,
     submitAttempts,
     submission,
+    dictated,
+    lastDictatedId,
   ];
 }

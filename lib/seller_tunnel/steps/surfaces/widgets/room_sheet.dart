@@ -71,6 +71,9 @@ class RoomSheet extends StatefulWidget {
 
 class _RoomSheetState extends State<RoomSheet> {
   late final _name = TextEditingController(text: widget.initial?.name);
+  late final _description = TextEditingController(
+    text: widget.initial?.description,
+  );
   late final _area = TextEditingController(
     text: widget.initial == null ? '' : RoomArea.input(widget.initial!.areaM2),
   );
@@ -91,6 +94,7 @@ class _RoomSheetState extends State<RoomSheet> {
   void dispose() {
     _name.dispose();
     _area.dispose();
+    _description.dispose();
     _nameFocus.dispose();
     super.dispose();
   }
@@ -123,6 +127,9 @@ class _RoomSheetState extends State<RoomSheet> {
             glazing: _glazing,
             isMain: _isMain,
             isAnnex: _isAnnex,
+            description: _description.text.trim().isEmpty
+                ? null
+                : _description.text.trim(),
           ),
         ),
       );
@@ -156,16 +163,7 @@ class _RoomSheetState extends State<RoomSheet> {
       }
       final label = suggestion.label(l10n);
       if (suggestion.isNumbered) {
-        // After the highest number (a plain "Chambre" counts as 1).
-        final pattern = RegExp('^${RegExp.escape(label)}(?: (\\d+))?\$');
-        var highest = 0;
-        for (final name in widget.otherNames) {
-          final match = pattern.firstMatch(name.trim());
-          if (match == null) continue;
-          final number = int.parse(match.group(1) ?? '1');
-          if (number > highest) highest = number;
-        }
-        _name.text = '$label ${highest + 1}';
+        _name.text = RoomSuggestion.numbered(label, widget.otherNames);
       } else {
         _name.text = label;
       }
@@ -305,6 +303,16 @@ class _RoomSheetState extends State<RoomSheet> {
                   ),
               ],
               onChanged: (value) => setState(() => _glazing = value),
+            ),
+            RealestyTextField(
+              label: l10n.surfacesDescriptionLabel,
+              hint: l10n.surfacesDescriptionHint,
+              controller: _description,
+              maxLines: 3,
+              textInputAction: TextInputAction.newline,
+              inputFormatters: [
+                LengthLimitingTextInputFormatter(Room.descriptionMaxLength),
+              ],
             ),
             const SizedBox(height: RealestySpacing.xxs),
             RealestyButton(

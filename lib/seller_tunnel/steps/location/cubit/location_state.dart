@@ -37,6 +37,7 @@ final class LocationState extends Equatable {
     this.submitAttempts = 0,
     this.submitStatus = LocationSubmitStatus.idle,
     this.savedParcels = const [],
+    this.dictated = const {},
   });
 
   /// The answers already saved in the dossier.
@@ -118,6 +119,9 @@ final class LocationState extends Equatable {
 
   /// Free text when [SpecialSituation.other] is selected.
   final String otherSituation;
+
+  /// Columns answered by voice on this visit ("Dicté").
+  final Set<String> dictated;
 
   /// Whether to show the validation errors (after "Continuer").
   final bool showErrors;
@@ -241,6 +245,7 @@ final class LocationState extends Equatable {
     int? submitAttempts,
     LocationSubmitStatus? submitStatus,
     List<PropertyParcel>? savedParcels,
+    Set<String>? dictated,
   }) {
     return LocationState(
       addressText: addressText ?? this.addressText,
@@ -261,6 +266,7 @@ final class LocationState extends Equatable {
       submitAttempts: submitAttempts ?? this.submitAttempts,
       submitStatus: submitStatus ?? this.submitStatus,
       savedParcels: savedParcels ?? this.savedParcels,
+      dictated: dictated ?? this.dictated,
     );
   }
 
@@ -283,5 +289,6 @@ final class LocationState extends Equatable {
     submitAttempts,
     submitStatus,
     savedParcels,
+    dictated,
   ];
 }

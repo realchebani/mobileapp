@@ -70,9 +70,10 @@ void main() {
       glazing: Glazing.double,
       isMain: true,
       isAnnex: true,
-      source: MeasurementMethod.scan,
+      source: RoomSource.voice,
       photosCount: 4,
       scanData: {'points': 12},
+      description: 'Ouvert sur la cuisine',
     );
     expect(Room.fromJson(room.toJson()), room);
     final bare = Room.fromJson(const {
@@ -82,6 +83,8 @@ void main() {
     });
     expect(bare, const Room(propertyId: 'p1', name: 'WC', areaM2: 2));
     expect(bare.isAnnex, isFalse);
+    expect(bare.source, RoomSource.manual);
+    expect(bare.description, isNull);
   });
 
   test('LifestyleItem round-trips and defaults', () {

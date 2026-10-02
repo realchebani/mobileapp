@@ -161,7 +161,7 @@ void main() {
       expect(turn.suggestions, {'secret_note': 'Vendre vite'});
       expect(turn.nextField, 'sanitation');
       expect(turn.done, isTrue);
-      expect(turn.props, hasLength(10));
+      expect(turn.props, hasLength(14));
       verify(
         () => functions.invoke(
           'agent-turn',
@@ -186,6 +186,351 @@ void main() {
         turnId: 't1',
       );
       expect(turn, const AgentTurn(turnId: 't1', transcript: '', reply: ''));
+    });
+  });
+
+  group('EPIC-14', () {
+    test('dictation transcribes only', () async {
+      answer({'turn_id': 't1', 'transcript': '12 rue des Lilas'});
+      await repository.transcribe(
+        propertyId: 'p1',
+        step: AgentStep.location,
+        audio: Uint8List(1),
+        duration: Duration.zero,
+        dictation: true,
+      );
+      verify(
+        () => functions.invoke(
+          'agent-transcribe',
+          body: any(named: 'body'),
+          queryParameters: {
+            'property_id': 'p1',
+            'step': 'location',
+            'format': 'm4a',
+            'duration': '0.00',
+            'mode': 'dictation',
+          },
+        ),
+      ).called(1);
+    });
+
+    test('sends the step context and parses entities', () async {
+      answer({
+        'turn_id': 't1',
+        'transcript': 'le séjour fait 40 m²',
+        'reply_fr': 'Noté.',
+        'patch': {'purchase_year': 2012},
+        'facts': [
+          {
+            'field': 'purchase_year',
+            'label_fr': 'Achat 2012',
+            'changed_fr': 'Modifié : 2010 → 2012',
+            'corrected': true,
+          },
+        ],
+        'entity_ops': [
+          {
+            'entity': 'room',
+            'op': 'update',
+            'target': 'R1',
+            'values': {'area_m2': 40},
+            'label_fr': 'Séjour · 40 m²',
+            'changed_fr': 'Modifiée : 38 → 40 m²',
+            'corrected': true,
+          },
+          {'entity': 'nope', 'op': 'nope'},
+        ],
+        'confirmations': [
+          {
+            'id': 'c1',
+            'reason': 'delete',
+            'label_fr': 'Supprimer Cellier ?',
+            'entity_ops': [
+              {
+                'entity': 'room',
+                'op': 'delete',
+                'target': 'R2',
+                'label_fr': 'Supprimer Cellier',
+              },
+            ],
+          },
+          {
+            'id': 'c2',
+            'reason': 'unknown',
+            'label_fr': 'Type : garage ?',
+            'patch': {'property_type': 'stationnement'},
+          },
+        ],
+        'out_of_step': [
+          {
+            'field': 'construction_year',
+            'step': 'technical',
+            'label_fr': 'Construction → Technique',
+          },
+        ],
+        'corrections': ['room:R1'],
+      });
+      final turn = await repository.turn(
+        propertyId: 'p1',
+        step: AgentStep.rooms,
+        transcript: 'le séjour fait 40 m²',
+        context: AgentTurnContext(
+          draft: const {'purchase_year': 2010},
+          rooms: const [
+            AgentRoom(ref: 'R1', name: 'Séjour', areaM2: 38, level: 'rdc'),
+          ],
+          estimates: [
+            AgentEstimate(
+              ref: 'E1',
+              priceEur: 300000,
+              month: DateTime(2024, 3),
+              agencyName: 'A',
+            ),
+            const AgentEstimate(ref: 'E2'),
+          ],
+          coOwnersCount: 1,
+          lastRoomRef: 'R1',
+        ),
+        undoneTurnIds: const ['t0'],
+      );
+      expect(turn.facts.single.changedLabel, 'Modifié : 2010 → 2012');
+      expect(turn.facts.single.corrected, isTrue);
+      expect(turn.entityOps.first.entity, AgentEntity.room);
+      expect(turn.entityOps.first.op, AgentEntityOp.update);
+      expect(turn.entityOps.first.isNew, isFalse);
+      expect(turn.entityOps.first.values, {'area_m2': 40});
+      expect(turn.entityOps.first.changedLabel, 'Modifiée : 38 → 40 m²');
+      expect(turn.entityOps.first.corrected, isTrue);
+      expect(turn.entityOps.last.entity, AgentEntity.room);
+      expect(turn.entityOps.last.op, AgentEntityOp.create);
+      expect(turn.entityOps.last.isNew, isTrue);
+      expect(turn.confirmations.first.reason, AgentConfirmationReason.delete);
+      expect(
+        turn.confirmations.first.entityOps.single.op,
+        AgentEntityOp.delete,
+      );
+      expect(
+        turn.confirmations.last.reason,
+        AgentConfirmationReason.mediumConfidence,
+      );
+      expect(turn.outOfStep.single.step, 'technical');
+      expect(turn.corrections, ['room:R1']);
+      expect(turn.understood, isTrue);
+      verify(
+        () => functions.invoke(
+          'agent-turn',
+          body: {
+            'property_id': 'p1',
+            'step': 'rooms',
+            'transcript': 'le séjour fait 40 m²',
+            'interactive': true,
+            'draft': {'purchase_year': 2010},
+            'rooms': [
+              {
+                'ref': 'R1',
+                'name': 'Séjour',
+                'area_m2': 38.0,
+                'level': 'rdc',
+                'floor_covering': null,
+                'glazing': null,
+                'ceiling_height_m': null,
+                'is_annex': false,
+              },
+            ],
+            'estimates': [
+              {
+                'ref': 'E1',
+                'price_eur': 300000,
+                'estimated_month': '2024-03-01',
+                'agency_name': 'A',
+              },
+              {
+                'ref': 'E2',
+                'price_eur': null,
+                'estimated_month': null,
+                'agency_name': null,
+              },
+            ],
+            'co_owners_count': 1,
+            'last_room_ref': 'R1',
+            'undone_turn_ids': ['t0'],
+          },
+        ),
+      ).called(1);
+    });
+
+    test('a turn without the pill the seller undid', () {
+      const turn = AgentTurn(
+        turnId: 't1',
+        transcript: 'x',
+        reply: 'y',
+        patch: {'a': 1, 'b': 2},
+        facts: [
+          AgentPill(field: 'a', label: 'A'),
+          AgentPill(field: 'b', label: 'B'),
+        ],
+        entityOps: [
+          AgentEntityChange(
+            entity: AgentEntity.room,
+            op: AgentEntityOp.create,
+            target: 'new',
+            label: 'R',
+          ),
+          AgentEntityChange(
+            entity: AgentEntity.room,
+            op: AgentEntityOp.update,
+            target: 'R1',
+            label: 'S',
+          ),
+        ],
+      );
+      final withoutA = turn.without('a');
+      expect(withoutA.patch, {'b': 2});
+      expect(withoutA.facts.single.field, 'b');
+      expect(withoutA.entityOps, hasLength(2));
+      final withoutOp = turn.without('op:0');
+      expect(withoutOp.patch, {'a': 1, 'b': 2});
+      expect(withoutOp.entityOps.single.target, 'R1');
+      expect(
+        const AgentTurn(turnId: 't', transcript: '', reply: '').understood,
+        isFalse,
+      );
+    });
+
+    test('a confirmed change is a turn of its own', () {
+      final turn = AgentTurn.confirmed(
+        't1',
+        const AgentConfirmation(
+          id: 'c1',
+          reason: AgentConfirmationReason.typeChange,
+          label: 'Type : garage\u00a0?',
+          patch: {'property_type': 'stationnement'},
+        ),
+      );
+      expect(turn.turnId, 't1#c1');
+      expect(turn.patch, {'property_type': 'stationnement'});
+      expect(turn.facts.single.label, 'Type : garage');
+      expect(turn.facts.single.field, 'property_type');
+      final delete = AgentTurn.confirmed(
+        't1',
+        const AgentConfirmation(
+          id: 'c2',
+          reason: AgentConfirmationReason.delete,
+          label: 'Supprimer ?',
+          entityOps: [
+            AgentEntityChange(
+              entity: AgentEntity.room,
+              op: AgentEntityOp.delete,
+              target: 'R2',
+              label: 'Supprimer Cellier',
+            ),
+          ],
+        ),
+      );
+      expect(delete.facts, isEmpty);
+      expect(delete.entityOps.single.target, 'R2');
+    });
+
+    test('rooms summary and undone turns', () async {
+      answer({'turn_id': 't9', 'reply_fr': 'J’ai noté 1 pièce.'});
+      final summary = await repository.roomsSummary(
+        propertyId: 'p1',
+        rooms: const [AgentRoom(ref: 'R1', name: 'Séjour', areaM2: 20)],
+      );
+      expect(summary.reply, 'J’ai noté 1 pièce.');
+      verify(
+        () => functions.invoke(
+          'agent-turn',
+          body: {
+            'property_id': 'p1',
+            'step': 'rooms',
+            'summary': true,
+            'rooms': [
+              {
+                'ref': 'R1',
+                'name': 'Séjour',
+                'area_m2': 20.0,
+                'level': null,
+                'floor_covering': null,
+                'glazing': null,
+                'ceiling_height_m': null,
+                'is_annex': false,
+              },
+            ],
+          },
+        ),
+      ).called(1);
+      answer({'undone': 1});
+      await repository.markUndone(
+        propertyId: 'p1',
+        step: AgentStep.owners,
+        turnIds: const ['t1'],
+      );
+      verify(
+        () => functions.invoke(
+          'agent-turn',
+          body: {
+            'property_id': 'p1',
+            'step': 'owners',
+            'undone_turn_ids': ['t1'],
+          },
+        ),
+      ).called(1);
+      await repository.markUndone(
+        propertyId: 'p1',
+        step: AgentStep.owners,
+        turnIds: const [],
+      );
+      verifyNoMoreInteractions(functions);
+    });
+
+    test('model props', () {
+      expect(
+        const AgentEntityChange(
+          entity: AgentEntity.coOwner,
+          op: AgentEntityOp.create,
+          target: 'new',
+          label: 'x',
+        ).props,
+        hasLength(7),
+      );
+      expect(
+        const AgentConfirmation(
+          id: 'c',
+          reason: AgentConfirmationReason.coOwner,
+          label: 'x',
+        ).props,
+        hasLength(5),
+      );
+      expect(const AgentOutOfStep(field: 'a', step: 'b', label: 'c').props, [
+        'a',
+        'b',
+        'c',
+      ]);
+      expect(
+        const AgentRoom(ref: 'R1', name: 'a', areaM2: 1).props,
+        hasLength(8),
+      );
+      expect(const AgentEstimate(ref: 'E1').props, hasLength(4));
+      expect(const AgentTurnContext().props, hasLength(6));
+      expect(const AgentTurnContext(interactive: false).toJson(), {
+        'interactive': false,
+      });
+      expect(AgentEntity.parse('co_owner'), AgentEntity.coOwner);
+      expect(AgentEntity.parse('x'), isNull);
+      expect(AgentEntityOp.parse('delete'), AgentEntityOp.delete);
+      expect(
+        AgentConfirmationReason.parse('merge_room'),
+        AgentConfirmationReason.mergeRoom,
+      );
+      expect(AgentStep.values.map((s) => s.value), [
+        'owners',
+        'location',
+        'context',
+        'technical',
+        'rooms',
+        'lifestyle',
+      ]);
     });
   });
 
@@ -224,7 +569,12 @@ void main() {
   });
 
   test('model equality', () {
-    expect(const AgentPill(field: 'a', label: 'b').props, ['a', 'b']);
+    expect(const AgentPill(field: 'a', label: 'b').props, [
+      'a',
+      'b',
+      null,
+      false,
+    ]);
     expect(AgentStep.lifestyle.value, 'lifestyle');
     expect(const Transcription(turnId: 'a', transcript: 'b').props, ['a', 'b']);
     expect(const AgentLifestyleItem(isAsset: true, label: 'x').props, [

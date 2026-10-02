@@ -91,6 +91,11 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(_mainBox);
       await tester.pump();
+      // EPIC-14: an optional description.
+      await tester.enterText(
+        _field('Description (facultatif)'),
+        '  Ouvert sur la cuisine ',
+      );
 
       await tester.tap(find.text('Ajouter'));
       await tester.pumpAndSettle();
@@ -104,6 +109,7 @@ void main() {
           areaM2: 38.5,
           floorCovering: 'parquet_chene',
           glazing: Glazing.double,
+          description: 'Ouvert sur la cuisine',
         ),
       );
     });
@@ -273,10 +279,12 @@ void main() {
           floorCovering: 'Marbre',
           glazing: Glazing.triple,
           isMain: true,
+          description: 'Cheminée',
         ),
       );
 
       expect(find.text('Modifier la pièce'), findsOneWidget);
+      expect(find.text('Cheminée'), findsOneWidget);
       expect(find.text('38'), findsOneWidget);
       expect(find.text('Marbre'), findsOneWidget);
       expect(find.text('Non précisé'), findsOneWidget);
@@ -296,6 +304,7 @@ void main() {
           areaM2: 38,
           floorCovering: 'Marbre',
           isMain: true,
+          description: 'Cheminée',
         ),
       );
     });

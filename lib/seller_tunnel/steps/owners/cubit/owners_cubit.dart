@@ -1,6 +1,8 @@
+import 'package:agent_repository/agent_repository.dart';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:mobileapp/seller_tunnel/steps/owners/models/owner_draft.dart';
+import 'package:mobileapp/seller_tunnel/voice/voice_form.dart';
 import 'package:property_repository/property_repository.dart';
 
 part 'owners_state.dart';
@@ -10,7 +12,11 @@ part 'owners_state.dart';
 /// Built from the saved owners of the dossier; when there are none, owner 1
 /// is prefilled with the given `firstName` (profile) and `email` (auth).
 /// [submit] saves the rows; the page then reports them to the tunnel.
-class OwnersCubit extends Cubit<OwnersState> {
+///
+/// The V1 voice sheet (EPIC-14) gives the ownership type and, once
+/// confirmed, the co-owners' names ([applyVoiceTurn]); their phone is typed
+/// on screen.
+class OwnersCubit extends Cubit<OwnersState> with VoiceFormMixin<OwnersState> {
   new({
     required this._propertyRepository,
     required this._propertyId,
@@ -93,6 +99,43 @@ class OwnersCubit extends Cubit<OwnersState> {
 
   void coOwnerRemoved(int index) =>
       _edit((s) => s.copyWith(coOwners: [...s.coOwners]..removeAt(index)));
+
+  @override
+  bool get acceptsVoice => !state.isSubmitting;
+
+  /// No name is sent: only the ownership type and the number of
+  /// co-owners.
+  @override
+  AgentTurnContext get voiceContext => AgentTurnContext(
+    draft: {PropertyColumns.ownershipType: state.ownershipType?.value},
+    coOwnersCount: state.coOwners.length,
+  );
+
+  @override
+  OwnersState applyVoiceTurn(OwnersState state, AgentTurn turn) {
+    final dictated = {...state.dictated};
+    final type = parseDbEnum(
+      OwnershipType.values,
+      turn.patch[PropertyColumns.ownershipType],
+    );
+    if (type != null) dictated.add(PropertyColumns.ownershipType);
+    final coOwners = [...state.coOwners];
+    for (final op in turn.entityOps) {
+      if (op.entity != AgentEntity.coOwner || op.op != AgentEntityOp.create) {
+        continue;
+      }
+      final first = op.values['first_name'];
+      final last = op.values['last_name'];
+      if (first is! String || last is! String) continue;
+      dictated.add('co_owner:${coOwners.length}');
+      coOwners.add(OwnerDraft(firstName: first.trim(), lastName: last.trim()));
+    }
+    return state.copyWith(
+      ownershipType: type,
+      coOwners: coOwners,
+      dictated: dictated,
+    );
+  }
 
   /// "Continuer": shows every error when an answer is missing or invalid;
   /// otherwise saves the owners: owner 1 at position 1, then the co-owners

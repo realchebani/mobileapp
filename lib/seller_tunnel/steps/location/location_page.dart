@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:agent_repository/agent_repository.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:geo_repository/geo_repository.dart';
@@ -13,6 +14,7 @@ import 'package:mobileapp/seller_tunnel/steps/location/widgets/parcel_card.dart'
 import 'package:mobileapp/seller_tunnel/steps/location/widgets/parcel_map.dart';
 import 'package:mobileapp/seller_tunnel/steps/location/widgets/same_address_card.dart';
 import 'package:mobileapp/seller_tunnel/view/seller_tunnel_navigation.dart';
+import 'package:mobileapp/seller_tunnel/voice/voice.dart';
 import 'package:mobileapp/seller_tunnel/widgets/widgets.dart';
 import 'package:mobileapp/ui/ui.dart';
 import 'package:property_repository/property_repository.dart';
@@ -71,6 +73,37 @@ class _LocationViewState extends State<LocationView> {
   late final TextEditingController _other = TextEditingController(
     text: _initial.otherSituation,
   );
+
+  /// The V2 voice sheet (EPIC-14): the special situations only.
+  Future<void> _openVoiceSheet() async {
+    final l10n = context.l10n;
+    await showStepVoiceSheet(
+      context,
+      propertyId: context.read<SellerTunnelCubit>().state.property!.id,
+      step: AgentStep.location,
+      form: context.read<LocationCubit>(),
+      title: l10n.locationVoiceTitle,
+      intro: l10n.locationVoiceIntro,
+    );
+  }
+
+  /// "Dicter l’adresse" (owner decision Q2): transcription only, into the
+  /// search field; the seller then picks the suggestion.
+  Future<void> _dictateAddress() async {
+    final l10n = context.l10n;
+    final cubit = context.read<LocationCubit>();
+    final text = await showVoiceDictationSheet(
+      context,
+      propertyId: context.read<SellerTunnelCubit>().state.property!.id,
+      step: AgentStep.location,
+      title: l10n.locationVoiceAddressTitle,
+      hint: l10n.locationVoiceAddressHint,
+    );
+    if (text == null || text.isEmpty || !mounted) return;
+    cubit.addressChanged(
+      text.substring(0, text.length.clamp(0, GeoRepository.maxQueryLength)),
+    );
+  }
 
   final GlobalKey _addressKey = GlobalKey();
   final GlobalKey _mapKey = GlobalKey();
@@ -183,6 +216,11 @@ class _LocationViewState extends State<LocationView> {
     final isBusy = state.isSubmitting || tunnelSaving;
     final center = state.mapCenter;
     final locate = isBusy || state.isLocating ? null : cubit.locate;
+    final voice =
+        VoiceServices.of(context).isAvailable &&
+        context.select<SellerTunnelCubit, bool>(
+          (cubit) => cubit.state.profile.hasVoice(_step),
+        );
 
     return MultiBlocListener(
       listeners: [
@@ -208,6 +246,12 @@ class _LocationViewState extends State<LocationView> {
               current.addressText != _address.text,
           listener: (context, state) => _address.text = state.addressText,
         ),
+        BlocListener<LocationCubit, LocationState>(
+          listenWhen: (previous, current) =>
+              previous.otherSituation != current.otherSituation &&
+              current.otherSituation != _other.text,
+          listener: (context, state) => _other.text = state.otherSituation,
+        ),
       ],
       child: TunnelScaffold(
         header: TunnelHeader(
@@ -219,6 +263,9 @@ class _LocationViewState extends State<LocationView> {
           label: l10n.tunnelContinue,
           isLoading: isBusy,
           onPressed: cubit.submit,
+          onMicPressed: isBusy || !voice
+              ? null
+              : () => unawaited(_openVoiceSheet()),
         ),
         children: [
           AgentIntro(message: _intro(l10n, state)),
@@ -270,6 +317,17 @@ class _LocationViewState extends State<LocationView> {
                   )
                 : null,
           ),
+          if (voice && VoiceDefaults.addressDictation)
+            Align(
+              alignment: Alignment.centerLeft,
+              child: RealestyButton(
+                label: l10n.locationVoiceAddressButton,
+                variant: RealestyButtonVariant.text,
+                leadingIcon: RealestyIcons.mic,
+                height: RealestySpacing.minTouchTarget,
+                onPressed: isBusy ? null : () => unawaited(_dictateAddress()),
+              ),
+            ),
           Column(
             key: _mapKey,
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -349,9 +407,20 @@ class _LocationViewState extends State<LocationView> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             spacing: 10,
             children: [
-              Text(
-                l10n.locationSituationsQuestion,
-                style: RealestyTextStyles.label.copyWith(color: c.encre2),
+              Row(
+                spacing: RealestySpacing.xs,
+                children: [
+                  Flexible(
+                    child: Text(
+                      l10n.locationSituationsQuestion,
+                      style: RealestyTextStyles.label.copyWith(color: c.encre2),
+                    ),
+                  ),
+                  if (state.dictated.contains(
+                    PropertyColumns.specialSituations,
+                  ))
+                    const DictatedTag(),
+                ],
               ),
               Wrap(
                 spacing: RealestySpacing.xs,

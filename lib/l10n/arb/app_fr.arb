@@ -3911,9 +3911,9 @@
   "@voiceConsentRetention": {
     "description": "Consentement voix : aucune conservation de l’audio"
   },
-  "voiceConsentIdentity": "Aucune donnée d’identité (nom, téléphone, e-mail, adresse) n’est envoyée à ces fournisseurs.",
+  "voiceConsentIdentity": "Votre téléphone et votre e-mail ne sont jamais envoyés à ces fournisseurs. Seuls les noms des co-propriétaires et l’adresse que vous choisissez de dicter leur sont transmis (l’adresse est seulement transcrite) ; ils ne sont pas conservés dans l’historique de l’agent.",
   "@voiceConsentIdentity": {
-    "description": "Consentement voix : pas de données d’identité"
+    "description": "Consentement vocal (v3, EPIC-14) : données d’identité envoyées ou non aux fournisseurs d’IA"
   },
   "voiceConsentScreen": "Vous pouvez à tout moment répondre à l’écran à la place.",
   "@voiceConsentScreen": {
@@ -4698,5 +4698,171 @@
   "methodSkip": "Passer cette étape",
   "@methodSkip": {
     "description": "V5 · passer le relevé des pièces (type « Autre », facultatif)"
+  },
+  "voiceSheetClose": "Terminer",
+  "@voiceSheetClose": {
+    "description": "Feuille vocale d’une étape (EPIC-14) : bouton qui termine la conversation"
+  },
+  "voiceSheetYes": "Oui",
+  "@voiceSheetYes": {
+    "description": "Feuille vocale : bouton qui confirme un changement proposé par l’agent"
+  },
+  "voiceSheetNo": "Non",
+  "@voiceSheetNo": {
+    "description": "Feuille vocale : bouton qui refuse un changement proposé par l’agent"
+  },
+  "voiceSheetUndoTurn": "Annuler ce tour",
+  "@voiceSheetUndoTurn": {
+    "description": "Feuille vocale : lien qui annule tout ce que l’agent a retenu au dernier tour"
+  },
+  "voiceSheetUndoPill": "Annuler {label}",
+  "@voiceSheetUndoPill": {
+    "description": "Feuille vocale : libellé d’accessibilité de la croix d’une pastille comprise",
+    "placeholders": {
+      "label": {
+        "type": "String",
+        "example": "Construction 1998"
+      }
+    }
+  },
+  "voiceSheetAdded": "{count, plural, =1{1 réponse ajoutée} other{{count} réponses ajoutées}}",
+  "@voiceSheetAdded": {
+    "description": "Instantané après la fermeture d’une feuille vocale : nombre de réponses ajoutées au formulaire",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "6"
+      }
+    }
+  },
+  "voiceSheetUndoSession": "Annuler",
+  "@voiceSheetUndoSession": {
+    "description": "Action de l’instantané après la fermeture d’une feuille vocale : annule toutes les réponses de la session"
+  },
+  "voiceSheetCancelled": "C’est annulé.",
+  "@voiceSheetCancelled": {
+    "description": "Réplique affichée quand le vendeur dit « annule »"
+  },
+  "voiceSheetNothingToCancel": "Il n’y a rien à annuler.",
+  "@voiceSheetNothingToCancel": {
+    "description": "Réplique affichée quand le vendeur dit « annule » sans réponse à annuler"
+  },
+  "voiceSheetConfirmed": "C’est noté.",
+  "@voiceSheetConfirmed": {
+    "description": "Réplique affichée quand le vendeur confirme un changement"
+  },
+  "voiceSheetRejected": "D’accord, je n’y touche pas.",
+  "@voiceSheetRejected": {
+    "description": "Réplique affichée quand le vendeur refuse un changement"
+  },
+  "voiceDictatedTag": "Dicté",
+  "@voiceDictatedTag": {
+    "description": "Étiquette d’un champ rempli à la voix, jusqu’à « Continuer »"
+  },
+  "voiceSheetMicLabel": "Répondre à la voix",
+  "@voiceSheetMicLabel": {
+    "description": "Libellé d’accessibilité du micro qui ouvre la feuille vocale d’une étape"
+  },
+  "surfacesDescriptionLabel": "Description (facultatif)",
+  "@surfacesDescriptionLabel": {
+    "description": "Fiche pièce (V5c) : libellé du champ de description libre de la pièce"
+  },
+  "surfacesDescriptionHint": "Ouverte sur la cuisine, cheminée, baie vitrée…",
+  "@surfacesDescriptionHint": {
+    "description": "Fiche pièce (V5c) : exemple dans le champ de description"
+  },
+  "surfacesVoiceTitle": "Dictée des pièces",
+  "@surfacesVoiceTitle": {
+    "description": "V5c : titre de la feuille de dictée des pièces"
+  },
+  "surfacesVoiceIntro": "Décrivez chaque pièce : son nom, sa surface, son niveau, le sol, le vitrage et ce qui la caractérise. Par exemple : « Le séjour fait 38 m² au rez-de-chaussée, parquet chêne, double vitrage. »",
+  "@surfacesVoiceIntro": {
+    "description": "V5c : introduction de la feuille de dictée des pièces"
+  },
+  "surfacesVoiceDictatedTitle": "Pièces dictées",
+  "@surfacesVoiceDictatedTitle": {
+    "description": "V5c : titre de la liste des pièces dictées dans la feuille de dictée"
+  },
+  "surfacesVoiceTotal": "{area} m² habitables · {count, plural, =1{1 pièce} other{{count} pièces}}",
+  "@surfacesVoiceTotal": {
+    "description": "V5c : total courant de la dictée (surface habitable, nombre de pièces)",
+    "placeholders": {
+      "area": {
+        "type": "String",
+        "example": "82,5"
+      },
+      "count": {
+        "type": "int",
+        "example": "6"
+      }
+    }
+  },
+  "methodVoiceTitle": "Dicter mes pièces",
+  "@methodVoiceTitle": {
+    "description": "V5 : titre de la carte qui ouvre la dictée des pièces"
+  },
+  "methodVoiceDescription": "Décrivez chaque pièce à voix haute : nom, surface, niveau, sol, vitrage.",
+  "@methodVoiceDescription": {
+    "description": "V5 : description de la carte « Dicter mes pièces »"
+  },
+  "technicalVoiceTitle": "Audit technique à la voix",
+  "@technicalVoiceTitle": {
+    "description": "V4b : titre de la feuille vocale de l’étape"
+  },
+  "technicalVoiceIntro": "Dites-moi ce que vous savez du bien : année de construction, surfaces, murs, toiture, chauffage, assainissement, extérieurs… Je remplis le formulaire au fur et à mesure.",
+  "@technicalVoiceIntro": {
+    "description": "V4b : introduction de la feuille vocale de l’étape"
+  },
+  "technicalVoiceGuided": "Conversation guidée",
+  "@technicalVoiceGuided": {
+    "description": "V4b : lien vers l’audit vocal guidé V4 (logements)"
+  },
+  "contextVoiceTitle": "Contexte à la voix",
+  "@contextVoiceTitle": {
+    "description": "V3 : titre de la feuille vocale de l’étape"
+  },
+  "contextVoiceIntro": "Dites-moi le type de bien, l’année et le prix d’achat, la raison de la vente, et si une agence l’a déjà estimé.",
+  "@contextVoiceIntro": {
+    "description": "V3 : introduction de la feuille vocale de l’étape"
+  },
+  "ownersVoiceTitle": "Propriétaires à la voix",
+  "@ownersVoiceTitle": {
+    "description": "V1 : titre de la feuille vocale de l’étape"
+  },
+  "ownersVoiceIntro": "Êtes-vous seul propriétaire ? Sinon, dites-moi le prénom et le nom des autres propriétaires. Leur téléphone se saisit à l’écran.",
+  "@ownersVoiceIntro": {
+    "description": "V1 : introduction de la feuille vocale (noms des co-propriétaires dictables)"
+  },
+  "ownersVoiceIntroWithoutNames": "Êtes-vous seul propriétaire, ou plusieurs ? Les autres propriétaires se saisissent à l’écran.",
+  "@ownersVoiceIntroWithoutNames": {
+    "description": "V1 : introduction de la feuille vocale (sans dictée des noms)"
+  },
+  "ownersCoOwnerIncomplete": "À compléter : téléphone",
+  "@ownersCoOwnerIncomplete": {
+    "description": "V1 : carte d’un co-propriétaire dicté à qui il manque le téléphone"
+  },
+  "locationVoiceTitle": "Servitudes à la voix",
+  "@locationVoiceTitle": {
+    "description": "V2 : titre de la feuille vocale de l’étape (situations particulières)"
+  },
+  "locationVoiceIntro": "Y a-t-il une situation particulière sur le terrain : une servitude de passage, des réseaux qui le traversent, autre chose ? Dites « aucune » s’il n’y en a pas.",
+  "@locationVoiceIntro": {
+    "description": "V2 : introduction de la feuille vocale de l’étape"
+  },
+  "locationVoiceAddressButton": "Dicter l’adresse",
+  "@locationVoiceAddressButton": {
+    "description": "V2 : bouton qui ouvre la dictée de l’adresse (transcription seule)"
+  },
+  "locationVoiceAddressTitle": "Dictez l’adresse",
+  "@locationVoiceAddressTitle": {
+    "description": "V2 : titre de la feuille de dictée de l’adresse"
+  },
+  "locationVoiceAddressHint": "Dites le numéro, la rue et la ville. Vous choisirez ensuite l’adresse proposée.",
+  "@locationVoiceAddressHint": {
+    "description": "V2 : consigne de la dictée de l’adresse"
+  },
+  "voiceDictationCancel": "Annuler",
+  "@voiceDictationCancel": {
+    "description": "Dictée simple : bouton qui ferme la feuille sans rien garder"
   }
 }

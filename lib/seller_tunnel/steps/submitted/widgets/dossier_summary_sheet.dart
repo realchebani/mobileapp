@@ -151,6 +151,10 @@ class DossierSummarySheet extends StatelessWidget {
                 roomsArea(annexes),
               ),
             ),
+          // EPIC-14: the description of each room (typed or dictated).
+          for (final room in state.rooms)
+            if (room.description case final description?)
+              (room.name, description),
         ],
       ),
       (

@@ -112,7 +112,7 @@ class PropertyGate extends StatelessWidget {
               // V3 → V4 (voice audit) when voice is available for this
               // type; V4 falls back to V4b (screen mode) without consent.
               if (next == SellerTunnelStep.technical &&
-                  state.profile.voice &&
+                  state.profile.voiceAudit &&
                   VoiceServices.of(context).isAvailable) {
                 context.go(
                   AppRoutes.sellerPropertyAudit(

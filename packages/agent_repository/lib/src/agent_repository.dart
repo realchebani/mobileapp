@@ -67,12 +67,17 @@ class AgentRepository {
   final Duration _timeout;
 
   /// Transcribes a recorded utterance (`m4a` by default) for [propertyId].
+  ///
+  /// [dictation] (V2 address): transcription only, never sent to the
+  /// language model nor kept in the journal; the transcript is not an
+  /// agent turn.
   Future<Transcription> transcribe({
     required String propertyId,
     required AgentStep step,
     required Uint8List audio,
     required Duration duration,
     String format = 'm4a',
+    bool dictation = false,
   }) async {
     final data = await _invoke(
       'agent-transcribe',
@@ -82,6 +87,7 @@ class AgentRepository {
         'step': step.value,
         'format': format,
         'duration': (duration.inMilliseconds / 1000).toStringAsFixed(2),
+        if (dictation) 'mode': 'dictation',
       },
     );
     final json = Map<String, dynamic>.from(data! as Map);
@@ -93,7 +99,9 @@ class AgentRepository {
 
   /// One agent turn: on a transcribed [turnId], or on a typed
   /// [transcript]. [assetLabels] / [watchPointLabels] are the V6 items
-  /// listed on screen (not saved yet), to avoid duplicates.
+  /// listed on screen (not saved yet), to avoid duplicates. [context] is
+  /// what a step sheet sends (draft, rooms, estimates; EPIC-14);
+  /// [undoneTurnIds] are the turns the seller undid since the last call.
   Future<AgentTurn> turn({
     required String propertyId,
     required AgentStep step,
@@ -101,6 +109,8 @@ class AgentRepository {
     String? transcript,
     List<String> assetLabels = const [],
     List<String> watchPointLabels = const [],
+    AgentTurnContext? context,
+    List<String> undoneTurnIds = const [],
   }) async {
     final data = await _invoke(
       'agent-turn',
@@ -114,9 +124,47 @@ class AgentRepository {
             'asset': assetLabels,
             'watch_point': watchPointLabels,
           },
+        ...?context?.toJson(),
+        if (undoneTurnIds.isNotEmpty) 'undone_turn_ids': undoneTurnIds,
       },
     );
     return AgentTurn.fromJson(Map<String, dynamic>.from(data! as Map));
+  }
+
+  /// The spoken summary of a rooms dictation ("J’ai noté 9 pièces pour
+  /// 115 m² habitables. Est-ce correct ?"), computed by the server from
+  /// [rooms] without the language model; speak it with [speech].
+  Future<AgentTurn> roomsSummary({
+    required String propertyId,
+    required List<AgentRoom> rooms,
+  }) async {
+    final data = await _invoke(
+      'agent-turn',
+      body: {
+        'property_id': propertyId,
+        'step': AgentStep.rooms.value,
+        'summary': true,
+        'rooms': [for (final room in rooms) room.toJson()],
+      },
+    );
+    return AgentTurn.fromJson(Map<String, dynamic>.from(data! as Map));
+  }
+
+  /// Reports the turns the seller undid (quality follow-up, plan §7.4).
+  Future<void> markUndone({
+    required String propertyId,
+    required AgentStep step,
+    required List<String> turnIds,
+  }) async {
+    if (turnIds.isEmpty) return;
+    await _invoke(
+      'agent-turn',
+      body: {
+        'property_id': propertyId,
+        'step': step.value,
+        'undone_turn_ids': turnIds,
+      },
+    );
   }
 
   /// The spoken reply of [turnId] (each reply is spoken once).

@@ -49,7 +49,18 @@ void main() {
       ),
       PropertyParcel(propertyId: _id, idu: '69043000AB0124'),
     ],
-    rooms: [_room(38.5), _room(12), _room(18, isAnnex: true)],
+    rooms: [
+      _room(38.5),
+      _room(12),
+      _room(18, isAnnex: true),
+      // EPIC-14: a room description.
+      const Room(
+        propertyId: _id,
+        name: 'Séjour',
+        areaM2: 0.5,
+        description: 'Ouvert sur la cuisine',
+      ),
+    ],
     lifestyleItems: [
       _item(LifestyleItemKind.asset),
       _item(LifestyleItemKind.asset),
@@ -102,7 +113,8 @@ void main() {
       'R+1',
       'Pompe à chaleur, Poêle à bois',
       'Tout-à-l’égout',
-      '2 pièces · 50,5${nb}m² habitables',
+      '3 pièces · 51${nb}m² habitables',
+      'Ouvert sur la cuisine',
       'Annexes',
       '1 annexe · 18${nb}m²',
       '2 éléments',

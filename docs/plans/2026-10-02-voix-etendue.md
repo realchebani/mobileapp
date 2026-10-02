@@ -1,6 +1,6 @@
 # EPIC-14 · Voix étendue à tout le tunnel vendeur — étude & conception
 
-Statut : **proposé** (questions ouvertes §12), aucun code écrit. Branche `feat/epic-14-voix-etendue` (depuis `main`). **L’implémentation commence après la fusion d’EPIC-13** (multi-biens) : ce plan s’appuie sur ses types de biens, son `PropertyTypeProfile`, ses colonnes (`usable_area_m2`, `parking_level`, `parking_features`, `land_kind`, `parking_kind`, `commercial_use`, `units_count`) et ses routes `/vendeur/biens/:id/audit/<étape>`.
+Statut : **implémenté** (tranches V0–V7, V9–V16 ; V8 « banc enregistré sur l’iPhone » reste à faire), avec les **choix par défaut** du §14 en attendant les arbitrages du porteur de projet (questions §12). Branche `feat/epic-14-voix-etendue`, après la fusion d’EPIC-13 (multi-biens) : ce plan s’appuie sur ses types de biens, son `PropertyTypeProfile`, ses colonnes (`usable_area_m2`, `parking_level`, `parking_features`, `land_kind`, `parking_kind`, `commercial_use`, `units_count`) et ses routes `/vendeur/biens/:id/audit/<étape>`.
 
 ## 0. Contexte
 
@@ -539,6 +539,52 @@ ARB : lecture-modification-écriture JSON puis `flutter gen-l10n` immédiatement
 
 ---
 
+## 13. Remise à niveau V0 (code fusionné d’EPIC-13)
+
+Inventaire §2 relu contre le code fusionné (`PropertyTypeProfile`, écrans, migrations `multi_biens*`) ; corrections :
+
+- **V2** « Autre » (`special_situation_other`) : borne de l’écran **300** caractères (et non 120).
+- **V3** : bornes confirmées (`PropertyContextState`) — années ≥ 1900, montants 1 000 € – 100 M€, précision et usage ≤ 100 car., agence ≤ 120, logements 2…500 ; « Construit par vous ? » pour maison, appartement, dépendance, autre (et type non choisi).
+- **V4b** : `usable_area_m2` **1…2 000** m² (`TechnicalState.minUsableArea`, `maxArea`) ; année de construction **obligatoire pour l’immeuble** aussi ; les colonnes par type sont exactement celles de `technicalFields` (table §2.4 confirmée) — la parité est maintenant **testée** (fixture `technical`, `parking_features` d’une dépendance = électricité / eau).
+- **V6** : l’étape existe pour M, A, T, L, I, Au (pas S ni D) ; bruit et vis-à-vis seulement si `asksNeighbourhood` (pas L).
+- **Modèle app** : `PropertyTypeProfile.voice` est devenu **`voiceAudit`** (V4 Night) + **`voiceSteps` / `hasVoice(step)`** (feuilles d’étape) ; `Room.source` était un `MeasurementMethod` → nouvel enum **`RoomSource`** (`scan`, `plan`, `manual`, `voice`) ; un co-propriétaire dicté n’a pas de téléphone : l’état V1 exige désormais que chaque co-propriétaire soit complet (« À compléter : téléphone »).
+- **Base** : la migration `agent_conversations` était déjà appliquée → la contrainte `agent_sessions.step` est remplacée dans la **nouvelle** migration `20261002111222_voix_etendue` (avec `rooms.description`, `rooms.source = voice`, `agent_turns.undone`, vue `agent_step_stats`).
+- **Routes** : V5c accepte `?dictee=1` (carte V5 « Dicter mes pièces ») ; aucune autre route ajoutée.
+
+## 14. Choix par défaut en attendant le porteur de projet
+
+Les 13 questions du §12 n’étant pas encore tranchées, l’option **recommandée (« proposé »)** de chacune est implémentée. Toutes sont réglables sans refonte : constantes `VOICE_DEFAULTS` (`supabase/functions/_shared/agent/defaults.ts`) côté serveur et `VoiceDefaults` (`lib/seller_tunnel/voice/voice_defaults.dart`) côté app, secrets Supabase pour les modèles et constantes `LIMITS` pour les quotas.
+
+| Q | Choix appliqué | Où le changer |
+|---|---|---|
+| Q1 Propriétaires | **(b)** type de propriété + prénom / nom des co-propriétaires, toujours confirmés, transcript effacé du journal ; téléphone et e-mail à l’écran. Remarque : l’option listée en premier est (a), mais (b) est l’option recommandée par le plan — (a) se règle par `coOwnerNames = false` (serveur et app) | `VOICE_DEFAULTS.coOwnerNames`, `VoiceDefaults.coOwnerNames` |
+| Q2 Adresse | **(a)** dictée simple (`agent-transcribe` `mode=dictation`, jamais envoyée au modèle de langage ni gardée au journal) dans le champ de recherche ; le vendeur choisit la suggestion | `addressDictation` |
+| Q3 Portée | **(a)** une feuille par étape | — (structure) |
+| Q4 V4b | **(a)** le micro ouvre la feuille d’étape ; l’audit Night V4 reste accessible par le lien « Conversation guidée » (logements) ; la redirection V3 → V4 reste inchangée | `VoiceDefaults.technicalSheet` |
+| Q5 Voix de l’agent | **(a)** parle dans les feuilles, se tait pendant la dictée de pièces (texte + vibration), récapitulatif final **parlé** (calculé par le serveur sans modèle) | `VoiceDefaults.silentRoomsDictation` |
+| Q6 Confirmation | **(a)** appliqué tout de suite, annulable ; confirmation pour : changement de type, suppressions, co-propriétaire, confiance 0,5–0,7, écart fort (surface ±50 %, année ±20 ans), « aucune » qui efface des situations, pièce existante redictée | `confirmFrom`, `strongChange` |
+| Q7 Description | **(a)** texte libre de 300 caractères par pièce | `Room.descriptionMaxLength` + contrainte SQL |
+| Q8 Traçabilité | **(a)** provenance « Déclaré », `rooms.source = voice`, détail au journal ; méthode V5 `manual` | `VoiceDefaults.dictationIsManualMethod` |
+| Q9 Quotas | **(a)** inchangés : 120 tours et 20 min d’audio par jour | `LIMITS` (`_shared/agent/db.ts`) |
+| Q10 « 4 sur 3 » | **(a)** surface calculée (« 4 × 3 m » affiché), les deux nombres doivent être dans la citation | `areaFromDimensions` |
+| Q11 V7 | **(a)** pas de micro | — |
+| Q12 Types non logement | **(a)** feuilles d’étape pour tous les types, audit Night pour les logements | `VOICE_DEFAULTS.allTypes`, `VoiceDefaults.allTypes` |
+| Q13 Modèles | **(a)** mêmes défauts partout ; bascule **par étape** par secret `OPENROUTER_MODEL_AGENT_<ÉTAPE>` selon la vue `agent_step_stats` | secrets Supabase |
+
+Écarts assumés (à valider) :
+- **Suppression d’un co-propriétaire à la voix : non prise en charge** (les noms ne sont jamais envoyés au modèle, il ne peut donc pas les désigner) ; elle reste à l’écran.
+- Les réponses « oui / non / annule / terminé » reconnues localement ne coûtent **pas d’appel au modèle**, mais leur transcription compte comme un tour dans le quota (la fonction de réservation compte toutes les lignes du journal).
+- Si la feuille V1 est fermée entre la transcription et la réponse de l’agent, ce transcript (noms) reste au journal ; tous les autres chemins (réponse, échec, JSON illisible) l’effacent.
+- L’étiquette « Dicté » est posée sur les questions à valeur unique (et pièces, co-propriétaires, situations) ; les listes de V4b (chauffage, extérieurs) n’en portent pas — les pastilles de la feuille et l’instantané « Annuler » couvrent le cas.
+
+---
+
 ## Journal d’exécution
 
 - 2026-10-02 : plan rédigé (aucun code), EPIC-14 créé ; en attente des arbitrages et de la fusion d’EPIC-13.
+- 2026-10-02 (V0) : inventaire relu contre le code fusionné d’EPIC-13 (§13) ; choix par défaut appliqués en attendant le porteur de projet (§14).
+- 2026-10-02 (V1) : migration `20261002111222_voix_etendue` (sonde dans une transaction annulée — vue lisible par `service_role` seulement, écritures du journal toujours interdites aux clients, `rooms.description` insérable — puis dry-run et push).
+- 2026-10-02 (V2–V7) : registre d’étapes `_shared/agent/steps/` (owners, location, context, technical, rooms, lifestyle) ; `french_numbers.ts` (nombres dits), `anchors.ts` (ancres numériques / lexicales, couverture du texte libre), `rooms.ts` (références R*, désignation, ambiguïtés, doublons) ; `validate.ts` (entités, confirmations, corrections, hors étape, typographie) ; prompt par étape ; handlers (contexte de l’app, refus étape × type, effacement V1, dictée d’adresse, récapitulatif de pièces sans modèle, tours annulés) ; modèle par étape. 144 tests Deno ; fonctions `agent-transcribe`, `agent-turn`, `agent-speech` redéployées.
+- 2026-10-02 (V9–V15) : `agent_repository` (étapes, contexte, entités, confirmations, dictée, récapitulatif, `markUndone`) ; cœur voix app (`VoiceForm` / `VoiceFormMixin` avec annulation par rejeu, `StepVoiceSheet`, `LocalVoiceCommands`, `VoiceDictationCubit`, « Dicté », consentement v3) ; V1, V2, V3, V4b, V5 / V5c (dictée, description), V6 migré sur la feuille générique, description des pièces dans l’aperçu V8.
+- 2026-10-02 (V8) : **non fait** — le banc étendu demande 40 phrases enregistrées sur l’iPhone.
+

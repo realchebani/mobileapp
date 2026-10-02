@@ -1,6 +1,8 @@
+import 'package:agent_repository/agent_repository.dart';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:mobileapp/seller_tunnel/models/property_type_profile.dart';
+import 'package:mobileapp/seller_tunnel/voice/voice_form.dart';
 import 'package:mobileapp/ui/format/realesty_format.dart';
 import 'package:property_repository/property_repository.dart';
 
@@ -11,7 +13,11 @@ part 'property_context_state.dart';
 /// [submit] validates the answers and saves the previous estimates (the
 /// `previous_estimates` rows); on success the view hands the saved rows and
 /// `PropertyContextState.patch` to the tunnel cubit.
-class PropertyContextCubit extends Cubit<PropertyContextState> {
+///
+/// The V3 voice sheet (EPIC-14) fills the same draft ([applyVoiceTurn]):
+/// answers and estimate cards.
+class PropertyContextCubit extends Cubit<PropertyContextState>
+    with VoiceFormMixin<PropertyContextState> {
   new({
     required this._propertyRepository,
     required Property property,
@@ -233,6 +239,139 @@ class PropertyContextCubit extends Cubit<PropertyContextState> {
         ),
       );
     }
+  }
+
+  // ---------------------------------------------------------------------
+  // Voice (EPIC-14).
+  // ---------------------------------------------------------------------
+
+  @override
+  bool get acceptsVoice =>
+      state.submission != PropertyContextSubmission.inProgress;
+
+  @override
+  AgentTurnContext get voiceContext => AgentTurnContext(
+    draft: encodeVoiceDraft(state.patch),
+    estimates: [
+      if (state.hasEstimates)
+        for (final (i, draft) in state.estimates.indexed)
+          AgentEstimate(
+            ref: 'E${i + 1}',
+            priceEur: PropertyContextState.parseDigits(draft.price),
+            month: PropertyContextState.parseMonth(draft.month),
+            agencyName: draft.agency.trim().isEmpty
+                ? null
+                : draft.agency.trim(),
+          ),
+    ],
+  );
+
+  @override
+  PropertyContextState applyVoiceTurn(
+    PropertyContextState state,
+    AgentTurn turn,
+  ) {
+    final patch = turn.patch;
+    final dictated = {...state.dictated, ...patch.keys};
+    String text(String column, String current) =>
+        patch.containsKey(column) ? (patch[column] as String?) ?? '' : current;
+    String number(String column, String current, {bool grouped = false}) {
+      final value = patch[column];
+      if (value is! num) return current;
+      return grouped ? frenchNumber(value.toInt()) : '${value.toInt()}';
+    }
+
+    var next = state.copyWith(
+      propertyType: parseDbEnum(
+        PropertyType.values,
+        patch[PropertyColumns.propertyType],
+      ),
+      propertyTypeOther: text(
+        PropertyColumns.propertyTypeOther,
+        state.propertyTypeOther,
+      ),
+      landKind: patch.containsKey(PropertyColumns.landKind)
+          ? () => parseDbEnum(LandKind.values, patch[PropertyColumns.landKind])
+          : null,
+      parkingKind: patch.containsKey(PropertyColumns.parkingKind)
+          ? () => parseDbEnum(
+              ParkingKind.values,
+              patch[PropertyColumns.parkingKind],
+            )
+          : null,
+      commercialUse: text(PropertyColumns.commercialUse, state.commercialUse),
+      unitsCount: number(PropertyColumns.unitsCount, state.unitsCount),
+      purchaseYear: number(PropertyColumns.purchaseYear, state.purchaseYear),
+      purchasePrice: number(
+        PropertyColumns.purchasePriceEur,
+        state.purchasePrice,
+        grouped: true,
+      ),
+      selfBuilt: patch[PropertyColumns.selfBuilt] as bool?,
+      saleReason: patch.containsKey(PropertyColumns.saleReason)
+          ? () => parseDbEnum(
+              SaleReason.values,
+              patch[PropertyColumns.saleReason],
+            )
+          : null,
+      previouslyEstimated: patch[PropertyColumns.previouslyEstimated] as bool?,
+    );
+    // Estimate cards (E1… in card order, as sent).
+    final refs = {
+      for (final (i, draft) in state.estimates.indexed) 'E${i + 1}': draft,
+    };
+    var estimates = [...next.estimates];
+    for (final op in turn.entityOps) {
+      if (op.entity != AgentEntity.previousEstimate) continue;
+      final values = op.values;
+      final price = values['price_eur'];
+      final month = DateTime.tryParse('${values['estimated_month']}');
+      final agency = values['agency_name'] as String?;
+      EstimateDraft filled(EstimateDraft draft) => EstimateDraft(
+        // A new key: the card shows the dictated values.
+        key: _nextKey++,
+        id: draft.id,
+        price: price is num ? frenchNumber(price.toInt()) : draft.price,
+        month: month == null
+            ? draft.month
+            : PropertyContextState.formatMonth(month),
+        agency: agency ?? draft.agency,
+      );
+      if (op.op == AgentEntityOp.create) {
+        // An empty card opened by "Oui" is filled first.
+        final empty = estimates.indexWhere(
+          (draft) => draft.price.trim().isEmpty && draft.id == null,
+        );
+        final card = filled(
+          empty < 0 ? EstimateDraft(key: _nextKey++) : estimates[empty],
+        );
+        if (empty < 0) {
+          estimates = [...estimates, card];
+        } else {
+          estimates = [...estimates]..[empty] = card;
+        }
+        dictated.add('estimate:${card.key}');
+        next = next.copyWith(previouslyEstimated: true);
+        continue;
+      }
+      final target = refs[op.target];
+      final index = target == null
+          ? -1
+          : estimates.indexWhere((draft) => draft.key == target.key);
+      if (index < 0) continue;
+      if (op.op == AgentEntityOp.delete) {
+        estimates = [...estimates]..removeAt(index);
+        continue;
+      }
+      final card = filled(estimates[index]);
+      estimates = [...estimates]..[index] = card;
+      dictated.add('estimate:${card.key}');
+    }
+    // "Oui" without an estimate said opens a first card, like on screen.
+    if ((next.previouslyEstimated ?? false) && estimates.isEmpty) {
+      estimates = [EstimateDraft(key: _nextKey++)];
+    }
+    return next.copyWith(estimates: estimates, dictated: dictated);
   }
 
   /// Id of the row of [draft]: loaded, or saved by a previous submission.

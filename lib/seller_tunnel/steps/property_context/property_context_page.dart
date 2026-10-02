@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:agent_repository/agent_repository.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:material_ui/material_ui.dart';
@@ -13,6 +14,7 @@ import 'package:mobileapp/seller_tunnel/steps/property_context/widgets/context_i
 import 'package:mobileapp/seller_tunnel/steps/property_context/widgets/context_question.dart';
 import 'package:mobileapp/seller_tunnel/steps/property_context/widgets/previous_estimate_card.dart';
 import 'package:mobileapp/seller_tunnel/view/seller_tunnel_navigation.dart';
+import 'package:mobileapp/seller_tunnel/voice/voice.dart';
 import 'package:mobileapp/seller_tunnel/widgets/widgets.dart';
 import 'package:mobileapp/ui/ui.dart';
 import 'package:property_repository/property_repository.dart';
@@ -66,6 +68,32 @@ class _PropertyContextViewState extends State<PropertyContextView> {
   late final TextEditingController _price = TextEditingController(
     text: _initial.purchasePrice,
   );
+
+  /// The text fields after a voice turn (typing keeps them equal).
+  void _syncControllers(PropertyContextState state) {
+    void sync(TextEditingController controller, String text) {
+      if (controller.text != text) controller.text = text;
+    }
+
+    sync(_typeOther, state.propertyTypeOther);
+    sync(_commercialUse, state.commercialUse);
+    sync(_units, state.unitsCount);
+    sync(_year, state.purchaseYear);
+    sync(_price, state.purchasePrice);
+  }
+
+  /// The V3 voice sheet (EPIC-14): type, purchase, reason, estimates.
+  Future<void> _openVoiceSheet() async {
+    final l10n = context.l10n;
+    await showStepVoiceSheet(
+      context,
+      propertyId: context.read<SellerTunnelCubit>().state.property!.id,
+      step: AgentStep.context,
+      form: context.read<PropertyContextCubit>(),
+      title: l10n.contextVoiceTitle,
+      intro: l10n.contextVoiceIntro,
+    );
+  }
 
   final GlobalKey _typeKey = GlobalKey();
   final GlobalKey _historyKey = GlobalKey();
@@ -154,6 +182,17 @@ class _PropertyContextViewState extends State<PropertyContextView> {
       };
     }
 
+    final busy =
+        tunnelSaving ||
+        state.submission == PropertyContextSubmission.inProgress;
+    // Voice on V3 for every type (the type may not be chosen yet).
+    final voice =
+        VoiceServices.of(context).isAvailable &&
+        context.select<SellerTunnelCubit, bool>(
+          (cubit) => cubit.state.profile.hasVoice(_step),
+        );
+    bool dictated(String column) => state.dictated.contains(column);
+    Widget? tag(String column) => dictated(column) ? const DictatedTag() : null;
     return MultiBlocListener(
       listeners: [
         BlocListener<PropertyContextCubit, PropertyContextState>(
@@ -166,6 +205,9 @@ class _PropertyContextViewState extends State<PropertyContextView> {
               previous.submitAttempts != current.submitAttempts,
           listener: (context, state) => _revealFirstError(state),
         ),
+        BlocListener<PropertyContextCubit, PropertyContextState>(
+          listener: (context, state) => _syncControllers(state),
+        ),
       ],
       child: TunnelScaffold(
         spacing: 18,
@@ -176,10 +218,11 @@ class _PropertyContextViewState extends State<PropertyContextView> {
         actionBar: AgentActionBar(
           hint: l10n.contextHint,
           label: l10n.tunnelContinue,
-          isLoading:
-              tunnelSaving ||
-              state.submission == PropertyContextSubmission.inProgress,
+          isLoading: busy,
           onPressed: cubit.submit,
+          onMicPressed: busy || !voice
+              ? null
+              : () => unawaited(_openVoiceSheet()),
         ),
         children: [
           AgentIntro(message: l10n.contextAgentMessage),
@@ -188,7 +231,13 @@ class _PropertyContextViewState extends State<PropertyContextView> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             spacing: 10,
             children: [
-              SectionLabel(l10n.contextPropertyTypeLabel),
+              Row(
+                spacing: RealestySpacing.xs,
+                children: [
+                  Flexible(child: SectionLabel(l10n.contextPropertyTypeLabel)),
+                  ?tag(PropertyColumns.propertyType),
+                ],
+              ),
               SelectableCardGrid(
                 spacing: 10,
                 children: [
@@ -236,6 +285,7 @@ class _PropertyContextViewState extends State<PropertyContextView> {
                         LengthLimitingTextInputFormatter(4),
                       ],
                       onChanged: cubit.purchaseYearChanged,
+                      footer: tag(PropertyColumns.purchaseYear),
                     ),
                   ),
                   Expanded(
@@ -248,12 +298,19 @@ class _PropertyContextViewState extends State<PropertyContextView> {
                       textInputAction: TextInputAction.done,
                       inputFormatters: const [AmountInputFormatter()],
                       onChanged: cubit.purchasePriceChanged,
-                      footer: Text(
-                        l10n.contextOptional,
-                        style: RealestyTextStyles.badge.copyWith(
-                          fontWeight: FontWeight.w400,
-                          color: context.realestyColors.texteDiscret,
-                        ),
+                      footer: Wrap(
+                        spacing: RealestySpacing.xs,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        children: [
+                          Text(
+                            l10n.contextOptional,
+                            style: RealestyTextStyles.badge.copyWith(
+                              fontWeight: FontWeight.w400,
+                              color: context.realestyColors.texteDiscret,
+                            ),
+                          ),
+                          ?tag(PropertyColumns.purchasePriceEur),
+                        ],
                       ),
                     ),
                   ),
@@ -263,6 +320,7 @@ class _PropertyContextViewState extends State<PropertyContextView> {
                 ContextQuestion(
                   key: _selfBuiltKey,
                   label: l10n.contextSelfBuiltLabel,
+                  dictated: dictated(PropertyColumns.selfBuilt),
                   errorText: error(
                     state.selfBuiltError,
                     () => l10n.contextErrorSelfBuilt,
@@ -276,6 +334,7 @@ class _PropertyContextViewState extends State<PropertyContextView> {
               ContextQuestion(
                 label: l10n.contextSaleReasonLabel,
                 spacing: RealestySpacing.xs,
+                dictated: dictated(PropertyColumns.saleReason),
                 child: Wrap(
                   spacing: RealestySpacing.xs,
                   runSpacing: RealestySpacing.xs,
@@ -291,6 +350,7 @@ class _PropertyContextViewState extends State<PropertyContextView> {
               ),
               ContextQuestion(
                 label: l10n.contextPreviouslyEstimatedLabel,
+                dictated: dictated(PropertyColumns.previouslyEstimated),
                 child: _YesNo(
                   value: state.previouslyEstimated,
                   onChanged: (value) => cubit.previouslyEstimatedChanged(
@@ -392,6 +452,7 @@ class _PropertyContextViewState extends State<PropertyContextView> {
         ContextQuestion(
           label: l10n.contextLandKindLabel,
           spacing: RealestySpacing.xs,
+          dictated: state.dictated.contains(PropertyColumns.landKind),
           child: Wrap(
             spacing: RealestySpacing.xs,
             runSpacing: RealestySpacing.xs,
@@ -414,6 +475,7 @@ class _PropertyContextViewState extends State<PropertyContextView> {
         ContextQuestion(
           label: l10n.contextParkingKindLabel,
           spacing: RealestySpacing.xs,
+          dictated: state.dictated.contains(PropertyColumns.parkingKind),
           child: Wrap(
             spacing: RealestySpacing.xs,
             runSpacing: RealestySpacing.xs,

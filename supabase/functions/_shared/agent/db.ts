@@ -92,6 +92,9 @@ export interface AgentDb {
   updateTurn(id: string, patch: TurnUpdate): Promise<void>;
   /** The caller's turns and audio seconds since [since]. */
   usageSince(since: Date): Promise<DailyUsage>;
+  /** Marks the caller's turns [ids] of [propertyId] as undone by the
+   * seller (quality follow-up); returns how many were marked. */
+  markUndone(propertyId: string, ids: string[]): Promise<number>;
 }
 
 /** Limits (plan §3.5). */
@@ -103,13 +106,38 @@ export const LIMITS = {
   transcriptChars: 2000,
   replyChars: 600,
   historyTurns: 6,
+  /** Draft values sent by the app (JSON bytes). */
+  draftBytes: 4000,
+  /** Rows of the V5c table sent by the app. */
+  rooms: 40,
+  /** Previous estimates sent by the app. */
+  estimates: 5,
+  /** Undone turns reported at once. */
+  undoneTurns: 50,
 };
 
-/** Columns of `properties` the agent reads (no identity data). */
+/** Columns of `properties` the agent reads (no identity data: neither the
+ * address nor the owners). */
 export const PROPERTY_COLUMNS = [
   "id",
   "status",
   "property_type",
+  "ownership_type",
+  "special_situations",
+  "special_situation_other",
+  "property_type_other",
+  "land_kind",
+  "parking_kind",
+  "commercial_use",
+  "units_count",
+  "purchase_year",
+  "purchase_price_eur",
+  "self_built",
+  "sale_reason",
+  "previously_estimated",
+  "usable_area_m2",
+  "parking_level",
+  "parking_features",
   "construction_year",
   "orientation",
   "living_area_m2",

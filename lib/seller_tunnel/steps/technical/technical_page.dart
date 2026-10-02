@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math';
 
+import 'package:agent_repository/agent_repository.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -16,6 +17,7 @@ import 'package:mobileapp/seller_tunnel/steps/technical/models/technical_options
 import 'package:mobileapp/seller_tunnel/steps/technical/widgets/technical_input_formatters.dart';
 import 'package:mobileapp/seller_tunnel/steps/technical/widgets/technical_question.dart';
 import 'package:mobileapp/seller_tunnel/view/seller_tunnel_navigation.dart';
+import 'package:mobileapp/seller_tunnel/voice/voice.dart';
 import 'package:mobileapp/seller_tunnel/widgets/widgets.dart';
 import 'package:mobileapp/ui/ui.dart';
 import 'package:property_repository/property_repository.dart';
@@ -38,7 +40,11 @@ class TechnicalPage extends StatelessWidget {
 }
 
 class TechnicalView extends StatefulWidget {
-  const new({super.key});
+  const new({this.voiceSheet = VoiceDefaults.technicalSheet, super.key});
+
+  /// The microphone opens the step sheet (owner decision Q4), otherwise
+  /// the V4 audit.
+  final bool voiceSheet;
 
   @override
   State<TechnicalView> createState() => _TechnicalViewState();
@@ -47,8 +53,23 @@ class TechnicalView extends StatefulWidget {
 class _TechnicalViewState extends State<TechnicalView> {
   static const SellerTunnelStep _step = SellerTunnelStep.technical;
 
-  /// The microphone: saves what was typed (without moving on), then opens
-  /// V4, which reads the dossier. Invalid answers are shown instead.
+  /// The microphone (EPIC-14, owner decision Q4): the V4b voice sheet,
+  /// whose answers fill this form (nothing saved before "Continuer").
+  Future<void> _openVoiceSheet() async {
+    final l10n = context.l10n;
+    await showStepVoiceSheet(
+      context,
+      propertyId: context.read<SellerTunnelCubit>().state.property!.id,
+      step: AgentStep.technical,
+      form: context.read<TechnicalCubit>(),
+      title: l10n.technicalVoiceTitle,
+      intro: l10n.technicalVoiceIntro,
+    );
+  }
+
+  /// "Conversation guidée" (or the microphone without the sheet): saves
+  /// what was typed (without moving on), then opens V4, which reads the
+  /// dossier. Invalid answers are shown instead.
   Future<void> _openVoiceAudit() async {
     final technical = context.read<TechnicalCubit>();
     final tunnel = context.read<SellerTunnelCubit>();
@@ -106,6 +127,21 @@ class _TechnicalViewState extends State<TechnicalView> {
     _usableArea = TextEditingController(text: initial.usableArea);
   }
 
+  /// The text fields after a voice turn (typing keeps them equal).
+  void _syncControllers(TechnicalState state) {
+    void sync(TextEditingController controller, String text) {
+      if (controller.text != text) controller.text = text;
+    }
+
+    sync(_constructionYear, state.constructionYear);
+    sync(_livingArea, state.livingArea);
+    sync(_livingRoomArea, state.livingRoomArea);
+    sync(_roofYear, state.roofYear);
+    sync(_heatPumpYear, state.heatPumpYear);
+    sync(_poolDimensions, state.poolDimensions);
+    sync(_usableArea, state.usableArea);
+  }
+
   @override
   void dispose() {
     _constructionYear.dispose();
@@ -157,12 +193,23 @@ class _TechnicalViewState extends State<TechnicalView> {
     );
     final enabled = !saving;
 
+    final services = VoiceServices.of(context);
+    final sheet =
+        widget.voiceSheet &&
+        services.isAvailable &&
+        state.profile.hasVoice(_step);
+    final guided = services.isAvailable && state.profile.voiceAudit;
     return MultiBlocListener(
       listeners: [
         BlocListener<TechnicalCubit, TechnicalState>(
           listenWhen: (previous, current) =>
               previous.submitAttempts != current.submitAttempts,
           listener: (context, state) => _revealFirstError(state),
+        ),
+        BlocListener<TechnicalCubit, TechnicalState>(
+          // A voice turn (or its undo) changed answers: the text fields
+          // follow (typing keeps them equal, so nothing happens then).
+          listener: (context, state) => _syncControllers(state),
         ),
         BlocListener<TechnicalCubit, TechnicalState>(
           listenWhen: (previous, current) =>
@@ -188,10 +235,28 @@ class _TechnicalViewState extends State<TechnicalView> {
           label: l10n.technicalSaveAndContinue,
           isLoading: saving,
           onPressed: cubit.submit,
-          // V4 · audit vocal (only for the types the agent serves).
-          onMicPressed: saving || !state.profile.voice ? null : _openVoiceAudit,
+          // The V4b voice sheet (EPIC-14); without it, V4 · audit vocal
+          // (only for the dwellings).
+          onMicPressed: saving
+              ? null
+              : sheet
+              ? () => unawaited(_openVoiceSheet())
+              : guided
+              ? _openVoiceAudit
+              : null,
         ),
         children: [
+          if (sheet && guided)
+            Align(
+              alignment: Alignment.centerLeft,
+              child: RealestyButton(
+                label: l10n.technicalVoiceGuided,
+                variant: RealestyButtonVariant.text,
+                leadingIcon: RealestyIcons.mic,
+                height: RealestySpacing.minTouchTarget,
+                onPressed: saving ? null : () => unawaited(_openVoiceAudit()),
+              ),
+            ),
           if (state.asks(TechnicalField.livingArea)) ...[
             _identity(context, state, enabled: enabled),
             _structure(context, state, enabled: enabled),
@@ -259,8 +324,16 @@ class _TechnicalViewState extends State<TechnicalView> {
   }) {
     if (!hasValue) return null;
     final provenance = state.provenanceOf(column);
-    if (!always && provenance == Provenance.declared) return null;
-    return TechnicalProvenanceTag(provenance);
+    final tag = !always && provenance == Provenance.declared
+        ? null
+        : TechnicalProvenanceTag(provenance);
+    if (!state.dictated.contains(column)) return tag;
+    // Answered by voice on this visit.
+    return Wrap(
+      spacing: RealestySpacing.xs,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [?tag, const DictatedTag()],
+    );
   }
 
   Widget _section(String title, List<Widget> children) {
