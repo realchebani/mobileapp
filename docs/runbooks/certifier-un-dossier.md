@@ -42,6 +42,15 @@ group by 1, 2, 3 order by 3 desc;
 
 Changer de modèle sans nouvelle version de l’app : `supabase secrets set OPENROUTER_MODEL_VISION=<modèle>` (photos) et, au besoin, `OPENROUTER_MODEL_PLAN=<modèle>` (plans).
 
+## 1 ter. Relire la fiche de remplissage (EPIC-16)
+
+Avant de certifier, relire d’où vient chaque valeur (dicté, dit à une autre étape, saisi, extrait, externe), la phrase d’origine et les valeurs « à vérifier », puis, si besoin, le fil de conversation : [fiche-de-remplissage.md](fiche-de-remplissage.md).
+
+```sql
+select step, label_fr, value, source, quote, confirmed, confirmation, verified
+from public.staff_fill_sheet('<property id>') order by sort_order;
+```
+
 ## 2. Le passer en examen (facultatif)
 
 ```sql

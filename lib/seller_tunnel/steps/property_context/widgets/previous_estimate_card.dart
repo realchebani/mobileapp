@@ -22,6 +22,7 @@ class PreviousEstimateCard extends StatefulWidget {
     this.monthError,
     this.onRemove,
     this.footer,
+    this.tag,
     super.key,
   });
 
@@ -36,6 +37,10 @@ class PreviousEstimateCard extends StatefulWidget {
 
   /// Shown at the bottom of the card ("Ajouter une autre agence").
   final Widget? footer;
+
+  /// Next to the title (EPIC-16: « À confirmer » for an estimate said on
+  /// another step).
+  final Widget? tag;
 
   @override
   State<PreviousEstimateCard> createState() => _PreviousEstimateCardState();
@@ -109,7 +114,13 @@ class _PreviousEstimateCardState extends State<PreviousEstimateCard> {
         children: [
           Row(
             children: [
-              Expanded(child: SectionLabel(widget.title)),
+              Expanded(
+                child: Wrap(
+                  spacing: RealestySpacing.xs,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [SectionLabel(widget.title), ?widget.tag],
+                ),
+              ),
               if (widget.onRemove != null)
                 RealestyIconButton(
                   icon: RealestyIcons.close,

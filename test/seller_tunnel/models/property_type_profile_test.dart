@@ -52,12 +52,14 @@ void main() {
           reason: type.value,
         );
       }
-      expect(of(null).voiceSteps, hasLength(6));
+      // EPIC-16: no voice on V1.
+      expect(of(null).voiceSteps, hasLength(5));
+      expect(of(null).hasVoice(SellerTunnelStep.owners), isFalse);
       // Q12 (b): voice only where the V4 audit is offered.
       expect(of(PropertyType.land).voiceStepsWith(allTypes: false), isEmpty);
       expect(
         of(PropertyType.house).voiceStepsWith(allTypes: false),
-        hasLength(6),
+        hasLength(5),
       );
       expect(of(null), of(null));
       expect(of(PropertyType.house).props, [PropertyType.house]);

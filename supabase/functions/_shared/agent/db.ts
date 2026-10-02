@@ -3,6 +3,7 @@
 // use an in-memory fake.
 
 import type { AgentStep, PropertyValues } from "./schema.ts";
+import type { CrossStepItem, EntitySummaries, PendingRow } from "./validate.ts";
 
 export interface PropertyRow extends PropertyValues {
   id: string;
@@ -95,6 +96,20 @@ export interface AgentDb {
   /** Marks the caller's turns [ids] of [propertyId] as undone by the
    * seller (quality follow-up); returns how many were marked. */
   markUndone(propertyId: string, ids: string[]): Promise<number>;
+  /** The open pending answers of the caller's property (RLS). */
+  pendingAnswers(propertyId: string): Promise<PendingRow[]>;
+  /** Names and areas of the saved rooms, amounts and months of the saved
+   * previous estimates (duplicates of the entities said elsewhere). */
+  entitySummaries(propertyId: string): Promise<EntitySummaries>;
+  /** Records the answers said for other steps (RPC agent_record_pending,
+   * service role): the id of each row (null beyond the ceiling) and the
+   * pending answers they superseded. */
+  recordPending(
+    propertyId: string,
+    turnId: string,
+    sourceStep: AgentStep,
+    items: CrossStepItem[],
+  ): Promise<{ ids: (string | null)[]; superseded: string[] }>;
 }
 
 /** Limits (plan §3.5). */
@@ -114,6 +129,10 @@ export const LIMITS = {
   estimates: 5,
   /** Undone turns reported at once. */
   undoneTurns: 50,
+  /** Open pending answers per property (agent_record_pending). */
+  pendingAnswers: 100,
+  /** Longest pending quote (pending_answers.quote). */
+  pendingQuoteChars: 300,
 };
 
 /** Columns of `properties` the agent reads (no identity data: neither the
@@ -122,7 +141,6 @@ export const PROPERTY_COLUMNS = [
   "id",
   "status",
   "property_type",
-  "ownership_type",
   "special_situations",
   "special_situation_other",
   "property_type_other",

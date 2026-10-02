@@ -413,3 +413,14 @@ enum DocumentStatus implements DbEnum {
   @override
   final String value;
 }
+
+/// V3 · how a previous estimate was given (`previous_estimates.source`).
+enum EstimateSource implements DbEnum {
+  manual('manual'),
+  voice('voice');
+
+  new(this.value);
+
+  @override
+  final String value;
+}

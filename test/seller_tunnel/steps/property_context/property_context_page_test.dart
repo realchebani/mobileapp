@@ -148,7 +148,7 @@ void main() {
         find.text('Indiquez si vous avez construit ce bien'),
         findsOneWidget,
       );
-      verifyNever(() => cubit.saveAndContinue(any(), any()));
+      verifyNoStepSaved(cubit);
 
       // Reveals the year once the type is chosen.
       await tester.tap(find.text('Maison'));
@@ -319,16 +319,14 @@ void main() {
         agencyName: 'Agence du Port',
       );
       verify(() => cubit.updateChildren(previousEstimates: [saved])).called(1);
-      verify(
-        () => cubit.saveAndContinue(SellerTunnelStep.context, {
-          PropertyColumns.propertyType: PropertyType.house,
-          PropertyColumns.purchaseYear: 2012,
-          PropertyColumns.purchasePriceEur: 320000,
-          PropertyColumns.selfBuilt: false,
-          PropertyColumns.saleReason: SaleReason.separation,
-          PropertyColumns.previouslyEstimated: true,
-        }),
-      ).called(1);
+      expect(savedStepPatch(cubit, SellerTunnelStep.context), {
+        PropertyColumns.propertyType: PropertyType.house,
+        PropertyColumns.purchaseYear: 2012,
+        PropertyColumns.purchasePriceEur: 320000,
+        PropertyColumns.selfBuilt: false,
+        PropertyColumns.saleReason: SaleReason.separation,
+        PropertyColumns.previouslyEstimated: true,
+      });
     });
 
     testWidgets('shows an error when the estimates cannot be saved', (
@@ -348,7 +346,7 @@ void main() {
         ),
         findsOneWidget,
       );
-      verifyNever(() => cubit.saveAndContinue(any(), any()));
+      verifyNoStepSaved(cubit);
     });
 
     testWidgets('shows the tunnel save in progress', (tester) async {

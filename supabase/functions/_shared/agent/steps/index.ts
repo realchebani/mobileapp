@@ -3,11 +3,10 @@
 // is asked for which property, which step is voiced for which type).
 
 import { VOICE_DEFAULTS } from "../defaults.ts";
-import { CONTEXT_STEP } from "./context.ts";
+import { CONTEXT_STEP, PREVIOUS_ESTIMATE_ENTITY } from "./context.ts";
 import { LIFESTYLE_STEP } from "./lifestyle.ts";
 import { LOCATION_STEP } from "./location.ts";
-import { ownersStep } from "./owners.ts";
-import { ROOMS_STEP } from "./rooms.ts";
+import { ROOM_ENTITY, ROOMS_STEP } from "./rooms.ts";
 import { TECHNICAL_STEP } from "./technical.ts";
 import {
   AGENT_STEPS,
@@ -21,7 +20,6 @@ import {
 export * from "./types.ts";
 
 const SCHEMAS: Record<AgentStep, StepSchema> = {
-  owners: ownersStep(VOICE_DEFAULTS.coOwnerNames),
   location: LOCATION_STEP,
   context: CONTEXT_STEP,
   technical: TECHNICAL_STEP,
@@ -102,10 +100,65 @@ export function stepOfColumn(column: string): { step: AgentStep; field: FieldDef
 
 /** French names of the steps (replies, "out of step" pills). */
 export const STEP_LABELS: Record<AgentStep, string> = {
-  owners: "Propriétaires",
   location: "Adresse",
   context: "Contexte",
   technical: "Technique",
   rooms: "Pièces",
   lifestyle: "Cadre de vie",
 };
+
+/** Columns never pre-filled from another step (plan §3.2, Q6 bis): the
+ * type is structuring (chosen on V3 only) and the secret note is the
+ * seller's own words for the expert. The address and the parcels are not
+ * agent fields at all, and V1 has no voice. */
+export const NEVER_PREFILLED: readonly string[] = ["property_type", "secret_note"];
+
+export interface CrossStepField {
+  step: AgentStep;
+  field: FieldDef;
+}
+
+export interface CrossStepEntity {
+  step: AgentStep;
+  entity: EntityDef;
+}
+
+/** What may be said on [step] for another step (plan §3.2): the fields of
+ * the other voiced steps asked for this type (conditional ones included:
+ * they may come with their condition), new rooms and previous estimates,
+ * lifestyle items, and a note for each of those steps. The app mirrors it
+ * in `PropertyTypeProfile.prefillTargets` (parity fixture). */
+export interface CrossStepTargets {
+  fields: CrossStepField[];
+  entities: CrossStepEntity[];
+  lifestyle: boolean;
+  noteSteps: AgentStep[];
+}
+
+export function crossStepTargets(
+  step: AgentStep,
+  values: Record<string, unknown>,
+): CrossStepTargets {
+  const type = (values.property_type ?? null) as string | null;
+  const others = voiceStepsFor(type).filter((other) => other !== step);
+  if (!VOICE_DEFAULTS.crossStepPrefill) {
+    return { fields: [], entities: [], lifestyle: false, noteSteps: [] };
+  }
+  const assumed = { ...values, heating_systems: ["pac"], outdoor_equipment: ["piscine"] };
+  const fields = others.flatMap((other) =>
+    SCHEMAS[other].fields
+      .filter((field) => !NEVER_PREFILLED.includes(field.column) && isAsked(field, assumed))
+      .map((field) => ({ step: other, field }))
+  );
+  const entities: CrossStepEntity[] = [];
+  if (others.includes("context")) {
+    entities.push({ step: "context", entity: PREVIOUS_ESTIMATE_ENTITY });
+  }
+  if (others.includes("rooms")) entities.push({ step: "rooms", entity: ROOM_ENTITY });
+  return {
+    fields,
+    entities,
+    lifestyle: others.includes("lifestyle"),
+    noteSteps: VOICE_DEFAULTS.stepNotes ? others : [],
+  };
+}

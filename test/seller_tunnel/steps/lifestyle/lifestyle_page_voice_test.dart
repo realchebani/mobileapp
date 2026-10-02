@@ -141,7 +141,7 @@ void main() {
       tester
           .widget<TextField>(
             find.descendant(
-              of: find.byType(RealestyTextField),
+              of: find.byType(RealestyTextField).first,
               matching: find.byType(TextField),
             ),
           )

@@ -161,7 +161,7 @@ void main() {
       expect(turn.suggestions, {'secret_note': 'Vendre vite'});
       expect(turn.nextField, 'sanitation');
       expect(turn.done, isTrue);
-      expect(turn.props, hasLength(14));
+      expect(turn.props, hasLength(17));
       verify(
         () => functions.invoke(
           'agent-turn',
@@ -288,7 +288,6 @@ void main() {
             ),
             const AgentEstimate(ref: 'E2'),
           ],
-          coOwnersCount: 1,
           lastRoomRef: 'R1',
         ),
         undoneTurnIds: const ['t0'],
@@ -351,7 +350,6 @@ void main() {
                 'agency_name': null,
               },
             ],
-            'co_owners_count': 1,
             'last_room_ref': 'R1',
             'undone_turn_ids': ['t0'],
           },
@@ -400,6 +398,73 @@ void main() {
       expect(
         const AgentTurn(turnId: 't', transcript: '', reply: '').understood,
         isFalse,
+      );
+    });
+
+    test('notes and values said for other steps (EPIC-16)', () {
+      final turn = AgentTurn.fromJson(const {
+        'turn_id': 't1',
+        'reply_fr': 'Noté.',
+        'notes': [
+          {'text': 'Vendu meublé'},
+          {'text': 'Grenier'},
+        ],
+        'cross_step': [
+          {
+            'id': 'p1',
+            'target_step': 'technical',
+            'kind': 'field',
+            'field': 'construction_year',
+            'value': 1998,
+            'label_fr': 'Construction 1998',
+            'changed_fr': 'Construction : 1990 → 1998',
+            'quote': 'elle date de 1998',
+            'confidence': 0.6,
+          },
+          {
+            'id': 'p2',
+            'target_step': 'nope',
+            'kind': 'nope',
+            'value': 'Grenier aménageable',
+          },
+        ],
+        'superseded_ids': ['p0'],
+      });
+      expect(turn.notes, ['Vendu meublé', 'Grenier']);
+      expect(turn.supersededIds, ['p0']);
+      final first = turn.crossStep.first;
+      expect(first.targetStep, AgentStep.technical);
+      expect(first.kind, AgentCrossStepKind.field);
+      expect(first.value, 1998);
+      expect(first.changedLabel, 'Construction : 1990 → 1998');
+      expect(first.quote, 'elle date de 1998');
+      expect(first.unsure, isTrue);
+      expect(first.props, hasLength(9));
+      final second = turn.crossStep.last;
+      expect(second.targetStep, AgentStep.technical);
+      expect(second.kind, AgentCrossStepKind.note);
+      expect(second.label, '');
+      expect(second.unsure, isFalse);
+      expect(turn.understood, isTrue);
+      expect(
+        const AgentTurn(
+          turnId: 't',
+          transcript: '',
+          reply: '',
+          notes: ['n'],
+        ).understood,
+        isTrue,
+      );
+      final withoutNote = turn.without('note:0');
+      expect(withoutNote.notes, ['Grenier']);
+      expect(withoutNote.crossStep, hasLength(2));
+      final withoutCross = turn.without('x:p1');
+      expect(withoutCross.crossStep.single.id, 'p2');
+      expect(withoutCross.notes, hasLength(2));
+      expect(withoutCross.supersededIds, ['p0']);
+      expect(
+        AgentCrossStepKind.parse('previous_estimate'),
+        AgentCrossStepKind.previousEstimate,
       );
     });
 
@@ -469,7 +534,7 @@ void main() {
       answer({'undone': 1});
       await repository.markUndone(
         propertyId: 'p1',
-        step: AgentStep.owners,
+        step: AgentStep.location,
         turnIds: const ['t1'],
       );
       verify(
@@ -477,14 +542,14 @@ void main() {
           'agent-turn',
           body: {
             'property_id': 'p1',
-            'step': 'owners',
+            'step': 'location',
             'undone_turn_ids': ['t1'],
           },
         ),
       ).called(1);
       await repository.markUndone(
         propertyId: 'p1',
-        step: AgentStep.owners,
+        step: AgentStep.location,
         turnIds: const [],
       );
       verifyNoMoreInteractions(functions);
@@ -493,7 +558,7 @@ void main() {
     test('model props', () {
       expect(
         const AgentEntityChange(
-          entity: AgentEntity.coOwner,
+          entity: AgentEntity.previousEstimate,
           op: AgentEntityOp.create,
           target: 'new',
           label: 'x',
@@ -503,7 +568,7 @@ void main() {
       expect(
         const AgentConfirmation(
           id: 'c',
-          reason: AgentConfirmationReason.coOwner,
+          reason: AgentConfirmationReason.delete,
           label: 'x',
         ).props,
         hasLength(5),
@@ -518,11 +583,13 @@ void main() {
         hasLength(8),
       );
       expect(const AgentEstimate(ref: 'E1').props, hasLength(4));
-      expect(const AgentTurnContext().props, hasLength(6));
+      expect(const AgentTurnContext().props, hasLength(5));
       expect(const AgentTurnContext(interactive: false).toJson(), {
         'interactive': false,
       });
-      expect(AgentEntity.parse('co_owner'), AgentEntity.coOwner);
+      expect(AgentEntity.parse('co_owner'), isNull);
+      expect(AgentStep.parse('owners'), isNull);
+      expect(AgentStep.parse('rooms'), AgentStep.rooms);
       expect(AgentEntity.parse('x'), isNull);
       expect(AgentEntityOp.parse('delete'), AgentEntityOp.delete);
       expect(
@@ -530,7 +597,6 @@ void main() {
         AgentConfirmationReason.mergeRoom,
       );
       expect(AgentStep.values.map((s) => s.value), [
-        'owners',
         'location',
         'context',
         'technical',

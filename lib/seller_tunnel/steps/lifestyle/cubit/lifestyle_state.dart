@@ -14,6 +14,7 @@ final class LifestyleState extends Equatable {
     this.secretNote = '',
     this.submission = LifestyleSubmission.idle,
     this.savedItems = const [],
+    this.pendingResolutions = const {},
     this.secretNoteSuggestion,
     this.dictated = const {},
   });
@@ -34,6 +35,10 @@ final class LifestyleState extends Equatable {
   /// The `lifestyle_items` rows after a successful [LifestyleCubit.submit],
   /// assets then watch points, each by sort order.
   final List<LifestyleItem> savedItems;
+
+  /// The pending items, resolved by the last submission (EPIC-16): closed
+  /// once the step is saved.
+  final Map<PendingResolution, List<String>> pendingResolutions;
 
   /// A secret note proposed by the voice agent: shown as a suggestion,
   /// never written unless the seller uses it.
@@ -84,6 +89,7 @@ final class LifestyleState extends Equatable {
     String? secretNote,
     LifestyleSubmission? submission,
     List<LifestyleItem>? savedItems,
+    Map<PendingResolution, List<String>>? pendingResolutions,
     String? Function()? secretNoteSuggestion,
     Set<String>? dictated,
   }) {
@@ -95,6 +101,7 @@ final class LifestyleState extends Equatable {
       secretNote: secretNote ?? this.secretNote,
       submission: submission ?? this.submission,
       savedItems: savedItems ?? this.savedItems,
+      pendingResolutions: pendingResolutions ?? this.pendingResolutions,
       secretNoteSuggestion: secretNoteSuggestion == null
           ? this.secretNoteSuggestion
           : secretNoteSuggestion(),
@@ -111,6 +118,7 @@ final class LifestyleState extends Equatable {
     secretNote,
     submission,
     savedItems,
+    pendingResolutions,
     secretNoteSuggestion,
     dictated,
   ];

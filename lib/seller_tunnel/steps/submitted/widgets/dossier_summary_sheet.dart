@@ -56,6 +56,11 @@ class DossierSummarySheet extends StatelessWidget {
         .where((item) => item.kind == LifestyleItemKind.asset)
         .length;
 
+    // EPIC-16: the « Notes complémentaires » of a step, when given.
+    List<(String, String)> notes(String key) => [
+      if (property.stepNoteOf(key) case final note? when note.trim().isNotEmpty)
+        (l10n.summaryStepNotes, note),
+    ];
     final sections = <(String, List<(String, String)>)>[
       (
         l10n.tunnelStepOwners,
@@ -85,6 +90,7 @@ class DossierSummarySheet extends StatelessWidget {
                       .join(', '),
           ),
           if (landArea > 0) (l10n.submittedSummaryLandArea, area(landArea)),
+          ...notes(StepNoteKeys.location),
         ],
       ),
       (
@@ -95,6 +101,7 @@ class DossierSummarySheet extends StatelessWidget {
             propertyTypeLabel(l10n, property) ?? missing,
           ),
           (l10n.submittedSummaryPurchaseYear, orMissing(property.purchaseYear)),
+          ...notes(StepNoteKeys.context),
         ],
       ),
       (
@@ -129,6 +136,7 @@ class DossierSummarySheet extends StatelessWidget {
             l10n.submittedSummarySanitation,
             orMissing(_sanitation(l10n, property.sanitation)),
           ),
+          ...notes(StepNoteKeys.technical),
         ],
       ),
       (
@@ -151,10 +159,12 @@ class DossierSummarySheet extends StatelessWidget {
                 roomsArea(annexes),
               ),
             ),
-          // EPIC-14: the description of each room (typed or dictated).
+          // The notes of each room (EPIC-14, « Notes complémentaires »
+          // since EPIC-16), then those of the step.
           for (final room in state.rooms)
             if (room.description case final description?)
               (room.name, description),
+          ...notes(StepNoteKeys.rooms),
           // EPIC-15: the photos, in total and room by room.
           if (state.rooms.isNotEmpty) ...[
             (
@@ -180,6 +190,7 @@ class DossierSummarySheet extends StatelessWidget {
             l10n.submittedSummaryWatchPoints,
             l10n.submittedSummaryCount(state.lifestyleItems.length - assets),
           ),
+          ...notes(StepNoteKeys.lifestyle),
         ],
       ),
       (

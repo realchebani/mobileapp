@@ -1,15 +1,24 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:mobileapp/l10n/l10n.dart';
 import 'package:mobileapp/seller_tunnel/steps/lifestyle/models/lifestyle_item_draft.dart';
+import 'package:mobileapp/seller_tunnel/voice/voice.dart';
 import 'package:mobileapp/ui/ui.dart';
 import 'package:property_repository/property_repository.dart';
 
 /// An asset (green check) or watch point (warning colors) on V6, with the
 /// edit pen; tapping the row opens its edit sheet.
 class LifestyleItemRow extends StatelessWidget {
-  const new({required this.item, required this.onEdit, super.key});
+  const new({
+    required this.item,
+    required this.onEdit,
+    this.toConfirm = false,
+    super.key,
+  });
 
   final LifestyleItemDraft item;
+
+  /// Said on another step, not confirmed yet (EPIC-16, « À confirmer »).
+  final bool toConfirm;
   final VoidCallback? onEdit;
 
   @override
@@ -52,7 +61,9 @@ class LifestyleItemRow extends StatelessWidget {
                     item.label,
                     style: RealestyTextStyles.bubble.copyWith(color: c.encre),
                   ),
-                  if (item.fromVoice)
+                  if (toConfirm)
+                    const ToConfirmTag()
+                  else if (item.fromVoice)
                     Row(
                       spacing: 4,
                       children: [

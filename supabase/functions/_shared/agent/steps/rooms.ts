@@ -81,9 +81,11 @@ export const ROOM_ENTITY: EntityDef = {
       kind: { type: "decimal", min: 1.5, max: 6 },
     },
     {
+      // « Notes complémentaires » of the room (EPIC-16): the column keeps
+      // its name; the app appends what is said turn after turn.
       column: "description",
-      label: "Description",
-      kind: { type: "text", max: 300, coverage: true },
+      label: "Notes",
+      kind: { type: "text", max: 600, coverage: true },
     },
   ],
   max: 40,
@@ -100,7 +102,7 @@ export const ROOMS_STEP: StepSchema = {
     '"name" : le nom de la pièce tel que dit (Séjour, Cuisine, Chambre, Salle de bain, Salle d’eau, WC, Entrée, Bureau, Dégagement, Cellier, Buanderie, Garage, Sous-sol, ou un autre nom court) ; ne numérote pas les chambres (l’application le fait).',
     '"area_m2" : la surface en m² ; si le vendeur donne deux dimensions (« 4 sur 3 »), écris-les « 4x3 ».',
     '"level" seulement s’il est dit : ne le déduis jamais.',
-    '"description" : ce qui caractérise la pièce, reformulé au minimum, factuel, sans adjectif ni chiffre ajouté, sans nom de personne (300 caractères au plus).',
+    '"description" (notes complémentaires) : TOUT ce qui est dit sur la pièce et n’a pas de champ (cheminée, placards, vue, travaux…), reformulé au minimum, factuel, sans adjectif ni chiffre ajouté, sans nom de personne (600 caractères au plus) ; seulement ce qui est nouveau dans cette phrase (l’application l’ajoute aux notes déjà prises).',
     'Modifier ou supprimer une pièce existante : op update / delete, "target" = sa référence (R1…) et "target_quote" = les mots exacts qui la désignent. « Même sol que le séjour » : "copy_from" = la référence du séjour et "copy_fields" = les champs copiés, avec "copy_quote".',
     "Ne parle pas des surfaces totales : l’application les calcule. Réplique très courte (une phrase), sans question si le vendeur enchaîne les pièces.",
   ],

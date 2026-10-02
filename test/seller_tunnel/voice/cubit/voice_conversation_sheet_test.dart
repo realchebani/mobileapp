@@ -16,6 +16,14 @@ class _Form implements VoiceForm {
   final undonePills = <(String, String)>[];
   int undoneFrom = -1;
   Exception? applyError;
+  bool prefilled = false;
+
+  @override
+  bool confirmPrefilled() {
+    final had = prefilled;
+    prefilled = false;
+    return had;
+  }
 
   @override
   Future<void> voiceTurnApplied(AgentTurn turn) async {

@@ -20,6 +20,42 @@ void main() {
       expect(preferences.consentGiven, isTrue);
       expect(preferences.agentMuted, isTrue);
     });
+
+    test(
+      'EPIC-16: input mode, quota of the day, offline, microphone',
+      () async {
+        SharedPreferences.setMockInitialValues({});
+        final preferences = VoicePreferences(
+          preferences: await SharedPreferences.getInstance(),
+        );
+        final now = DateTime.utc(2026, 10, 2, 23);
+        expect(preferences.inputMode, VoiceInputMode.voice);
+        await preferences.setInputMode(VoiceInputMode.text);
+        expect(preferences.inputMode, VoiceInputMode.text);
+        expect(preferences.quotaReached(now), isFalse);
+        await preferences.markQuotaReached(now);
+        expect(preferences.quotaReached(now), isTrue);
+        // Until midnight UTC.
+        expect(
+          preferences.quotaReached(now.add(const Duration(hours: 1))),
+          isFalse,
+        );
+        const pause = Duration(minutes: 10);
+        expect(preferences.recentlyOffline(now, pause), isFalse);
+        await preferences.markOffline(now);
+        expect(preferences.recentlyOffline(now, pause), isTrue);
+        expect(
+          preferences.recentlyOffline(
+            now.add(const Duration(minutes: 11)),
+            pause,
+          ),
+          isFalse,
+        );
+        expect(preferences.micDenied, isFalse);
+        await preferences.setMicDenied(denied: true);
+        expect(preferences.micDenied, isTrue);
+      },
+    );
   });
 
   group(VoiceServices, () {

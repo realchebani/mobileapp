@@ -5,16 +5,64 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:voice_repository/voice_repository.dart';
 
+/// How a voice-first step opens (EPIC-16): with its voice sheet, or on the
+/// form (« Écrire plutôt »).
+enum VoiceInputMode { voice, text }
+
 /// Voice settings remembered on the device: the RGPD consent to send the
-/// voice to the AI providers, and whether the agent's voice is muted.
+/// voice to the AI providers, whether the agent's voice is muted, the
+/// input mode (EPIC-16) and what keeps the sheet from opening by itself
+/// (quota of the day used up, network failure, microphone refused).
 class VoicePreferences {
   const new({required this._preferences});
 
   final SharedPreferences _preferences;
 
-  /// Bump the version when the consent text changes materially.
-  static const consentKey = 'voice_consent_v3';
+  /// Bump the version when the consent text changes materially (v4,
+  /// EPIC-16: no names, the thread kept for the expert, contacts masked).
+  static const consentKey = 'voice_consent_v4';
   static const mutedKey = 'voice_agent_muted';
+  static const inputModeKey = 'voice_input_mode';
+  static const quotaDayKey = 'voice_quota_day';
+  static const offlineAtKey = 'voice_offline_at';
+  static const micDeniedKey = 'voice_mic_denied';
+
+  /// One preference for the device (Q3 a); voice by default.
+  VoiceInputMode get inputMode =>
+      _preferences.getString(inputModeKey) == VoiceInputMode.text.name
+      ? VoiceInputMode.text
+      : VoiceInputMode.voice;
+
+  Future<void> setInputMode(VoiceInputMode mode) =>
+      _preferences.setString(inputModeKey, mode.name);
+
+  static String _day(DateTime now) {
+    final utc = now.toUtc();
+    return '${utc.year}-${utc.month}-${utc.day}';
+  }
+
+  /// The daily quota was refused today (until midnight UTC).
+  bool quotaReached(DateTime now) =>
+      _preferences.getString(quotaDayKey) == _day(now);
+
+  Future<void> markQuotaReached(DateTime now) =>
+      _preferences.setString(quotaDayKey, _day(now));
+
+  /// A voice session failed on the network less than [pause] ago.
+  bool recentlyOffline(DateTime now, Duration pause) {
+    final at = _preferences.getInt(offlineAtKey);
+    return at != null &&
+        now.difference(DateTime.fromMillisecondsSinceEpoch(at)) < pause;
+  }
+
+  Future<void> markOffline(DateTime now) =>
+      _preferences.setInt(offlineAtKey, now.millisecondsSinceEpoch);
+
+  /// The microphone was refused (iOS permission) at the last attempt.
+  bool get micDenied => _preferences.getBool(micDeniedKey) ?? false;
+
+  Future<void> setMicDenied({required bool denied}) =>
+      _preferences.setBool(micDeniedKey, denied);
 
   bool get consentGiven => _preferences.getBool(consentKey) ?? false;
 

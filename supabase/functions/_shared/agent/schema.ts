@@ -2,9 +2,11 @@
 // its answer. The fields themselves live in the step registry (./steps/):
 // the same `properties` columns, codes and rules as the screens.
 
+import { VOICE_DEFAULTS } from "./defaults.ts";
 import {
   AGENT_STEPS,
   type AgentStep,
+  crossStepTargets,
   type EntityDef,
   entityOf,
   type FieldDef,
@@ -18,6 +20,8 @@ export {
   AGENT_STEPS,
   type AgentStep,
   codesOf,
+  type CrossStepTargets,
+  crossStepTargets,
   type EntityDef,
   type FieldDef,
   type FieldKind,
@@ -156,8 +160,96 @@ function entityOpSchema(step: AgentStep, entities: EntityDef[]): Record<string, 
   };
 }
 
-/** The JSON Schema (strict structured output) of an agent answer. */
-export function outputSchema(step: AgentStep): Record<string, unknown> {
+const said = {
+  type: "object",
+  additionalProperties: false,
+  required: ["field", "value", "confidence", "quote"],
+  properties: {
+    field: { type: "string" },
+    value: { type: "string" },
+    confidence: { type: "number" },
+    quote: { type: "string" },
+  },
+};
+
+function strict(properties: Record<string, unknown>): Record<string, unknown> {
+  return {
+    type: "object",
+    additionalProperties: false,
+    required: Object.keys(properties),
+    properties,
+  };
+}
+
+const lifestyleItemSchema = strict({
+  kind: { type: "string", enum: ["asset", "watch_point"] },
+  label: { type: "string" },
+  quote: { type: "string" },
+});
+
+/** The `cross_step` part of the answer (plan §7): values said for another
+ * step, validated with that step's definitions, then kept as pending
+ * answers. Its enums depend on the step and the property type. */
+export function crossStepSchema(
+  step: AgentStep,
+  values: PropertyValues,
+): Record<string, unknown> {
+  const targets = crossStepTargets(step, values);
+  const columns = targets.fields.map((t) => t.field.column);
+  const entityFields = [
+    ...new Set(targets.entities.flatMap((t) => t.entity.fields.map((f) => f.column))),
+  ];
+  return strict({
+    answers: {
+      type: "array",
+      items: strict({
+        field: { type: "string", enum: columns.length ? columns : ["none"] },
+        value: { type: "string" },
+        confidence: { type: "number" },
+        quote: { type: "string" },
+      }),
+    },
+    entities: {
+      type: "array",
+      items: strict({
+        entity: {
+          type: "string",
+          enum: targets.entities.length ? targets.entities.map((t) => t.entity.name) : ["none"],
+        },
+        fields: {
+          type: "array",
+          items: {
+            ...said,
+            properties: {
+              ...said.properties,
+              field: { type: "string", enum: entityFields.length ? entityFields : ["none"] },
+            },
+          },
+        },
+      }),
+    },
+    lifestyle_items: { type: "array", items: lifestyleItemSchema },
+    notes: {
+      type: "array",
+      items: strict({
+        step: {
+          type: "string",
+          enum: targets.noteSteps.length ? targets.noteSteps : ["none"],
+        },
+        text: { type: "string" },
+        quote: { type: "string" },
+      }),
+    },
+  });
+}
+
+/** The JSON Schema (strict structured output) of an agent answer. [values]
+ * (the dossier and the draft) decide the other steps' fields of
+ * `cross_step` (property type). */
+export function outputSchema(
+  step: AgentStep,
+  values: PropertyValues = {},
+): Record<string, unknown> {
   const schema = stepSchema(step);
   const columns = schema.fields.map((field) => field.column);
   const properties: Record<string, unknown> = {
@@ -168,19 +260,16 @@ export function outputSchema(step: AgentStep): Record<string, unknown> {
     properties.entity_ops = { type: "array", items: entityOpSchema(step, schema.entities) };
   }
   if (schema.lifestyle) {
-    properties.lifestyle_items = {
+    properties.lifestyle_items = { type: "array", items: lifestyleItemSchema };
+  }
+  if (VOICE_DEFAULTS.stepNotes) {
+    properties.notes = {
       type: "array",
-      items: {
-        type: "object",
-        additionalProperties: false,
-        required: ["kind", "label", "quote"],
-        properties: {
-          kind: { type: "string", enum: ["asset", "watch_point"] },
-          label: { type: "string" },
-          quote: { type: "string" },
-        },
-      },
+      items: strict({ text: { type: "string" }, quote: { type: "string" } }),
     };
+  }
+  if (VOICE_DEFAULTS.crossStepPrefill) {
+    properties.cross_step = crossStepSchema(step, values);
   }
   properties.out_of_step = {
     type: "array",

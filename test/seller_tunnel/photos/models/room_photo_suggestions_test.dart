@@ -142,9 +142,10 @@ void main() {
         name: 'A',
         level: null,
         areaM2: 1,
-        description: 'x' * 299,
+        description: 'x' * 599,
       );
-      expect(long.withNote('Une note').description, hasLength(300));
+      // « Notes complémentaires » (EPIC-16): 600 characters.
+      expect(long.withNote('Une note').description, hasLength(600));
     });
   });
 }

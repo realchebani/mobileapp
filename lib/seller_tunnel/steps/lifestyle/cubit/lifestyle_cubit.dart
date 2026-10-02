@@ -17,12 +17,23 @@ class LifestyleCubit extends Cubit<LifestyleState>
     required this._propertyRepository,
     required Property property,
     List<LifestyleItem> items = const [],
+    List<PendingAnswer> pendingItems = const [],
     String Function()? newId,
+    DateTime Function()? clock,
     this._timeout = const Duration(seconds: 15),
   }) : _propertyId = property.id,
        _newId = newId ?? generateUuidV4,
+       _clock = clock ?? DateTime.now,
        _saved = {for (final item in items) ?item.id: item},
-       super(_initialState(property, items, newId ?? generateUuidV4));
+       _pending = {for (final answer in pendingItems) answer.id: answer},
+       super(
+         _initialState(property, items, pendingItems, newId ?? generateUuidV4),
+       );
+
+  final DateTime Function() _clock;
+
+  /// Items said on another step (EPIC-16), by pending answer id.
+  final Map<String, PendingAnswer> _pending;
 
   final PropertyRepository _propertyRepository;
   final String _propertyId;
@@ -39,18 +50,42 @@ class LifestyleCubit extends Cubit<LifestyleState>
   static LifestyleState _initialState(
     Property property,
     List<LifestyleItem> items,
+    List<PendingAnswer> pending,
     String Function() newId,
   ) {
     List<LifestyleItemDraft> drafts(LifestyleItemKind kind) => [
       for (final item in items)
         if (item.kind == kind) LifestyleItemDraft.fromItem(item, newId: newId),
-    ];
+      // Said on another step: « À confirmer », within the limits.
+      for (final answer in pending)
+        if (_pendingDraft(answer, newId) case final draft?
+            when draft.kind == kind)
+          draft,
+    ].take(lifestyleItemsMax).toList();
     return LifestyleState(
       assets: drafts(LifestyleItemKind.asset),
       watchPoints: drafts(LifestyleItemKind.watchPoint),
       noiseLevel: property.noiseLevel,
       overlooking: property.overlooking,
       secretNote: property.secretNote ?? '',
+    );
+  }
+
+  static LifestyleItemDraft? _pendingDraft(
+    PendingAnswer answer,
+    String Function() newId,
+  ) {
+    final values = answer.values;
+    final label = values['label'];
+    if (label is! String || !isValidLifestyleLabel(label)) return null;
+    return LifestyleItemDraft(
+      id: newId(),
+      kind: values['kind'] == 'watch_point'
+          ? LifestyleItemKind.watchPoint
+          : LifestyleItemKind.asset,
+      label: label.trim(),
+      source: LifestyleItemSource.voice,
+      pendingId: answer.id,
     );
   }
 
@@ -122,7 +157,8 @@ class LifestyleCubit extends Cubit<LifestyleState>
   @override
   LifestyleState applyVoiceTurn(LifestyleState state, AgentTurn turn) {
     var next = state;
-    for (final item in turn.lifestyleItems) {
+    final [turnId, ...confirmation] = turn.turnId.split('#');
+    for (final (index, item) in turn.lifestyleItems.indexed) {
       final kind = item.isAsset
           ? LifestyleItemKind.asset
           : LifestyleItemKind.watchPoint;
@@ -140,6 +176,15 @@ class LifestyleCubit extends Cubit<LifestyleState>
           kind: kind,
           label: label,
           source: LifestyleItemSource.voice,
+          // EPIC-16: the words it comes from (journal evidence `li:<i>`).
+          fieldSources: {
+            'label': FieldSource(
+              kind: FieldSourceKind.dictated,
+              at: _clock(),
+              turnId: turnId,
+              evidenceKey: [...confirmation, 'li:$index'].join('.'),
+            ).toJson(),
+          },
         ),
       ]);
     }
@@ -164,6 +209,31 @@ class LifestyleCubit extends Cubit<LifestyleState>
     return next.copyWith(dictated: dictated);
   }
 
+  /// [draft] with the origin of its label: kept when already recorded,
+  /// said on another step (pending, as said), or typed (new or changed).
+  LifestyleItemDraft _traced(LifestyleItemDraft draft, Set<String> confirmed) {
+    if (draft.fieldSources.isNotEmpty) return draft;
+    final saved = _saved[draft.id];
+    if (saved != null && saved.label == draft.label) {
+      return draft.withSources(saved.fieldSources);
+    }
+    final answer = _pending[draft.pendingId];
+    final now = _clock();
+    final source =
+        answer != null && draft.label == '${answer.values['label']}'.trim()
+        ? FieldSource(
+            kind: FieldSourceKind.dictatedElsewhere,
+            at: now,
+            turnId: answer.turnId,
+            pendingId: answer.id,
+            confirmation: confirmed.contains(answer.id)
+                ? FieldConfirmation.yes
+                : FieldConfirmation.continueTapped,
+          )
+        : FieldSource.typed(now);
+    return draft.withSources({'label': source.toJson()});
+  }
+
   /// Uses the suggested secret note (appended to the current note).
   void secretNoteSuggestionUsed() => _edit((s) {
     final suggestion = s.secretNoteSuggestion;
@@ -183,15 +253,32 @@ class LifestyleCubit extends Cubit<LifestyleState>
   /// and changed items (unchanged rows are not written). Each result is
   /// recorded as soon as it arrives, so a retry after a failure only
   /// writes what is left.
-  Future<void> submit() async {
+  ///
+  /// [confirmed]: the pending answers confirmed by « oui » (EPIC-16).
+  Future<void> submit({Set<String> confirmed = const {}}) async {
     if (state.isSubmitting) return;
     emit(state.copyWith(submission: LifestyleSubmission.inProgress));
+    final drafts = [...state.assets, ...state.watchPoints];
     final wanted = [
       for (final (i, draft) in state.assets.indexed)
-        draft.toItem(propertyId: _propertyId, sortOrder: i),
+        _traced(draft, confirmed).toItem(propertyId: _propertyId, sortOrder: i),
       for (final (i, draft) in state.watchPoints.indexed)
-        draft.toItem(propertyId: _propertyId, sortOrder: i),
+        _traced(draft, confirmed).toItem(propertyId: _propertyId, sortOrder: i),
     ];
+    final resolutions = <PendingResolution, List<String>>{};
+    for (final MapEntry(key: id, value: answer) in _pending.entries) {
+      final draft = drafts.where((d) => d.pendingId == id).firstOrNull;
+      final kept =
+          draft != null && draft.label == '${answer.values['label']}'.trim();
+      final resolution = draft == null
+          ? PendingResolution.erased
+          : !kept
+          ? PendingResolution.modified
+          : confirmed.contains(id)
+          ? PendingResolution.yes
+          : PendingResolution.continueTapped;
+      (resolutions[resolution] ??= []).add(id);
+    }
     final wantedIds = {for (final item in wanted) item.id};
     try {
       for (final id in {..._saved.keys, ..._attempted}) {
@@ -218,6 +305,7 @@ class LifestyleCubit extends Cubit<LifestyleState>
       emit(
         state.copyWith(
           savedItems: saved,
+          pendingResolutions: resolutions,
           submission: LifestyleSubmission.success,
         ),
       );

@@ -8,6 +8,19 @@ Map<String, Object?> _withId(String? id, Map<String, Object?> row) => {
   ...row,
 };
 
+/// A `field_sources` column as read (EPIC-16).
+Map<String, Object?> _sources(Object? json) =>
+    Map<String, Object?>.unmodifiable(
+      json as Map<String, dynamic>? ?? const {},
+    );
+
+/// [row] with its `field_sources` when known: an upsert without them keeps
+/// the stored ones.
+Map<String, Object?> _withSources(
+  Map<String, Object?> sources,
+  Map<String, Object?> row,
+) => {...row, if (sources.isNotEmpty) 'field_sources': sources};
+
 /// {@template property_owner}
 /// V1 · an owner of the property (`property_owners`); position 1 is the
 /// signed-in user.
@@ -158,6 +171,8 @@ class PreviousEstimate extends Equatable {
     this.id,
     this.estimatedMonth,
     this.agencyName,
+    this.source = EstimateSource.manual,
+    this.fieldSources = const {},
   });
 
   /// Builds an estimate from a `previous_estimates` row.
@@ -167,6 +182,10 @@ class PreviousEstimate extends Equatable {
     priceEur: readInt(json['price_eur'])!,
     estimatedMonth: readDateTime(json['estimated_month']),
     agencyName: json['agency_name'] as String?,
+    source:
+        parseDbEnum(EstimateSource.values, json['source']) ??
+        EstimateSource.manual,
+    fieldSources: _sources(json['field_sources']),
   );
 
   final String? id;
@@ -177,15 +196,25 @@ class PreviousEstimate extends Equatable {
   final DateTime? estimatedMonth;
   final String? agencyName;
 
+  /// Typed or dictated (EPIC-16).
+  final EstimateSource source;
+
+  /// Origin of each value (column → `FieldSource` JSON), EPIC-16.
+  final Map<String, Object?> fieldSources;
+
   /// The row of this estimate.
-  Map<String, Object?> toJson() => _withId(id, {
-    'property_id': propertyId,
-    'price_eur': priceEur,
-    'estimated_month': estimatedMonth == null
-        ? null
-        : encodeMonth(estimatedMonth!),
-    'agency_name': agencyName,
-  });
+  Map<String, Object?> toJson() => _withId(
+    id,
+    _withSources(fieldSources, {
+      'property_id': propertyId,
+      'price_eur': priceEur,
+      'estimated_month': estimatedMonth == null
+          ? null
+          : encodeMonth(estimatedMonth!),
+      'agency_name': agencyName,
+      'source': source.value,
+    }),
+  );
 
   @override
   List<Object?> get props => [
@@ -194,6 +223,8 @@ class PreviousEstimate extends Equatable {
     priceEur,
     estimatedMonth,
     agencyName,
+    source,
+    fieldSources,
   ];
 }
 
@@ -218,6 +249,7 @@ class Room extends Equatable {
     this.photosCount = 0,
     this.scanData,
     this.description,
+    this.fieldSources = const {},
   });
 
   /// Builds a room from a `rooms` row.
@@ -237,6 +269,7 @@ class Room extends Equatable {
     photosCount: readInt(json['photos_count']) ?? 0,
     scanData: json['scan_data'] as Map<String, dynamic>?,
     description: json['description'] as String?,
+    fieldSources: _sources(json['field_sources']),
   );
 
   final String? id;
@@ -258,30 +291,36 @@ class Room extends Equatable {
   final int photosCount;
   final Map<String, dynamic>? scanData;
 
-  /// Free description (≤ [descriptionMaxLength] characters), typed or
-  /// dictated (EPIC-14).
+  /// « Notes complémentaires » (≤ [descriptionMaxLength] characters),
+  /// typed, dictated (EPIC-14, EPIC-16) or added from a photo (EPIC-15).
   final String? description;
 
+  /// Origin of each value (column → `FieldSource` JSON), EPIC-16.
+  final Map<String, Object?> fieldSources;
+
   /// Maximum length of [description] (`rooms.description`).
-  static const descriptionMaxLength = 300;
+  static const descriptionMaxLength = 600;
 
   /// The row of this room.
-  Map<String, Object?> toJson() => _withId(id, {
-    'property_id': propertyId,
-    'name': name,
-    'level': level?.value,
-    'sort_order': sortOrder,
-    'area_m2': areaM2,
-    'ceiling_height_m': ceilingHeightM,
-    'floor_covering': floorCovering,
-    'glazing': glazing?.value,
-    'is_main': isMain,
-    'is_annex': isAnnex,
-    'source': source.value,
-    'photos_count': photosCount,
-    'scan_data': scanData,
-    'description': description,
-  });
+  Map<String, Object?> toJson() => _withId(
+    id,
+    _withSources(fieldSources, {
+      'property_id': propertyId,
+      'name': name,
+      'level': level?.value,
+      'sort_order': sortOrder,
+      'area_m2': areaM2,
+      'ceiling_height_m': ceilingHeightM,
+      'floor_covering': floorCovering,
+      'glazing': glazing?.value,
+      'is_main': isMain,
+      'is_annex': isAnnex,
+      'source': source.value,
+      'photos_count': photosCount,
+      'scan_data': scanData,
+      'description': description,
+    }),
+  );
 
   @override
   List<Object?> get props => [
@@ -300,6 +339,7 @@ class Room extends Equatable {
     photosCount,
     scanData,
     description,
+    fieldSources,
   ];
 }
 
@@ -316,6 +356,7 @@ class LifestyleItem extends Equatable {
     this.id,
     this.sortOrder = 0,
     this.source = LifestyleItemSource.declared,
+    this.fieldSources = const {},
   });
 
   /// Builds an item from a `lifestyle_items` row.
@@ -330,6 +371,7 @@ class LifestyleItem extends Equatable {
     source:
         parseDbEnum(LifestyleItemSource.values, json['source']) ??
         LifestyleItemSource.declared,
+    fieldSources: _sources(json['field_sources']),
   );
 
   final String? id;
@@ -339,17 +381,31 @@ class LifestyleItem extends Equatable {
   final int sortOrder;
   final LifestyleItemSource source;
 
+  /// Origin of the label (`label` → `FieldSource` JSON), EPIC-16.
+  final Map<String, Object?> fieldSources;
+
   /// The row of this item.
-  Map<String, Object?> toJson() => _withId(id, {
-    'property_id': propertyId,
-    'kind': kind.value,
-    'label': label,
-    'sort_order': sortOrder,
-    'source': source.value,
-  });
+  Map<String, Object?> toJson() => _withId(
+    id,
+    _withSources(fieldSources, {
+      'property_id': propertyId,
+      'kind': kind.value,
+      'label': label,
+      'sort_order': sortOrder,
+      'source': source.value,
+    }),
+  );
 
   @override
-  List<Object?> get props => [id, propertyId, kind, label, sortOrder, source];
+  List<Object?> get props => [
+    id,
+    propertyId,
+    kind,
+    label,
+    sortOrder,
+    source,
+    fieldSources,
+  ];
 }
 
 /// {@template property_document}

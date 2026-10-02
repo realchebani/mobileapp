@@ -7,5 +7,6 @@ export 'src/models/market_snapshot.dart';
 export 'src/models/property.dart';
 export 'src/models/property_lot.dart';
 export 'src/models/room_photo.dart';
+export 'src/models/voice_trace.dart';
 export 'src/property_repository.dart';
 export 'src/uuid.dart';

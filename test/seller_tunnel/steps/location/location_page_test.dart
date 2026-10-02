@@ -143,7 +143,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Indiquez l’adresse du bien'), findsOneWidget);
     expect(find.text('Choisissez au moins une réponse.'), findsOneWidget);
-    verifyNever(() => cubit.saveAndContinue(any(), any()));
+    verifyNoStepSaved(cubit);
 
     await tester.enterText(_addressInput(), 'Lieu-dit Les Pins');
     await tester.pump();
@@ -219,14 +219,7 @@ void main() {
         ],
       ),
     ).called(1);
-    final patch =
-        verify(
-              () => cubit.saveAndContinue(
-                SellerTunnelStep.location,
-                captureAny(),
-              ),
-            ).captured.single
-            as Map<String, Object?>;
+    final patch = savedStepPatch(cubit, SellerTunnelStep.location);
     expect(patch[PropertyColumns.addressBanId], testAddress.id);
     expect(patch[PropertyColumns.parcelConfirmed], isTrue);
     expect(patch[PropertyColumns.specialSituations], [SpecialSituation.none]);
@@ -328,8 +321,7 @@ void main() {
     await tapText(tester, 'Servitude de réseaux');
     await tapText(tester, 'Continuer');
     await tester.pumpAndSettle();
-    verify(() => cubit.saveAndContinue(SellerTunnelStep.location, any()))
-        .called(1);
+    savedStepPatch(cubit, SellerTunnelStep.location);
   });
 
   testWidgets('shows the lookup in progress', (tester) async {
@@ -393,14 +385,7 @@ void main() {
     );
     await tapText(tester, 'Continuer');
     await tester.pumpAndSettle();
-    final patch =
-        verify(
-              () => cubit.saveAndContinue(
-                SellerTunnelStep.location,
-                captureAny(),
-              ),
-            ).captured.single
-            as Map<String, Object?>;
+    final patch = savedStepPatch(cubit, SellerTunnelStep.location);
     expect(patch[PropertyColumns.specialSituationOther], 'Puits commun');
   });
 
@@ -418,7 +403,7 @@ void main() {
     await tapText(tester, 'Continuer');
     await tester.pump();
     expect(find.byType(SnackBar), findsOneWidget);
-    verifyNever(() => cubit.saveAndContinue(any(), any()));
+    verifyNoStepSaved(cubit);
   });
 
   testWidgets('disables the answers while the dossier is saved', (

@@ -218,11 +218,17 @@ class MethodView extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final c = context.realestyColors;
+    final services = VoiceServices.of(context);
     final dictation =
         context.select<SellerTunnelCubit, bool>(
           (cubit) => cubit.state.profile.hasVoice(SellerTunnelStep.surfaces),
         ) &&
-        VoiceServices.of(context).isAvailable;
+        services.isAvailable;
+    // EPIC-16: in the voice mode, « Dicter mes pièces » comes first.
+    final voiceFirst =
+        dictation &&
+        VoiceDefaults.voiceFirst &&
+        services.preferences?.inputMode == VoiceInputMode.voice;
     final reading = context.watch<PlanReadingCubit>().state;
     final saving =
         context.select<SellerTunnelCubit, bool>(
@@ -248,11 +254,24 @@ class MethodView extends StatelessWidget {
         ),
         children: [
           AgentIntro(message: l10n.methodAgentMessage),
+          if (voiceFirst)
+            MethodCard(
+              icon: RealestyIcons.mic,
+              title: l10n.methodVoiceTitle,
+              description: l10n.methodVoiceDescription,
+              highlighted: true,
+              badge: RealestyBadge(
+                label: l10n.methodVoiceRecommended,
+                variant: RealestyBadgeVariant.certified,
+                showIcon: false,
+              ),
+              onTap: saving ? null : () => unawaited(_dictate(context)),
+            ),
           MethodCard(
             icon: RealestyIcons.pen,
             title: l10n.methodManualTitle,
             description: l10n.methodManualDescription,
-            highlighted: true,
+            highlighted: !voiceFirst,
             isLoading: saving,
             onTap: saving
                 ? null
@@ -263,7 +282,7 @@ class MethodView extends StatelessWidget {
                     }),
                   ),
           ),
-          if (dictation)
+          if (dictation && !voiceFirst)
             MethodCard(
               icon: RealestyIcons.mic,
               title: l10n.methodVoiceTitle,

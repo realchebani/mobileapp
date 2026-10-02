@@ -27,11 +27,79 @@ class SurfacesCubit extends Cubit<SurfacesState>
     required this._propertyRepository,
     required this._propertyId,
     List<Room> rooms = const [],
+    List<PendingAnswer> pendingRooms = const [],
     String Function()? generateId,
+    DateTime Function()? clock,
     this._timeout = defaultTimeout,
   }) : _saved = [...rooms],
        _generateId = generateId ?? randomUuid,
-       super(SurfacesState(rooms: rooms));
+       _clock = clock ?? DateTime.now,
+       super(SurfacesState(rooms: rooms)) {
+    // EPIC-16: the rooms said on another step join the table « À
+    // confirmer ». A room already written for its photos is linked to its
+    // answer by its `field_sources` (`p`): it is not added again, and stays
+    // « À confirmer » until « Continuer » records the confirmation (`c`).
+    var table = [...rooms];
+    for (final answer in pendingRooms) {
+      final stored = rooms.where((room) => _pendingIdIn(room) == answer.id);
+      if (stored.firstOrNull case final room?) {
+        _pending[room.id!] = answer;
+        if (_confirmedIn(room)) _accepted.add(room.id!);
+        continue;
+      }
+      final room = _dictatedRoom(answer.values, table);
+      if (room == null) continue;
+      table = [...table, room];
+      _pending[room.id!] = answer;
+    }
+    if (_pending.isNotEmpty) {
+      emit(
+        SurfacesState(
+          rooms: table,
+          toConfirm: {
+            for (final MapEntry(:key, :value) in _pending.entries)
+              if (!_accepted.contains(key)) key: value.id,
+          },
+        ),
+      );
+    }
+  }
+
+  /// The pending answer a stored room was pre-filled from, if any.
+  static String? _pendingIdIn(Room room) {
+    for (final source in room.fieldSources.values) {
+      if (source is Map && source['p'] is String) return source['p'] as String;
+    }
+    return null;
+  }
+
+  /// Whether the pre-filled values of [room] were confirmed (`c`).
+  static bool _confirmedIn(Room room) => room.fieldSources.values.any(
+    (source) => source is Map && source['p'] != null && source['c'] != null,
+  );
+
+  /// Rooms written and confirmed before, whose answer is still open (its
+  /// resolution was lost): accepted again.
+  final Set<String> _accepted = {};
+
+  final DateTime Function() _clock;
+
+  /// The rooms said on another step (EPIC-16), by room id.
+  final Map<String, PendingAnswer> _pending = {};
+
+  /// Rooms changed by voice after they were pre-filled (replaced).
+  final Set<String> _redictated = {};
+
+  /// Room columns traced in `field_sources`.
+  static const _tracedColumns = [
+    'name',
+    'area_m2',
+    'level',
+    'floor_covering',
+    'glazing',
+    'ceiling_height_m',
+    'description',
+  ];
 
   /// Delay after which a write is considered failed.
   static const defaultTimeout = Duration(seconds: 15);
@@ -60,30 +128,46 @@ class SurfacesCubit extends Cubit<SurfacesState>
       _apply(
         Room(propertyId: _propertyId, id: _generateId(), name: '', areaM2: 0),
         input,
+        _clock(),
       ),
     ],
   );
 
   /// Replaces the answers of the room [id] (keeping its other data).
-  void roomEdited(String id, RoomInput input) => _edit(
-    (rooms) => [
-      for (final room in rooms)
-        if (room.id == id) _apply(room, input) else room,
-    ],
-  );
+  void roomEdited(String id, RoomInput input) {
+    _edit(
+      (rooms) => [
+        for (final room in rooms)
+          if (room.id == id) _apply(room, input, _clock()) else room,
+      ],
+    );
+    _unconfirm(id);
+  }
+
+  /// A pre-filled room changed on screen: no longer « À confirmer ».
+  void _unconfirm(String id) {
+    if (isClosed || !state.toConfirm.containsKey(id)) return;
+    emit(state.copyWith(toConfirm: {...state.toConfirm}..remove(id)));
+  }
 
   /// Removes the room [id] (deleted from the dossier on submit).
-  void roomDeleted(String id) => _edit(
-    (rooms) => [
-      for (final room in rooms)
-        if (room.id != id) room,
-    ],
-  );
+  void roomDeleted(String id) {
+    _edit(
+      (rooms) => [
+        for (final room in rooms)
+          if (room.id != id) room,
+      ],
+    );
+    _unconfirm(id);
+  }
 
-  /// "Tout est correct, continuer": shows the error when there is no
+  /// "C’est correct, continuer": shows the error when there is no
   /// living-space room; otherwise deletes the removed rooms, then writes the
   /// new and changed ones (unchanged rows are not written), in table order.
-  Future<void> submit() async {
+  ///
+  /// [confirmed]: the pending answers the seller confirmed by « oui »
+  /// (EPIC-16).
+  Future<void> submit({Set<String> confirmed = const {}}) async {
     if (state.isSubmitting) return;
     if (!state.isValid) {
       emit(
@@ -101,10 +185,33 @@ class SurfacesCubit extends Cubit<SurfacesState>
         submission: SurfacesSubmission.inProgress,
       ),
     );
+    final now = _clock();
     final wanted = [
       for (final (index, room) in state.rooms.indexed)
-        _withSortOrder(room, index),
+        _sealed(
+          _pendingSources(
+            _withSortOrder(room, index),
+            now,
+            confirmation: (id) => confirmed.contains(id)
+                ? FieldConfirmation.yes
+                : FieldConfirmation.continueTapped,
+          ),
+          confirmed,
+        ),
     ];
+    final resolutions = <PendingResolution, List<String>>{};
+    for (final MapEntry(key: id, value: answer) in _pending.entries) {
+      final resolution = !state.rooms.any((room) => room.id == id)
+          ? PendingResolution.erased
+          : state.toConfirm.containsKey(id) || _accepted.contains(id)
+          ? confirmed.contains(answer.id)
+                ? PendingResolution.yes
+                : PendingResolution.continueTapped
+          : _redictated.contains(id)
+          ? PendingResolution.replaced
+          : PendingResolution.modified;
+      (resolutions[resolution] ??= []).add(answer.id);
+    }
     try {
       final wantedIds = {for (final room in wanted) room.id};
       final storedIds = {for (final row in _saved) row.id!, ..._uncertain};
@@ -144,6 +251,7 @@ class SurfacesCubit extends Cubit<SurfacesState>
       emit(
         state.copyWith(
           savedRooms: result,
+          pendingResolutions: resolutions,
           submission: SurfacesSubmission.success,
         ),
       );
@@ -169,7 +277,13 @@ class SurfacesCubit extends Cubit<SurfacesState>
     if (state.isSubmitting) return;
     final index = state.rooms.indexWhere((room) => room.id == id);
     if (index < 0) return;
-    final room = _withSortOrder(state.rooms[index], index);
+    // Not confirmed yet: the answer is linked (`p`) without a confirmation,
+    // recorded by « Continuer » only.
+    final room = _pendingSources(
+      _withSortOrder(state.rooms[index], index),
+      _clock(),
+      confirmation: (_) => null,
+    );
     final stored = _saved.where((saved) => saved.id == id).firstOrNull;
     if (stored != null && stored == room) {
       emit(state.copyWith(photosRoom: () => stored));
@@ -222,12 +336,25 @@ class SurfacesCubit extends Cubit<SurfacesState>
     photosCount: count,
     scanData: room.scanData,
     description: room.description,
+    fieldSources: room.fieldSources,
   );
 
   /// [room] with the answers of [input]. A room read on a plan whose name
   /// or area is corrected becomes a typed one (its values are no longer
-  /// those of the document).
-  static Room _apply(Room room, RoomInput input) => Room(
+  /// those of the document); each changed value is recorded as typed
+  /// (EPIC-16, `field_sources`).
+  static Room _apply(Room room, RoomInput input, DateTime at) {
+    final applied = _applyValues(room, input);
+    final before = room.toJson();
+    final after = applied.toJson();
+    return _withSources(applied, {
+      for (final column in _tracedColumns)
+        if (!sameStoredValue(before[column], after[column]))
+          column: FieldSource.typed(at),
+    });
+  }
+
+  static Room _applyValues(Room room, RoomInput input) => Room(
     id: room.id,
     propertyId: room.propertyId,
     name: input.name,
@@ -248,7 +375,78 @@ class SurfacesCubit extends Cubit<SurfacesState>
     photosCount: room.photosCount,
     scanData: room.scanData,
     description: input.description,
+    fieldSources: room.fieldSources,
   );
+
+  /// [room] with [sources] merged into its `field_sources`.
+  static Room _withSources(Room room, Map<String, FieldSource> sources) {
+    if (sources.isEmpty) return room;
+    return Room(
+      id: room.id,
+      propertyId: room.propertyId,
+      name: room.name,
+      level: room.level,
+      sortOrder: room.sortOrder,
+      areaM2: room.areaM2,
+      ceilingHeightM: room.ceilingHeightM,
+      floorCovering: room.floorCovering,
+      glazing: room.glazing,
+      isMain: room.isMain,
+      isAnnex: room.isAnnex,
+      source: room.source,
+      photosCount: room.photosCount,
+      scanData: room.scanData,
+      description: room.description,
+      fieldSources: mergeFieldSourceMaps(room.fieldSources, sources),
+    );
+  }
+
+  /// A room still holding what was said on another step: its values are
+  /// recorded as said there, with [confirmation] (null before « Continuer »).
+  Room _pendingSources(
+    Room room,
+    DateTime at, {
+    required FieldConfirmation? Function(String pendingId) confirmation,
+  }) {
+    final answer = _pending[room.id];
+    if (answer == null || !state.toConfirm.containsKey(room.id)) return room;
+    final source = FieldSource(
+      kind: FieldSourceKind.dictatedElsewhere,
+      at: at,
+      turnId: answer.turnId,
+      pendingId: answer.id,
+      confirmation: confirmation(answer.id),
+    );
+    return _withSources(room, {
+      for (final column in _tracedColumns)
+        if (answer.values.containsKey(column)) column: source,
+    });
+  }
+
+  /// [room] saved by « Continuer »: a value still linked to a pending
+  /// answer without a confirmation (written for the photos, then kept)
+  /// is now confirmed.
+  static Room _sealed(Room room, Set<String> confirmed) {
+    final open = {
+      for (final MapEntry(:key, :value) in room.fieldSources.entries)
+        if (value is Map && value['p'] is String && value['c'] == null)
+          key: value,
+    };
+    if (open.isEmpty) return room;
+    return Room.fromJson({
+      ...room.toJson(),
+      'field_sources': {
+        ...room.fieldSources,
+        for (final MapEntry(:key, :value) in open.entries)
+          key: {
+            ...value,
+            'c': confirmed.contains(value['p'])
+                ? FieldConfirmation.yes.value
+                : FieldConfirmation.continueTapped.value,
+          },
+      },
+    });
+  }
 
   static Room _withSortOrder(Room room, int sortOrder) => Room(
     id: room.id,
@@ -266,6 +464,7 @@ class SurfacesCubit extends Cubit<SurfacesState>
     photosCount: room.photosCount,
     scanData: room.scanData,
     description: room.description,
+    fieldSources: room.fieldSources,
   );
 
   // ---------------------------------------------------------------------
@@ -305,6 +504,16 @@ class SurfacesCubit extends Cubit<SurfacesState>
     );
   }
 
+  /// The rooms of [voiceContext] without those still « À confirmer »
+  /// (EPIC-16): the spoken summary counts only the rooms confirmed.
+  List<AgentRoom> get confirmedVoiceRooms {
+    final refs = _byRef(state.rooms);
+    return [
+      for (final room in voiceContext.rooms)
+        if (!state.toConfirm.containsKey(refs[room.ref]?.id)) room,
+    ];
+  }
+
   /// R1… become the room ids (`id:<id>`).
   @override
   AgentTurn resolveVoiceTurn(SurfacesState state, AgentTurn turn) {
@@ -323,12 +532,21 @@ class SurfacesCubit extends Cubit<SurfacesState>
     };
     var rooms = [...state.rooms];
     final dictated = {...state.dictated};
+    final toConfirm = {...state.toConfirm};
     var last = state.lastDictatedId;
-    for (final op in turn.entityOps) {
+    final [turnId, ...confirmation] = turn.turnId.split('#');
+    for (final (index, op) in turn.entityOps.indexed) {
       if (op.entity != AgentEntity.room) continue;
       final values = op.values;
+      // EPIC-16: the words each value comes from (`op:<i>.<column>`).
+      final origin = FieldSource(
+        kind: FieldSourceKind.dictated,
+        at: _clock(),
+        turnId: turnId,
+      );
+      final key = [...confirmation, 'op:$index'].join('.');
       if (op.isNew && op.op == AgentEntityOp.create) {
-        final room = _dictatedRoom(values, rooms);
+        final room = _dictatedRoom(values, rooms, origin: origin, key: key);
         if (room == null) continue;
         rooms = [...rooms, room];
         dictated.add(room.id!);
@@ -350,14 +568,19 @@ class SurfacesCubit extends Cubit<SurfacesState>
       }
       rooms = [
         for (final room in rooms)
-          if (room.id == target.id) _withVoiceValues(room, values) else room,
+          if (room.id == target.id)
+            _withVoiceValues(room, values, origin: origin, key: key)
+          else
+            room,
       ];
       dictated.add(target.id!);
+      if (toConfirm.remove(target.id) != null) _redictated.add(target.id!);
       last = target.id;
     }
     return state.copyWith(
       rooms: rooms,
       dictated: dictated,
+      toConfirm: toConfirm,
       lastDictatedId: () => last,
     );
   }
@@ -365,7 +588,12 @@ class SurfacesCubit extends Cubit<SurfacesState>
   /// A new room from the agent's [values]: its kind decides main / annex,
   /// bedrooms are numbered like on the room form, and a level that was not
   /// said is the one of the last room (never guessed by the AI).
-  Room? _dictatedRoom(Map<String, Object?> values, List<Room> rooms) {
+  Room? _dictatedRoom(
+    Map<String, Object?> values,
+    List<Room> rooms, {
+    FieldSource? origin,
+    String? key,
+  }) {
     final name = values['name'];
     final area = values['area_m2'];
     if (name is! String || name.trim().isEmpty || area is! num) return null;
@@ -391,13 +619,29 @@ class SurfacesCubit extends Cubit<SurfacesState>
         source: RoomSource.voice,
       ),
       {...values, 'level': level.value},
+      origin: origin,
+      key: key,
     );
   }
 
-  /// [room] with the values said ([values] as stored).
-  static Room _withVoiceValues(Room room, Map<String, Object?> values) {
+  /// [room] with the values said ([values] as stored), each recorded with
+  /// [origin] and its evidence key under [key] (`op:0.area_m2`). The notes
+  /// said (description) are appended to the room's notes (EPIC-16).
+  static Room _withVoiceValues(
+    Room room,
+    Map<String, Object?> values, {
+    FieldSource? origin,
+    String? key,
+  }) {
     String? text(String key, String? current) =>
         values.containsKey(key) ? (values[key] as String?)?.trim() : current;
+    final said = (values['description'] as String?)?.trim() ?? '';
+    final current = room.description?.trim() ?? '';
+    final notes = said.isEmpty || current.contains(said)
+        ? room.description
+        : current.isEmpty
+        ? said
+        : '$current · $said';
     final area = values['area_m2'];
     final height = values['ceiling_height_m'];
     return Room(
@@ -419,7 +663,21 @@ class SurfacesCubit extends Cubit<SurfacesState>
       source: room.source,
       photosCount: room.photosCount,
       scanData: room.scanData,
-      description: text('description', room.description),
+      description: notes != null && notes.length > Room.descriptionMaxLength
+          ? notes.substring(0, Room.descriptionMaxLength)
+          : notes,
+      fieldSources: origin == null
+          ? room.fieldSources
+          : mergeFieldSourceMaps(room.fieldSources, {
+              for (final column in _tracedColumns)
+                if (values.containsKey(column))
+                  column: FieldSource(
+                    kind: origin.kind,
+                    at: origin.at,
+                    turnId: origin.turnId,
+                    evidenceKey: '$key.$column',
+                  ),
+            }),
     );
   }
 

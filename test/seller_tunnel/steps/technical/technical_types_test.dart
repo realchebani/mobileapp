@@ -160,18 +160,16 @@ void main() {
       await tester.pump();
       await tester.tap(find.text('Enregistrer et continuer'));
       await tester.pump();
-      verify(
-        () => cubit.saveAndContinue(SellerTunnelStep.technical, {
-          PropertyColumns.usableAreaM2: 13.0,
-          PropertyColumns.parkingLevel: ParkingLevel.basement,
-          PropertyColumns.parkingFeatures: [ParkingFeature.chargingPoint],
-          PropertyColumns.provenance: {
-            PropertyColumns.usableAreaM2: 'declared',
-            PropertyColumns.parkingLevel: 'declared',
-            PropertyColumns.parkingFeatures: 'declared',
-          },
-        }),
-      ).called(1);
+      expect(savedStepPatch(cubit, SellerTunnelStep.technical), {
+        PropertyColumns.usableAreaM2: 13.0,
+        PropertyColumns.parkingLevel: ParkingLevel.basement,
+        PropertyColumns.parkingFeatures: [ParkingFeature.chargingPoint],
+        PropertyColumns.provenance: {
+          PropertyColumns.usableAreaM2: 'declared',
+          PropertyColumns.parkingLevel: 'declared',
+          PropertyColumns.parkingFeatures: 'declared',
+        },
+      });
     });
 
     testWidgets('an outbuilding', (tester) async {

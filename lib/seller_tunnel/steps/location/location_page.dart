@@ -37,17 +37,22 @@ class LocationPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) {
-        final tunnel = context.read<SellerTunnelCubit>().state;
-        return LocationCubit(
-          geoRepository: context.read<GeoRepository>(),
-          propertyRepository: context.read<PropertyRepository>(),
-          deviceLocator: deviceLocator ?? DeviceLocator(),
-          property: tunnel.property!,
-          parcels: tunnel.parcels,
-        );
-      },
+    final tunnel = context.read<SellerTunnelCubit>().state;
+    // EPIC-16: situations said on another step start « À confirmer ».
+    final trace = StepVoiceFirst.createTrace(tunnel, SellerTunnelStep.location);
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider.value(value: trace),
+        BlocProvider(
+          create: (context) => LocationCubit(
+            geoRepository: context.read<GeoRepository>(),
+            propertyRepository: context.read<PropertyRepository>(),
+            deviceLocator: deviceLocator ?? DeviceLocator(),
+            property: trace.state.prefilledProperty(tunnel.property!),
+            parcels: tunnel.parcels,
+          ),
+        ),
+      ],
       child: LocationView(tileBuilder: tileBuilder),
     );
   }
@@ -74,22 +79,45 @@ class _LocationViewState extends State<LocationView> {
     text: _initial.otherSituation,
   );
 
-  /// The V2 voice sheet (EPIC-14): the special situations only.
-  Future<void> _openVoiceSheet() async {
+  /// The V2 voice sheet (EPIC-14): the special situations and the notes;
+  /// opened by itself once the parcels are confirmed (EPIC-16).
+  Future<void> _openVoiceSheet({bool autoOpened = false}) async {
     final l10n = context.l10n;
-    await showStepVoiceSheet(
+    _sheetOpened = true;
+    await StepVoiceFirst.openSheet(
       context,
-      propertyId: context.read<SellerTunnelCubit>().state.property!.id,
       step: AgentStep.location,
       form: context.read<LocationCubit>(),
       title: l10n.locationVoiceTitle,
       intro: l10n.locationVoiceIntro,
+      autoOpened: autoOpened,
+    );
+  }
+
+  /// The sheet was opened on this visit (it opens by itself once only).
+  bool _sheetOpened = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // EPIC-16: the address field opens in dictation when it is empty;
+    // with an address and confirmed parcels, the situations sheet opens.
+    final initial = context.read<LocationCubit>().state;
+    StepVoiceFirst.schedule(
+      context,
+      _step,
+      () => initial.addressText.trim().isEmpty
+          ? _dictateAddress(autoOpened: true)
+          : _openVoiceSheet(autoOpened: true),
+      when:
+          VoiceDefaults.addressDictation &&
+          (initial.addressText.trim().isEmpty || initial.parcelConfirmed),
     );
   }
 
   /// "Dicter l’adresse" (owner decision Q2): transcription only, into the
   /// search field; the seller then picks the suggestion.
-  Future<void> _dictateAddress() async {
+  Future<void> _dictateAddress({bool autoOpened = false}) async {
     final l10n = context.l10n;
     final cubit = context.read<LocationCubit>();
     final text = await showVoiceDictationSheet(
@@ -98,6 +126,7 @@ class _LocationViewState extends State<LocationView> {
       step: AgentStep.location,
       title: l10n.locationVoiceAddressTitle,
       hint: l10n.locationVoiceAddressHint,
+      autoOpened: autoOpened,
     );
     if (text == null || text.isEmpty || !mounted) return;
     cubit.addressChanged(
@@ -122,8 +151,27 @@ class _LocationViewState extends State<LocationView> {
       case LocationSubmitStatus.success:
         final tunnel = context.read<SellerTunnelCubit>()
           ..updateChildren(parcels: state.savedParcels);
+        final traced = StepVoiceFirst.save(
+          context,
+          state.toPatch(tunnel.state.property!),
+          voiceSource: context.read<LocationCubit>().voiceSourceOf,
+          // The address and its point come from the address base.
+          kinds: {
+            if (state.address != null)
+              for (final column in [
+                ...LocationState.addressColumns,
+                PropertyColumns.lat,
+                PropertyColumns.lng,
+              ])
+                column: FieldSourceKind.external,
+          },
+        );
         unawaited(
-          tunnel.saveAndContinue(_step, state.toPatch(tunnel.state.property!)),
+          tunnel.saveStepAndContinue(
+            _step,
+            traced.patch,
+            resolve: traced.resolutions,
+          ),
         );
       case LocationSubmitStatus.failure:
         showRealestySnackBar(
@@ -233,6 +281,18 @@ class _LocationViewState extends State<LocationView> {
           listenWhen: (previous, current) =>
               previous.submitAttempts != current.submitAttempts,
           listener: _revealFirstError,
+        ),
+        // EPIC-16: the parcels confirmed, the situations sheet opens by
+        // itself (voice mode, once per visit).
+        BlocListener<LocationCubit, LocationState>(
+          listenWhen: (previous, current) =>
+              !previous.parcelConfirmed && current.parcelConfirmed,
+          listener: (context, state) {
+            if (_sheetOpened || !StepVoiceFirst.canAutoOpen(context, _step)) {
+              return;
+            }
+            unawaited(_openVoiceSheet(autoOpened: true));
+          },
         ),
         BlocListener<LocationCubit, LocationState>(
           listenWhen: (previous, current) =>
@@ -416,10 +476,16 @@ class _LocationViewState extends State<LocationView> {
                       style: RealestyTextStyles.label.copyWith(color: c.encre2),
                     ),
                   ),
-                  if (state.dictated.contains(
+                  ?StepVoiceFirst.tagOf(
+                    context,
                     PropertyColumns.specialSituations,
-                  ))
-                    const DictatedTag(),
+                    encodeVoiceDraft({
+                      PropertyColumns.specialSituations: state.situations,
+                    })[PropertyColumns.specialSituations],
+                    dictated: state.dictated.contains(
+                      PropertyColumns.specialSituations,
+                    ),
+                  ),
                 ],
               ),
               Wrap(
@@ -454,6 +520,7 @@ class _LocationViewState extends State<LocationView> {
                 LocationErrorText(l10n.locationSituationsRequired),
             ],
           ),
+          StepNotesField(enabled: !isBusy),
         ],
       ),
     );

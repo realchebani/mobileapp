@@ -24,6 +24,7 @@ void main() {
     WidgetTester tester,
     VoiceDictationState state, {
     Stream<VoiceDictationState>? states,
+    VoiceServices services = const VoiceServices(),
   }) async {
     if (states != null) {
       whenListen(dictation, states, initialState: state);
@@ -38,11 +39,14 @@ void main() {
             await showModalBottomSheet<String>(
               context: context,
               isScrollControlled: true,
-              builder: (_) => BlocProvider<VoiceDictationCubit>.value(
-                value: dictation,
-                child: const VoiceDictationSheet(
-                  title: 'Dictez l’adresse',
-                  hint: 'Dites le numéro',
+              builder: (_) => RepositoryProvider.value(
+                value: services,
+                child: BlocProvider<VoiceDictationCubit>.value(
+                  value: dictation,
+                  child: const VoiceDictationSheet(
+                    title: 'Dictez l’adresse',
+                    hint: 'Dites le numéro',
+                  ),
                 ),
               ),
             ),
@@ -69,6 +73,20 @@ void main() {
     await tester.pumpAndSettle();
     verify(() => dictation.cancel()).called(1);
     expect(results, [null]);
+  });
+
+  testWidgets('« Écrire plutôt » cancels (EPIC-16)', (tester) async {
+    final services = await testVoiceServices(inputMode: VoiceInputMode.voice);
+    final results = await pump(
+      tester,
+      const VoiceDictationState(phase: VoicePhase.listening),
+      services: services,
+    );
+    await tester.tap(find.text('Écrire plutôt'));
+    await tester.pumpAndSettle();
+    verify(() => dictation.cancel()).called(1);
+    expect(results, [null]);
+    expect(services.preferences!.inputMode, VoiceInputMode.text);
   });
 
   testWidgets('pops the text once transcribed', (tester) async {

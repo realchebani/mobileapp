@@ -13,6 +13,7 @@ import type {
 } from "../_shared/agent/db.ts";
 import type { Deps } from "../_shared/agent/handlers.ts";
 import type { AgentStep } from "../_shared/agent/schema.ts";
+import type { CrossStepItem, EntitySummaries, PendingRow } from "../_shared/agent/validate.ts";
 
 export const PROPERTY = "11111111-1111-4111-8111-111111111111";
 export const OTHER = "22222222-2222-4222-8222-222222222222";
@@ -27,6 +28,10 @@ export class FakeDb implements AgentDb {
   usage = { turns: 0, audioSeconds: 0 };
   saved = { asset: ["Calme"], watch_point: [] as string[] };
   failInsert = false;
+  // deno-lint-ignore no-explicit-any
+  pending: (PendingRow & Record<string, any>)[] = [];
+  summaries: EntitySummaries = { rooms: [], estimates: [] };
+  pendingMax = LIMITS.pendingAnswers;
 
   property(id: string) {
     return Promise.resolve(this.properties.get(id) ?? null);
@@ -106,6 +111,45 @@ export class FakeDb implements AgentDb {
   }
   usageSince() {
     return Promise.resolve(this.usage);
+  }
+  pendingAnswers(propertyId: string) {
+    return Promise.resolve(
+      this.pending.filter((p) => p.property_id === propertyId && p.status === "pending"),
+    );
+  }
+  entitySummaries() {
+    return Promise.resolve(this.summaries);
+  }
+  // Like agent_record_pending: supersedes the open answer of the same
+  // field, refuses rows beyond the ceiling.
+  recordPending(propertyId: string, turnId: string, sourceStep: AgentStep, items: CrossStepItem[]) {
+    const ids: (string | null)[] = [];
+    const superseded: string[] = [];
+    for (const item of items) {
+      const open = this.pending.filter((p) =>
+        p.property_id === propertyId && p.status === "pending"
+      );
+      const old = item.kind === "field" ? open.find((p) => p.field === item.field) : undefined;
+      if (old) {
+        old.status = "superseded";
+        superseded.push(old.id);
+      }
+      if (open.length - (old ? 1 : 0) >= this.pendingMax) {
+        ids.push(null);
+        continue;
+      }
+      const id = `p${this.pending.length + 1}`;
+      this.pending.push({
+        id,
+        property_id: propertyId,
+        status: "pending",
+        turn_id: turnId,
+        source_step: sourceStep,
+        ...item,
+      });
+      ids.push(id);
+    }
+    return Promise.resolve({ ids, superseded });
   }
   markUndone(propertyId: string, ids: string[]) {
     const sessions = this.sessions.filter((s) => s.property_id === propertyId).map((s) => s.id);

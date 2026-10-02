@@ -12,10 +12,16 @@ Future<VoiceServices> testVoiceServices({
   bool consentGiven = true,
   bool muted = false,
   List<Uri>? openedUrls,
+  VoiceInputMode inputMode = VoiceInputMode.text,
+  Map<String, Object> extraPreferences = const {},
 }) async {
+  // The written mode by default: a step test opens its sheet itself
+  // (EPIC-16 voice-first tests ask for VoiceInputMode.voice).
   SharedPreferences.setMockInitialValues({
     VoicePreferences.consentKey: consentGiven,
     VoicePreferences.mutedKey: muted,
+    VoicePreferences.inputModeKey: inputMode.name,
+    ...extraPreferences,
   });
   final preferences = await SharedPreferences.getInstance();
   return VoiceServices(

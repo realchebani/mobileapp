@@ -1,9 +1,8 @@
 // Types of the step registry of the voice agent (plan §4.4): each tunnel
 // step declares the `properties` columns the agent may fill, its entities
-// (rooms, previous estimates, co-owners), its instructions and its output.
+// (rooms, previous estimates), its instructions and its output.
 
 export type AgentStep =
-  | "owners"
   | "location"
   | "context"
   | "technical"
@@ -11,7 +10,6 @@ export type AgentStep =
   | "lifestyle";
 
 export const AGENT_STEPS: readonly AgentStep[] = [
-  "owners",
   "location",
   "context",
   "technical",
@@ -81,7 +79,7 @@ export interface FieldDef {
   requiredFor?: readonly PropertyType[];
 }
 
-export type EntityName = "room" | "previous_estimate" | "co_owner";
+export type EntityName = "room" | "previous_estimate";
 
 export interface EntityDef {
   name: EntityName;
@@ -109,7 +107,4 @@ export interface StepSchema {
   maxTokens: number;
   /** The step classifies lifestyle items (V6). */
   lifestyle?: boolean;
-  /** The transcript holds identity data: wiped from the journal once the
-   * turn is answered (V1). */
-  identity?: boolean;
 }

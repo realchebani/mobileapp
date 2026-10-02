@@ -416,6 +416,46 @@ class PropertyRepository {
   /// Deletes the lifestyle item [id].
   Future<void> deleteLifestyleItem(String id) => _delete(_lifestyleItems, id);
 
+  /// The open pending answers of [propertyId] (EPIC-16: values said on
+  /// another step, pre-filled « À confirmer »), oldest first.
+  Future<List<PendingAnswer>> getPendingAnswers(String propertyId) async {
+    try {
+      final rows = await _client
+          .from('pending_answers')
+          .select()
+          .eq('property_id', propertyId)
+          .eq('status', PendingStatus.pending.value)
+          .order('created_at', ascending: true);
+      return [for (final row in rows) PendingAnswer.fromJson(row)];
+    } on Object catch (error, stackTrace) {
+      Error.throwWithStackTrace(PropertyLoadFailure(error), stackTrace);
+    }
+  }
+
+  /// Closes the pending answers [ids] with [resolution] (its status). Only
+  /// open ones change: resolving twice (a retry, another device) is a
+  /// no-op. Returns the ids actually resolved.
+  Future<List<String>> resolvePendingAnswers(
+    List<String> ids,
+    PendingResolution resolution,
+  ) async {
+    if (ids.isEmpty) return const [];
+    try {
+      final rows = await _client
+          .from('pending_answers')
+          .update({
+            'status': resolution.status.value,
+            'resolution': resolution.value,
+          })
+          .inFilter('id', ids)
+          .eq('status', PendingStatus.pending.value)
+          .select('id');
+      return [for (final row in rows) row['id'] as String];
+    } on Object catch (error, stackTrace) {
+      Error.throwWithStackTrace(PropertySaveFailure(error), stackTrace);
+    }
+  }
+
   /// Documents of [propertyId], oldest first.
   Future<List<PropertyDocument>> getDocuments(String propertyId) =>
       _list(_documents, propertyId);

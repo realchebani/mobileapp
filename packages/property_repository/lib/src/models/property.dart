@@ -1,6 +1,7 @@
 import 'package:equatable/equatable.dart';
 import 'package:property_repository/src/models/enums.dart';
 import 'package:property_repository/src/models/json.dart';
+import 'package:property_repository/src/models/voice_trace.dart';
 
 /// Column names of the `properties` table, to build the patches given to
 /// `PropertyRepository.updateProperty`.
@@ -63,6 +64,8 @@ abstract final class PropertyColumns {
   static const overlooking = 'overlooking';
   static const secretNote = 'secret_note';
   static const provenance = 'provenance';
+  static const stepNotes = 'step_notes';
+  static const fieldSources = 'field_sources';
   static const transparencyScore = 'transparency_score';
   static const submittedAt = 'submitted_at';
   static const notifyPush = 'notify_push';
@@ -140,6 +143,8 @@ class Property extends Equatable {
     this.overlooking,
     this.secretNote,
     this.provenance = const {},
+    this.stepNotes = const {},
+    this.fieldSources = const {},
     this.transparencyScore,
     this.submittedAt,
     this.notifyPush = true,
@@ -260,6 +265,14 @@ class Property extends Equatable {
       provenance: Map<String, Object?>.unmodifiable(
         json[PropertyColumns.provenance] as Map<String, dynamic>? ?? const {},
       ),
+      stepNotes: Map<String, String>.unmodifiable({
+        for (final MapEntry(:key, :value)
+            in (json[PropertyColumns.stepNotes] as Map? ?? const {}).entries)
+          if (value is String) key as String: value,
+      }),
+      fieldSources: Map<String, Object?>.unmodifiable(
+        json[PropertyColumns.fieldSources] as Map<String, dynamic>? ?? const {},
+      ),
       transparencyScore: readInt(json[PropertyColumns.transparencyScore]),
       submittedAt: readDateTime(json[PropertyColumns.submittedAt]),
       notifyPush: json[PropertyColumns.notifyPush] as bool? ?? true,
@@ -371,6 +384,13 @@ class Property extends Equatable {
   /// Raw provenance map (column → value); see [provenanceOf].
   final Map<String, Object?> provenance;
 
+  /// « Notes complémentaires » per step ([StepNoteKeys]), EPIC-16.
+  final Map<String, String> stepNotes;
+
+  /// Raw origin of each saved value (column → [FieldSource] JSON); see
+  /// [fieldSourceOf].
+  final Map<String, Object?> fieldSources;
+
   /// 0–100.
   final int? transparencyScore;
   final DateTime? submittedAt;
@@ -410,6 +430,27 @@ class Property extends Equatable {
     ...provenance,
     for (final MapEntry(:key, :value) in updates.entries) key: value.value,
   };
+
+  /// The note of [step] ([StepNoteKeys]), or null.
+  String? stepNoteOf(String step) => stepNotes[step];
+
+  /// The [stepNotes] with the note of [step] set to [text] (removed when
+  /// empty), to send as the `step_notes` column of a patch.
+  Map<String, String> withStepNote(String step, String? text) => {
+    for (final MapEntry(:key, :value) in stepNotes.entries)
+      if (key != step) key: value,
+    if (text != null && text.trim().isNotEmpty) step: text.trim(),
+  };
+
+  /// The origin of [column] (or of a step note, [StepNoteKeys.sourceKey]),
+  /// if recorded (values saved before EPIC-16 have none).
+  FieldSource? fieldSourceOf(String column) =>
+      FieldSource.tryParse(fieldSources[column]);
+
+  /// The [fieldSources] map with [updates] applied, to send as the
+  /// `field_sources` column of the same patch as the values.
+  Map<String, Object?> mergeFieldSources(Map<String, FieldSource> updates) =>
+      mergeFieldSourceMaps(fieldSources, updates);
 
   /// The row of this property, as stored (including columns the app may not
   /// write: never send it as an update).
@@ -473,6 +514,8 @@ class Property extends Equatable {
       PropertyColumns.overlooking: overlooking?.value,
       PropertyColumns.secretNote: secretNote,
       PropertyColumns.provenance: provenance,
+      PropertyColumns.stepNotes: stepNotes,
+      PropertyColumns.fieldSources: fieldSources,
       PropertyColumns.transparencyScore: transparencyScore,
       PropertyColumns.submittedAt: encodeDbValue(submittedAt),
       PropertyColumns.notifyPush: notifyPush,
@@ -546,6 +589,8 @@ class Property extends Equatable {
     overlooking,
     secretNote,
     provenance,
+    stepNotes,
+    fieldSources,
     transparencyScore,
     submittedAt,
     notifyPush,

@@ -19,6 +19,7 @@ void main() {
     SellerTunnelSaveStatus saveStatus = SellerTunnelSaveStatus.success,
     int currentStep = 4,
     bool voice = true,
+    VoiceInputMode mode = VoiceInputMode.text,
   }) async {
     usePhoneSurface();
     final cubit = mockSellerTunnelCubit(
@@ -36,7 +37,7 @@ void main() {
     await tester.pumpTunnelPage(
       voice
           ? RepositoryProvider.value(
-              value: await testVoiceServices(),
+              value: await testVoiceServices(inputMode: mode),
               child: const MethodPage(),
             )
           : const MethodPage(),
@@ -89,5 +90,19 @@ void main() {
   testWidgets('no dictation without voice', (tester) async {
     await pump(tester, voice: false);
     expect(find.text('Dicter mes pièces'), findsNothing);
+  });
+
+  testWidgets('EPIC-16: in the voice mode « Dicter mes pièces » comes first', (
+    tester,
+  ) async {
+    await pump(tester, mode: VoiceInputMode.voice);
+    expect(find.text('Recommandé'), findsOneWidget);
+    expect(
+      tester.getTopLeft(find.text('Dicter mes pièces')).dy,
+      lessThan(tester.getTopLeft(find.text('Saisir manuellement')).dy),
+    );
+    await tester.tap(find.text('Dicter mes pièces'));
+    await tester.pumpAndSettle();
+    verify(() => goRouter.go(any())).called(1);
   });
 }

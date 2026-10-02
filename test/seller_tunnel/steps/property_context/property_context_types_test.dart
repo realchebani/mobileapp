@@ -192,17 +192,10 @@ void main() {
       await tester.enterText(_field('Année d’achat'), '2001');
       await tester.tap(find.text('Continuer'));
       await tester.pump();
-      verify(
-        () => cubit.saveAndContinue(
-          SellerTunnelStep.context,
-          any(
-            that: containsPair(
-              PropertyColumns.parkingKind,
-              ParkingKind.outdoorSpace,
-            ),
-          ),
-        ),
-      ).called(1);
+      expect(
+        savedStepPatch(cubit, SellerTunnelStep.context),
+        containsPair(PropertyColumns.parkingKind, ParkingKind.outdoorSpace),
+      );
     });
 
     testWidgets('lists every kind of land and parking', (tester) async {

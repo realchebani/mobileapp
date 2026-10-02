@@ -38,6 +38,7 @@ final class EstimateDraft extends Equatable {
     this.price = '',
     this.month = '',
     this.agency = '',
+    this.pendingId,
   });
 
   /// Identifies the card while it is edited (stable across saves).
@@ -54,6 +55,10 @@ final class EstimateDraft extends Equatable {
 
   final String agency;
 
+  /// The pending answer this card was pre-filled from (EPIC-16: an
+  /// estimate said on another step, « À confirmer »).
+  final String? pendingId;
+
   EstimateDraft copyWith({String? price, String? month, String? agency}) {
     return EstimateDraft(
       key: key,
@@ -61,6 +66,7 @@ final class EstimateDraft extends Equatable {
       price: price ?? this.price,
       month: month ?? this.month,
       agency: agency ?? this.agency,
+      pendingId: pendingId,
     );
   }
 
@@ -71,10 +77,11 @@ final class EstimateDraft extends Equatable {
     price: price,
     month: month,
     agency: agency,
+    pendingId: pendingId,
   );
 
   @override
-  List<Object?> get props => [key, id, price, month, agency];
+  List<Object?> get props => [key, id, price, month, agency, pendingId];
 }
 
 /// Answers of V3 · Contexte & type de bien, as edited.
@@ -94,6 +101,7 @@ final class PropertyContextState extends Equatable {
     this.previouslyEstimated,
     this.estimates = const [],
     this.savedEstimates = const [],
+    this.estimateResolutions = const {},
     this.showErrors = false,
     this.submitAttempts = 0,
     this.submission = PropertyContextSubmission.idle,
@@ -151,6 +159,10 @@ final class PropertyContextState extends Equatable {
 
   /// The estimates as saved by the last successful submission.
   final List<PreviousEstimate> savedEstimates;
+
+  /// The pending estimates of the cards, resolved by the last submission
+  /// (EPIC-16): closed once the step is saved.
+  final Map<PendingResolution, List<String>> estimateResolutions;
 
   /// Whether errors are shown (after a first "Continuer").
   final bool showErrors;
@@ -306,6 +318,7 @@ final class PropertyContextState extends Equatable {
     bool? previouslyEstimated,
     List<EstimateDraft>? estimates,
     List<PreviousEstimate>? savedEstimates,
+    Map<PendingResolution, List<String>>? estimateResolutions,
     bool? showErrors,
     int? submitAttempts,
     PropertyContextSubmission? submission,
@@ -326,6 +339,7 @@ final class PropertyContextState extends Equatable {
       previouslyEstimated: previouslyEstimated ?? this.previouslyEstimated,
       estimates: estimates ?? this.estimates,
       savedEstimates: savedEstimates ?? this.savedEstimates,
+      estimateResolutions: estimateResolutions ?? this.estimateResolutions,
       showErrors: showErrors ?? this.showErrors,
       submitAttempts: submitAttempts ?? this.submitAttempts,
       submission: submission ?? this.submission,
@@ -349,6 +363,7 @@ final class PropertyContextState extends Equatable {
     previouslyEstimated,
     estimates,
     savedEstimates,
+    estimateResolutions,
     showErrors,
     submitAttempts,
     submission,

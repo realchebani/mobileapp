@@ -21,7 +21,7 @@ class VoiceSheetMocks {
       levels = StreamController<double>.broadcast() {
     registerFallbackValue(Uint8List(0));
     registerFallbackValue(Duration.zero);
-    registerFallbackValue(AgentStep.owners);
+    registerFallbackValue(AgentStep.location);
     registerFallbackValue(const AgentTurnContext());
     when(recorder.requestPermission).thenAnswer((_) async => true);
     when(recorder.start).thenAnswer((_) async {});
@@ -77,14 +77,17 @@ class VoiceSheetMocks {
   ).thenAnswer((_) async => turn);
 
   /// Voice services on these mocks (agent muted: nothing spoken).
-  Future<VoiceServices> services({bool consentGiven = true}) =>
-      testVoiceServices(
-        agentRepository: agent,
-        recorder: recorder,
-        player: player,
-        muted: true,
-        consentGiven: consentGiven,
-      );
+  Future<VoiceServices> services({
+    bool consentGiven = true,
+    VoiceInputMode inputMode = VoiceInputMode.text,
+  }) => testVoiceServices(
+    agentRepository: agent,
+    recorder: recorder,
+    player: player,
+    muted: true,
+    consentGiven: consentGiven,
+    inputMode: inputMode,
+  );
 
   /// The context sent with the last agent turn.
   AgentTurnContext? lastContext() =>

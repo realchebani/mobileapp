@@ -93,7 +93,7 @@ void main() {
       await tester.pump();
       // EPIC-14: an optional description.
       await tester.enterText(
-        _field('Description (facultatif)'),
+        _field('Notes complémentaires (facultatif)'),
         '  Ouvert sur la cuisine ',
       );
 

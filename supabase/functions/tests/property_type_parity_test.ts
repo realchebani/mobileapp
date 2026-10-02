@@ -32,7 +32,7 @@ Deno.test("V4 audit types match the fixture", () => {
 
 Deno.test("voiced steps match the fixture", () => {
   for (const type of types) assertEquals(voiceStepsFor(type), fixture[type].voice_steps, type);
-  assertEquals(voiceStepsFor(null).length, 6);
+  assertEquals(voiceStepsFor(null).length, 5);
 });
 
 Deno.test("V4b columns and choices match the fixture", () => {

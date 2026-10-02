@@ -124,8 +124,10 @@ void main() {
       build: build,
       act: (cubit) => cubit.roomAdded(_bedroom),
       expect: () => [
-        const SurfacesState(
-          rooms: [
+        isA<SurfacesState>().having(
+          (state) => state.rooms.map(withoutSources).toList(),
+          'rooms',
+          const [
             _living,
             _kitchen,
             Room(
@@ -139,6 +141,12 @@ void main() {
           ],
         ),
       ],
+      // EPIC-16: the values typed are recorded as such.
+      verify: (cubit) => expect(sourceKinds(cubit.state.rooms.last), {
+        'name': 'saisi',
+        'area_m2': 'saisi',
+        'level': 'saisi',
+      }),
     );
 
     blocTest<SurfacesCubit, SurfacesState>(
@@ -149,8 +157,10 @@ void main() {
         const RoomInput(name: 'Salon', level: RoomLevel.firstFloor, areaM2: 40),
       ),
       expect: () => [
-        const SurfacesState(
-          rooms: [
+        isA<SurfacesState>().having(
+          (state) => state.rooms.map(withoutSources).toList(),
+          'rooms',
+          const [
             Room(
               id: 'r1',
               propertyId: 'p',
@@ -165,6 +175,10 @@ void main() {
           ],
         ),
       ],
+      verify: (cubit) => expect(
+        sourceKinds(cubit.state.rooms.first).keys,
+        unorderedEquals(['name', 'area_m2', 'level', 'floor_covering']),
+      ),
     );
 
     blocTest<SurfacesCubit, SurfacesState>(
@@ -180,8 +194,10 @@ void main() {
         ),
       ),
       expect: () => [
-        const SurfacesState(
-          rooms: [
+        isA<SurfacesState>().having(
+          (state) => state.rooms.map(withoutSources).toList(),
+          'rooms',
+          const [
             Room(
               id: 'new-0',
               propertyId: 'p',

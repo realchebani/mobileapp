@@ -150,14 +150,7 @@ void main() {
       expect(find.text('Tuiles'), findsNothing);
       await tester.tap(find.text('Enregistrer et continuer'));
       await tester.pump();
-      final patch =
-          verify(
-                () => cubit.saveAndContinue(
-                  SellerTunnelStep.technical,
-                  captureAny(),
-                ),
-              ).captured.single
-              as Map<String, Object?>;
+      final patch = savedStepPatch(cubit, SellerTunnelStep.technical);
       expect(patch[PropertyColumns.roofType], isNull);
       expect(patch.containsKey(PropertyColumns.provenance), isFalse);
     });
@@ -221,14 +214,7 @@ void main() {
       await tester.tap(find.text('Enregistrer et continuer'));
       await tester.pump();
 
-      final patch =
-          verify(
-                () => cubit.saveAndContinue(
-                  SellerTunnelStep.technical,
-                  captureAny(),
-                ),
-              ).captured.single
-              as Map<String, Object?>;
+      final patch = savedStepPatch(cubit, SellerTunnelStep.technical);
       expect(patch[PropertyColumns.constructionYear], 1998);
       expect(patch[PropertyColumns.poolLengthM], 8.0);
       expect(patch.containsKey(PropertyColumns.provenance), isFalse);
@@ -274,14 +260,7 @@ void main() {
       await tester.tap(find.text('Enregistrer et continuer'));
       await tester.pump();
 
-      final patch =
-          verify(
-                () => cubit.saveAndContinue(
-                  SellerTunnelStep.technical,
-                  captureAny(),
-                ),
-              ).captured.single
-              as Map<String, Object?>;
+      final patch = savedStepPatch(cubit, SellerTunnelStep.technical);
       expect(patch, containsPair(PropertyColumns.constructionYear, 1975));
       expect(patch, containsPair(PropertyColumns.livingAreaM2, 120.5));
       expect(patch, containsPair(PropertyColumns.livingRoomAreaM2, 40.0));
@@ -358,7 +337,7 @@ void main() {
       expect(find.text('Indiquez l’année de construction'), findsOneWidget);
       expect(find.text('Indiquez la surface habitable'), findsOneWidget);
       expect(find.text('Indiquez le nombre de niveaux'), findsOneWidget);
-      verifyNever(() => cubit.saveAndContinue(any(), any()));
+      verifyNoStepSaved(cubit);
 
       // Reveals the heating once the identity card is answered.
       await tester.enterText(_field('Année de construction'), '1998');
@@ -530,14 +509,7 @@ void main() {
         find.text('Choisissez au moins un système de chauffage'),
         findsNothing,
       );
-      final patch =
-          verify(
-                () => cubit.saveAndContinue(
-                  SellerTunnelStep.technical,
-                  captureAny(),
-                ),
-              ).captured.single
-              as Map<String, Object?>;
+      final patch = savedStepPatch(cubit, SellerTunnelStep.technical);
       expect(patch[PropertyColumns.heatingSystems], isEmpty);
     });
 
@@ -565,14 +537,7 @@ void main() {
       await tester.tap(find.text('Puits perdu'));
       await tester.tap(find.text('Enregistrer et continuer'));
       await tester.pump();
-      final patch =
-          verify(
-                () => cubit.saveAndContinue(
-                  SellerTunnelStep.technical,
-                  captureAny(),
-                ),
-              ).captured.single
-              as Map<String, Object?>;
+      final patch = savedStepPatch(cubit, SellerTunnelStep.technical);
       expect(patch[PropertyColumns.sanitation], Sanitation.soakaway);
       expect(patch[PropertyColumns.constructionYear], isNull);
     });

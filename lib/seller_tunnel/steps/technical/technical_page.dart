@@ -30,10 +30,23 @@ class TechnicalPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) => TechnicalCubit(
-        property: context.read<SellerTunnelCubit>().state.property!,
-      ),
+    final tunnel = context.read<SellerTunnelCubit>().state;
+    // EPIC-16: the values said on another step start the form « À
+    // confirmer ».
+    final trace = StepVoiceFirst.createTrace(
+      tunnel,
+      SellerTunnelStep.technical,
+    );
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider.value(value: trace),
+        BlocProvider(
+          create: (context) => TechnicalCubit(
+            property: trace.state.prefilledProperty(tunnel.property!),
+            saved: tunnel.property,
+          ),
+        ),
+      ],
       child: const TechnicalView(),
     );
   }
@@ -54,18 +67,26 @@ class _TechnicalViewState extends State<TechnicalView> {
   static const SellerTunnelStep _step = SellerTunnelStep.technical;
 
   /// The microphone (EPIC-14, owner decision Q4): the V4b voice sheet,
-  /// whose answers fill this form (nothing saved before "Continuer").
-  Future<void> _openVoiceSheet() async {
+  /// whose answers fill this form (nothing saved before "Continuer");
+  /// opened by itself in the voice mode (EPIC-16).
+  Future<void> _openVoiceSheet({bool autoOpened = false}) async {
     final l10n = context.l10n;
-    await showStepVoiceSheet(
+    await StepVoiceFirst.openSheet(
       context,
-      propertyId: context.read<SellerTunnelCubit>().state.property!.id,
       step: AgentStep.technical,
       form: context.read<TechnicalCubit>(),
       title: l10n.technicalVoiceTitle,
       intro: l10n.technicalVoiceIntro,
+      autoOpened: autoOpened,
     );
   }
+
+  /// [patch] with its origins and notes, and the pending answers shown.
+  StepTraceSave _traced(Map<String, Object?> patch) => StepVoiceFirst.save(
+    context,
+    patch,
+    voiceSource: context.read<TechnicalCubit>().voiceSourceOf,
+  );
 
   /// "Conversation guidée" (or the microphone without the sheet): saves
   /// what was typed (without moving on), then opens V4, which reads the
@@ -78,8 +99,10 @@ class _TechnicalViewState extends State<TechnicalView> {
       technical.submit();
       return;
     }
-    if (state.values.keys.any(state.isChanged)) {
-      await tunnel.save(state.patch);
+    final traced = _traced(state.patch);
+    if (state.values.keys.any(state.isChanged) ||
+        traced.patch.length > state.patch.length) {
+      await tunnel.saveStep(traced.patch, resolve: traced.resolutions);
       if (tunnel.state.saveStatus == SellerTunnelSaveStatus.failure) return;
     }
     if (mounted) {
@@ -125,6 +148,12 @@ class _TechnicalViewState extends State<TechnicalView> {
     _heatPumpYear = TextEditingController(text: initial.heatPumpYear);
     _poolDimensions = TextEditingController(text: initial.poolDimensions);
     _usableArea = TextEditingController(text: initial.usableArea);
+    StepVoiceFirst.schedule(
+      context,
+      _step,
+      () => _openVoiceSheet(autoOpened: true),
+      when: widget.voiceSheet,
+    );
   }
 
   /// The text fields after a voice turn (typing keeps them equal).
@@ -214,12 +243,16 @@ class _TechnicalViewState extends State<TechnicalView> {
         BlocListener<TechnicalCubit, TechnicalState>(
           listenWhen: (previous, current) =>
               previous.saveRequests != current.saveRequests,
-          listener: (context, state) => unawaited(
-            context.read<SellerTunnelCubit>().saveAndContinue(
-              _step,
-              state.patch,
-            ),
-          ),
+          listener: (context, state) {
+            final traced = _traced(state.patch);
+            unawaited(
+              context.read<SellerTunnelCubit>().saveStepAndContinue(
+                _step,
+                traced.patch,
+                resolve: traced.resolutions,
+              ),
+            );
+          },
         ),
       ],
       child: TunnelScaffold(
@@ -278,6 +311,7 @@ class _TechnicalViewState extends State<TechnicalView> {
           ],
           if (state.asks(TechnicalField.outdoorEquipment))
             _outdoor(context, state, enabled: enabled),
+          StepNotesField(enabled: enabled),
           InlineBanner(
             message: l10n.technicalProvenanceNote,
             variant: InlineBannerVariant.info,
@@ -327,12 +361,19 @@ class _TechnicalViewState extends State<TechnicalView> {
     final tag = !always && provenance == Provenance.declared
         ? null
         : TechnicalProvenanceTag(provenance);
-    if (!state.dictated.contains(column)) return tag;
-    // Answered by voice on this visit.
+    // Answered by voice on this visit, or said on another step and
+    // pre-filled « À confirmer » (EPIC-16).
+    final voice = StepVoiceFirst.tagOf(
+      context,
+      column,
+      encodeVoiceDraft({column: state.values[column]})[column],
+      dictated: state.dictated.contains(column),
+    );
+    if (voice == null) return tag;
     return Wrap(
       spacing: RealestySpacing.xs,
       crossAxisAlignment: WrapCrossAlignment.center,
-      children: [?tag, const DictatedTag()],
+      children: [?tag, voice],
     );
   }
 

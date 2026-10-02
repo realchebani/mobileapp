@@ -2,11 +2,9 @@ import 'dart:typed_data';
 
 import 'package:equatable/equatable.dart';
 
-/// Tunnel step the agent works on (`agent_sessions.step`).
+/// Tunnel step the agent works on (`agent_sessions.step`). V1 has no voice
+/// (EPIC-16).
 enum AgentStep {
-  /// V1 · propriétaires.
-  owners('owners'),
-
   /// V2 · situations particulières (the address is only dictated).
   location('location'),
 
@@ -25,6 +23,13 @@ enum AgentStep {
   new(this.value);
 
   final String value;
+
+  static AgentStep? parse(Object? value) {
+    for (final step in values) {
+      if (step.value == value) return step;
+    }
+    return null;
+  }
 }
 
 /// A recorded utterance, transcribed (`agent-transcribe`).
@@ -93,10 +98,7 @@ enum AgentEntity {
   room('room'),
 
   /// V3 · a previous agency estimate.
-  previousEstimate('previous_estimate'),
-
-  /// V1 · a co-owner (first and last names only).
-  coOwner('co_owner');
+  previousEstimate('previous_estimate');
 
   new(this.value);
 
@@ -128,7 +130,7 @@ enum AgentEntityOp {
 }
 
 /// A validated change of an entity: a room created, a previous estimate
-/// updated, a co-owner added… [target] is `new` or the short reference
+/// updated… [target] is `new` or the short reference
 /// the app sent (R1, E2…); [values] are as stored (`area_m2`, `level`…;
 /// a room also has its `kind`, the `RoomSuggestion` name).
 final class AgentEntityChange extends Equatable {
@@ -198,7 +200,6 @@ final class AgentEntityChange extends Equatable {
 enum AgentConfirmationReason {
   typeChange('type_change'),
   delete('delete'),
-  coOwner('co_owner'),
   mediumConfidence('medium_confidence'),
   strongChange('strong_change'),
   clearSituations('clear_situations'),
@@ -273,6 +274,93 @@ final class AgentOutOfStep extends Equatable {
   List<Object?> get props => [field, step, label];
 }
 
+/// What a value said for another step is (`pending_answers.kind`).
+enum AgentCrossStepKind {
+  field('field'),
+  room('room'),
+  previousEstimate('previous_estimate'),
+  lifestyleItem('lifestyle_item'),
+  note('note');
+
+  new(this.value);
+
+  final String value;
+
+  static AgentCrossStepKind parse(Object? value) {
+    for (final kind in values) {
+      if (kind.value == value) return kind;
+    }
+    return note;
+  }
+}
+
+/// A value said on one step for another one (EPIC-16), kept by the server
+/// as a pending answer ([id]) and pre-filled « À confirmer » on
+/// [targetStep]: "Noté pour Technique · Construction 1998".
+final class AgentCrossStep extends Equatable {
+  const new({
+    required this.id,
+    required this.targetStep,
+    required this.kind,
+    required this.label,
+    this.field,
+    this.value,
+    this.changedLabel,
+    this.quote = '',
+    this.confidence = 1,
+  });
+
+  new fromJson(Map<String, dynamic> json)
+    : this(
+        id: json['id'] as String,
+        targetStep: AgentStep.parse(json['target_step']) ?? AgentStep.technical,
+        kind: AgentCrossStepKind.parse(json['kind']),
+        field: json['field'] as String?,
+        value: json['value'],
+        label: json['label_fr'] as String? ?? '',
+        changedLabel: json['changed_fr'] as String?,
+        quote: json['quote'] as String? ?? '',
+        confidence: (json['confidence'] as num?)?.toDouble() ?? 1,
+      );
+
+  /// The `pending_answers` row.
+  final String id;
+  final AgentStep targetStep;
+  final AgentCrossStepKind kind;
+
+  /// The `properties` column ([AgentCrossStepKind.field]).
+  final String? field;
+
+  /// As stored: a code, a number, a list; the values of an entity; a note.
+  final Object? value;
+
+  /// "Construction 1998".
+  final String label;
+
+  /// "Construction : 1998 → 1999" when it replaces a saved value.
+  final String? changedLabel;
+
+  /// The words it comes from.
+  final String quote;
+  final double confidence;
+
+  /// Whether the model was unsure (0,5–0,7): a « ? » in the pill.
+  bool get unsure => confidence < 0.7;
+
+  @override
+  List<Object?> get props => [
+    id,
+    targetStep,
+    kind,
+    field,
+    value,
+    label,
+    changedLabel,
+    quote,
+    confidence,
+  ];
+}
+
 /// The answer of one agent turn (`agent-turn`). The server validated
 /// [patch] (column → value as stored: codes, numbers, lists) and
 /// [entityOps]; the app writes them itself.
@@ -290,6 +378,9 @@ final class AgentTurn extends Equatable {
     this.confirmations = const [],
     this.outOfStep = const [],
     this.corrections = const [],
+    this.notes = const [],
+    this.crossStep = const [],
+    this.supersededIds = const [],
     this.nextField,
     this.done = false,
   });
@@ -326,6 +417,18 @@ final class AgentTurn extends Equatable {
         corrections: [
           for (final item in json['corrections'] as List? ?? const [])
             item as String,
+        ],
+        notes: [
+          for (final note in json['notes'] as List? ?? const [])
+            (note as Map)['text'] as String,
+        ],
+        crossStep: [
+          for (final item in json['cross_step'] as List? ?? const [])
+            AgentCrossStep.fromJson(Map<String, dynamic>.from(item as Map)),
+        ],
+        supersededIds: [
+          for (final id in json['superseded_ids'] as List? ?? const [])
+            id as String,
         ],
         nextField: json['next_field'] as String?,
         done: json['done'] as bool? ?? false,
@@ -381,6 +484,16 @@ final class AgentTurn extends Equatable {
 
   /// Columns (or "room:R3"…) the seller corrected.
   final List<String> corrections;
+
+  /// What was said on the step and fits no field: appended to its « Notes
+  /// complémentaires ».
+  final List<String> notes;
+
+  /// Values said for other steps, kept as pending answers.
+  final List<AgentCrossStep> crossStep;
+
+  /// Pending answers replaced by this turn's [crossStep].
+  final List<String> supersededIds;
   final String? nextField;
 
   /// Whether nothing useful is missing any more.
@@ -392,35 +505,51 @@ final class AgentTurn extends Equatable {
       lifestyleItems.isNotEmpty ||
       suggestions.isNotEmpty ||
       entityOps.isNotEmpty ||
-      confirmations.isNotEmpty;
+      confirmations.isNotEmpty ||
+      notes.isNotEmpty ||
+      crossStep.isNotEmpty;
 
-  /// This turn with [ops] as its entity operations (e.g. short
-  /// references resolved to stable ids by the form).
-  AgentTurn withEntityOps(List<AgentEntityChange> ops) => AgentTurn(
+  AgentTurn _copy({
+    required List<AgentEntityChange> entityOps,
+    Map<String, Object?>? patch,
+    List<AgentPill>? facts,
+    List<String>? notes,
+    List<AgentCrossStep>? crossStep,
+  }) => AgentTurn(
     turnId: turnId,
     transcript: transcript,
     reply: reply,
-    patch: patch,
-    facts: facts,
+    patch: patch ?? this.patch,
+    facts: facts ?? this.facts,
     pending: pending,
     lifestyleItems: lifestyleItems,
     suggestions: suggestions,
-    entityOps: ops,
+    entityOps: entityOps,
     confirmations: confirmations,
     outOfStep: outOfStep,
     corrections: corrections,
+    notes: notes ?? this.notes,
+    crossStep: crossStep ?? this.crossStep,
+    supersededIds: supersededIds,
     nextField: nextField,
     done: done,
   );
 
-  /// This turn without the answer [key]: a column of [patch] (its fact
-  /// too) or `op:<index>` of [entityOps] (the seller undid that pill).
+  /// This turn with [ops] as its entity operations (e.g. short
+  /// references resolved to stable ids by the form).
+  AgentTurn withEntityOps(List<AgentEntityChange> ops) => _copy(entityOps: ops);
+
+  /// This turn without the answer [key] (the seller undid that pill): a
+  /// column of [patch] (its fact too), `op:<index>` of [entityOps],
+  /// `note:<index>` of [notes] or `x:<pending id>` of [crossStep].
   AgentTurn without(String key) {
-    final index = key.startsWith('op:') ? int.tryParse(key.substring(3)) : null;
-    return AgentTurn(
-      turnId: turnId,
-      transcript: transcript,
-      reply: reply,
+    int? indexOf(String prefix) => key.startsWith(prefix)
+        ? int.tryParse(key.substring(prefix.length))
+        : null;
+    final op = indexOf('op:');
+    final note = indexOf('note:');
+    final cross = key.startsWith('x:') ? key.substring(2) : null;
+    return _copy(
       patch: {
         for (final MapEntry(key: column, :value) in patch.entries)
           if (column != key) column: value,
@@ -429,18 +558,18 @@ final class AgentTurn extends Equatable {
         for (final fact in facts)
           if (fact.field != key) fact,
       ],
-      pending: pending,
-      lifestyleItems: lifestyleItems,
-      suggestions: suggestions,
       entityOps: [
-        for (final (i, op) in entityOps.indexed)
-          if (i != index) op,
+        for (final (i, change) in entityOps.indexed)
+          if (i != op) change,
       ],
-      confirmations: confirmations,
-      outOfStep: outOfStep,
-      corrections: corrections,
-      nextField: nextField,
-      done: done,
+      notes: [
+        for (final (i, text) in notes.indexed)
+          if (i != note) text,
+      ],
+      crossStep: [
+        for (final item in crossStep)
+          if (item.id != cross) item,
+      ],
     );
   }
 
@@ -458,6 +587,9 @@ final class AgentTurn extends Equatable {
     confirmations,
     outOfStep,
     corrections,
+    notes,
+    crossStep,
+    supersededIds,
     nextField,
     done,
   ];
@@ -546,7 +678,6 @@ final class AgentTurnContext extends Equatable {
     this.draft = const {},
     this.rooms = const [],
     this.estimates = const [],
-    this.coOwnersCount,
     this.lastRoomRef,
   });
 
@@ -556,7 +687,6 @@ final class AgentTurnContext extends Equatable {
   final Map<String, Object?> draft;
   final List<AgentRoom> rooms;
   final List<AgentEstimate> estimates;
-  final int? coOwnersCount;
 
   /// The room dictated last ("la dernière").
   final String? lastRoomRef;
@@ -567,7 +697,6 @@ final class AgentTurnContext extends Equatable {
     if (rooms.isNotEmpty) 'rooms': [for (final room in rooms) room.toJson()],
     if (estimates.isNotEmpty)
       'estimates': [for (final estimate in estimates) estimate.toJson()],
-    'co_owners_count': ?coOwnersCount,
     'last_room_ref': ?lastRoomRef,
   };
 
@@ -577,7 +706,6 @@ final class AgentTurnContext extends Equatable {
     draft,
     rooms,
     estimates,
-    coOwnersCount,
     lastRoomRef,
   ];
 }

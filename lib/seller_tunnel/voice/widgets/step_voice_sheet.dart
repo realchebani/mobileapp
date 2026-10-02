@@ -21,6 +21,12 @@ import 'package:mobileapp/ui/ui.dart';
 /// (a vibration per turn), listening resumes at once, and "Terminer" asks
 /// the spoken summary. [extra] is shown under the exchange (the dictated
 /// rooms).
+///
+/// EPIC-16: [pendingSink] keeps what is said for other steps; the intro
+/// lists the values pre-filled « À confirmer » ([prefilledLabels]); the
+/// header's « Écrire plutôt » closes the sheet and remembers the written
+/// mode. Opened by itself ([autoOpened]), a refused consent remembers the
+/// written mode too.
 Future<void> showStepVoiceSheet(
   BuildContext context, {
   required String propertyId,
@@ -33,11 +39,20 @@ Future<void> showStepVoiceSheet(
   Widget? extra,
   List<String> Function()? assetLabels,
   List<String> Function()? watchPointLabels,
+  VoicePendingSink? pendingSink,
+  List<String> prefilledLabels = const [],
+  bool autoOpened = false,
 }) async {
   final services = VoiceServices.of(context);
   final l10n = context.l10n;
   final messenger = ScaffoldMessenger.maybeOf(context);
-  if (!await ensureVoiceConsent(context) || !context.mounted) return;
+  if (!await ensureVoiceConsent(context)) {
+    if (autoOpened) {
+      await services.preferences?.setInputMode(VoiceInputMode.text);
+    }
+    return;
+  }
+  if (!context.mounted) return;
   VoiceConversationCubit? conversation;
   await showModalBottomSheet<void>(
     context: context,
@@ -55,8 +70,12 @@ Future<void> showStepVoiceSheet(
           preferences: services.preferences!,
           propertyId: propertyId,
           step: step,
-          intro: intro,
+          intro: prefilledLabels.isEmpty
+              ? intro
+              : l10n.voiceFirstPrefilledIntro(prefilledLabels.join(', ')),
           form: form,
+          pendingSink: pendingSink,
+          updateLabel: (item) => prefillUpdateLabel(l10n, item),
           speakReplies: !dictation,
           stopWhenDone: !dictation,
           summary: summary,
@@ -67,6 +86,8 @@ Future<void> showStepVoiceSheet(
             nothingToCancel: l10n.voiceSheetNothingToCancel,
             confirmed: l10n.voiceSheetConfirmed,
             rejected: l10n.voiceSheetRejected,
+            prefilledConfirmed: l10n.voiceFirstPrefilledConfirmed,
+            notePrefix: l10n.prefillNotePrefix,
           ),
         );
         unawaited(cubit.start());
@@ -160,14 +181,40 @@ class StepVoiceSheet extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     spacing: 12,
                     children: [
-                      Semantics(
-                        header: true,
-                        child: Text(
-                          title,
-                          style: RealestyTextStyles.title2.copyWith(
-                            color: c.nuitTexte,
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Semantics(
+                              header: true,
+                              child: Text(
+                                title,
+                                style: RealestyTextStyles.title2.copyWith(
+                                  color: c.nuitTexte,
+                                ),
+                              ),
+                            ),
                           ),
-                        ),
+                          // EPIC-16: back to the form, remembered.
+                          TextButton(
+                            style: TextButton.styleFrom(
+                              minimumSize: const Size(
+                                RealestySpacing.minTouchTarget,
+                                RealestySpacing.minTouchTarget,
+                              ),
+                            ),
+                            onPressed: () {
+                              unawaited(
+                                VoiceServices.of(context).preferences
+                                    ?.setInputMode(VoiceInputMode.text),
+                              );
+                              Navigator.of(context).maybePop();
+                            },
+                            child: Text(
+                              l10n.voiceFirstWriteInstead,
+                              style: link,
+                            ),
+                          ),
+                        ],
                       ),
                       Center(
                         child: ListeningOrb(
@@ -220,7 +267,8 @@ class StepVoiceSheet extends StatelessWidget {
                         ),
                       if (state.applied.isNotEmpty ||
                           state.pending.isNotEmpty ||
-                          state.outOfStep.isNotEmpty)
+                          state.outOfStep.isNotEmpty ||
+                          state.crossStep.isNotEmpty)
                         Wrap(
                           spacing: 6,
                           runSpacing: 6,
@@ -237,6 +285,14 @@ class StepVoiceSheet extends StatelessWidget {
                               FactPill(label: pill.label, pending: true),
                             for (final item in state.outOfStep)
                               OutOfStepPill(label: item.label),
+                            for (final pill in state.crossStep)
+                              CrossStepPill(
+                                label: prefillNotedLabel(l10n, pill.item),
+                                undoLabel: l10n.voiceSheetUndoPill(
+                                  pill.item.label,
+                                ),
+                                onUndo: () => cubit.undoCross(pill),
+                              ),
                           ],
                         ),
                       if (state.appliedTurns > 0)
@@ -248,6 +304,18 @@ class StepVoiceSheet extends StatelessWidget {
                           ),
                         ),
                       ?extra,
+                      // Nothing understood for several turns.
+                      if (state.suggestScreenMode)
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: TextButton(
+                            onPressed: () => Navigator.of(context).maybePop(),
+                            child: Text(
+                              l10n.voiceFirstContinueInWriting,
+                              style: link,
+                            ),
+                          ),
+                        ),
                       if (error != null)
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -501,6 +569,144 @@ class DictatedTag extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// The French name of [step] (« Noté pour Technique »).
+String voiceStepLabel(AppLocalizations l10n, AgentStep step) => switch (step) {
+  AgentStep.location => l10n.voiceStepLocation,
+  AgentStep.context => l10n.voiceStepContext,
+  AgentStep.technical => l10n.voiceStepTechnical,
+  AgentStep.rooms => l10n.voiceStepRooms,
+  AgentStep.lifestyle => l10n.voiceStepLifestyle,
+};
+
+/// « Noté pour Technique · Construction 1998 » (« ? » when unsure).
+String prefillNotedLabel(AppLocalizations l10n, AgentCrossStep item) {
+  final label = l10n.prefillNotedFor(
+    voiceStepLabel(l10n, item.targetStep),
+    item.label,
+  );
+  return item.unsure ? '$label\u00a0?' : label;
+}
+
+/// « Mettre à jour Contexte · Prix d’achat : 300 000 € → 320 000 € ? »,
+/// or « Ajouter à Contexte · … ? » when the field was empty.
+String prefillUpdateLabel(AppLocalizations l10n, AgentCrossStep item) {
+  final step = voiceStepLabel(l10n, item.targetStep);
+  final changed = item.changedLabel;
+  return changed == null
+      ? l10n.prefillAddTo(step, item.label)
+      : l10n.prefillUpdate(step, changed);
+}
+
+/// A value said for another step (atténuée, arrow): « Noté pour Technique ·
+/// Construction 1998 », with its "Annuler" cross while the sheet is open.
+class CrossStepPill extends StatelessWidget {
+  const new({
+    required this.label,
+    required this.undoLabel,
+    required this.onUndo,
+    super.key,
+  });
+
+  final String label;
+  final String undoLabel;
+  final VoidCallback onUndo;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.realestyColors;
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minHeight: 44),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: c.lueur.withValues(alpha: 0.18),
+          border: Border.all(color: c.lueur.withValues(alpha: 0.6)),
+          borderRadius: BorderRadius.circular(22),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(width: 12),
+            RealestyIcon(RealestyIcons.chevronRight, size: 12, color: c.lueur),
+            const SizedBox(width: 5),
+            Flexible(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 6),
+                child: Text(
+                  label,
+                  style: RealestyTextStyles.badge.copyWith(color: c.nuitTexte),
+                ),
+              ),
+            ),
+            Semantics(
+              button: true,
+              label: undoLabel,
+              excludeSemantics: true,
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: onUndo,
+                child: SizedBox.square(
+                  dimension: 44,
+                  child: Center(
+                    child: RealestyIcon(
+                      RealestyIcons.close,
+                      size: 14,
+                      color: c.nuitTexte,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// « À confirmer »: a value said on another step and pre-filled here; a
+/// touch shows the words it comes from ([quote]).
+class ToConfirmTag extends StatelessWidget {
+  const new({this.quote, super.key});
+
+  final String? quote;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.realestyColors;
+    final tag = Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: c.attentionFond,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        spacing: 3,
+        children: [
+          RealestyIcon(RealestyIcons.mic, size: 10, color: c.attention),
+          // Wraps in a narrow column (rooms table) instead of overflowing.
+          Flexible(
+            child: Text(
+              context.l10n.prefillToConfirm,
+              style: RealestyTextStyles.badge.copyWith(
+                color: c.attention,
+                fontSize: 10,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+    final quote = this.quote;
+    if (quote == null || quote.isEmpty) return tag;
+    return Tooltip(
+      message: '« $quote »',
+      triggerMode: TooltipTriggerMode.tap,
+      child: tag,
     );
   }
 }

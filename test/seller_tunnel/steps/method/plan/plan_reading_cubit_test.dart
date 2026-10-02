@@ -143,7 +143,13 @@ void main() {
       );
       expect(cubit.state.roomsSaved, isTrue);
       expect(saved, hasLength(2));
-      expect(saved.last, [
+      expect(sourceKinds(saved.last[1]), {
+        'name': 'extrait',
+        'area_m2': 'extrait',
+        'level': 'extrait',
+      });
+      expect(sourceKinds(saved.last[2])['name'], 'saisi');
+      expect(saved.last.map(withoutSources), [
         existing.single,
         const Room(
           id: 'room-1',

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:material_ui/material_ui.dart';
 import 'package:mobileapp/l10n/l10n.dart';
 import 'package:mobileapp/seller_tunnel/voice/voice_services.dart';
@@ -8,7 +10,10 @@ import 'package:mobileapp/ui/ui.dart';
 ///
 /// The microphone shows when the step handles it ([onMicPressed]) and
 /// voice is available ([VoiceServices.isAvailable]: `VOICE_ENABLED` flag of
-/// the flavor); otherwise the tunnel stays screen-only.
+/// the flavor); otherwise the tunnel stays screen-only. In the written
+/// mode (« Écrire plutôt », EPIC-16), a « Répondre à la voix » link brings
+/// voice back as the input mode and opens the sheet; the microphone alone
+/// is a one-off use that keeps the preference.
 class AgentActionBar extends StatelessWidget {
   const new({
     required this.label,
@@ -58,6 +63,13 @@ class AgentActionBar extends StatelessWidget {
     final hint = showMic || this.hint != l10n.tunnelHintVoiceOrScreen
         ? this.hint
         : null;
+    final preferences = VoiceServices.of(context).preferences;
+    final onMic = onMicPressed;
+    final voiceLink =
+        showMic &&
+        onMic != null &&
+        preferences != null &&
+        preferences.inputMode == VoiceInputMode.text;
     return DecoratedBox(
       decoration: BoxDecoration(
         color: c.ivoire,
@@ -84,6 +96,22 @@ class AgentActionBar extends StatelessWidget {
                   style: RealestyTextStyles.badge.copyWith(
                     fontWeight: FontWeight.w400,
                     color: c.texteDiscret,
+                  ),
+                ),
+              if (voiceLink)
+                TextButton(
+                  style: TextButton.styleFrom(
+                    minimumSize: const Size(0, RealestySpacing.minTouchTarget),
+                  ),
+                  onPressed: () {
+                    unawaited(preferences.setInputMode(VoiceInputMode.voice));
+                    onMic();
+                  },
+                  child: Text(
+                    l10n.voiceFirstAnswerByVoice,
+                    style: RealestyTextStyles.badge.copyWith(
+                      color: c.vertTexte,
+                    ),
                   ),
                 ),
               Row(

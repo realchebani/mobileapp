@@ -133,7 +133,7 @@ void main() {
       expect(find.text('Annexe'), findsNothing);
       expect(find.text('52,5${_nbsp}m²'), findsOneWidget);
       expect(find.bySemanticsLabel('Modifier Séjour'), findsOneWidget);
-      expect(find.text('Tout est correct, continuer'), findsOneWidget);
+      expect(find.text('C’est correct, continuer'), findsOneWidget);
     });
 
     testWidgets('counts the annexes apart from the living area', (
@@ -153,30 +153,28 @@ void main() {
       expect(find.text('52,5${_nbsp}m²'), findsOneWidget);
       expect(find.text('Annexes$_nbsp: 18,0${_nbsp}m²'), findsOneWidget);
 
-      await tester.tap(find.text('Tout est correct, continuer'));
+      await tester.tap(find.text('C’est correct, continuer'));
       await tester.pumpAndSettle();
-      verify(
-        () => cubit.saveAndContinue(SellerTunnelStep.surfaces, {
-          PropertyColumns.livingAreaM2: 52.5,
-          PropertyColumns.annexAreaM2: 18.0,
-          PropertyColumns.provenance: {
-            'construction_year': 'document',
-            'living_area_m2': 'declared',
-            'annex_area_m2': 'declared',
-          },
-        }),
-      ).called(1);
+      expect(savedStepPatch(cubit, SellerTunnelStep.surfaces), {
+        PropertyColumns.livingAreaM2: 52.5,
+        PropertyColumns.annexAreaM2: 18.0,
+        PropertyColumns.provenance: {
+          'construction_year': 'document',
+          'living_area_m2': 'declared',
+          'annex_area_m2': 'declared',
+        },
+      });
     });
 
     testWidgets('annexes alone cannot continue', (tester) async {
       final cubit = await pump(tester, state: _state(rooms: const [_garage]));
-      await tester.tap(find.text('Tout est correct, continuer'));
+      await tester.tap(find.text('C’est correct, continuer'));
       await tester.pumpAndSettle();
       expect(
         find.text('Ajoutez au moins une pièce habitable pour continuer.'),
         findsOneWidget,
       );
-      verifyNever(() => cubit.saveAndContinue(any(), any()));
+      verifyNoStepSaved(cubit);
     });
 
     testWidgets('templates the agent message by count', (tester) async {
@@ -213,14 +211,14 @@ void main() {
       expect(find.text('0,0${_nbsp}m²'), findsOneWidget);
       expect(find.byType(RealestyBadge), findsNothing);
 
-      await tester.tap(find.text('Tout est correct, continuer'));
+      await tester.tap(find.text('C’est correct, continuer'));
       await tester.pumpAndSettle();
 
       expect(
         find.text('Ajoutez au moins une pièce habitable pour continuer.'),
         findsOneWidget,
       );
-      verifyNever(() => cubit.saveAndContinue(any(), any()));
+      verifyNoStepSaved(cubit);
     });
 
     testWidgets('adds a room on the level of the last one', (tester) async {
@@ -285,24 +283,22 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('Supprimer cette pièce'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Tout est correct, continuer'));
+      await tester.tap(find.text('C’est correct, continuer'));
       await tester.pumpAndSettle();
 
       verify(() => repository.deleteRoom('r3')).called(1);
       verifyNever(() => repository.saveRoom(any()));
       verify(() => cubit.updateChildren(rooms: const [_living, _bedroom]))
           .called(1);
-      verify(
-        () => cubit.saveAndContinue(SellerTunnelStep.surfaces, {
-          PropertyColumns.livingAreaM2: 50.9,
-          PropertyColumns.annexAreaM2: 0.0,
-          PropertyColumns.provenance: {
-            'construction_year': 'document',
-            'living_area_m2': 'declared',
-            'annex_area_m2': 'declared',
-          },
-        }),
-      ).called(1);
+      expect(savedStepPatch(cubit, SellerTunnelStep.surfaces), {
+        PropertyColumns.livingAreaM2: 50.9,
+        PropertyColumns.annexAreaM2: 0.0,
+        PropertyColumns.provenance: {
+          'construction_year': 'document',
+          'living_area_m2': 'declared',
+          'annex_area_m2': 'declared',
+        },
+      });
     });
 
     testWidgets('a failed save shows an error', (tester) async {
@@ -313,7 +309,7 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('Supprimer cette pièce'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Tout est correct, continuer'));
+      await tester.tap(find.text('C’est correct, continuer'));
       await tester.pumpAndSettle();
 
       expect(
@@ -322,7 +318,7 @@ void main() {
         ),
         findsOneWidget,
       );
-      verifyNever(() => cubit.saveAndContinue(any(), any()));
+      verifyNoStepSaved(cubit);
       // The tunnel keeps the rows still stored.
       verify(() => cubit.updateChildren(rooms: const [_living, _bedroom, _wc]))
           .called(1);
@@ -337,7 +333,7 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('Supprimer cette pièce'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Tout est correct, continuer'));
+      await tester.tap(find.text('C’est correct, continuer'));
       await tester.pump();
 
       expect(
@@ -386,7 +382,7 @@ void main() {
 
     testWidgets('reveals the error on a small screen', (tester) async {
       await pump(tester, state: _state(rooms: const []), height: 500);
-      await tester.tap(find.text('Tout est correct, continuer'));
+      await tester.tap(find.text('C’est correct, continuer'));
       await tester.pumpAndSettle();
       expect(
         find.text('Ajoutez au moins une pièce habitable pour continuer.'),

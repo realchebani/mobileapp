@@ -26,15 +26,23 @@ class PropertyContextPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) {
-        final tunnel = context.read<SellerTunnelCubit>().state;
-        return PropertyContextCubit(
-          propertyRepository: context.read<PropertyRepository>(),
-          property: tunnel.property!,
-          estimates: tunnel.previousEstimates,
-        );
-      },
+    final tunnel = context.read<SellerTunnelCubit>().state;
+    // EPIC-16: what was said on another step starts « À confirmer ».
+    final trace = StepVoiceFirst.createTrace(tunnel, SellerTunnelStep.context);
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider.value(value: trace),
+        BlocProvider(
+          create: (context) => PropertyContextCubit(
+            propertyRepository: context.read<PropertyRepository>(),
+            property: trace.state.prefilledProperty(tunnel.property!),
+            estimates: tunnel.previousEstimates,
+            pendingEstimates: trace.state.prefilledOf(
+              PendingKind.previousEstimate,
+            ),
+          ),
+        ),
+      ],
       child: const PropertyContextView(),
     );
   }
@@ -82,16 +90,27 @@ class _PropertyContextViewState extends State<PropertyContextView> {
     sync(_price, state.purchasePrice);
   }
 
-  /// The V3 voice sheet (EPIC-14): type, purchase, reason, estimates.
-  Future<void> _openVoiceSheet() async {
+  /// The V3 voice sheet (EPIC-14): type, purchase, reason, estimates;
+  /// opened by itself in the voice mode (EPIC-16).
+  Future<void> _openVoiceSheet({bool autoOpened = false}) async {
     final l10n = context.l10n;
-    await showStepVoiceSheet(
+    await StepVoiceFirst.openSheet(
       context,
-      propertyId: context.read<SellerTunnelCubit>().state.property!.id,
       step: AgentStep.context,
       form: context.read<PropertyContextCubit>(),
       title: l10n.contextVoiceTitle,
       intro: l10n.contextVoiceIntro,
+      autoOpened: autoOpened,
+    );
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    StepVoiceFirst.schedule(
+      context,
+      _step,
+      () => _openVoiceSheet(autoOpened: true),
     );
   }
 
@@ -115,7 +134,27 @@ class _PropertyContextViewState extends State<PropertyContextView> {
       case PropertyContextSubmission.success:
         final tunnel = context.read<SellerTunnelCubit>()
           ..updateChildren(previousEstimates: state.savedEstimates);
-        unawaited(tunnel.saveAndContinue(_step, state.patch));
+        final traced = StepVoiceFirst.save(
+          context,
+          state.patch,
+          voiceSource: context.read<PropertyContextCubit>().voiceSourceOf,
+        );
+        unawaited(
+          tunnel.saveStepAndContinue(
+            _step,
+            traced.patch,
+            resolve: {
+              for (final resolution in {
+                ...traced.resolutions.keys,
+                ...state.estimateResolutions.keys,
+              })
+                resolution: [
+                  ...?traced.resolutions[resolution],
+                  ...?state.estimateResolutions[resolution],
+                ],
+            },
+          ),
+        );
       case PropertyContextSubmission.failure:
         showRealestySnackBar(
           context,
@@ -192,7 +231,19 @@ class _PropertyContextViewState extends State<PropertyContextView> {
           (cubit) => cubit.state.profile.hasVoice(_step),
         );
     bool dictated(String column) => state.dictated.contains(column);
-    Widget? tag(String column) => dictated(column) ? const DictatedTag() : null;
+    // « Dicté », or « À confirmer » for a value said on another step.
+    final values = encodeVoiceDraft(state.patch);
+    Widget? tag(String column) => StepVoiceFirst.tagOf(
+      context,
+      column,
+      values[column],
+      dictated: dictated(column),
+    );
+    final trace = context.watch<StepTraceCubit>().state;
+    final estimateToConfirm = state.estimates.any(
+      (draft) =>
+          draft.pendingId != null && !trace.confirmed.contains(draft.pendingId),
+    );
     return MultiBlocListener(
       listeners: [
         BlocListener<PropertyContextCubit, PropertyContextState>(
@@ -219,7 +270,11 @@ class _PropertyContextViewState extends State<PropertyContextView> {
           hint: l10n.contextHint,
           label: l10n.tunnelContinue,
           isLoading: busy,
-          onPressed: cubit.submit,
+          onPressed: () => unawaited(
+            cubit.submit(
+              confirmed: context.read<StepTraceCubit>().state.confirmed,
+            ),
+          ),
           onMicPressed: busy || !voice
               ? null
               : () => unawaited(_openVoiceSheet()),
@@ -320,7 +375,7 @@ class _PropertyContextViewState extends State<PropertyContextView> {
                 ContextQuestion(
                   key: _selfBuiltKey,
                   label: l10n.contextSelfBuiltLabel,
-                  dictated: dictated(PropertyColumns.selfBuilt),
+                  tag: tag(PropertyColumns.selfBuilt),
                   errorText: error(
                     state.selfBuiltError,
                     () => l10n.contextErrorSelfBuilt,
@@ -334,7 +389,7 @@ class _PropertyContextViewState extends State<PropertyContextView> {
               ContextQuestion(
                 label: l10n.contextSaleReasonLabel,
                 spacing: RealestySpacing.xs,
-                dictated: dictated(PropertyColumns.saleReason),
+                tag: tag(PropertyColumns.saleReason),
                 child: Wrap(
                   spacing: RealestySpacing.xs,
                   runSpacing: RealestySpacing.xs,
@@ -350,7 +405,17 @@ class _PropertyContextViewState extends State<PropertyContextView> {
               ),
               ContextQuestion(
                 label: l10n.contextPreviouslyEstimatedLabel,
-                dictated: dictated(PropertyColumns.previouslyEstimated),
+                // « Oui » set by an estimate said on another step.
+                tag:
+                    estimateToConfirm &&
+                        context
+                                .read<SellerTunnelCubit>()
+                                .state
+                                .property
+                                ?.previouslyEstimated !=
+                            true
+                    ? const ToConfirmTag()
+                    : tag(PropertyColumns.previouslyEstimated),
                 child: _YesNo(
                   value: state.previouslyEstimated,
                   onChanged: (value) => cubit.previouslyEstimatedChanged(
@@ -371,11 +436,15 @@ class _PropertyContextViewState extends State<PropertyContextView> {
                         draft: draft,
                         index: index,
                         error: error,
+                        toConfirm:
+                            draft.pendingId != null &&
+                            !trace.confirmed.contains(draft.pendingId),
                       ),
                   ],
                 ),
             ],
           ),
+          StepNotesField(enabled: !busy),
         ],
       ),
     );
@@ -387,6 +456,7 @@ class _PropertyContextViewState extends State<PropertyContextView> {
     required EstimateDraft draft,
     required int index,
     required String? Function(PropertyContextError?, String Function()) error,
+    bool toConfirm = false,
   }) {
     final l10n = context.l10n;
     final cubit = context.read<PropertyContextCubit>();
@@ -408,6 +478,7 @@ class _PropertyContextViewState extends State<PropertyContextView> {
       onAgencyChanged: (value) =>
           cubit.estimateChanged(draft.key, agency: value),
       onRemove: count > 1 ? () => cubit.estimateRemoved(draft.key) : null,
+      tag: toConfirm ? const ToConfirmTag() : null,
       footer: isLast
           ? RealestyButton(
               label: l10n.contextEstimateAdd,
@@ -452,7 +523,12 @@ class _PropertyContextViewState extends State<PropertyContextView> {
         ContextQuestion(
           label: l10n.contextLandKindLabel,
           spacing: RealestySpacing.xs,
-          dictated: state.dictated.contains(PropertyColumns.landKind),
+          tag: StepVoiceFirst.tagOf(
+            context,
+            PropertyColumns.landKind,
+            state.landKind?.value,
+            dictated: state.dictated.contains(PropertyColumns.landKind),
+          ),
           child: Wrap(
             spacing: RealestySpacing.xs,
             runSpacing: RealestySpacing.xs,
@@ -475,7 +551,12 @@ class _PropertyContextViewState extends State<PropertyContextView> {
         ContextQuestion(
           label: l10n.contextParkingKindLabel,
           spacing: RealestySpacing.xs,
-          dictated: state.dictated.contains(PropertyColumns.parkingKind),
+          tag: StepVoiceFirst.tagOf(
+            context,
+            PropertyColumns.parkingKind,
+            state.parkingKind?.value,
+            dictated: state.dictated.contains(PropertyColumns.parkingKind),
+          ),
           child: Wrap(
             spacing: RealestySpacing.xs,
             runSpacing: RealestySpacing.xs,

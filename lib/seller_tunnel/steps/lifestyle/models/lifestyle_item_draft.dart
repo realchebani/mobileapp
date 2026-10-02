@@ -56,6 +56,8 @@ final class LifestyleItemDraft extends Equatable {
     required this.kind,
     required this.label,
     this.source = LifestyleItemSource.declared,
+    this.fieldSources = const {},
+    this.pendingId,
   });
 
   /// The draft of a saved row.
@@ -65,6 +67,7 @@ final class LifestyleItemDraft extends Equatable {
         kind: item.kind,
         label: item.label,
         source: item.source,
+        fieldSources: item.fieldSources,
       );
 
   final String id;
@@ -77,11 +80,21 @@ final class LifestyleItemDraft extends Equatable {
 
   bool get fromVoice => source == LifestyleItemSource.voice;
 
+  /// Origin of the label (`field_sources`, EPIC-16); emptied when the label
+  /// is typed again (the save then records it as typed).
+  final Map<String, Object?> fieldSources;
+
+  /// The pending answer this item was pre-filled from (said on another
+  /// step, « À confirmer »).
+  final String? pendingId;
+
+  /// [label] typed by the seller: no longer the words said.
   LifestyleItemDraft copyWith({String? label}) => LifestyleItemDraft(
     id: id,
     kind: kind,
     label: label ?? this.label,
     source: source,
+    pendingId: pendingId,
   );
 
   /// The `lifestyle_items` row of this draft, at [sortOrder] in its list.
@@ -93,8 +106,20 @@ final class LifestyleItemDraft extends Equatable {
         label: label,
         sortOrder: sortOrder,
         source: source,
+        fieldSources: fieldSources,
+      );
+
+  /// This draft with the origin of its label.
+  LifestyleItemDraft withSources(Map<String, Object?> sources) =>
+      LifestyleItemDraft(
+        id: id,
+        kind: kind,
+        label: label,
+        source: source,
+        fieldSources: sources,
+        pendingId: pendingId,
       );
 
   @override
-  List<Object?> get props => [id, kind, label, source];
+  List<Object?> get props => [id, kind, label, source, fieldSources, pendingId];
 }

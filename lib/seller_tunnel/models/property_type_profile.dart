@@ -131,8 +131,8 @@ final class PropertyTypeProfile extends Equatable {
   /// Whether [step] has a voice sheet for this type.
   bool hasVoice(SellerTunnelStep step) => voiceSteps.contains(step);
 
+  /// V1 has no voice (EPIC-16, owner decision).
   static const Set<SellerTunnelStep> _voicedSteps = {
-    SellerTunnelStep.owners,
     SellerTunnelStep.location,
     SellerTunnelStep.context,
     SellerTunnelStep.technical,
@@ -256,6 +256,12 @@ final class PropertyTypeProfile extends Equatable {
     if (!steps.contains(SellerTunnelStep.lifestyle))
       PropertyColumns.secretNote: null,
   };
+
+  /// Whether a value said for [column] on another step may be pre-filled
+  /// « À confirmer » for this type (EPIC-16): the column is asked (a
+  /// pending answer of a column the type no longer asks stays hidden, and
+  /// expires when the dossier is sent).
+  bool prefills(String column) => !clearedOnSubmit.containsKey(column);
 
   /// The answers of [property] this type does not ask, emptied: the patch
   /// that clears them when the dossier is sent (only the ones with a
