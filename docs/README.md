@@ -13,6 +13,7 @@ Statuts : ✅ Terminé · 🚧 En cours · 📋 À faire
 | [EPIC-05](epics/EPIC-05-estimation-non-certifiee.md) | Estimation non certifiée (tendance de prix) | 📋 |
 | [EPIC-06](epics/EPIC-06-voix-et-agent-ia.md) | Voix et agent IA | 📋 |
 | [EPIC-07](epics/EPIC-07-tableau-de-bord-vendeur.md) | Espace vendeur : tableau de bord & avis de valeur | 🚧 |
+| [EPIC-14](epics/EPIC-14-voix-etendue.md) | Voix étendue à tout le tunnel vendeur (dictée de pièces) | 📋 |
 
 ## Plans d'implémentation
 
@@ -25,6 +26,7 @@ Chaque chantier commence par un plan, versionné dans [`plans/`](plans/) (`AAAA-
 | 2026-10-01 | [Estimation non certifiée](plans/2026-10-01-estimation-non-certifiee.md) (validé) | EPIC-05 |
 | 2026-10-01 | [Voix et agent IA](plans/2026-10-01-voix-et-agent-ia.md) (validé) | EPIC-06 |
 | 2026-10-01 | [Parcours vendeur V8b → V19](plans/2026-10-01-parcours-vendeur-v8b-v19.md) (questions ouvertes) | EPIC-07 à EPIC-11 |
+| 2026-10-02 | [Voix étendue à tout le tunnel](plans/2026-10-02-voix-etendue.md) (questions ouvertes, après EPIC-13) | EPIC-14 |
 
 ## Décisions et backlog
 
