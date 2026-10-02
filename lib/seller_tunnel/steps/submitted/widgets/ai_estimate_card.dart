@@ -2,16 +2,20 @@ import 'package:material_ui/material_ui.dart';
 import 'package:mobileapp/l10n/l10n.dart';
 import 'package:mobileapp/seller_tunnel/steps/submitted/widgets/submitted_format.dart';
 import 'package:mobileapp/ui/ui.dart';
+import 'package:property_repository/property_repository.dart';
 
 /// "Tendance IA" card (V8): indicative range computed by the backend, with
-/// a range bar marking the median. Only built when the three
-/// `ai_estimate_*` values exist.
+/// a range bar marking the median, its reliability and the link to the
+/// market summary (V8b). Built from a `market_snapshots` result.
 class AiEstimateCard extends StatelessWidget {
   const new({
     required this.low,
     required this.median,
     required this.high,
     this.computedAt,
+    this.confidence,
+    this.widenedNote,
+    this.onSynthesis,
     super.key,
   });
 
@@ -19,6 +23,16 @@ class AiEstimateCard extends StatelessWidget {
   final int median;
   final int high;
   final DateTime? computedAt;
+
+  /// Reliability of the estimate, hidden when unknown.
+  final EstimateConfidenceLevel? confidence;
+
+  /// Says that the search of comparable sales had to be widened (radius,
+  /// period); hidden when null.
+  final String? widenedNote;
+
+  /// Opens the market summary (V8b); the button is hidden when null.
+  final VoidCallback? onSynthesis;
 
   /// Share of the track left empty on each side of the range.
   static const _margin = 0.18;
@@ -28,6 +42,9 @@ class AiEstimateCard extends StatelessWidget {
     final l10n = context.l10n;
     final c = context.realestyColors;
     final computedAt = this.computedAt;
+    final confidence = this.confidence;
+    final onSynthesis = this.onSynthesis;
+    final widenedNote = this.widenedNote;
     final span = high - low;
     final medianShare = span <= 0
         ? 0.5
@@ -46,12 +63,14 @@ class AiEstimateCard extends StatelessWidget {
         spacing: RealestySpacing.sm,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            spacing: RealestySpacing.xs,
             children: [
-              Text(
-                l10n.submittedAiLabel.toUpperCase(),
-                style: RealestyTextStyles.caption.copyWith(
-                  color: c.texteDiscret,
+              Expanded(
+                child: Text(
+                  l10n.submittedAiLabel.toUpperCase(),
+                  style: RealestyTextStyles.caption.copyWith(
+                    color: c.texteDiscret,
+                  ),
                 ),
               ),
               RealestyBadge(
@@ -142,6 +161,39 @@ class AiEstimateCard extends StatelessWidget {
               ],
             ),
           ),
+          if (confidence != null)
+            Text(
+              switch (confidence) {
+                EstimateConfidenceLevel.high => l10n.submittedAiConfidenceHigh,
+                EstimateConfidenceLevel.medium =>
+                  l10n.submittedAiConfidenceMedium,
+                EstimateConfidenceLevel.low => l10n.submittedAiConfidenceLow,
+              },
+              style: RealestyTextStyles.listSubtitle.copyWith(
+                fontWeight: FontWeight.w700,
+                color: c.encre,
+              ),
+            ),
+          if (widenedNote != null)
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              spacing: RealestySpacing.xs,
+              children: [
+                RealestyIcon(
+                  RealestyIcons.infoCircle,
+                  size: 16,
+                  color: c.attention,
+                ),
+                Expanded(
+                  child: Text(
+                    widenedNote,
+                    style: RealestyTextStyles.listSubtitle.copyWith(
+                      color: c.encre,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           Text(
             computedAt == null
                 ? l10n.submittedAiComputedNoDate
@@ -150,6 +202,50 @@ class AiEstimateCard extends StatelessWidget {
               color: c.texteDiscret,
             ),
           ),
+          if (onSynthesis != null)
+            // Secondary button whose label wraps with large text sizes
+            // (RealestyButton keeps one line).
+            RealestyPressable(
+              onPressed: onSynthesis,
+              semanticLabel: l10n.submittedAiSynthesis,
+              child: Container(
+                constraints: const BoxConstraints(minHeight: 48),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: RealestySpacing.md,
+                  vertical: RealestySpacing.xs,
+                ),
+                decoration: BoxDecoration(
+                  color: c.surface,
+                  borderRadius: BorderRadius.circular(RealestyRadius.button),
+                  border: Border.all(
+                    color: c.ligne,
+                    width: RealestyBorders.medium,
+                  ),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  spacing: RealestySpacing.xs,
+                  children: [
+                    RealestyIcon(RealestyIcons.trending, color: c.encre),
+                    Flexible(
+                      child: Text(
+                        l10n.submittedAiSynthesis,
+                        textAlign: TextAlign.center,
+                        style: RealestyTextStyles.button.copyWith(
+                          fontSize: 15,
+                          color: c.encre,
+                        ),
+                      ),
+                    ),
+                    RealestyIcon(
+                      RealestyIcons.chevronRight,
+                      size: 18,
+                      color: c.encre,
+                    ),
+                  ],
+                ),
+              ),
+            ),
         ],
       ),
     );

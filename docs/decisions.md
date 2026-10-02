@@ -4,6 +4,8 @@ Journal des arbitrages du porteur de projet, du plus récent au plus ancien. Cha
 
 | Date | Décision | Contexte |
 |---|---|---|
+| 2026-10-02 | Recherche des ventes comparables : **la fraîcheur prime** — on garde les 2 dernières années et on **élargit d'abord la zone** (500 m → 1 → 2 → 5 → 10 → 20 km, communes voisines), la période (3 puis 5 ans) seulement si le plus grand rayon reste trop pauvre ; objectif ~10 ventes, pas d'estimation sous 5 ; l'indice de confiance reflète rayon et période ; V8 / V8b signalent une recherche élargie | EPIC-05 |
+| 2026-10-02 | Ventes comparables : rue (si ≥ 3 ventes), **distance arrondie à 100 m** et **année de vente seulement** (pas de mois), partout | EPIC-05 |
 | 2026-10-01 | Organisation : **une branche et une PR par epic** (worktrees séparés) | — |
 | 2026-10-01 | **Paiements : plus tard** (aucun paiement en v1) ; **mandat : signature de test** (case à cocher + signature dessinée, tests internes uniquement, montage juridique à faire valider avant tout vrai vendeur) | EPIC-08 |
 | 2026-10-01 | **Certification** : **mini back-office web** pour les experts, utilisable par un **expert embauché** (rôle dédié, accès restreint, confidentialité) et par des **experts partenaires** (saisie directe ou rapports saisis par l'équipe) | EPIC-12 (à créer) |

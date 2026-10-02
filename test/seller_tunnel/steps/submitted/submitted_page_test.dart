@@ -26,14 +26,43 @@ const _owner = PropertyOwner(
   email: 'sophie.durand@email.fr',
 );
 
+MarketSnapshot _snapshot(
+  MarketSnapshotStatus status, {
+  String? reason,
+  int? low = 495000,
+  int? median = 518000,
+  int? high = 540000,
+  DateTime? computedAt,
+  int? confidence = 75,
+  DateTime? createdAt,
+}) => MarketSnapshot(
+  id: 's1',
+  propertyId: 'property-id',
+  status: status,
+  reason: reason,
+  createdAt: createdAt ?? DateTime.now(),
+  computedAt: computedAt,
+  lowEur: low,
+  medianEur: median,
+  highEur: high,
+  confidence: confidence,
+);
+
 void main() {
   late _MockStore store;
+  late MockPropertyRepository repository;
 
   setUp(() {
     store = _MockStore();
     when(() => store.read(any())).thenAnswer((_) async => null);
     when(() => store.write(any(), enabled: any(named: 'enabled')))
         .thenAnswer((_) async {});
+    repository = MockPropertyRepository();
+    when(() => repository.getMarketSnapshot(any())).thenAnswer(
+      (_) async =>
+          _snapshot(MarketSnapshotStatus.insufficient, reason: 'too_few_sales'),
+    );
+    when(() => repository.requestEstimate(any())).thenAnswer((_) async {});
   });
 
   Future<void> pump(
@@ -62,6 +91,7 @@ void main() {
           ),
       appBloc: appBloc,
       goRouter: goRouter,
+      propertyRepository: repository,
     );
     await tester.pump();
   }
@@ -95,6 +125,7 @@ void main() {
       TimelineNodeState.todo,
     ]);
     expect(find.byType(AiEstimateCard), findsNothing);
+    expect(find.textContaining('Trop peu de ventes comparables'), findsOne);
     expect(find.text('Et par e-mail à sophie.durand@email.fr'), findsOne);
     expect(find.bySemanticsLabel(RegExp('Dossier complet, Terminé')), findsOne);
     expect(
@@ -136,13 +167,12 @@ void main() {
         id: 'property-id',
         ownerId: 'user-id',
         status: PropertyStatus.certified,
-        aiEstimateLowEur: 495000,
-        aiEstimateMedianEur: 518000,
-        aiEstimateHighEur: 540000,
       ),
     );
     expect(find.text('Votre avis de valeur est prêt'), findsOne);
     expect(find.byType(AiEstimateCard), findsNothing);
+    expect(find.text('TENDANCE IA'), findsNothing);
+    verifyNever(() => repository.getMarketSnapshot(any()));
     expect(
       find.textContaining('votre avis de valeur certifié est disponible'),
       findsOne,
@@ -221,63 +251,183 @@ void main() {
     expect(find.textContaining('Et par e-mail'), findsNothing);
   });
 
-  testWidgets('shows the AI trend when it was computed', (tester) async {
-    await pump(
+  group('Tendance IA', () {
+    testWidgets('shows the estimate and opens the market summary', (
       tester,
-      property: Property(
-        id: 'property-id',
-        ownerId: 'user-id',
-        status: PropertyStatus.submitted,
-        aiEstimateLowEur: 495000,
-        aiEstimateMedianEur: 518000,
-        aiEstimateHighEur: 540000,
-        aiEstimateComputedAt: DateTime(2026, 9, 24, 10),
-      ),
-    );
-    expect(find.byType(AiEstimateCard), findsOne);
-    expect(find.text('TENDANCE IA'), findsOne);
-    expect(find.text('Indicative'), findsOne);
-    expect(find.text('495${nb}000$nb– 540${nb}000$nb€'), findsOne);
-    expect(find.text('495${nb}k€'), findsOne);
-    expect(find.text('Médiane 518${nb}k€'), findsOne);
-    expect(find.text('540${nb}k€'), findsOne);
-    expect(find.textContaining('Calculée le 24/09/2026'), findsOne);
-    expect(
-      find.bySemanticsLabel(
-        'Fourchette de 495${nb}000 à 540${nb}000$nb€, '
-        'médiane 518${nb}000$nb€',
-      ),
-      findsOne,
-    );
-  });
+    ) async {
+      when(() => repository.getMarketSnapshot(any())).thenAnswer(
+        (_) async => _snapshot(
+          MarketSnapshotStatus.ok,
+          computedAt: DateTime(2026, 9, 24, 10),
+        ),
+      );
+      final goRouter = MockGoRouter();
+      when(() => goRouter.go(any())).thenReturn(null);
+      await pump(tester, goRouter: goRouter);
+      expect(find.byType(AiEstimateCard), findsOne);
+      expect(find.text('TENDANCE IA'), findsOne);
+      expect(find.text('Non certifiée'), findsOne);
+      expect(find.text('495${nb}000$nb– 540${nb}000$nb€'), findsOne);
+      expect(find.text('495${nb}k€'), findsOne);
+      expect(find.text('Médiane 518${nb}k€'), findsOne);
+      expect(find.text('540${nb}k€'), findsOne);
+      expect(find.text('Fiabilité$nb: élevée'), findsOne);
+      expect(find.textContaining('Calculée le 24/09/2026'), findsOne);
+      expect(
+        find.bySemanticsLabel(
+          'Fourchette de 495${nb}000 à 540${nb}000$nb€, '
+          'médiane 518${nb}000$nb€',
+        ),
+        findsOne,
+      );
+      await tester.ensureVisible(find.text('Voir la synthèse du marché'));
+      await tester.tap(find.text('Voir la synthèse du marché'));
+      verify(() => goRouter.go(AppRoutes.sellerMarket)).called(1);
+      verifyNever(() => repository.requestEstimate(any()));
+    });
 
-  testWidgets('AI trend without date and with an empty range', (tester) async {
-    await pump(
-      tester,
-      property: const Property(
-        id: 'property-id',
-        ownerId: 'user-id',
-        status: PropertyStatus.submitted,
-        aiEstimateLowEur: 500000,
-        aiEstimateMedianEur: 500000,
-        aiEstimateHighEur: 500000,
-      ),
-    );
-    expect(find.textContaining('Calculée à partir'), findsOne);
-  });
+    testWidgets('says when the search had to be widened', (tester) async {
+      when(() => repository.getMarketSnapshot(any())).thenAnswer(
+        (_) async => MarketSnapshot(
+          id: 's1',
+          propertyId: 'property-id',
+          status: MarketSnapshotStatus.ok,
+          createdAt: DateTime.now(),
+          lowEur: 103000,
+          medianEur: 123000,
+          highEur: 148000,
+          radiusM: 10000,
+          months: 24,
+        ),
+      );
+      await pump(tester);
+      expect(
+        find.text(
+          'Recherche élargie faute de ventes proches et récentes$nb: ventes '
+          'jusqu’à 10${nb}km, 2${nb}dernières années.',
+        ),
+        findsOne,
+      );
+    });
 
-  testWidgets('hides the AI trend when a value is missing', (tester) async {
-    await pump(
+    testWidgets('without date, with an empty range and other reliabilities', (
       tester,
-      property: const Property(
-        id: 'property-id',
-        ownerId: 'user-id',
-        status: PropertyStatus.submitted,
-        aiEstimateLowEur: 495000,
-        aiEstimateHighEur: 540000,
-      ),
-    );
-    expect(find.byType(AiEstimateCard), findsNothing);
+    ) async {
+      when(() => repository.getMarketSnapshot(any())).thenAnswer(
+        (_) async => _snapshot(
+          MarketSnapshotStatus.ok,
+          low: 500000,
+          median: 500000,
+          high: 500000,
+          confidence: 50,
+        ),
+      );
+      await pump(tester);
+      expect(find.textContaining('Calculée à partir'), findsOne);
+      expect(find.text('Fiabilité$nb: moyenne'), findsOne);
+    });
+
+    testWidgets('low reliability, or none', (tester) async {
+      when(() => repository.getMarketSnapshot(any())).thenAnswer(
+        (_) async => _snapshot(MarketSnapshotStatus.ok, confidence: 20),
+      );
+      await pump(tester);
+      expect(find.text('Fiabilité$nb: faible'), findsOne);
+    });
+
+    testWidgets('fewer than 5 comparable sales: the expert takes over', (
+      tester,
+    ) async {
+      await pump(tester);
+      expect(find.byType(AiEstimateCard), findsNothing);
+      expect(find.textContaining('Trop peu de ventes comparables'), findsOne);
+      expect(find.text('Réessayer'), findsNothing);
+    });
+
+    testWidgets('no estimate for this property', (tester) async {
+      when(() => repository.getMarketSnapshot(any())).thenAnswer(
+        (_) async => _snapshot(
+          MarketSnapshotStatus.insufficient,
+          reason: 'unsupported_type',
+        ),
+      );
+      await pump(tester);
+      expect(find.textContaining('Pas de tendance automatique'), findsOne);
+    });
+
+    testWidgets('an ok result without range is shown as unavailable', (
+      tester,
+    ) async {
+      when(
+        () => repository.getMarketSnapshot(any()),
+      ).thenAnswer((_) async => _snapshot(MarketSnapshotStatus.ok, low: null));
+      await pump(tester);
+      expect(find.byType(AiEstimateCard), findsNothing);
+      expect(find.textContaining('Pas de tendance automatique'), findsOne);
+    });
+
+    testWidgets('requests the estimate when none exists, then shows it', (
+      tester,
+    ) async {
+      final answers = [
+        null,
+        _snapshot(MarketSnapshotStatus.ok, computedAt: DateTime(2026, 10)),
+      ];
+      when(() => repository.getMarketSnapshot(any()))
+          .thenAnswer((_) async => answers.removeAt(0));
+      await pump(tester);
+      expect(find.text('Calcul de votre tendance de prix…'), findsOne);
+      verify(() => repository.requestEstimate('property-id')).called(1);
+      await tester.pump(const Duration(seconds: 3));
+      await tester.pump();
+      expect(find.byType(AiEstimateCard), findsOne);
+    });
+
+    testWidgets('too many requests today: no retry', (tester) async {
+      when(() => repository.getMarketSnapshot(any()))
+          .thenAnswer((_) async => null);
+      when(() => repository.requestEstimate(any()))
+          .thenThrow(const EstimateRateLimitFailure('x'));
+      await pump(tester);
+      expect(find.textContaining('Trop de demandes de calcul'), findsOne);
+      expect(find.text('Réessayer'), findsNothing);
+    });
+
+    testWidgets('the market summary link wraps with large text', (
+      tester,
+    ) async {
+      tester.platformDispatcher.textScaleFactorTestValue = 1.3;
+      addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+      when(() => repository.getMarketSnapshot(any()))
+          .thenAnswer((_) async => _snapshot(MarketSnapshotStatus.ok));
+      await pump(tester);
+      expect(find.text('Voir la synthèse du marché'), findsOne);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('after a failure, "Réessayer" requests it again', (
+      tester,
+    ) async {
+      final answers = [
+        _snapshot(MarketSnapshotStatus.error),
+        _snapshot(MarketSnapshotStatus.ok),
+      ];
+      when(() => repository.getMarketSnapshot(any()))
+          .thenAnswer((_) async => answers.removeAt(0));
+      await pump(tester);
+      expect(
+        find.text('Votre tendance de prix n’a pas pu être calculée.'),
+        findsOne,
+      );
+      verifyNever(() => repository.requestEstimate(any()));
+      await tester.ensureVisible(find.text('Réessayer'));
+      await tester.tap(find.text('Réessayer'));
+      await tester.pump();
+      verify(() => repository.requestEstimate('property-id')).called(1);
+      await tester.pump(const Duration(seconds: 3));
+      await tester.pump();
+      expect(find.byType(AiEstimateCard), findsOne);
+    });
   });
 
   testWidgets('the switch starts from the saved choice and saves changes', (

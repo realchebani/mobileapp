@@ -529,6 +529,85 @@ void main() {
     );
   });
 
+  group('market snapshots', () {
+    Map<String, Object?> snapshot(String id, String status) => {
+      'id': id,
+      'property_id': propertyId,
+      'status': status,
+      'created_at': '2026-10-01T10:00:00Z',
+    };
+
+    test('returns the final result first', () async {
+      respond = (_) => json([snapshot('e', 'error'), snapshot('o', 'ok')]);
+      final result = await repository.getMarketSnapshot(propertyId);
+      expect(result?.id, 'o');
+      final request = requests.single;
+      expect(request.url.path, '/rest/v1/market_snapshots');
+      expect(request.url.queryParameters, {
+        'select': '*',
+        'property_id': 'eq.$propertyId',
+        'order': 'created_at.desc.nullslast',
+        'limit': '10',
+      });
+    });
+
+    test('returns the latest attempt, or null', () async {
+      respond = (_) => json([snapshot('r', 'running'), snapshot('e', 'error')]);
+      expect((await repository.getMarketSnapshot(propertyId))?.id, 'r');
+      respond = (_) => json(<Object>[]);
+      expect(await repository.getMarketSnapshot(propertyId), isNull);
+    });
+
+    test('throws PropertyLoadFailure on error', () async {
+      respond = (_) => error();
+      await expectLater(
+        repository.getMarketSnapshot(propertyId),
+        failure<PropertyLoadFailure>(),
+      );
+    });
+
+    test('requestEstimate invokes the Edge Function', () async {
+      respond = (_) => json({'status': 'running'}, status: 202);
+      await repository.requestEstimate(propertyId);
+      final request = requests.single;
+      expect(request.method, 'POST');
+      expect(request.url.path, '/functions/v1/estimate-property');
+      expect(jsonDecode(request.body), {'property_id': propertyId});
+    });
+
+    test('requestEstimate throws EstimateRequestFailure on error', () async {
+      respond = (_) => json({'error': 'not_found'}, status: 404);
+      await expectLater(
+        repository.requestEstimate(propertyId),
+        failure<EstimateRequestFailure>(),
+      );
+      expect(
+        const EstimateRequestFailure('x').toString(),
+        'EstimateRequestFailure(x)',
+      );
+    });
+
+    test('requestEstimate throws EstimateRateLimitFailure on 429', () async {
+      respond = (_) => json({'error': 'too_many_attempts'}, status: 429);
+      await expectLater(
+        repository.requestEstimate(propertyId),
+        failure<EstimateRateLimitFailure>(),
+      );
+      expect(
+        const EstimateRateLimitFailure('x').toString(),
+        'EstimateRateLimitFailure(x)',
+      );
+    });
+
+    test('requestEstimate wraps other errors', () async {
+      respond = (_) => throw Exception('offline');
+      await expectLater(
+        repository.requestEstimate(propertyId),
+        failure<EstimateRequestFailure>(),
+      );
+    });
+  });
+
   test('defaults the clock', () {
     expect(PropertyRepository(client: client), isNotNull);
   });
