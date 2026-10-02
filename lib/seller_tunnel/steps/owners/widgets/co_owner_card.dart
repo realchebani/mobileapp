@@ -1,15 +1,27 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:mobileapp/l10n/l10n.dart';
 import 'package:mobileapp/seller_tunnel/steps/owners/models/owner_draft.dart';
+import 'package:mobileapp/seller_tunnel/voice/widgets/step_voice_sheet.dart';
 import 'package:mobileapp/ui/ui.dart';
 
 /// A co-owner on V1: initials, name, "Co-propriétaire · 06 98 76 54 32" and
-/// the edit button (deleting is done from the edit sheet).
+/// the edit button (deleting is done from the edit sheet). A dictated
+/// co-owner is tagged "Dicté"; an incomplete one asks to be completed.
 class CoOwnerCard extends StatelessWidget {
-  const new({required this.coOwner, required this.onEdit, super.key});
+  const new({
+    required this.coOwner,
+    required this.onEdit,
+    this.dictated = false,
+    this.incomplete = false,
+    super.key,
+  });
 
   final OwnerDraft coOwner;
   final VoidCallback? onEdit;
+  final bool dictated;
+
+  /// Missing answers (a dictated co-owner has no phone yet).
+  final bool incomplete;
 
   @override
   Widget build(BuildContext context) {
@@ -53,18 +65,27 @@ class CoOwnerCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    name,
-                    style: RealestyTextStyles.listTitle.copyWith(
-                      color: c.encre,
-                    ),
+                  Wrap(
+                    spacing: RealestySpacing.xs,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: [
+                      Text(
+                        name,
+                        style: RealestyTextStyles.listTitle.copyWith(
+                          color: c.encre,
+                        ),
+                      ),
+                      if (dictated) const DictatedTag(),
+                    ],
                   ),
                   Text(
-                    phone.isEmpty
+                    incomplete
+                        ? l10n.ownersCoOwnerIncomplete
+                        : phone.isEmpty
                         ? l10n.ownersCoOwnerRole
                         : l10n.ownersCoOwnerSubtitle(phone),
                     style: RealestyTextStyles.listSubtitle.copyWith(
-                      color: c.texteDiscret,
+                      color: incomplete ? c.erreur : c.texteDiscret,
                     ),
                   ),
                 ],

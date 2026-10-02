@@ -13,7 +13,7 @@ import 'package:mobileapp/seller_tunnel/steps/lifestyle/widgets/lifestyle_item_s
 import 'package:mobileapp/seller_tunnel/steps/lifestyle/widgets/lifestyle_voice_sheet.dart';
 import 'package:mobileapp/seller_tunnel/steps/lifestyle/widgets/noise_slider.dart';
 import 'package:mobileapp/seller_tunnel/view/seller_tunnel_navigation.dart';
-import 'package:mobileapp/seller_tunnel/voice/voice_services.dart';
+import 'package:mobileapp/seller_tunnel/voice/voice.dart';
 import 'package:mobileapp/seller_tunnel/widgets/widgets.dart';
 import 'package:mobileapp/ui/ui.dart';
 import 'package:property_repository/property_repository.dart';
@@ -122,7 +122,8 @@ class _LifestyleViewState extends State<LifestyleView> {
     // Only the types the voice agent serves (not land, commercial premises,
     // whole buildings…).
     final voiceAvailable =
-        VoiceServices.of(context).isAvailable && profile.voice;
+        VoiceServices.of(context).isAvailable &&
+        profile.hasVoice(SellerTunnelStep.lifestyle);
     final suggestion = state.secretNoteSuggestion;
     final noise = state.noiseLevel;
     final noiseText = noise == null
@@ -186,7 +187,14 @@ class _LifestyleViewState extends State<LifestyleView> {
                 Row(
                   spacing: RealestySpacing.xs,
                   children: [
-                    Expanded(child: _FieldLabel(l10n.lifestyleNoiseLabel)),
+                    Expanded(
+                      child: _FieldLabel(
+                        l10n.lifestyleNoiseLabel,
+                        dictated: state.dictated.contains(
+                          PropertyColumns.noiseLevel,
+                        ),
+                      ),
+                    ),
                     // The slider announces the value.
                     ExcludeSemantics(
                       child: RealestyBadge(
@@ -211,7 +219,12 @@ class _LifestyleViewState extends State<LifestyleView> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               spacing: 6,
               children: [
-                _FieldLabel(l10n.lifestyleOverlookingLabel),
+                _FieldLabel(
+                  l10n.lifestyleOverlookingLabel,
+                  dictated: state.dictated.contains(
+                    PropertyColumns.overlooking,
+                  ),
+                ),
                 RealestySegmentedControl<Overlooking?>(
                   segments: [
                     RealestySegment(
@@ -421,17 +434,28 @@ class _SecretNoteSuggestion extends StatelessWidget {
 
 /// Form label (13/600 Encre 2), as above the text fields.
 class _FieldLabel extends StatelessWidget {
-  const new(this.text);
+  const new(this.text, {this.dictated = false});
 
   final String text;
 
+  /// Answered by voice on this visit ("Dicté").
+  final bool dictated;
+
   @override
   Widget build(BuildContext context) {
-    return Text(
+    final label = Text(
       text,
       style: RealestyTextStyles.label.copyWith(
         color: context.realestyColors.encre2,
       ),
+    );
+    if (!dictated) return label;
+    return Row(
+      spacing: RealestySpacing.xs,
+      children: [
+        Flexible(child: label),
+        const DictatedTag(),
+      ],
     );
   }
 }

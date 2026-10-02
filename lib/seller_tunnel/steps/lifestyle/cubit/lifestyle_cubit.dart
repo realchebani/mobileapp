@@ -2,6 +2,7 @@ import 'package:agent_repository/agent_repository.dart';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:mobileapp/seller_tunnel/steps/lifestyle/models/lifestyle_item_draft.dart';
+import 'package:mobileapp/seller_tunnel/voice/voice_form.dart';
 import 'package:property_repository/property_repository.dart';
 
 part 'lifestyle_state.dart';
@@ -10,7 +11,8 @@ part 'lifestyle_state.dart';
 ///
 /// [submit] saves the assets and watch points; on success the view hands
 /// the saved rows and `LifestyleState.patchFor` to the tunnel cubit.
-class LifestyleCubit extends Cubit<LifestyleState> {
+class LifestyleCubit extends Cubit<LifestyleState>
+    with VoiceFormMixin<LifestyleState> {
   new({
     required this._propertyRepository,
     required Property property,
@@ -102,12 +104,24 @@ class LifestyleCubit extends Cubit<LifestyleState> {
   void secretNoteChanged(String note) =>
       _edit((s) => s.copyWith(secretNote: note));
 
+  @override
+  bool get acceptsVoice => !state.isSubmitting;
+
+  @override
+  AgentTurnContext get voiceContext => AgentTurnContext(
+    draft: {
+      PropertyColumns.noiseLevel: state.noiseLevel,
+      PropertyColumns.overlooking: state.overlooking?.value,
+    },
+  );
+
   /// Adds what the voice agent understood (V6 "Parlez librement"): the
   /// items (source "voix", within the limits), the noise and overlooking
   /// it heard, and a secret note as a suggestion only. Nothing is saved
   /// before "Continuer".
-  Future<void> voiceTurnApplied(AgentTurn turn) async => _edit((s) {
-    var next = s;
+  @override
+  LifestyleState applyVoiceTurn(LifestyleState state, AgentTurn turn) {
+    var next = state;
     for (final item in turn.lifestyleItems) {
       final kind = item.isAsset
           ? LifestyleItemKind.asset
@@ -129,21 +143,26 @@ class LifestyleCubit extends Cubit<LifestyleState> {
         ),
       ]);
     }
+    final dictated = {...next.dictated};
     final noise = turn.patch[PropertyColumns.noiseLevel];
     if (noise is num) {
       next = next.copyWith(noiseLevel: noise.toInt().clamp(1, 10));
+      dictated.add(PropertyColumns.noiseLevel);
     }
     final overlooking = parseDbEnum(
       Overlooking.values,
       turn.patch[PropertyColumns.overlooking],
     );
-    if (overlooking != null) next = next.copyWith(overlooking: overlooking);
+    if (overlooking != null) {
+      next = next.copyWith(overlooking: overlooking);
+      dictated.add(PropertyColumns.overlooking);
+    }
     final note = turn.suggestions[PropertyColumns.secretNote]?.trim();
     if (note != null && note.isNotEmpty) {
       next = next.copyWith(secretNoteSuggestion: () => note);
     }
-    return next;
-  });
+    return next.copyWith(dictated: dictated);
+  }
 
   /// Uses the suggested secret note (appended to the current note).
   void secretNoteSuggestionUsed() => _edit((s) {

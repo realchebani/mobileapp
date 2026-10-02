@@ -23,6 +23,7 @@ void main() {
     registerFallbackValue(Uint8List(0));
     registerFallbackValue(Duration.zero);
     registerFallbackValue(AgentStep.lifestyle);
+    registerFallbackValue(const AgentTurnContext());
   });
 
   setUp(() {
@@ -61,12 +62,16 @@ void main() {
         turnId: any(named: 'turnId'),
         assetLabels: any(named: 'assetLabels'),
         watchPointLabels: any(named: 'watchPointLabels'),
+        context: any(named: 'context'),
+        undoneTurnIds: any(named: 'undoneTurnIds'),
       ),
     ).thenAnswer(
       (_) async => const AgentTurn(
         turnId: 't1',
         transcript: 'Très calme',
         reply: 'J’ai noté un atout.',
+        patch: {'noise_level': 2},
+        facts: [AgentPill(field: 'noise_level', label: 'Bruit 2/10')],
         lifestyleItems: [
           AgentLifestyleItem(isAsset: true, label: 'Quartier très calme'),
         ],
@@ -110,6 +115,23 @@ void main() {
 
     expect(find.text('Quartier très calme'), findsOneWidget);
     expect(find.text('Ajouté à la voix'), findsOneWidget);
+    // EPIC-14: the noise said is tagged "Dicté"; the snackbar offers to
+    // undo the session.
+    expect(find.text('Dicté'), findsOneWidget);
+    expect(find.text('1 réponse ajoutée'), findsOneWidget);
+    verify(
+      () => agent.turn(
+        propertyId: 'property-id',
+        step: AgentStep.lifestyle,
+        turnId: 't1',
+        assetLabels: [],
+        watchPointLabels: [],
+        context: const AgentTurnContext(
+          draft: {'noise_level': null, 'overlooking': null},
+        ),
+        undoneTurnIds: [],
+      ),
+    ).called(1);
     expect(find.text('Vente avant la rentrée'), findsOneWidget);
     final use = find.text('Utiliser');
     await tester.ensureVisible(use);
@@ -149,7 +171,48 @@ void main() {
     verifyNever(recorder.requestPermission);
   });
 
-  testWidgets('no voice for land', (tester) async {
+  testWidgets('the session can be undone from the snackbar', (tester) async {
+    usePhoneSurface();
+    when(
+      () => agent.markUndone(
+        propertyId: any(named: 'propertyId'),
+        step: any(named: 'step'),
+        turnIds: any(named: 'turnIds'),
+      ),
+    ).thenAnswer((_) async {});
+    final services = await testVoiceServices(
+      agentRepository: agent,
+      recorder: recorder,
+      player: player,
+      muted: true,
+    );
+    await tester.pumpTunnelPage(
+      RepositoryProvider.value(value: services, child: const LifestylePage()),
+    );
+    await tester.tap(find.byType(RealestyMicButton));
+    await tester.pumpAndSettle();
+    levels.add(-20);
+    await tester.pump();
+    await tester.tap(find.text('J’ai fini'));
+    await tester.runAsync(() => Future<void>.delayed(Duration.zero));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Terminer'));
+    await tester.tap(find.text('Terminer'));
+    await tester.pumpAndSettle();
+    expect(find.text('Quartier très calme'), findsOneWidget);
+    await tester.tap(find.text('Annuler'));
+    await tester.pumpAndSettle();
+    expect(find.text('Quartier très calme'), findsNothing);
+    verify(
+      () => agent.markUndone(
+        propertyId: 'property-id',
+        step: AgentStep.lifestyle,
+        turnIds: ['t1'],
+      ),
+    ).called(1);
+  });
+
+  testWidgets('voice for land too (EPIC-14)', (tester) async {
     usePhoneSurface();
     await tester.pumpTunnelPage(
       RepositoryProvider.value(
@@ -167,10 +230,10 @@ void main() {
         ),
       ),
     );
-    expect(find.byType(RealestyMicButton), findsNothing);
+    expect(find.byType(RealestyMicButton), findsOneWidget);
     expect(
       find.text('Parlez librement, l’agent classe vos réponses'),
-      findsNothing,
+      findsOneWidget,
     );
   });
 }

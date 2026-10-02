@@ -1,10 +1,13 @@
 import 'dart:async';
 import 'dart:math';
 
+import 'package:agent_repository/agent_repository.dart';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:mobileapp/seller_tunnel/steps/surfaces/models/room_area.dart';
 import 'package:mobileapp/seller_tunnel/steps/surfaces/models/room_input.dart';
+import 'package:mobileapp/seller_tunnel/steps/surfaces/models/room_options.dart';
+import 'package:mobileapp/seller_tunnel/voice/voice_form.dart';
 import 'package:property_repository/property_repository.dart';
 
 part 'surfaces_state.dart';
@@ -15,7 +18,11 @@ part 'surfaces_state.dart';
 /// id (a UUID) as soon as it is added, so writing it is an upsert by id:
 /// retrying after a failure (even one where the insert succeeded but its
 /// answer was lost) updates the row instead of inserting it twice.
-class SurfacesCubit extends Cubit<SurfacesState> {
+///
+/// The rooms dictated to the voice agent (EPIC-14, V5c dictation) are
+/// applied to the table the same way ([applyVoiceTurn]), `source = voice`.
+class SurfacesCubit extends Cubit<SurfacesState>
+    with VoiceFormMixin<SurfacesState> {
   new({
     required this._propertyRepository,
     required this._propertyId,
@@ -168,6 +175,7 @@ class SurfacesCubit extends Cubit<SurfacesState> {
     source: room.source,
     photosCount: room.photosCount,
     scanData: room.scanData,
+    description: input.description,
   );
 
   static Room _withSortOrder(Room room, int sortOrder) => Room(
@@ -185,7 +193,163 @@ class SurfacesCubit extends Cubit<SurfacesState> {
     source: room.source,
     photosCount: room.photosCount,
     scanData: room.scanData,
+    description: room.description,
   );
+
+  // ---------------------------------------------------------------------
+  // Voice (EPIC-14): rooms dictated to the agent.
+  // ---------------------------------------------------------------------
+
+  @override
+  bool get acceptsVoice => !state.isSubmitting;
+
+  /// The short reference of each room sent to the agent (R1… in table
+  /// order).
+  static Map<String, Room> _byRef(List<Room> rooms) => {
+    for (final (i, room) in rooms.indexed) 'R${i + 1}': room,
+  };
+
+  @override
+  AgentTurnContext get voiceContext {
+    final refs = _byRef(state.rooms);
+    return AgentTurnContext(
+      rooms: [
+        for (final MapEntry(key: ref, value: room) in refs.entries)
+          AgentRoom(
+            ref: ref,
+            name: room.name,
+            areaM2: room.areaM2,
+            level: room.level?.value,
+            floorCovering: room.floorCovering,
+            glazing: room.glazing?.value,
+            ceilingHeightM: room.ceilingHeightM,
+            isAnnex: room.isAnnex,
+          ),
+      ],
+      lastRoomRef: [
+        for (final MapEntry(key: ref, value: room) in refs.entries)
+          if (room.id != null && room.id == state.lastDictatedId) ref,
+      ].firstOrNull,
+    );
+  }
+
+  /// R1… become the room ids (`id:<id>`).
+  @override
+  AgentTurn resolveVoiceTurn(SurfacesState state, AgentTurn turn) {
+    final refs = _byRef(state.rooms);
+    return turn.withEntityOps([
+      for (final op in turn.entityOps)
+        if (refs[op.target]?.id case final id?) op.withTarget('id:$id') else op,
+    ]);
+  }
+
+  @override
+  SurfacesState applyVoiceTurn(SurfacesState state, AgentTurn turn) {
+    final refs = {
+      ..._byRef(state.rooms),
+      for (final room in state.rooms) 'id:${room.id}': room,
+    };
+    var rooms = [...state.rooms];
+    final dictated = {...state.dictated};
+    var last = state.lastDictatedId;
+    for (final op in turn.entityOps) {
+      if (op.entity != AgentEntity.room) continue;
+      final values = op.values;
+      if (op.isNew && op.op == AgentEntityOp.create) {
+        final room = _dictatedRoom(values, rooms);
+        if (room == null) continue;
+        rooms = [...rooms, room];
+        dictated.add(room.id!);
+        last = room.id;
+        continue;
+      }
+      final target = refs[op.target];
+      if (target == null || !rooms.any((room) => room.id == target.id)) {
+        continue;
+      }
+      if (op.op == AgentEntityOp.delete) {
+        rooms = [
+          for (final room in rooms)
+            if (room.id != target.id) room,
+        ];
+        dictated.remove(target.id);
+        if (last == target.id) last = null;
+        continue;
+      }
+      rooms = [
+        for (final room in rooms)
+          if (room.id == target.id) _withVoiceValues(room, values) else room,
+      ];
+      dictated.add(target.id!);
+      last = target.id;
+    }
+    return state.copyWith(
+      rooms: rooms,
+      dictated: dictated,
+      lastDictatedId: () => last,
+    );
+  }
+
+  /// A new room from the agent's [values]: its kind decides main / annex,
+  /// bedrooms are numbered like on the room form, and a level that was not
+  /// said is the one of the last room (never guessed by the AI).
+  Room? _dictatedRoom(Map<String, Object?> values, List<Room> rooms) {
+    final name = values['name'];
+    final area = values['area_m2'];
+    if (name is! String || name.trim().isEmpty || area is! num) return null;
+    final kind = RoomSuggestion.byKind(values['kind']);
+    final level =
+        parseDbEnum(RoomLevel.values, values['level']) ??
+        rooms.lastOrNull?.level ??
+        RoomLevel.groundFloor;
+    final isAnnex = kind?.isAnnex ?? false;
+    return _withVoiceValues(
+      Room(
+        id: _generateId(),
+        propertyId: _propertyId,
+        name: kind?.isNumbered ?? false
+            ? RoomSuggestion.numbered(name.trim(), [
+                for (final room in rooms) room.name,
+              ])
+            : name.trim(),
+        areaM2: 0,
+        level: level,
+        isMain: (kind?.isMain ?? false) && !isAnnex,
+        isAnnex: isAnnex,
+        source: RoomSource.voice,
+      ),
+      {...values, 'level': level.value},
+    );
+  }
+
+  /// [room] with the values said ([values] as stored).
+  static Room _withVoiceValues(Room room, Map<String, Object?> values) {
+    String? text(String key, String? current) =>
+        values.containsKey(key) ? (values[key] as String?)?.trim() : current;
+    final area = values['area_m2'];
+    final height = values['ceiling_height_m'];
+    return Room(
+      id: room.id,
+      propertyId: room.propertyId,
+      name: room.name,
+      level: values.containsKey('level')
+          ? parseDbEnum(RoomLevel.values, values['level']) ?? room.level
+          : room.level,
+      sortOrder: room.sortOrder,
+      areaM2: area is num ? RoomArea.round(area.toDouble()) : room.areaM2,
+      ceilingHeightM: height is num ? height.toDouble() : room.ceilingHeightM,
+      floorCovering: text('floor_covering', room.floorCovering),
+      glazing: values.containsKey('glazing')
+          ? parseDbEnum(Glazing.values, values['glazing']) ?? room.glazing
+          : room.glazing,
+      isMain: room.isMain,
+      isAnnex: room.isAnnex,
+      source: room.source,
+      photosCount: room.photosCount,
+      scanData: room.scanData,
+      description: text('description', room.description),
+    );
+  }
 
   static final Random _random = Random.secure();
 

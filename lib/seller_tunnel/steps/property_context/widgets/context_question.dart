@@ -1,4 +1,5 @@
 import 'package:material_ui/material_ui.dart';
+import 'package:mobileapp/seller_tunnel/voice/widgets/step_voice_sheet.dart';
 import 'package:mobileapp/ui/ui.dart';
 
 /// A labelled question of V3 (label 13/600 Encre 2 over its [child]), with
@@ -9,6 +10,7 @@ class ContextQuestion extends StatelessWidget {
     required this.child,
     this.errorText,
     this.spacing = 6,
+    this.dictated = false,
     super.key,
   });
 
@@ -18,6 +20,9 @@ class ContextQuestion extends StatelessWidget {
 
   /// Gap between the label, [child] and the error.
   final double spacing;
+
+  /// Answered by voice on this visit ("Dicté").
+  final bool dictated;
 
   @override
   Widget build(BuildContext context) {
@@ -29,11 +34,19 @@ class ContextQuestion extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         spacing: spacing,
         children: [
-          ExcludeSemantics(
-            child: Text(
-              label,
-              style: RealestyTextStyles.label.copyWith(color: c.encre2),
-            ),
+          Row(
+            spacing: RealestySpacing.xs,
+            children: [
+              Flexible(
+                child: ExcludeSemantics(
+                  child: Text(
+                    label,
+                    style: RealestyTextStyles.label.copyWith(color: c.encre2),
+                  ),
+                ),
+              ),
+              if (dictated) const DictatedTag(),
+            ],
           ),
           child,
           if (errorText != null) ContextErrorText(errorText!),

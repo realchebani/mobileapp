@@ -214,9 +214,10 @@ class Room extends Equatable {
     this.glazing,
     this.isMain = false,
     this.isAnnex = false,
-    this.source = MeasurementMethod.manual,
+    this.source = RoomSource.manual,
     this.photosCount = 0,
     this.scanData,
+    this.description,
   });
 
   /// Builds a room from a `rooms` row.
@@ -232,11 +233,10 @@ class Room extends Equatable {
     glazing: parseDbEnum(Glazing.values, json['glazing']),
     isMain: json['is_main'] as bool? ?? false,
     isAnnex: json['is_annex'] as bool? ?? false,
-    source:
-        parseDbEnum(MeasurementMethod.values, json['source']) ??
-        MeasurementMethod.manual,
+    source: parseDbEnum(RoomSource.values, json['source']) ?? RoomSource.manual,
     photosCount: readInt(json['photos_count']) ?? 0,
     scanData: json['scan_data'] as Map<String, dynamic>?,
+    description: json['description'] as String?,
   );
 
   final String? id;
@@ -254,9 +254,16 @@ class Room extends Equatable {
 
   /// Annexe (garage, cellier…): not part of the living area.
   final bool isAnnex;
-  final MeasurementMethod source;
+  final RoomSource source;
   final int photosCount;
   final Map<String, dynamic>? scanData;
+
+  /// Free description (≤ [descriptionMaxLength] characters), typed or
+  /// dictated (EPIC-14).
+  final String? description;
+
+  /// Maximum length of [description] (`rooms.description`).
+  static const descriptionMaxLength = 300;
 
   /// The row of this room.
   Map<String, Object?> toJson() => _withId(id, {
@@ -273,6 +280,7 @@ class Room extends Equatable {
     'source': source.value,
     'photos_count': photosCount,
     'scan_data': scanData,
+    'description': description,
   });
 
   @override
@@ -291,6 +299,7 @@ class Room extends Equatable {
     source,
     photosCount,
     scanData,
+    description,
   ];
 }
 

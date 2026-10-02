@@ -2,12 +2,17 @@
 // injected dependencies (tested with fakes in handlers_test.ts).
 //
 // - agent-transcribe: POST audio bytes (application/octet-stream) with
-//   ?property_id=&step=&format=m4a → {turn_id, transcript}; the duration is
-//   measured server-side (m4a header, size bound, STT usage).
+//   ?property_id=&step=&format=m4a[&mode=dictation] → {turn_id,
+//   transcript}; the duration is measured server-side (m4a header, size
+//   bound, STT usage). mode=dictation (V2 address): transcription only,
+//   never sent to the language model nor kept in the journal.
 // - agent-turn: POST {property_id, step, turn_id? | transcript?,
-//   lifestyle_labels?} → {turn_id, reply_fr, patch, facts, pending,
-//   lifestyle_items, suggestions, next_field, done}. Never writes the
-//   dossier: the app applies `patch` itself (RLS, lock).
+//   interactive?, draft?, rooms?, estimates?, co_owners_count?,
+//   last_room_ref?, lifestyle_labels?, undone_turn_ids?} → {turn_id,
+//   reply_fr, patch, facts, pending, lifestyle_items, suggestions,
+//   entity_ops, confirmations, out_of_step, corrections, next_field, done}.
+//   Never writes the dossier: the app applies the answer itself (RLS,
+//   lock). A body with only undone_turn_ids marks those turns undone.
 // - agent-speech: POST {turn_id} → the turn's reply as audio
 //   (application/octet-stream, header x-audio-format: mp3 | wav), once.
 
@@ -20,15 +25,29 @@ import {
   repairXingHeader,
   speechFormatFor,
 } from "../openrouter/audio.ts";
-import { type AgentModels, agentProvider } from "./config.ts";
-import { type AgentDb, LIMITS, type PropertyRow, startOfDay } from "./db.ts";
+import { agentModelFor, type AgentModels, agentProvider } from "./config.ts";
+import { type AgentDb, LIMITS, type PropertyRow, startOfDay, type TurnRow } from "./db.ts";
+import { VOICE_DEFAULTS } from "./defaults.ts";
 import { buildMessages } from "./prompt.ts";
-import { type AgentStep, isVoiceType, outputSchema } from "./schema.ts";
-import { type ModelOutput, parseModelOutput, validateTurn } from "./validate.ts";
+import type { RoomRow } from "./rooms.ts";
+import { type AgentStep, isStep, outputSchema, stepSchema, voiceStepsFor } from "./schema.ts";
+import { ROOM_LEVELS } from "./steps/rooms.ts";
+import {
+  type EstimateRow,
+  formatNumber,
+  type ModelOutput,
+  parseModelOutput,
+  type ValidatedTurn,
+  validateTurn,
+} from "./validate.ts";
 
 /** Reply when the agent's answer stays unreadable after a retry. */
 export const ASK_TO_REPEAT =
   "Pardon, je n’ai pas bien saisi. Pouvez-vous répéter, s’il vous plaît ?";
+
+/** What the journal keeps of a V1 turn (names) and of a dictated address. */
+export const IDENTITY_REMOVED = "[identité non conservée]";
+export const ADDRESS_REMOVED = "[adresse non conservée]";
 
 export interface Deps {
   db: AgentDb | null;
@@ -51,16 +70,14 @@ export function failure(code: string, status: number, extra = {}): Response {
   return json({ error: code, ...extra }, status);
 }
 
-function isStep(value: unknown): value is AgentStep {
-  return value === "technical" || value === "lifestyle";
-}
-
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-/** The caller's draft property, or an error response. */
+/** The caller's draft property, when [step] is voiced for its type, or an
+ * error response. */
 async function draftProperty(
   db: AgentDb,
   id: unknown,
+  step: AgentStep,
 ): Promise<PropertyRow | Response> {
   if (typeof id !== "string" || !UUID.test(id)) {
     return failure("bad_request", 400);
@@ -68,7 +85,7 @@ async function draftProperty(
   const property = await db.property(id);
   if (!property) return failure("not_found", 404);
   if (property.status !== "draft") return failure("locked", 409);
-  if (!isVoiceType(property.property_type)) return failure("bad_request", 400);
+  if (!voiceStepsFor(property.property_type).includes(step)) return failure("bad_request", 400);
   return property;
 }
 
@@ -147,8 +164,17 @@ export async function handleTranscribe(
   const url = new URL(request.url);
   const step = url.searchParams.get("step");
   const format = url.searchParams.get("format") ?? "m4a";
+  const mode = url.searchParams.get("mode") ?? "agent";
   // The client's `duration` parameter is ignored: never trusted.
   if (!isStep(step) || !AUDIO_FORMATS.includes(format)) {
+    return failure("bad_request", 400);
+  }
+  // Dictation: the V2 address only (transcription, no agent).
+  const dictation = mode === "dictation";
+  if (
+    (mode !== "agent" && !dictation) ||
+    (dictation && (step !== "location" || !VOICE_DEFAULTS.addressDictation))
+  ) {
     return failure("bad_request", 400);
   }
   const audio = await readCapped(request, LIMITS.audioBytes);
@@ -158,7 +184,7 @@ export async function handleTranscribe(
   if (measured > LIMITS.audioSecondsPerTurn + 1) return failure("too_long", 413);
 
   try {
-    const property = await draftProperty(db, url.searchParams.get("property_id"));
+    const property = await draftProperty(db, url.searchParams.get("property_id"), step);
     if (property instanceof Response) return property;
     const session = await db.session(property.id, step);
     // Reserved before the STT call, atomically with the quota check: parallel
@@ -185,13 +211,15 @@ export async function handleTranscribe(
     }
     const transcript = result.text.slice(0, LIMITS.transcriptChars);
     // Journaled even when empty: the audio and its cost count in the quotas.
+    // A dictated address is never kept, and its turn can never be answered.
     await db.updateTurn(turn.id, {
-      transcript,
+      transcript: dictation && transcript ? ADDRESS_REMOVED : transcript,
       audio_seconds: Math.min(Math.max(result.seconds ?? 0, measured), 9999),
       stt_model: deps.models.stt,
       stt_ms: result.ms,
       cost_usd: result.cost,
-      error: transcript ? null : "empty",
+      error: transcript ? (dictation ? "dictation" : null) : "empty",
+      ...(dictation ? { extracted: { mode: "dictation" } } : {}),
     });
     if (!transcript) return failure("empty", 422);
     return json({ turn_id: turn.id, transcript });
@@ -205,7 +233,15 @@ interface TurnBody {
   step?: unknown;
   turn_id?: unknown;
   transcript?: unknown;
+  interactive?: unknown;
+  draft?: unknown;
+  rooms?: unknown;
+  estimates?: unknown;
+  co_owners_count?: unknown;
+  last_room_ref?: unknown;
   lifestyle_labels?: { asset?: unknown; watch_point?: unknown };
+  undone_turn_ids?: unknown;
+  summary?: unknown;
 }
 
 function labels(value: unknown): string[] {
@@ -213,6 +249,220 @@ function labels(value: unknown): string[] {
     ? value.filter((v): v is string => typeof v === "string").slice(0, 20)
       .map((v) => v.slice(0, 140))
     : [];
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+/** The screen's unsaved answers of [step] (whitelisted columns, simple
+ * values, ≤ 4 KB): known values for the prompt and the rules, never
+ * written by the server. The type only comes from V3's own draft. */
+export function sanitizeDraft(step: AgentStep, value: unknown): Record<string, unknown> {
+  if (!isRecord(value)) return {};
+  if (JSON.stringify(value).length > LIMITS.draftBytes) return {};
+  const columns = new Set(stepSchema(step).fields.map((f) => f.column));
+  const draft: Record<string, unknown> = {};
+  for (const [column, raw] of Object.entries(value)) {
+    if (!columns.has(column)) continue;
+    if (
+      raw === null || typeof raw === "boolean" ||
+      (typeof raw === "number" && Number.isFinite(raw))
+    ) {
+      draft[column] = raw;
+    } else if (typeof raw === "string") {
+      draft[column] = raw.slice(0, 300);
+    } else if (Array.isArray(raw)) {
+      draft[column] = raw.filter((v): v is string => typeof v === "string").slice(0, 10)
+        .map((v) => v.slice(0, 40));
+    }
+  }
+  return draft;
+}
+
+function num(value: unknown, min: number, max: number): number | null {
+  return typeof value === "number" && Number.isFinite(value) && value >= min && value <= max
+    ? value
+    : null;
+}
+
+function str(value: unknown, max: number): string | null {
+  return typeof value === "string" && value.trim() ? value.trim().slice(0, max) : null;
+}
+
+/** The V5c table sent by the app (≤ 40 rows, references R1…R40). */
+export function sanitizeRooms(value: unknown): RoomRow[] {
+  if (!Array.isArray(value)) return [];
+  const rooms: RoomRow[] = [];
+  for (const raw of value.slice(0, LIMITS.rooms)) {
+    if (!isRecord(raw)) continue;
+    const ref = typeof raw.ref === "string" && /^R\d{1,2}$/.test(raw.ref) ? raw.ref : null;
+    const name = str(raw.name, 60);
+    const area = num(raw.area_m2, 0.01, 500);
+    if (!ref || !name || area === null || rooms.some((r) => r.ref === ref)) continue;
+    rooms.push({
+      ref,
+      name,
+      level: typeof raw.level === "string" && raw.level in ROOM_LEVELS ? raw.level : null,
+      area_m2: area,
+      floor_covering: str(raw.floor_covering, 30),
+      glazing: ["simple", "double", "triple"].includes(raw.glazing as string)
+        ? raw.glazing as string
+        : null,
+      ceiling_height_m: num(raw.ceiling_height_m, 0.01, 99),
+      is_annex: raw.is_annex === true,
+    });
+  }
+  return rooms;
+}
+
+/** The V3 estimate cards sent by the app (≤ 5, references E1…E5). */
+export function sanitizeEstimates(value: unknown): EstimateRow[] {
+  if (!Array.isArray(value)) return [];
+  const estimates: EstimateRow[] = [];
+  for (const raw of value.slice(0, LIMITS.estimates)) {
+    if (!isRecord(raw)) continue;
+    const ref = typeof raw.ref === "string" && /^E\d$/.test(raw.ref) ? raw.ref : null;
+    if (!ref || estimates.some((e) => e.ref === ref)) continue;
+    const month = typeof raw.estimated_month === "string" &&
+        /^\d{4}-\d{2}-\d{2}$/.test(raw.estimated_month)
+      ? raw.estimated_month
+      : null;
+    estimates.push({
+      ref,
+      price_eur: num(raw.price_eur, 1, 1_000_000_000),
+      estimated_month: month,
+      agency_name: str(raw.agency_name, 120),
+    });
+  }
+  return estimates;
+}
+
+/** What the previous turn retained, for corrections ("non, plutôt 40"). */
+export function lastRetained(turn: TurnRow | undefined): string[] {
+  const extracted = turn?.extracted;
+  if (!isRecord(extracted)) return [];
+  const retained: string[] = [];
+  const patch = isRecord(extracted.patch) ? extracted.patch : {};
+  for (const [column, value] of Object.entries(patch)) {
+    retained.push(`${column} = ${Array.isArray(value) ? value.join(", ") : String(value)}`);
+  }
+  const ops = Array.isArray(extracted.entity_ops) ? extracted.entity_ops : [];
+  for (const op of ops) {
+    if (!isRecord(op) || typeof op.label_fr !== "string") continue;
+    retained.push(`${op.entity} ${op.op} ${op.target} : ${op.label_fr}`);
+  }
+  return retained.slice(0, 15);
+}
+
+/** [validated] without the names said on V1 (journal of an identity
+ * step): counts and reasons stay for the quality follow-up. */
+function withoutIdentity(validated: ValidatedTurn): ValidatedTurn {
+  const anonymous = <T extends { values: Record<string, unknown>; label_fr: string }>(op: T) => ({
+    ...op,
+    values: {},
+    label_fr: IDENTITY_REMOVED,
+  });
+  return {
+    ...validated,
+    entity_ops: validated.entity_ops.map(anonymous),
+    confirmations: validated.confirmations.map((c) => ({
+      ...c,
+      label_fr: c.reason === "co_owner" ? IDENTITY_REMOVED : c.label_fr,
+      entity_ops: c.entity_ops.map(anonymous),
+    })),
+    pending: validated.pending.map((p) =>
+      p.field === "entity" ? { ...p, label_fr: IDENTITY_REMOVED } : p
+    ),
+    rejected: validated.rejected.map((r) =>
+      r.field.startsWith("co_owner") ? { ...r, value: "" } : r
+    ),
+  };
+}
+
+/** [reply] without the names of people said in [transcript] or extracted
+ * by the model (V1): they are replaced by « … ». */
+export function redactNames(reply: string, output: ModelOutput, transcript: string): string {
+  const names = new Set<string>();
+  for (const op of output.entity_ops ?? []) {
+    for (const field of op.fields) {
+      for (const word of field.value.split(/[\s'’-]+/)) {
+        if (word.length >= 2) names.add(word);
+      }
+    }
+  }
+  // Capitalised words of the transcript, except a sentence start.
+  transcript.split(/\s+/).forEach((word, i, all) => {
+    const clean = word.replace(/^[^\p{L}]+|[^\p{L}]+$/gu, "");
+    const sentenceStart = i === 0 || /[.!?…]$/.test(all[i - 1]);
+    if (!sentenceStart && clean.length >= 2 && /^\p{Lu}/u.test(clean)) names.add(clean);
+  });
+  let redacted = reply;
+  for (const name of names) {
+    const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    redacted = redacted.replace(
+      new RegExp(`(?<![\\p{L}])${escaped}(?![\\p{L}])`, "giu"),
+      "…",
+    );
+  }
+  return redacted;
+}
+
+function emptyAnswer(turn: { id: string; transcript: string }, reply: string) {
+  return {
+    turn_id: turn.id,
+    transcript: turn.transcript,
+    reply_fr: reply,
+    patch: {},
+    facts: [],
+    pending: [],
+    lifestyle_items: [],
+    suggestions: {},
+    entity_ops: [],
+    confirmations: [],
+    out_of_step: [],
+    corrections: [],
+    next_field: null,
+    done: false,
+  };
+}
+
+/** "J’ai noté 9 pièces pour 115 m² habitables. Est-ce correct ?" */
+export function roomsSummaryText(rooms: RoomRow[]): string {
+  const living = rooms.filter((r) => !r.is_annex).reduce((sum, r) => sum + r.area_m2, 0);
+  const annex = rooms.filter((r) => r.is_annex).reduce((sum, r) => sum + r.area_m2, 0);
+  const count = rooms.length;
+  const pieces = count === 1 ? "1 pièce" : `${count} pièces`;
+  const annexes = annex > 0 ? `, plus ${formatNumber(annex)} m² d’annexes` : "";
+  return count === 0
+    ? "Je n’ai noté aucune pièce. Dictez-moi la première, s’il vous plaît."
+    : `J’ai noté ${pieces} pour ${formatNumber(living)} m² habitables${annexes}. Est-ce correct ?`;
+}
+
+/** The end of a rooms dictation (plan §3.2): the summary is computed here,
+ * without the language model, and journaled as a turn so that
+ * agent-speech can say it (once, within the quotas). */
+async function roomsSummary(
+  db: AgentDb,
+  propertyId: string,
+  rooms: RoomRow[],
+  now: Date,
+): Promise<Response> {
+  const session = await db.session(propertyId, "rooms");
+  const turn = await db.reserveTurn({
+    session_id: session.id,
+    transcript: "[récapitulatif]",
+    audio_seconds: 0,
+    since: startOfDay(now),
+  });
+  if (!turn) return failure("quota", 429);
+  const reply = roomsSummaryText(rooms);
+  await db.updateTurn(turn.id, {
+    reply_fr: reply,
+    extracted: { mode: "summary", rooms: rooms.length },
+    error: null,
+  });
+  return json(emptyAnswer({ id: turn.id, transcript: "" }, reply));
 }
 
 export async function handleTurn(
@@ -228,10 +478,23 @@ export async function handleTurn(
   if (typeof body !== "object" || body === null) return failure("bad_request", 400);
   const step = body.step;
   if (!isStep(step)) return failure("bad_request", 400);
+  const undone = Array.isArray(body.undone_turn_ids)
+    ? body.undone_turn_ids.filter((id): id is string => typeof id === "string" && UUID.test(id))
+      .slice(0, LIMITS.undoneTurns)
+    : [];
+  const identity = stepSchema(step).identity === true;
 
   try {
-    const property = await draftProperty(db, body.property_id);
+    const property = await draftProperty(db, body.property_id, step);
     if (property instanceof Response) return property;
+    if (undone.length) await db.markUndone(property.id, undone);
+    if (step === "rooms" && body.summary === true) {
+      return await roomsSummary(db, property.id, sanitizeRooms(body.rooms), now);
+    }
+    if (body.turn_id === undefined && body.transcript === undefined) {
+      // Only reporting undone turns.
+      return undone.length ? json({ undone: undone.length }) : failure("bad_request", 400);
+    }
     const session = await db.session(property.id, step);
 
     let turn;
@@ -268,6 +531,18 @@ export async function handleTurn(
       if (!reserved) return failure("quota", 429);
       turn = reserved;
     }
+    // A V1 transcript wiped after a failed agent call can never be sent to
+    // the model: the seller is asked to repeat.
+    if (turn.transcript === IDENTITY_REMOVED) {
+      await db.updateTurn(turn.id, {
+        reply_fr: ASK_TO_REPEAT,
+        extracted: { mode: "identity_retry" },
+        error: null,
+      });
+      return json(emptyAnswer({ id: turn.id, transcript: "" }, ASK_TO_REPEAT));
+    }
+    // A V1 transcript (names) is never kept, whatever happens next.
+    const forget = identity ? { transcript: IDENTITY_REMOVED } : {};
 
     const history = (await db.recentTurns(session.id, LIMITS.historyTurns + 1))
       .filter((t) => t.id !== turn.id)
@@ -283,14 +558,29 @@ export async function handleTurn(
       ],
     };
     const currentYear = now.getUTCFullYear();
+    const currentMonth = now.getUTCMonth() + 1;
+    const values = { ...property, ...sanitizeDraft(step, body.draft) };
+    const rooms = step === "rooms" ? sanitizeRooms(body.rooms) : [];
+    const estimates = step === "context" ? sanitizeEstimates(body.estimates) : [];
+    const coOwnersCount = num(body.co_owners_count, 0, 10) ?? 0;
+    const lastRoomRef = typeof body.last_room_ref === "string" &&
+        rooms.some((r) => r.ref === body.last_room_ref)
+      ? body.last_room_ref
+      : null;
+    const model = agentModelFor(deps.models, step);
 
     const messages = buildMessages({
       step,
-      values: property,
+      values,
       transcript: turn.transcript,
       history,
       lifestyleLabels,
       currentYear,
+      currentMonth,
+      rooms,
+      estimates,
+      coOwnersCount,
+      lastRetained: lastRetained(history.at(-1)),
     });
     // A truncated or invalid JSON answer (seen with Gemini Flash-Lite) is
     // asked again once, with more room; then the seller is asked to repeat.
@@ -299,19 +589,20 @@ export async function handleTurn(
     let tokensIn = 0;
     let tokensOut = 0;
     let cost = 0;
-    for (const maxTokens of [1500, 3000]) {
+    const budget = stepSchema(step).maxTokens;
+    for (const maxTokens of [budget, budget * 2]) {
       let chat;
       try {
         chat = await deps.openrouter.chat({
-          model: deps.models.agent,
+          model,
           messages,
           jsonSchema: { name: "agent_turn", schema: outputSchema(step) },
           maxTokens,
           temperature: 0,
-          provider: agentProvider(deps.models.agent),
+          provider: agentProvider(model),
         });
       } catch (error) {
-        await db.updateTurn(turn.id, { error: "agent_failed" }).catch(() => {});
+        await db.updateTurn(turn.id, { error: "agent_failed", ...forget }).catch(() => {});
         console.error(error instanceof Error ? error.message : "agent error");
         return failure("upstream", 502, { turn_id: turn.id });
       }
@@ -330,45 +621,47 @@ export async function handleTurn(
       await db.updateTurn(turn.id, {
         reply_fr: ASK_TO_REPEAT,
         error: "invalid_output",
-        agent_model: deps.models.agent,
+        agent_model: model,
         tokens_in: tokensIn,
         tokens_out: tokensOut,
         agent_ms: ms,
         cost_usd: (turn.cost_usd ?? 0) + cost,
+        ...forget,
       }).catch(() => {});
-      return json({
-        turn_id: turn.id,
-        transcript: turn.transcript,
-        reply_fr: ASK_TO_REPEAT,
-        patch: {},
-        facts: [],
-        pending: [],
-        lifestyle_items: [],
-        suggestions: {},
-        next_field: null,
-        done: false,
-      });
+      return json(emptyAnswer(turn, ASK_TO_REPEAT));
     }
     const validated = validateTurn(output, {
       step,
-      values: property,
+      values,
       transcript: turn.transcript,
       currentYear,
+      currentMonth,
       lifestyleLabels,
+      interactive: body.interactive === true,
+      rooms,
+      lastRoomRef,
+      estimates,
+      coOwnersCount,
     });
     const reply = output.reply_fr.slice(0, LIMITS.replyChars) ||
       "Pouvez-vous reformuler, s’il vous plaît ?";
     const done = output.done;
     const nextField = output.next_field === "none" ? null : output.next_field;
     await db.updateTurn(turn.id, {
-      reply_fr: reply,
-      extracted: { ...validated, done, next_field: nextField },
-      agent_model: deps.models.agent,
+      // V1: the journal (and the spoken reply) never holds a name.
+      reply_fr: identity ? redactNames(reply, output, turn.transcript) : reply,
+      extracted: {
+        ...(identity ? withoutIdentity(validated) : validated),
+        done,
+        next_field: nextField,
+      },
+      agent_model: model,
       tokens_in: tokensIn,
       tokens_out: tokensOut,
       agent_ms: ms,
       cost_usd: (turn.cost_usd ?? 0) + cost,
       error: null,
+      ...forget,
     });
     await db.updateSession(session.id, {
       next_field: nextField?.slice(0, 60) ?? null,
@@ -383,6 +676,10 @@ export async function handleTurn(
       pending: validated.pending,
       lifestyle_items: validated.lifestyle_items,
       suggestions: validated.suggestions,
+      entity_ops: validated.entity_ops,
+      confirmations: validated.confirmations,
+      out_of_step: validated.out_of_step,
+      corrections: validated.corrections,
       next_field: nextField,
       done,
     });
@@ -406,7 +703,7 @@ export async function handleSpeech(
   try {
     const turn = await db.turn(body.turn_id);
     if (!turn || !turn.reply_fr) return failure("not_found", 404);
-    const property = await draftProperty(db, turn.session.property_id);
+    const property = await draftProperty(db, turn.session.property_id, turn.session.step);
     if (property instanceof Response) return property;
     const quota = await quotaError(db, deps.now?.() ?? new Date(), {
       newTurn: false,

@@ -72,6 +72,28 @@ enum RoomSuggestion {
   /// Several rooms of this kind are numbered ("Chambre 2").
   bool get isNumbered => this == bedroom;
 
+  /// The suggestion named [name] (the agent's `kind`), or null.
+  static RoomSuggestion? byKind(Object? name) {
+    for (final suggestion in values) {
+      if (suggestion.name == name) return suggestion;
+    }
+    return null;
+  }
+
+  /// [label] with the number after the highest one of [otherNames] ("Chambre
+  /// 3" after "Chambre 1" and "Chambre 2"; a plain "Chambre" counts as 1).
+  static String numbered(String label, Iterable<String> otherNames) {
+    final pattern = RegExp('^${RegExp.escape(label)}(?: (\\d+))?\$');
+    var highest = 0;
+    for (final name in otherNames) {
+      final match = pattern.firstMatch(name.trim());
+      if (match == null) continue;
+      final number = int.parse(match.group(1) ?? '1');
+      if (number > highest) highest = number;
+    }
+    return '$label ${highest + 1}';
+  }
+
   String label(AppLocalizations l10n) => switch (this) {
     entrance => l10n.surfacesRoomEntrance,
     livingRoom => l10n.surfacesRoomLivingRoom,

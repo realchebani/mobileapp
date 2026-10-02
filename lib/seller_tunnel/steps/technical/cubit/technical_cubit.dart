@@ -1,7 +1,9 @@
+import 'package:agent_repository/agent_repository.dart';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:mobileapp/seller_tunnel/models/property_type_profile.dart';
 import 'package:mobileapp/seller_tunnel/steps/technical/models/technical_options.dart';
+import 'package:mobileapp/seller_tunnel/voice/voice_form.dart';
 import 'package:property_repository/property_repository.dart';
 
 part 'technical_state.dart';
@@ -11,9 +13,39 @@ part 'technical_state.dart';
 /// [submit] validates the answers; when they are valid it increments
 /// `TechnicalState.saveRequests`, on which the view hands
 /// `TechnicalState.patch` to the tunnel cubit (the step has no child rows).
-class TechnicalCubit extends Cubit<TechnicalState> {
+///
+/// The V4b voice sheet (EPIC-14) fills the same draft ([applyVoiceTurn]).
+class TechnicalCubit extends Cubit<TechnicalState>
+    with VoiceFormMixin<TechnicalState> {
   new({required Property property, DateTime? today})
     : super(TechnicalState.fromProperty(property, today ?? DateTime.now()));
+
+  @override
+  AgentTurnContext get voiceContext =>
+      AgentTurnContext(draft: encodeVoiceDraft(state.values));
+
+  /// The draft with the answers of [turn]: the form is rebuilt from the
+  /// dossier, the current answers and the turn's patch (same parsing as a
+  /// saved dossier); errors and save requests are kept.
+  @override
+  TechnicalState applyVoiceTurn(TechnicalState state, AgentTurn turn) {
+    if (turn.patch.isEmpty) return state;
+    final row = {
+      ...state.property.toJson(),
+      ...encodeVoiceDraft(state.values),
+      ...turn.patch,
+    };
+    return TechnicalState.fromProperty(
+      Property.fromJson(row),
+      state.today,
+      saved: state.property,
+    ).copyWith(
+      showErrors: state.showErrors,
+      submitAttempts: state.submitAttempts,
+      saveRequests: state.saveRequests,
+      dictated: {...state.dictated, ...turn.patch.keys},
+    );
+  }
 
   void constructionYearChanged(String value) =>
       emit(state.copyWith(constructionYear: value));

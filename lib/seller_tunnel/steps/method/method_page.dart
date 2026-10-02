@@ -1,21 +1,25 @@
 import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:mobileapp/l10n/l10n.dart';
 import 'package:mobileapp/seller_tunnel/cubit/seller_tunnel_cubit.dart';
 import 'package:mobileapp/seller_tunnel/models/seller_tunnel_step.dart';
 import 'package:mobileapp/seller_tunnel/steps/method/widgets/method_card.dart';
+import 'package:mobileapp/seller_tunnel/steps/surfaces/surfaces_page.dart';
 import 'package:mobileapp/seller_tunnel/view/seller_tunnel_navigation.dart';
+import 'package:mobileapp/seller_tunnel/voice/voice.dart';
 import 'package:mobileapp/seller_tunnel/widgets/widgets.dart';
 import 'package:mobileapp/ui/ui.dart';
 import 'package:property_repository/property_repository.dart';
 
 /// V5 · Choix de la méthode de relevé: how the rooms are measured.
 ///
-/// v1: only "Saisir manuellement" (listed first) is available (it saves
-/// `measurement_method` and opens V5c); the camera scan and the plan import
-/// are shown as coming soon.
+/// v1: "Saisir manuellement" (listed first) saves `measurement_method` and
+/// opens V5c; "Dicter mes pièces" (EPIC-14, when voice is available) saves
+/// the same method and opens V5c with the dictation; the camera scan and
+/// the plan import are shown as coming soon.
 class MethodPage extends StatelessWidget {
   const new({super.key});
 
@@ -37,10 +41,35 @@ class MethodView extends StatelessWidget {
     if (next != null && context.mounted) context.goToTunnelStep(next);
   }
 
+  /// "Dicter mes pièces": saves the method (`manual`, owner decision Q8)
+  /// and opens V5c with the dictation (`?dictee=1`).
+  static Future<void> _dictate(BuildContext context) async {
+    final tunnel = context.read<SellerTunnelCubit>();
+    final property = tunnel.state.property!;
+    await tunnel.save({
+      PropertyColumns.measurementMethod: MeasurementMethod.manual,
+      if (property.currentStep < SellerTunnelStep.surfaces.number)
+        PropertyColumns.currentStep: SellerTunnelStep.surfaces.number,
+    });
+    if (tunnel.state.saveStatus != SellerTunnelSaveStatus.success ||
+        !context.mounted) {
+      return;
+    }
+    context.go(
+      '${SellerTunnelStep.surfaces.routeFor(property.id)}'
+      '?${SurfacesPage.dictationQuery}=1',
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final c = context.realestyColors;
+    final dictation =
+        context.select<SellerTunnelCubit, bool>(
+          (cubit) => cubit.state.profile.hasVoice(SellerTunnelStep.surfaces),
+        ) &&
+        VoiceServices.of(context).isAvailable;
     final saving = context.select<SellerTunnelCubit, bool>(
       (cubit) => cubit.state.isSaving,
     );
@@ -70,6 +99,13 @@ class MethodView extends StatelessWidget {
                   }),
                 ),
         ),
+        if (dictation)
+          MethodCard(
+            icon: RealestyIcons.mic,
+            title: l10n.methodVoiceTitle,
+            description: l10n.methodVoiceDescription,
+            onTap: saving ? null : () => unawaited(_dictate(context)),
+          ),
         MethodCard(
           icon: RealestyIcons.scan,
           title: l10n.methodScanTitle,

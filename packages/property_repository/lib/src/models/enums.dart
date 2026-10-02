@@ -294,6 +294,21 @@ enum MeasurementMethod implements DbEnum {
   final String value;
 }
 
+/// V5c · how a room was captured (`rooms.source`).
+enum RoomSource implements DbEnum {
+  scan('scan'),
+  plan('plan'),
+  manual('manual'),
+
+  /// Dictated to the voice agent (EPIC-14).
+  voice('voice');
+
+  new(this.value);
+
+  @override
+  final String value;
+}
+
 /// V6 · overlooking neighbours.
 enum Overlooking implements DbEnum {
   none('aucun'),

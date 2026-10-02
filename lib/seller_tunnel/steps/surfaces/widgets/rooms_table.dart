@@ -2,6 +2,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:mobileapp/l10n/l10n.dart';
 import 'package:mobileapp/seller_tunnel/steps/surfaces/models/room_area.dart';
 import 'package:mobileapp/seller_tunnel/steps/surfaces/models/room_options.dart';
+import 'package:mobileapp/seller_tunnel/voice/widgets/step_voice_sheet.dart';
 import 'package:mobileapp/ui/ui.dart';
 import 'package:property_repository/property_repository.dart';
 
@@ -14,6 +15,7 @@ class RoomsTable extends StatelessWidget {
     required this.livingArea,
     required this.onEdit,
     this.annexArea,
+    this.dictated = const {},
     super.key,
   });
 
@@ -28,6 +30,9 @@ class RoomsTable extends StatelessWidget {
 
   /// Edits a room; null disables the edit buttons.
   final ValueChanged<Room>? onEdit;
+
+  /// Ids of the rooms dictated on this visit ("Dicté").
+  final Set<String> dictated;
 
   @override
   Widget build(BuildContext context) {
@@ -73,6 +78,7 @@ class RoomsTable extends StatelessWidget {
                 key: ValueKey(room.id),
                 room: room,
                 border: border,
+                dictated: dictated.contains(room.id),
                 onEdit: onEdit == null ? null : () => onEdit!(room),
               ),
           ],
@@ -130,12 +136,14 @@ class _RoomRow extends StatelessWidget {
     required this.room,
     required this.border,
     required this.onEdit,
+    this.dictated = false,
     super.key,
   });
 
   final Room room;
   final BorderSide border;
   final VoidCallback? onEdit;
+  final bool dictated;
 
   @override
   Widget build(BuildContext context) {
@@ -151,17 +159,38 @@ class _RoomRow extends StatelessWidget {
         children: [
           Expanded(
             flex: 8,
-            child: room.isAnnex
-                ? Wrap(
-                    spacing: 6,
-                    runSpacing: 4,
-                    crossAxisAlignment: WrapCrossAlignment.center,
-                    children: [
-                      Text(room.name, style: textStyle),
-                      RealestyBadge(label: l10n.surfacesAnnexTag),
-                    ],
-                  )
-                : Text(room.name, style: textStyle),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 6),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                spacing: 2,
+                children: [
+                  if (room.isAnnex || dictated)
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 4,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        Text(room.name, style: textStyle),
+                        if (room.isAnnex)
+                          RealestyBadge(label: l10n.surfacesAnnexTag),
+                        if (dictated) const DictatedTag(),
+                      ],
+                    )
+                  else
+                    Text(room.name, style: textStyle),
+                  if (room.description case final description?)
+                    Text(
+                      description,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: RealestyTextStyles.listSubtitle.copyWith(
+                        color: c.texteDiscret,
+                      ),
+                    ),
+                ],
+              ),
+            ),
           ),
           SizedBox(
             width: 64,

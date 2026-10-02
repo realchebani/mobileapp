@@ -46,6 +46,20 @@ class _PreviousEstimateCardState extends State<PreviousEstimateCard> {
   late final _month = TextEditingController(text: widget.draft.month);
   late final _agency = TextEditingController(text: widget.draft.agency);
 
+  /// A voice turn (or its undo) changed the card: the fields follow
+  /// (typing keeps them equal, so nothing happens then).
+  @override
+  void didUpdateWidget(PreviousEstimateCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    void sync(TextEditingController controller, String text) {
+      if (controller.text != text) controller.text = text;
+    }
+
+    sync(_price, widget.draft.price);
+    sync(_month, widget.draft.month);
+    sync(_agency, widget.draft.agency);
+  }
+
   @override
   void dispose() {
     _price.dispose();

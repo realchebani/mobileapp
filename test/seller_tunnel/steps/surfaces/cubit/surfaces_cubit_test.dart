@@ -19,7 +19,7 @@ const _living = Room(
   isMain: true,
   ceilingHeightM: 2.5,
   photosCount: 4,
-  source: MeasurementMethod.scan,
+  source: RoomSource.scan,
 );
 
 const _kitchen = Room(
@@ -158,7 +158,7 @@ void main() {
               areaM2: 40,
               ceilingHeightM: 2.5,
               photosCount: 4,
-              source: MeasurementMethod.scan,
+              source: RoomSource.scan,
             ),
             _kitchen,
           ],

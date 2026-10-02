@@ -1,6 +1,8 @@
 import 'dart:async';
 
+import 'package:agent_repository/agent_repository.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:mobileapp/l10n/l10n.dart';
 import 'package:mobileapp/seller_tunnel/cubit/seller_tunnel_cubit.dart';
@@ -8,18 +10,36 @@ import 'package:mobileapp/seller_tunnel/models/seller_tunnel_step.dart';
 import 'package:mobileapp/seller_tunnel/steps/surfaces/cubit/surfaces_cubit.dart';
 import 'package:mobileapp/seller_tunnel/steps/surfaces/models/room_area.dart';
 import 'package:mobileapp/seller_tunnel/steps/surfaces/models/room_input.dart';
+import 'package:mobileapp/seller_tunnel/steps/surfaces/widgets/dictated_rooms_list.dart';
 import 'package:mobileapp/seller_tunnel/steps/surfaces/widgets/room_sheet.dart';
 import 'package:mobileapp/seller_tunnel/steps/surfaces/widgets/rooms_table.dart';
 import 'package:mobileapp/seller_tunnel/view/seller_tunnel_navigation.dart';
+import 'package:mobileapp/seller_tunnel/voice/voice.dart';
 import 'package:mobileapp/seller_tunnel/widgets/widgets.dart';
 import 'package:mobileapp/ui/ui.dart';
 import 'package:property_repository/property_repository.dart';
 
-/// V5c · Récapitulatif des surfaces: the rooms table (manual entry in v1),
-/// the living area (surface habitable) of the rooms and the area of the
-/// annexes (garage, cellier…).
+/// V5c · Récapitulatif des surfaces: the rooms table (typed, or dictated to
+/// the voice agent: EPIC-14), the living area (surface habitable) of the
+/// rooms and the area of the annexes (garage, cellier…).
+///
+/// `?dictee=1` (V5 "Dicter mes pièces") opens the dictation on arrival.
 class SurfacesPage extends StatelessWidget {
   const new({super.key});
+
+  /// Query parameter of V5 "Dicter mes pièces".
+  static const dictationQuery = 'dictee';
+
+  /// Whether the route asks to open the dictation (`?dictee=1`).
+  static bool dictationRequested(BuildContext context) {
+    try {
+      final uri = GoRouter.of(context).state.uri;
+      return uri.queryParameters[dictationQuery] == '1';
+    } on Object {
+      // Outside a router (or a mocked one): no dictation request.
+      return false;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -32,13 +52,16 @@ class SurfacesPage extends StatelessWidget {
           rooms: tunnel.rooms,
         );
       },
-      child: const SurfacesView(),
+      child: SurfacesView(startDictation: dictationRequested(context)),
     );
   }
 }
 
 class SurfacesView extends StatefulWidget {
-  const new({super.key});
+  const new({this.startDictation = false, super.key});
+
+  /// Opens the dictation once the screen is shown.
+  final bool startDictation;
 
   @override
   State<SurfacesView> createState() => _SurfacesViewState();
@@ -48,6 +71,43 @@ class _SurfacesViewState extends State<SurfacesView> {
   static const SellerTunnelStep _step = SellerTunnelStep.surfaces;
 
   final GlobalKey _tableKey = GlobalKey();
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.startDictation) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && _voiceAvailable(context)) unawaited(_openDictation());
+      });
+    }
+  }
+
+  static bool _voiceAvailable(BuildContext context) =>
+      VoiceServices.of(context).isAvailable &&
+      context.read<SellerTunnelCubit>().state.profile.hasVoice(_step);
+
+  /// The rooms dictation (Night sheet; the agent stays silent until the
+  /// spoken summary of "Terminer").
+  Future<void> _openDictation() async {
+    final l10n = context.l10n;
+    final cubit = context.read<SurfacesCubit>();
+    final propertyId = context.read<SellerTunnelCubit>().state.property!.id;
+    final repository = VoiceServices.of(context).agentRepository!;
+    await showStepVoiceSheet(
+      context,
+      propertyId: propertyId,
+      step: AgentStep.rooms,
+      form: cubit,
+      title: l10n.surfacesVoiceTitle,
+      intro: l10n.surfacesVoiceIntro,
+      dictation: VoiceDefaults.silentRoomsDictation,
+      summary: () => repository.roomsSummary(
+        propertyId: propertyId,
+        rooms: cubit.voiceContext.rooms,
+      ),
+      extra: BlocProvider.value(value: cubit, child: const DictatedRoomsList()),
+    );
+  }
 
   void _onSubmission(BuildContext context, SurfacesState state) {
     switch (state.submission) {
@@ -159,6 +219,9 @@ class _SurfacesViewState extends State<SurfacesView> {
           label: l10n.surfacesContinue,
           isLoading: busy,
           onPressed: cubit.submit,
+          onMicPressed: busy || !_voiceAvailable(context)
+              ? null
+              : () => unawaited(_openDictation()),
         ),
         children: [
           AgentIntro(
@@ -189,6 +252,7 @@ class _SurfacesViewState extends State<SurfacesView> {
                 groups: state.roomsByLevel,
                 livingArea: state.livingArea,
                 annexArea: state.hasAnnexes ? state.annexArea : null,
+                dictated: state.dictated,
                 onEdit: busy ? null : (room) => _editRoom(state, room),
               ),
               if (state.showErrors && !state.isValid)

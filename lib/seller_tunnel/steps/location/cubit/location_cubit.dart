@@ -1,9 +1,11 @@
 import 'dart:async';
 
+import 'package:agent_repository/agent_repository.dart';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:geo_repository/geo_repository.dart';
 import 'package:mobileapp/seller_tunnel/steps/location/data/device_locator.dart';
+import 'package:mobileapp/seller_tunnel/voice/voice_form.dart';
 import 'package:property_repository/property_repository.dart';
 
 part 'location_state.dart';
@@ -28,7 +30,11 @@ enum _Lookup {
 /// [submit] saves the selected parcels (`property_parcels` rows); the view
 /// then reports them to the `SellerTunnelCubit` and saves
 /// [LocationState.toPatch] with `saveAndContinue`.
-class LocationCubit extends Cubit<LocationState> {
+///
+/// The V2 voice sheet (EPIC-14) answers the special situations
+/// ([applyVoiceTurn]); the address is only dictated into its field.
+class LocationCubit extends Cubit<LocationState>
+    with VoiceFormMixin<LocationState> {
   new({
     required this._geoRepository,
     required this._propertyRepository,
@@ -265,6 +271,36 @@ class LocationCubit extends Cubit<LocationState> {
   /// The "Autre" free text changed.
   void otherSituationChanged(String text) {
     emit(state.copyWith(otherSituation: text));
+  }
+
+  @override
+  bool get acceptsVoice => !state.isSubmitting;
+
+  @override
+  AgentTurnContext get voiceContext => AgentTurnContext(
+    draft: {
+      PropertyColumns.specialSituations: [
+        for (final situation in state.situations) situation.value,
+      ],
+      PropertyColumns.specialSituationOther: state.otherSituation.trim().isEmpty
+          ? null
+          : state.otherSituation.trim(),
+    },
+  );
+
+  @override
+  LocationState applyVoiceTurn(LocationState state, AgentTurn turn) {
+    final patch = turn.patch;
+    final situations = patch[PropertyColumns.specialSituations];
+    final other = patch[PropertyColumns.specialSituationOther];
+    return state.copyWith(
+      situations: situations is List
+          ? (parseDbEnumList(SpecialSituation.values, situations)
+              ..sort((a, b) => a.index.compareTo(b.index)))
+          : null,
+      otherSituation: other is String ? other : null,
+      dictated: {...state.dictated, ...patch.keys},
+    );
   }
 
   /// "Continuer": shows the errors if the answers are incomplete, else

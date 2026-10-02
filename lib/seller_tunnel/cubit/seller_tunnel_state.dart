@@ -79,7 +79,7 @@ final class SellerTunnelState extends Equatable {
         : SellerTunnelStep.fromSegment(segment);
     if (step == null || step == SellerTunnelStep.submitted) return null;
     if (isLocked) return SellerTunnelStep.submitted.routeFor(property.id);
-    if (segment == SellerTunnelStep.voiceAuditSegment && !profile.voice) {
+    if (segment == SellerTunnelStep.voiceAuditSegment && !profile.voiceAudit) {
       return SellerTunnelStep.technical.routeFor(property.id);
     }
     if (!profile.includes(step)) {

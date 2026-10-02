@@ -20,7 +20,7 @@ enum VoicePhase {
   /// Paused by the seller.
   paused,
 
-  /// The agent has everything it needs.
+  /// The agent has everything it needs (or the seller said "terminé").
   done,
 }
 
@@ -59,6 +59,45 @@ final class VoiceMessage extends Equatable {
   List<Object?> get props => [text, fromAgent];
 }
 
+/// An answer applied to the step's form during this sheet session, with
+/// its "Annuler" cross (EPIC-14).
+final class VoiceAppliedPill extends Equatable {
+  const new({
+    required this.turnId,
+    required this.key,
+    required this.label,
+    this.changedLabel,
+  });
+
+  final String turnId;
+
+  /// A column, or `op:<index>` of the turn's entity operations.
+  final String key;
+  final String label;
+
+  /// "Modifié : 1998 → 1999".
+  final String? changedLabel;
+
+  @override
+  List<Object?> get props => [turnId, key, label, changedLabel];
+}
+
+/// A change waiting for the seller's "Oui" (a pill with Oui / Non).
+final class VoicePendingConfirmation extends Equatable {
+  const new({required this.turnId, required this.confirmation});
+
+  final String turnId;
+  final AgentConfirmation confirmation;
+
+  /// The end of a rooms dictation: "Est-ce correct ?" (no change).
+  bool get isSummary => confirmation.id == summaryId;
+
+  static const summaryId = 'summary';
+
+  @override
+  List<Object?> get props => [turnId, confirmation];
+}
+
 final class VoiceConversationState extends Equatable {
   const new({
     this.phase = VoicePhase.idle,
@@ -69,6 +108,12 @@ final class VoiceConversationState extends Equatable {
     this.error,
     this.muted = false,
     this.suggestScreenMode = false,
+    this.applied = const [],
+    this.confirmations = const [],
+    this.outOfStep = const [],
+    this.turnIds = const [],
+    this.sessionStart = 0,
+    this.finished = false,
   });
 
   /// Bars of the waveform.
@@ -93,6 +138,28 @@ final class VoiceConversationState extends Equatable {
   /// Nothing was understood for several turns: the screen mode is offered.
   final bool suggestScreenMode;
 
+  /// What this sheet session applied to the form, oldest first.
+  final List<VoiceAppliedPill> applied;
+
+  /// Changes waiting for "Oui" / "Non".
+  final List<VoicePendingConfirmation> confirmations;
+
+  /// Answers about other steps ("Construction → Technique").
+  final List<AgentOutOfStep> outOfStep;
+
+  /// Turns applied to the form in this sheet session, oldest first (the
+  /// last one can be undone).
+  final List<String> turnIds;
+
+  /// Number of form turns when this session started (to undo it all).
+  final int sessionStart;
+
+  /// Number of turns applied in this session.
+  int get appliedTurns => turnIds.length;
+
+  /// The seller ended the sheet ("terminé", or "oui" to the summary).
+  final bool finished;
+
   /// The current input level (0…1).
   double get level => levels.isEmpty ? 0 : levels.last;
 
@@ -105,6 +172,11 @@ final class VoiceConversationState extends Equatable {
     VoiceError? Function()? error,
     bool? muted,
     bool? suggestScreenMode,
+    List<VoiceAppliedPill>? applied,
+    List<VoicePendingConfirmation>? confirmations,
+    List<AgentOutOfStep>? outOfStep,
+    List<String>? turnIds,
+    bool? finished,
   }) {
     return VoiceConversationState(
       phase: phase ?? this.phase,
@@ -115,6 +187,12 @@ final class VoiceConversationState extends Equatable {
       error: error == null ? this.error : error(),
       muted: muted ?? this.muted,
       suggestScreenMode: suggestScreenMode ?? this.suggestScreenMode,
+      applied: applied ?? this.applied,
+      confirmations: confirmations ?? this.confirmations,
+      outOfStep: outOfStep ?? this.outOfStep,
+      turnIds: turnIds ?? this.turnIds,
+      sessionStart: sessionStart,
+      finished: finished ?? this.finished,
     );
   }
 
@@ -128,5 +206,11 @@ final class VoiceConversationState extends Equatable {
     error,
     muted,
     suggestScreenMode,
+    applied,
+    confirmations,
+    outOfStep,
+    turnIds,
+    sessionStart,
+    finished,
   ];
 }
