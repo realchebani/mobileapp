@@ -1,0 +1,31 @@
+{
+  "_comment": "Parity fixture (EPIC-15): the options the vision AI may propose, which must match the V5c form of the app (RoomSuggestion names, FloorCovering values, Glazing and RoomLevel values). Read by the Edge Function tests (tests/vision_validate_test.ts) and by the app (test/seller_tunnel/photos/vision_options_parity_test.dart).",
+  "room_kinds": [
+    "entrance",
+    "livingRoom",
+    "kitchen",
+    "bedroom",
+    "bathroom",
+    "showerRoom",
+    "toilet",
+    "office",
+    "hallway",
+    "storeroom",
+    "laundry",
+    "garage",
+    "basement",
+    "other"
+  ],
+  "floor_coverings": [
+    "parquet_chene",
+    "parquet",
+    "carrelage",
+    "moquette",
+    "beton_cire",
+    "stratifie",
+    "vinyle",
+    "autre"
+  ],
+  "glazings": ["simple", "double", "triple"],
+  "levels": ["sous_sol", "rdc", "etage_1", "etage_2", "combles"]
+}

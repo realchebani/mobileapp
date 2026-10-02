@@ -65,6 +65,7 @@ final class DocumentsState extends Equatable {
   const new({
     required this.property,
     required this.documents,
+    this.rooms = const [],
     this.picking = false,
     this.uploading,
     this.busyDocumentIds = const {},
@@ -79,6 +80,9 @@ final class DocumentsState extends Equatable {
 
   /// The uploaded documents, oldest first.
   final List<PropertyDocument> documents;
+
+  /// The rooms of the dossier (their photos count, EPIC-15).
+  final List<Room> rooms;
 
   /// Whether a picker is open.
   final bool picking;
@@ -101,7 +105,8 @@ final class DocumentsState extends Equatable {
   final bool showsSubmissionErrors;
 
   /// Statuses, missing count and transparency score.
-  DocumentChecklist get checklist => DocumentChecklist.of(property, documents);
+  DocumentChecklist get checklist =>
+      DocumentChecklist.of(property, documents, rooms: rooms);
 
   bool get isUploading => uploading != null;
 
@@ -126,6 +131,7 @@ final class DocumentsState extends Equatable {
     return DocumentsState(
       property: property,
       documents: documents ?? this.documents,
+      rooms: rooms,
       picking: picking ?? this.picking,
       uploading: uploading == null ? this.uploading : uploading(),
       busyDocumentIds: busyDocumentIds ?? this.busyDocumentIds,
@@ -141,6 +147,7 @@ final class DocumentsState extends Equatable {
   List<Object?> get props => [
     property,
     documents,
+    rooms,
     picking,
     uploading,
     busyDocumentIds,

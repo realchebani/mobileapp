@@ -169,6 +169,10 @@ final class PropertyTypeProfile extends Equatable {
   /// once provided).
   final List<DocumentKind> documentKinds;
 
+  /// Whether a main room needs a photo to send the dossier (EPIC-15, owner
+  /// decision Q3): the types whose tunnel has rooms.
+  bool get requiresRoomPhotos => steps.contains(SellerTunnelStep.surfaces);
+
   /// Whether [step] is part of the tunnel of this type ([SellerTunnelStep
   /// .submitted] always is).
   bool includes(SellerTunnelStep step) =>

@@ -292,3 +292,13 @@ Total ≈ **15 à 19 tranches**, entièrement compatible iPhone 14 Plus, coût d
 - OpenRouter : [Gemini 3.5 Flash-Lite, tarifs](https://pricepertoken.com/pricing-page/model/google-gemini-3.5-flash-lite).
 - Plugins Flutter (licences relevées sur pub.dev le 2026-10-02) : `camera` BSD-3, `image_picker` Apache-2.0/BSD-3, `video_player` BSD-3, `webview_flutter` BSD-3, `sensors_plus` BSD-3, `panorama_viewer` Apache-2.0, `opencv_dart` Apache-2.0, `arkit_plugin` MIT, `ar_flutter_plugin` MIT (non maintenu depuis 2022), `roomplan` / `roomplan_flutter` MIT, `google_mlkit_face_detection` MIT (SDK ML Kit sous conditions Google), `video_compress` MIT, `tus_client_dart` MIT (2023), `flutter_gaussian_splatter` MIT, `model_viewer_plus` Apache-2.0 ; `ffmpeg_kit_flutter(_new)` **LGPL-3.0, exclu**.
 - Volumes vidéo iPhone (HEVC 1080p30 ≈ 60 Mo/min, 4K30 ≈ 170 Mo/min) : réglages Appareil photo d’iOS (Réglages > Appareil photo > Enregistrement vidéo).
+
+## Arbitrages du porteur de projet (2026-10-02)
+- Q1 : **les deux usages** (expert + annonce) avec une seule capture ; les photos doivent être assez documentées pour l'analyse de l'expert. L'outil doit aussi être intégré au parcours vendeur **au moment de la mise en vente** (V11a) pour ceux qui ne l'ont pas utilisé dans le tunnel.
+- Q2 : capture **depuis chaque pièce dans V5c**.
+- Q3 : **au moins une photo par pièce principale** pour envoyer le dossier.
+- Q5 : **IA de vision via OpenRouter avec consentement** au premier usage.
+- Q4 : **pas de floutage automatique en v1** (au backlog, après les tests) : consigne « personne dans le champ » à l’écran, l’IA signale les personnes, la photo est à reprendre ou supprimer.
+- Q6 : **lecture d’un plan en v1** (pièces et surfaces imprimées seulement, validation ligne par ligne, provenance « Extrait d’un document »).
+- Q7 : **carte « Scanner avec la caméra » retirée** pour l’instant.
+- Questions 8–10 : à trancher. Mise en œuvre : [Photos du bien](2026-10-02-photos-du-bien.md) (EPIC-15).

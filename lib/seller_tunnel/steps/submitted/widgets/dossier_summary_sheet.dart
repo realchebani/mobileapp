@@ -155,6 +155,21 @@ class DossierSummarySheet extends StatelessWidget {
           for (final room in state.rooms)
             if (room.description case final description?)
               (room.name, description),
+          // EPIC-15: the photos, in total and room by room.
+          if (state.rooms.isNotEmpty) ...[
+            (
+              l10n.submittedSummaryPhotos,
+              l10n.submittedSummaryPhotosCount(
+                state.rooms.fold(0, (sum, room) => sum + room.photosCount),
+              ),
+            ),
+            for (final room in state.rooms)
+              if (room.photosCount > 0)
+                (
+                  l10n.submittedSummaryRoomPhotos(room.name),
+                  l10n.submittedSummaryPhotosCount(room.photosCount),
+                ),
+          ],
         ],
       ),
       (

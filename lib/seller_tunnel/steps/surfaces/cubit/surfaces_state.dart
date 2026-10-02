@@ -14,6 +14,8 @@ final class SurfacesState extends Equatable {
     this.submission = SurfacesSubmission.idle,
     this.dictated = const {},
     this.lastDictatedId,
+    this.savingRoomId,
+    this.photosRoom,
   });
 
   /// The rooms of the table, in order (each has its id, even before it is
@@ -38,13 +40,36 @@ final class SurfacesState extends Equatable {
   /// The room dictated last ("la dernière").
   final String? lastDictatedId;
 
+  /// The room being saved before its photos are opened (EPIC-15).
+  final String? savingRoomId;
+
+  /// The stored row of the room whose photos open (after
+  /// `SurfacesCubit.preparePhotos`), or null when it could not be written.
+  final Room? photosRoom;
+
+  /// Photos of all the rooms (EPIC-15).
+  int get photosCount => rooms.fold(0, (sum, room) => sum + room.photosCount);
+
+  /// The "pièces principales", which need a photo to send the dossier.
+  List<Room> get mainRooms => [
+    for (final room in rooms)
+      if (room.isMain) room,
+  ];
+
+  /// The main rooms without a photo yet.
+  List<Room> get mainRoomsWithoutPhotos => [
+    for (final room in mainRooms)
+      if (room.photosCount == 0) room,
+  ];
+
   /// The rooms dictated on this visit, in table order.
   List<Room> get dictatedRooms => [
     for (final room in rooms)
       if (dictated.contains(room.id)) room,
   ];
 
-  bool get isSubmitting => submission == SurfacesSubmission.inProgress;
+  bool get isSubmitting =>
+      submission == SurfacesSubmission.inProgress || savingRoomId != null;
 
   /// At least one living-space room (not an annex) is needed to continue.
   bool get isValid => rooms.any((room) => !room.isAnnex);
@@ -82,6 +107,8 @@ final class SurfacesState extends Equatable {
     SurfacesSubmission? submission,
     Set<String>? dictated,
     String? Function()? lastDictatedId,
+    String? Function()? savingRoomId,
+    Room? Function()? photosRoom,
   }) {
     return SurfacesState(
       rooms: rooms ?? this.rooms,
@@ -93,6 +120,8 @@ final class SurfacesState extends Equatable {
       lastDictatedId: lastDictatedId == null
           ? this.lastDictatedId
           : lastDictatedId(),
+      savingRoomId: savingRoomId == null ? this.savingRoomId : savingRoomId(),
+      photosRoom: photosRoom == null ? this.photosRoom : photosRoom(),
     );
   }
 
@@ -105,5 +134,7 @@ final class SurfacesState extends Equatable {
     submission,
     dictated,
     lastDictatedId,
+    savingRoomId,
+    photosRoom,
   ];
 }
