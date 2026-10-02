@@ -1,7 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:mobileapp/app/app.dart';
 import 'package:mobileapp/l10n/l10n.dart';
 import 'package:mobileapp/seller_tunnel/cubit/seller_tunnel_cubit.dart';
 import 'package:mobileapp/seller_tunnel/models/seller_tunnel_step.dart';
@@ -9,12 +7,11 @@ import 'package:mobileapp/seller_tunnel/view/seller_tunnel_navigation.dart';
 import 'package:mobileapp/ui/ui.dart';
 import 'package:mobileapp/widgets/widgets.dart';
 
-/// Seller space ("Mon dossier vendeur"): starts or resumes the audit,
-/// signs out and, in the development flavor, opens the design system.
+/// "Mon bien" tab while the dossier is a draft ("Mon dossier vendeur"):
+/// starts or resumes the audit. Signing out and the design system link
+/// live in the "Compte" tab.
 class SellerHomePage extends StatelessWidget {
-  const new({this.showDesignSystemLink = false, super.key});
-
-  final bool showDesignSystemLink;
+  const new({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -23,17 +20,13 @@ class SellerHomePage extends StatelessWidget {
     final step = context.select<SellerTunnelCubit, SellerTunnelStep>(
       (cubit) => cubit.state.resumeStep,
     );
-    final String label;
-    if (step == SellerTunnelStep.submitted) {
-      label = l10n.sellerHomeSubmitted;
-    } else if (step == SellerTunnelStep.owners) {
-      label = l10n.sellerHomeStart;
-    } else {
-      label = l10n.sellerHomeResume(step.number, SellerTunnelStep.count);
-    }
+    final label = step == SellerTunnelStep.owners
+        ? l10n.sellerHomeStart
+        : l10n.sellerHomeResume(step.number, SellerTunnelStep.count);
     return Scaffold(
       backgroundColor: c.ivoire,
       body: SafeArea(
+        bottom: false,
         child: FillScrollView(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(
@@ -69,21 +62,6 @@ class SellerHomePage extends StatelessWidget {
                   label: label,
                   onPressed: () => context.goToTunnelStep(step),
                 ),
-                const SizedBox(height: RealestySpacing.sm),
-                RealestyButton(
-                  label: l10n.logoutButton,
-                  variant: RealestyButtonVariant.secondary,
-                  onPressed: () =>
-                      context.read<AppBloc>().add(const AppLogoutPressed()),
-                ),
-                if (showDesignSystemLink) ...[
-                  const SizedBox(height: RealestySpacing.sm),
-                  RealestyButton(
-                    label: l10n.homeDesignSystem,
-                    variant: RealestyButtonVariant.text,
-                    onPressed: () => context.push(AppRoutes.designSystem),
-                  ),
-                ],
               ],
             ),
           ),

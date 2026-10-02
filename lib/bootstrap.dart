@@ -11,6 +11,7 @@ import 'package:mobileapp/seller_tunnel/voice/voice_services.dart';
 import 'package:mobileapp/ui/ui.dart';
 import 'package:profile_repository/profile_repository.dart';
 import 'package:property_repository/property_repository.dart';
+import 'package:sale_repository/sale_repository.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:voice_repository/voice_repository.dart';
@@ -22,6 +23,8 @@ typedef AppBuilder = FutureOr<Widget> Function({
   required PropertyRepository propertyRepository,
   required GeoRepository geoRepository,
   required OnboardingRepository onboardingRepository,
+  required ValuationRepository valuationRepository,
+  required NotificationRepository notificationRepository,
   VoiceServices? voiceServices,
 });
 
@@ -64,6 +67,8 @@ Future<void> bootstrap(AppBuilder builder) async {
       propertyRepository: PropertyRepository(client: client),
       geoRepository: GeoRepository(),
       onboardingRepository: OnboardingRepository(preferences: preferences),
+      valuationRepository: ValuationRepository(client: client),
+      notificationRepository: NotificationRepository(client: client),
       // Voice + AI agent only where the flavor enables it (VOICE_ENABLED).
       voiceServices: VoiceServices(
         // False only when analyzed without the flavor's dart-defines.

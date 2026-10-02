@@ -42,6 +42,7 @@ void main() {
         'LISTE',
         'BANNIÈRES',
         'AGENT',
+        'ESPACE VENDEUR',
       ]) {
         expect(find.text(section), findsOneWidget, reason: section);
       }
@@ -114,6 +115,31 @@ void main() {
       await tester.tap(find.text('Terrain'));
       await tester.pumpAndSettle();
       expect(find.text('Terrain'), findsOneWidget);
+    });
+
+    testWidgets('seller space components', (tester) async {
+      await pumpGallery(tester);
+      await tapAndExpectToast(
+        tester,
+        find.text('Voir le rapport complet'),
+        'Rapport',
+      );
+      await tapAndExpectToast(
+        tester,
+        find.text('Mettre mon bien en vente'),
+        'Mise en vente',
+      );
+      await tapAndExpectToast(
+        tester,
+        find.text('Suivi de mon dossier'),
+        'Suivi',
+      );
+      await tester.tap(find.text('Compte'));
+      await tester.pump();
+      expect(
+        tester.widget<Text>(find.text('Compte')).style?.fontWeight,
+        FontWeight.w700,
+      );
     });
   });
 }

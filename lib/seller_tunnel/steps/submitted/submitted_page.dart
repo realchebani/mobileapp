@@ -1,13 +1,15 @@
 import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:mobileapp/app/app.dart';
 import 'package:mobileapp/l10n/l10n.dart';
 import 'package:mobileapp/seller_tunnel/cubit/seller_tunnel_cubit.dart';
-import 'package:mobileapp/seller_tunnel/steps/submitted/cubit/notification_preference_cubit.dart';
-import 'package:mobileapp/seller_tunnel/steps/submitted/data/notification_preference_store.dart';
+import 'package:mobileapp/seller_tunnel/market/widgets/market_format.dart';
+import 'package:mobileapp/seller_tunnel/steps/submitted/cubit/ai_estimate_cubit.dart';
 import 'package:mobileapp/seller_tunnel/steps/submitted/widgets/ai_estimate_card.dart';
+import 'package:mobileapp/seller_tunnel/steps/submitted/widgets/ai_estimate_status_card.dart';
 import 'package:mobileapp/seller_tunnel/steps/submitted/widgets/dossier_summary_sheet.dart';
 import 'package:mobileapp/seller_tunnel/steps/submitted/widgets/submitted_format.dart';
 import 'package:mobileapp/seller_tunnel/steps/submitted/widgets/submitted_timeline.dart';
@@ -17,39 +19,25 @@ import 'package:mobileapp/ui/ui.dart';
 import 'package:property_repository/property_repository.dart';
 
 /// V8 · Attente de validation expert: confirmation once the dossier is
-/// sent, AI trend (when computed), expert review timeline (from `status`
-/// and `submitted_at`) and notification preference. Read-only: works for
-/// submitted, in_review and certified dossiers.
+/// sent, AI trend (non-certified estimate, EPIC-05), expert review
+/// timeline (from `status` and `submitted_at`) and a note that the seller
+/// is notified in the app. Read-only: works for submitted, in_review and
+/// certified dossiers.
 class SubmittedPage extends StatelessWidget {
-  const new({this.notificationStore, super.key});
-
-  /// Where the notification choice is kept (device preferences by default).
-  final NotificationPreferenceStore? notificationStore;
+  const new({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final tunnel = context.read<SellerTunnelCubit>();
-    final property = tunnel.state.property!;
-    // The dossier can only be written while it is open (RLS); once locked,
-    // the device preference is the only record of the choice.
-    final isOpen =
-        property.status == PropertyStatus.draft ||
-        property.status == PropertyStatus.submitted;
+    final property = context.read<SellerTunnelCubit>().state.property!;
     return BlocProvider(
-      create: (_) {
-        final cubit = NotificationPreferenceCubit(
-          store: notificationStore ?? NotificationPreferenceStore(),
+      create: (context) {
+        final cubit = AiEstimateCubit(
+          propertyRepository: context.read<PropertyRepository>(),
           propertyId: property.id,
-          initialValue: property.notifyPush,
-          saveRemote: isOpen
-              ? ({required enabled}) async {
-                  // A failure shows the tunnel save-error snackbar
-                  // (SellerTunnelGate).
-                  await tunnel.save({PropertyColumns.notifyPush: enabled});
-                  return tunnel.state.saveStatus ==
-                      SellerTunnelSaveStatus.success;
-                }
-              : null,
+          // No trend once certified (the expert's value replaces it).
+          enabled:
+              property.status == PropertyStatus.submitted ||
+              property.status == PropertyStatus.inReview,
         );
         unawaited(cubit.load());
         return cubit;
@@ -68,9 +56,6 @@ class SubmittedView extends StatelessWidget {
     final state = context.watch<SellerTunnelCubit>().state;
     final property = state.property!;
     final status = property.status;
-    final low = property.aiEstimateLowEur;
-    final median = property.aiEstimateMedianEur;
-    final high = property.aiEstimateHighEur;
     return TunnelScaffold(
       spacing: 14,
       actionBar: _ActionBar(
@@ -78,31 +63,13 @@ class SubmittedView extends StatelessWidget {
       ),
       children: [
         _Hero(state: state),
-        if (status != PropertyStatus.certified &&
-            low != null &&
-            median != null &&
-            high != null)
-          AiEstimateCard(
-            low: low,
-            median: median,
-            high: high,
-            computedAt: property.aiEstimateComputedAt,
-          ),
+        const _AiEstimate(),
         _Card(child: SubmittedTimeline(entries: _timeline(l10n, property))),
         if (status == PropertyStatus.submitted ||
             status == PropertyStatus.inReview)
-          _NotificationRow(email: _email(context, state)),
+          const _NotificationRow(),
       ],
     );
-  }
-
-  static String? _email(BuildContext context, SellerTunnelState state) {
-    for (final owner in state.owners) {
-      if (owner.position == 1 && (owner.email?.isNotEmpty ?? false)) {
-        return owner.email;
-      }
-    }
-    return context.read<AppBloc>().state.user?.email;
   }
 
   static List<TimelineEntry> _timeline(
@@ -243,6 +210,60 @@ class _Hero extends StatelessWidget {
   }
 }
 
+/// "Tendance IA": the non-certified estimate, its computation or why
+/// there is none.
+class _AiEstimate extends StatelessWidget {
+  const new();
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final state = context.watch<AiEstimateCubit>().state;
+    final snapshot = state.snapshot;
+    final low = snapshot?.lowEur;
+    final median = snapshot?.medianEur;
+    final high = snapshot?.highEur;
+    return switch (state.status) {
+      AiEstimateStatus.hidden => const SizedBox.shrink(),
+      AiEstimateStatus.ready
+          when low != null && median != null && high != null =>
+        AiEstimateCard(
+          low: low,
+          median: median,
+          high: high,
+          computedAt: snapshot!.computedAt,
+          confidence: snapshot.confidenceLevel,
+          widenedNote: _widenedNote(l10n, snapshot),
+          onSynthesis: () => context.push(AppRoutes.sellerMarket),
+        ),
+      AiEstimateStatus.computing => AiEstimateStatusCard(
+        message: l10n.submittedAiComputing,
+        isLoading: true,
+      ),
+      AiEstimateStatus.rateLimited => AiEstimateStatusCard(
+        message: l10n.submittedAiRateLimited,
+      ),
+      AiEstimateStatus.failed => AiEstimateStatusCard(
+        message: l10n.submittedAiFailed,
+        onRetry: () => context.read<AiEstimateCubit>().retry(),
+      ),
+      AiEstimateStatus.ready ||
+      AiEstimateStatus.unavailable => AiEstimateStatusCard(
+        message: snapshot?.reason == 'too_few_sales'
+            ? l10n.submittedAiTooFewSales
+            : l10n.submittedAiUnavailable,
+      ),
+    };
+  }
+}
+
+String? _widenedNote(AppLocalizations l10n, MarketSnapshot snapshot) {
+  final radius = snapshot.radiusM;
+  final years = snapshot.years;
+  if (!snapshot.isSearchWidened || radius == null || years == null) return null;
+  return l10n.submittedAiWidened(marketDistance(l10n, radius), years);
+}
+
 class _Card extends StatelessWidget {
   const new({required this.child});
 
@@ -263,56 +284,27 @@ class _Card extends StatelessWidget {
   }
 }
 
-/// "Me prévenir par notification": a device preference in v1 (no push
-/// notifications yet), see `NotificationPreferenceStore`.
+/// The seller is notified in the app (automatic: no setting; no push and no
+/// e-mail, decisions 2026-10-01).
 class _NotificationRow extends StatelessWidget {
-  const new({required this.email});
-
-  final String? email;
+  const new();
 
   @override
   Widget build(BuildContext context) {
-    final l10n = context.l10n;
     final c = context.realestyColors;
-    final enabled = context.watch<NotificationPreferenceCubit>().state;
-    final email = this.email;
-    return MergeSemantics(
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(
-          minHeight: RealestySpacing.minTouchTarget,
-        ),
-        child: Row(
-          spacing: RealestySpacing.sm,
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    l10n.submittedNotifyTitle,
-                    style: RealestyTextStyles.listTitle.copyWith(
-                      color: c.encre,
-                    ),
-                  ),
-                  if (email != null && email.isNotEmpty)
-                    Text(
-                      l10n.submittedNotifyEmail(email),
-                      style: RealestyTextStyles.listSubtitle.copyWith(
-                        color: c.texteDiscret,
-                      ),
-                    ),
-                ],
-              ),
+    return Row(
+      spacing: RealestySpacing.sm,
+      children: [
+        RealestyIcon(RealestyIcons.bell, color: c.vertTexte),
+        Expanded(
+          child: Text(
+            context.l10n.submittedNotifyInApp,
+            style: RealestyTextStyles.listSubtitle.copyWith(
+              color: c.texteDiscret,
             ),
-            Switch(
-              value: enabled,
-              onChanged: (value) => context
-                  .read<NotificationPreferenceCubit>()
-                  .toggled(enabled: value),
-            ),
-          ],
+          ),
         ),
-      ),
+      ],
     );
   }
 }

@@ -18,9 +18,21 @@ abstract final class AppRoutes {
   /// 02 · Sélecteur de rôle.
   static const role = '/role';
 
-  /// Seller space: entry screen of the seller dossier ("Mon dossier
-  /// vendeur").
+  /// Seller space, tab "Mon bien": V9 Dashboard once the dossier is sent,
+  /// "Mon dossier vendeur" (start / resume the audit) while it is a draft.
   static const seller = '/vendeur';
+
+  /// V9b · Rapport d’avis de valeur (tab "Mon bien").
+  static const sellerReport = '/vendeur/rapport';
+
+  /// Tab "Visites" (V13, EPIC-09).
+  static const sellerVisits = '/vendeur/visites';
+
+  /// Tab "Coffre-fort" (C1, EPIC-11).
+  static const sellerVault = '/vendeur/coffre';
+
+  /// Tab "Compte" (C2).
+  static const sellerAccount = '/vendeur/compte';
 
   /// Seller tunnel steps live under this path (see `SellerTunnelStep`).
   static const sellerAudit = '/vendeur/audit';
@@ -54,6 +66,10 @@ abstract final class AppRoutes {
 
   /// V8 · Dossier envoyé, attente de l’expert.
   static const sellerSubmitted = '/vendeur/audit/envoye';
+
+  /// V8b · Synthèse du marché (non-certified estimate, EPIC-05), pushed
+  /// above the tabs.
+  static const sellerMarket = '/vendeur/marche';
 
   /// Buyer space (placeholder).
   static const buyer = '/acheteur';

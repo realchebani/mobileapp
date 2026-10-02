@@ -389,10 +389,6 @@
       }
     }
   },
-  "sellerHomeSubmitted": "Voir mon dossier envoyé",
-  "@sellerHomeSubmitted": {
-    "description": "Button opening the submitted dossier screen"
-  },
   "sellerTunnelLoadError": "Impossible de charger votre dossier.",
   "@sellerTunnelLoadError": {
     "description": "Error when the seller dossier cannot be loaded"
@@ -1975,9 +1971,9 @@
   "@submittedAiLabel": {
     "description": "V8 · légende de la carte d’estimation IA"
   },
-  "submittedAiBadge": "Indicative",
+  "submittedAiBadge": "Non certifiée",
   "@submittedAiBadge": {
-    "description": "V8 · badge de l’estimation IA"
+    "description": "Badge de la carte Tendance IA (V8) : l’estimation n’est pas certifiée"
   },
   "submittedAiRange": "{low} – {high} €",
   "@submittedAiRange": {
@@ -2009,18 +2005,18 @@
       }
     }
   },
-  "submittedAiComputed": "Calculée le {date} à partir de vos réponses, documents et références de marché. Non validée par un professionnel.",
+  "submittedAiComputed": "Calculée le {date} à partir des ventes notariées (DVF) de votre secteur. Non certifiée : votre expert établira la valeur.",
   "@submittedAiComputed": {
-    "description": "V8 · note sous l’estimation IA (date jj/mm/aaaa)",
+    "description": "Date de calcul de la tendance IA (V8)",
     "placeholders": {
       "date": {
         "type": "String"
       }
     }
   },
-  "submittedAiComputedNoDate": "Calculée à partir de vos réponses, documents et références de marché. Non validée par un professionnel.",
+  "submittedAiComputedNoDate": "Calculée à partir des ventes notariées (DVF) de votre secteur. Non certifiée : votre expert établira la valeur.",
   "@submittedAiComputedNoDate": {
-    "description": "V8 · note sous l’estimation IA sans date de calcul"
+    "description": "Mention de la tendance IA sans date (V8)"
   },
   "submittedStepComplete": "Dossier complet",
   "@submittedStepComplete": {
@@ -2078,7 +2074,7 @@
   "@submittedStepCertified": {
     "description": "V8 · frise : étape 3"
   },
-  "submittedStepCertifiedTodo": "Consultable ici et envoyé par e-mail",
+  "submittedStepCertifiedTodo": "Consultable ici, avec une notification dans l’application",
   "@submittedStepCertifiedTodo": {
     "description": "V8 · frise : avis à venir"
   },
@@ -2098,22 +2094,9 @@
   "@submittedStepStateTodo": {
     "description": "V8 · frise : état d’une étape (lecteur d’écran)"
   },
-  "submittedNotifyTitle": "Me prévenir par notification",
-  "@submittedNotifyTitle": {
-    "description": "V8 · interrupteur des notifications"
-  },
-  "submittedNotifyEmail": "Et par e-mail à {email}",
-  "@submittedNotifyEmail": {
-    "description": "V8 · adresse e-mail de notification",
-    "placeholders": {
-      "email": {
-        "type": "String"
-      }
-    }
-  },
-  "submittedBackToDossier": "Retour à mon dossier",
+  "submittedBackToDossier": "Aller au tableau de bord",
   "@submittedBackToDossier": {
-    "description": "V8 · bouton principal vers l’espace vendeur"
+    "description": "V8 · bouton principal vers le tableau de bord (V9)"
   },
   "submittedSummaryButton": "Voir l’aperçu de mes données",
   "@submittedSummaryButton": {
@@ -2868,6 +2851,1031 @@
     "placeholders": {
       "count": {
         "type": "int"
+      }
+    }
+  },
+  "tabBarLabel": "Navigation principale",
+  "@tabBarLabel": {
+    "description": "Barre d’onglets · libellé d’accessibilité"
+  },
+  "tabBarMyProperty": "Mon bien",
+  "@tabBarMyProperty": {
+    "description": "Barre d’onglets · onglet Mon bien"
+  },
+  "tabBarVisits": "Visites",
+  "@tabBarVisits": {
+    "description": "Barre d’onglets · onglet Visites"
+  },
+  "tabBarVault": "Coffre-fort",
+  "@tabBarVault": {
+    "description": "Barre d’onglets · onglet Coffre-fort"
+  },
+  "tabBarAccount": "Compte",
+  "@tabBarAccount": {
+    "description": "Barre d’onglets · onglet Compte"
+  },
+  "comingSoonBadge": "Bientôt",
+  "@comingSoonBadge": {
+    "description": "Onglet à venir · badge"
+  },
+  "visitsTitle": "Demandes de visite",
+  "@visitsTitle": {
+    "description": "Onglet Visites · titre"
+  },
+  "visitsComingSoon": "Vous retrouverez ici les demandes de visite des acquéreurs, une fois votre bien mis en vente.",
+  "@visitsComingSoon": {
+    "description": "Onglet Visites · texte d’attente"
+  },
+  "vaultTitle": "Coffre-fort",
+  "@vaultTitle": {
+    "description": "Onglet Coffre-fort · titre"
+  },
+  "vaultComingSoon": "Vous retrouverez ici tous les documents de votre bien, rangés par rubrique.",
+  "@vaultComingSoon": {
+    "description": "Onglet Coffre-fort · texte d’attente"
+  },
+  "accountTitle": "Mon compte",
+  "@accountTitle": {
+    "description": "C2 · titre"
+  },
+  "accountRoleSeller": "Vendeur",
+  "@accountRoleSeller": {
+    "description": "C2 · badge du rôle vendeur"
+  },
+  "accountSecuritySection": "Connexion & sécurité",
+  "@accountSecuritySection": {
+    "description": "C2 · titre de section"
+  },
+  "accountSignInMethod": "Méthode de connexion",
+  "@accountSignInMethod": {
+    "description": "C2 · ligne méthode de connexion"
+  },
+  "accountSignInMethodValue": "Lien de connexion par e-mail",
+  "@accountSignInMethodValue": {
+    "description": "C2 · méthode de connexion (lien magique)"
+  },
+  "accountPreferencesSection": "Préférences",
+  "@accountPreferencesSection": {
+    "description": "C2 · titre de section"
+  },
+  "accountLanguage": "Langue",
+  "@accountLanguage": {
+    "description": "C2 · ligne langue"
+  },
+  "accountLanguageValue": "Français",
+  "@accountLanguageValue": {
+    "description": "C2 · langue de l’application"
+  },
+  "accountMoreSoon": "La modification de vos informations, vos préférences de notifications et la suppression du compte arrivent bientôt.",
+  "@accountMoreSoon": {
+    "description": "C2 · fonctions à venir"
+  },
+  "accountNoName": "Mon profil",
+  "@accountNoName": {
+    "description": "C2 · nom affiché sans prénom"
+  },
+  "notificationsTitle": "Notifications",
+  "@notificationsTitle": {
+    "description": "Notifications · titre de la liste"
+  },
+  "notificationsButton": "Notifications",
+  "@notificationsButton": {
+    "description": "V9 · bouton cloche (lecteur d’écran)"
+  },
+  "notificationsButtonUnread": "{count, plural, =1{Notifications, 1 non lue} other{Notifications, {count} non lues}}",
+  "@notificationsButtonUnread": {
+    "description": "V9 · bouton cloche avec notifications non lues (lecteur d’écran)",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "notificationsEmpty": "Aucune notification pour le moment.",
+  "@notificationsEmpty": {
+    "description": "Notifications · liste vide"
+  },
+  "notificationsError": "Impossible de charger vos notifications.",
+  "@notificationsError": {
+    "description": "Notifications · erreur de chargement"
+  },
+  "notificationsUnread": "Non lue",
+  "@notificationsUnread": {
+    "description": "Notifications · état non lu (lecteur d’écran)"
+  },
+  "notificationsDate": "Le {date} à {time}",
+  "@notificationsDate": {
+    "description": "Notifications · date de réception",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "dashboardGreeting": "Bonjour",
+  "@dashboardGreeting": {
+    "description": "V9 · salutation au-dessus du prénom"
+  },
+  "dashboardTitleFallback": "Mon bien",
+  "@dashboardTitleFallback": {
+    "description": "V9 · titre sans prénom"
+  },
+  "dashboardAgentSubmitted": "Votre dossier est entre les mains de notre expert. Je vous préviens dès que votre avis de valeur certifié est prêt.",
+  "@dashboardAgentSubmitted": {
+    "description": "V9 · message de l’agent, dossier envoyé"
+  },
+  "dashboardAgentInReview": "Un expert analyse votre dossier. Je vous préviens dès que votre avis de valeur certifié est prêt.",
+  "@dashboardAgentInReview": {
+    "description": "V9 · message de l’agent, dossier en analyse"
+  },
+  "dashboardAgentCertified": "Votre avis de valeur certifié est disponible. Découvrez dans le rapport comment l’expert l’a établi.",
+  "@dashboardAgentCertified": {
+    "description": "V9 · message de l’agent, dossier certifié"
+  },
+  "dashboardArea": "{area} m²",
+  "@dashboardArea": {
+    "description": "V9 · surface habitable (nombre formaté)",
+    "placeholders": {
+      "area": {
+        "type": "String"
+      }
+    }
+  },
+  "dashboardRooms": "{count, plural, =1{1 pièce} other{{count} pièces}}",
+  "@dashboardRooms": {
+    "description": "V9 · nombre de pièces",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dashboardBadgeInProgress": "Analyse en cours",
+  "@dashboardBadgeInProgress": {
+    "description": "V9 · badge du bien avant certification"
+  },
+  "dashboardBadgeCertified": "Rapport disponible",
+  "@dashboardBadgeCertified": {
+    "description": "V9 · badge du bien certifié"
+  },
+  "dashboardNoEstimate": "Votre tendance IA n’est pas disponible : l’expert vous donnera directement son avis de valeur.",
+  "@dashboardNoEstimate": {
+    "description": "V9 · pas d’estimation IA avant certification"
+  },
+  "dashboardMarketLink": "Voir la synthèse du marché",
+  "@dashboardMarketLink": {
+    "description": "V9 · lien vers V8b"
+  },
+  "dashboardTrackTitle": "Suivi de mon dossier",
+  "@dashboardTrackTitle": {
+    "description": "V9 · ligne vers V8"
+  },
+  "dashboardHeroCaption": "Avis de valeur certifié",
+  "@dashboardHeroCaption": {
+    "description": "V9 · légende de la carte de valeur"
+  },
+  "dashboardHeroBadge": "Certifié",
+  "@dashboardHeroBadge": {
+    "description": "V9 / V9b · badge de la valeur certifiée"
+  },
+  "dashboardHeroRange": "Fourchette {low} – {high} €",
+  "@dashboardHeroRange": {
+    "description": "V9 · fourchette (montants formatés)",
+    "placeholders": {
+      "low": {
+        "type": "String"
+      },
+      "high": {
+        "type": "String"
+      }
+    }
+  },
+  "dashboardHeroAiTrend": "Tendance IA initiale {value} €",
+  "@dashboardHeroAiTrend": {
+    "description": "V9 · tendance IA de départ (montant formaté)",
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "dashboardHeroExpert": "Validé par {name}, expert immobilier · {date}",
+  "@dashboardHeroExpert": {
+    "description": "V9 / V9b · expert et date de validation",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "dashboardHeroAction": "Voir le rapport complet",
+  "@dashboardHeroAction": {
+    "description": "V9 · bouton vers V9b"
+  },
+  "dashboardSellTitle": "Mettre mon bien en vente",
+  "@dashboardSellTitle": {
+    "description": "V9 · action de mise en vente"
+  },
+  "dashboardSellSubtitle": "Choisissez votre formule, dès 1 % au succès",
+  "@dashboardSellSubtitle": {
+    "description": "V9 · sous-titre de la mise en vente"
+  },
+  "dashboardSellSoon": "Le choix de votre formule arrive bientôt dans l’application.",
+  "@dashboardSellSoon": {
+    "description": "V9 · mise en vente pas encore disponible"
+  },
+  "dashboardDossierTitle": "Mon dossier",
+  "@dashboardDossierTitle": {
+    "description": "V9 · carte du dossier"
+  },
+  "dashboardDossierScore": "{score} %",
+  "@dashboardDossierScore": {
+    "description": "V9 · score de transparence",
+    "placeholders": {
+      "score": {
+        "type": "int"
+      }
+    }
+  },
+  "dashboardDocuments": "Documents",
+  "@dashboardDocuments": {
+    "description": "V9 · ligne documents"
+  },
+  "dashboardDocumentsCount": "{count, plural, =0{Aucun document} =1{1 document} other{{count} documents}}",
+  "@dashboardDocumentsCount": {
+    "description": "V9 · nombre de documents",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dashboardDocumentsRejected": "{count} à remplacer",
+  "@dashboardDocumentsRejected": {
+    "description": "V9 · documents refusés",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dashboardActionRequired": "Action requise",
+  "@dashboardActionRequired": {
+    "description": "V9 · badge documents à reprendre"
+  },
+  "dashboardSurfaces": "Surfaces & pièces",
+  "@dashboardSurfaces": {
+    "description": "V9 · ligne surfaces"
+  },
+  "dashboardLifestyle": "Cadre de vie",
+  "@dashboardLifestyle": {
+    "description": "V9 · ligne cadre de vie"
+  },
+  "dashboardLifestyleAssets": "{count, plural, =0{Aucun atout} =1{1 atout} other{{count} atouts}}",
+  "@dashboardLifestyleAssets": {
+    "description": "V9 · nombre d’atouts",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dashboardLifestyleWatch": "{count, plural, =0{aucun point de vigilance} =1{1 point de vigilance} other{{count} points de vigilance}}",
+  "@dashboardLifestyleWatch": {
+    "description": "V9 · nombre de points de vigilance",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dashboardRefreshError": "Impossible d’actualiser votre dossier. Vérifiez votre connexion.",
+  "@dashboardRefreshError": {
+    "description": "V9 · échec de l’actualisation"
+  },
+  "dashboardValuationError": "Impossible de charger votre avis de valeur.",
+  "@dashboardValuationError": {
+    "description": "V9 / V9b · échec du chargement de l’avis de valeur"
+  },
+  "reportTitle": "Rapport d’avis de valeur",
+  "@reportTitle": {
+    "description": "V9b · titre"
+  },
+  "reportBack": "Retour",
+  "@reportBack": {
+    "description": "V9b · bouton retour (lecteur d’écran)"
+  },
+  "reportCaption": "Valeur certifiée",
+  "@reportCaption": {
+    "description": "V9b · légende de la carte de valeur"
+  },
+  "reportRange": "Fourchette {low} € – {high} €",
+  "@reportRange": {
+    "description": "V9b · fourchette (montants formatés)",
+    "placeholders": {
+      "low": {
+        "type": "String"
+      },
+      "high": {
+        "type": "String"
+      }
+    }
+  },
+  "reportPriceM2": "soit {value} €/m²",
+  "@reportPriceM2": {
+    "description": "V9b · prix au m² (montant formaté)",
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "reportDownload": "Télécharger le rapport (PDF · {pages} pages)",
+  "@reportDownload": {
+    "description": "V9b · bouton du PDF",
+    "placeholders": {
+      "pages": {
+        "type": "int"
+      }
+    }
+  },
+  "reportDownloadNoPages": "Télécharger le rapport (PDF)",
+  "@reportDownloadNoPages": {
+    "description": "V9b · bouton du PDF sans nombre de pages"
+  },
+  "reportDownloadError": "Impossible d’ouvrir le rapport. Réessayez.",
+  "@reportDownloadError": {
+    "description": "V9b · échec de l’ouverture du PDF"
+  },
+  "reportMissing": "Votre avis de valeur n’est pas encore disponible.",
+  "@reportMissing": {
+    "description": "V9b · pas d’avis de valeur"
+  },
+  "reportTabSynthesis": "Synthèse",
+  "@reportTabSynthesis": {
+    "description": "V9b · onglet"
+  },
+  "reportTabProperty": "Le bien",
+  "@reportTabProperty": {
+    "description": "V9b · onglet"
+  },
+  "reportTabSector": "Secteur",
+  "@reportTabSector": {
+    "description": "V9b · onglet"
+  },
+  "reportTabPrice": "Prix",
+  "@reportTabPrice": {
+    "description": "V9b · onglet"
+  },
+  "reportEuros": "{amount} €",
+  "@reportEuros": {
+    "description": "V9b · montant (formaté)",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "reportPlusEuros": "+ {amount} €",
+  "@reportPlusEuros": {
+    "description": "V9b · montant positif (formaté)",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "reportMinusEuros": "− {amount} €",
+  "@reportMinusEuros": {
+    "description": "V9b · montant négatif (formaté)",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "reportAdvisedPrice": "Prix conseillé",
+  "@reportAdvisedPrice": {
+    "description": "V9b Synthèse · tuile"
+  },
+  "reportAdvisedPriceHint": "au cœur de la fourchette",
+  "@reportAdvisedPriceHint": {
+    "description": "V9b Synthèse · sous-titre du prix conseillé"
+  },
+  "reportDelay": "Délai estimé",
+  "@reportDelay": {
+    "description": "V9b Synthèse · tuile"
+  },
+  "reportDelayValue": "≈ {weeks} sem.",
+  "@reportDelayValue": {
+    "description": "V9b Synthèse · délai en semaines",
+    "placeholders": {
+      "weeks": {
+        "type": "int"
+      }
+    }
+  },
+  "reportDelayHint": "à ce prix",
+  "@reportDelayHint": {
+    "description": "V9b Synthèse · sous-titre du délai"
+  },
+  "reportHowTitle": "Comment nous arrivons à ce chiffre",
+  "@reportHowTitle": {
+    "description": "V9b Synthèse · titre"
+  },
+  "reportWhyTitle": "Pourquoi cette valeur",
+  "@reportWhyTitle": {
+    "description": "V9b Synthèse · titre"
+  },
+  "reportPositive": "Point fort",
+  "@reportPositive": {
+    "description": "V9b Synthèse · raison positive (lecteur d’écran)"
+  },
+  "reportNegative": "Point faible",
+  "@reportNegative": {
+    "description": "V9b Synthèse · raison négative (lecteur d’écran)"
+  },
+  "reportDelayTitle": "Le prix décide du délai",
+  "@reportDelayTitle": {
+    "description": "V9b Synthèse · titre"
+  },
+  "reportDelaySubtitle": "Plus le prix s’éloigne de la valeur, plus la vente s’allonge.",
+  "@reportDelaySubtitle": {
+    "description": "V9b Synthèse · sous-titre"
+  },
+  "reportExpertSignature": "{name} · Expert immobilier · Realesty",
+  "@reportExpertSignature": {
+    "description": "V9b Synthèse · signature de l’expert",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "reportNextTitle": "Et maintenant ?",
+  "@reportNextTitle": {
+    "description": "V9b Synthèse · titre"
+  },
+  "reportSellTitle": "Mettre en vente à {value} €",
+  "@reportSellTitle": {
+    "description": "V9b Synthèse · action de mise en vente (montant formaté)",
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "reportSellSubtitle": "Choisir ma formule, dès 1 % au succès",
+  "@reportSellSubtitle": {
+    "description": "V9b Synthèse · sous-titre de la mise en vente"
+  },
+  "reportTechnicalTitle": "Fiche technique",
+  "@reportTechnicalTitle": {
+    "description": "V9b Le bien · titre"
+  },
+  "reportTechnicalSubtitle": "Chaque information indique sa provenance.",
+  "@reportTechnicalSubtitle": {
+    "description": "V9b Le bien · sous-titre"
+  },
+  "reportProvenanceDeclared": "Déclaré",
+  "@reportProvenanceDeclared": {
+    "description": "V9b Le bien · provenance"
+  },
+  "reportProvenanceDocument": "Document",
+  "@reportProvenanceDocument": {
+    "description": "V9b Le bien · provenance"
+  },
+  "reportProvenanceExternal": "Externe",
+  "@reportProvenanceExternal": {
+    "description": "V9b Le bien · provenance"
+  },
+  "reportProvenanceVerified": "Vérifié",
+  "@reportProvenanceVerified": {
+    "description": "V9b Le bien · provenance"
+  },
+  "reportSurfacesTitle": "Surfaces pièce par pièce",
+  "@reportSurfacesTitle": {
+    "description": "V9b Le bien · titre"
+  },
+  "reportSurfacesScan": "Relevé par scan pièce par pièce dans l’appli.",
+  "@reportSurfacesScan": {
+    "description": "V9b Le bien · méthode de relevé (scan)"
+  },
+  "reportSurfacesManual": "Déclaré pièce par pièce dans l’appli.",
+  "@reportSurfacesManual": {
+    "description": "V9b Le bien · méthode de relevé (saisie)"
+  },
+  "reportSurfacesTotal": "Surface habitable totale",
+  "@reportSurfacesTotal": {
+    "description": "V9b Le bien · total"
+  },
+  "reportAnnexes": "Annexes",
+  "@reportAnnexes": {
+    "description": "V9b Le bien · groupe des annexes"
+  },
+  "reportArea": "{area} m²",
+  "@reportArea": {
+    "description": "V9b · surface (nombre formaté)",
+    "placeholders": {
+      "area": {
+        "type": "String"
+      }
+    }
+  },
+  "reportSoldTitle": "Ce qui s’est réellement vendu",
+  "@reportSoldTitle": {
+    "description": "V9b Secteur · titre"
+  },
+  "reportSoldSubtitle": "Base DVF · ventes comparables étudiées par l’expert",
+  "@reportSoldSubtitle": {
+    "description": "V9b Secteur · sous-titre"
+  },
+  "reportLand": "terrain {area} m²",
+  "@reportLand": {
+    "description": "V9b Secteur · surface du terrain (nombre formaté)",
+    "placeholders": {
+      "area": {
+        "type": "String"
+      }
+    }
+  },
+  "reportExcluded": "Écartée",
+  "@reportExcluded": {
+    "description": "V9b Secteur · vente écartée"
+  },
+  "reportCompetitorsTitle": "Les biens qui vous font concurrence",
+  "@reportCompetitorsTitle": {
+    "description": "V9b Secteur · titre"
+  },
+  "reportRetained": "Retenu",
+  "@reportRetained": {
+    "description": "V9b Secteur · bien concurrent retenu"
+  },
+  "reportDismissed": "Écarté",
+  "@reportDismissed": {
+    "description": "V9b Secteur · bien concurrent écarté"
+  },
+  "reportDaysOnline": "{days} j en ligne",
+  "@reportDaysOnline": {
+    "description": "V9b Secteur · durée de mise en ligne",
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "reportRisks": "Sols et risques · {note}",
+  "@reportRisks": {
+    "description": "V9b Secteur · note de l’expert sur les risques",
+    "placeholders": {
+      "note": {
+        "type": "String"
+      }
+    }
+  },
+  "reportSectorEmpty": "L’expert n’a pas ajouté de données de marché à ce rapport.",
+  "@reportSectorEmpty": {
+    "description": "V9b Secteur · aucune donnée"
+  },
+  "reportAdjustTitle": "Ce qui déplace le prix",
+  "@reportAdjustTitle": {
+    "description": "V9b Prix · titre"
+  },
+  "reportMethodTitle": "La méthode",
+  "@reportMethodTitle": {
+    "description": "V9b Prix · titre"
+  },
+  "reportMethodSubtitle": "Les ventes donnent la base, la concurrence dit ce que verra votre acquéreur.",
+  "@reportMethodSubtitle": {
+    "description": "V9b Prix · sous-titre"
+  },
+  "reportNetTitle": "Ce qui vous revient",
+  "@reportNetTitle": {
+    "description": "V9b Prix · titre"
+  },
+  "reportNetSubtitle": "Sur la base du prix conseillé, hors diagnostics.",
+  "@reportNetSubtitle": {
+    "description": "V9b Prix · sous-titre"
+  },
+  "reportNetRealesty": "Avec Realesty · 1 % au succès",
+  "@reportNetRealesty": {
+    "description": "V9b Prix · net vendeur avec Realesty"
+  },
+  "reportNetAgency": "Avec une agence classique · 4 %",
+  "@reportNetAgency": {
+    "description": "V9b Prix · net vendeur avec une agence"
+  },
+  "reportNetGain": "Vous gardez en plus",
+  "@reportNetGain": {
+    "description": "V9b Prix · différence"
+  },
+  "reportBuyerTitle": "Le calcul que fera votre acquéreur",
+  "@reportBuyerTitle": {
+    "description": "V9b Prix · titre"
+  },
+  "reportBuyerPrice": "Prix affiché",
+  "@reportBuyerPrice": {
+    "description": "V9b Prix · prix affiché"
+  },
+  "reportBuyerNotary": "+ Frais de notaire (≈ 7,5 %)",
+  "@reportBuyerNotary": {
+    "description": "V9b Prix · frais de notaire"
+  },
+  "reportBuyerWorks": "+ {label}",
+  "@reportBuyerWorks": {
+    "description": "V9b Prix · travaux à prévoir (libellé de l’expert)",
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+  "reportBuyerTotal": "Coût total de son projet",
+  "@reportBuyerTotal": {
+    "description": "V9b Prix · total acquéreur"
+  },
+  "reportSources": "Sources · {sources}",
+  "@reportSources": {
+    "description": "V9b Prix · sources (texte de l’expert)",
+    "placeholders": {
+      "sources": {
+        "type": "String"
+      }
+    }
+  },
+  "reportLegal": "Avis de valeur établi à partir des déclarations du propriétaire, des documents du coffre-fort et des données publiques. Il ne constitue pas une expertise au sens réglementaire ; validité 3 mois (jusqu’au {date}).",
+  "@reportLegal": {
+    "description": "V9b Prix · mention légale",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "submittedNotifyInApp": "Vous serez prévenu(e) dans l’application.",
+  "@submittedNotifyInApp": {
+    "description": "V8 · canal de notification (dans l’app uniquement)"
+  },
+  "reportBuyerWorksDefault": "Travaux à prévoir",
+  "@reportBuyerWorksDefault": {
+    "description": "V9b Prix · travaux à prévoir sans libellé de l’expert"
+  },
+  "submittedAiConfidenceHigh": "Fiabilité : élevée",
+  "@submittedAiConfidenceHigh": {
+    "description": "Indice de confiance élevé de la tendance IA"
+  },
+  "submittedAiConfidenceMedium": "Fiabilité : moyenne",
+  "@submittedAiConfidenceMedium": {
+    "description": "Indice de confiance moyen de la tendance IA"
+  },
+  "submittedAiConfidenceLow": "Fiabilité : faible",
+  "@submittedAiConfidenceLow": {
+    "description": "Indice de confiance faible de la tendance IA"
+  },
+  "submittedAiSynthesis": "Voir la synthèse du marché",
+  "@submittedAiSynthesis": {
+    "description": "Bouton de la carte Tendance IA vers V8b"
+  },
+  "submittedAiComputing": "Calcul de votre tendance de prix…",
+  "@submittedAiComputing": {
+    "description": "Carte Tendance IA pendant le calcul"
+  },
+  "submittedAiTooFewSales": "Trop peu de ventes comparables près de chez vous pour une tendance fiable : l’expert s’en charge dans votre avis de valeur.",
+  "@submittedAiTooFewSales": {
+    "description": "Carte Tendance IA quand il y a moins de 5 ventes comparables"
+  },
+  "submittedAiUnavailable": "Pas de tendance automatique pour ce bien : l’expert s’en charge dans votre avis de valeur.",
+  "@submittedAiUnavailable": {
+    "description": "Carte Tendance IA quand le bien ne permet pas d’estimation (terrain, surface manquante…)"
+  },
+  "submittedAiFailed": "Votre tendance de prix n’a pas pu être calculée.",
+  "@submittedAiFailed": {
+    "description": "Carte Tendance IA quand le calcul a échoué"
+  },
+  "marketTitle": "Synthèse du marché",
+  "@marketTitle": {
+    "description": "Titre de l’écran V8b"
+  },
+  "marketBadge": "Non certifiée",
+  "@marketBadge": {
+    "description": "Badge de V8b : chiffres non certifiés"
+  },
+  "marketComputedOn": "Calculée le {date}",
+  "@marketComputedOn": {
+    "description": "Badge de date de calcul (V8b)",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "marketHeading": "Votre bien face au marché",
+  "@marketHeading": {
+    "description": "Titre de V8b"
+  },
+  "marketTypeHouse": "Maison",
+  "@marketTypeHouse": {
+    "description": "Type de bien maison (V8b)"
+  },
+  "marketTypeApartment": "Appartement",
+  "@marketTypeApartment": {
+    "description": "Type de bien appartement (V8b)"
+  },
+  "marketSummary": "{type} {area} m² · {city} · tendance IA {median} €, soit environ {perM2} €/m².",
+  "@marketSummary": {
+    "description": "Phrase de synthèse de V8b",
+    "placeholders": {
+      "type": {
+        "type": "String"
+      },
+      "area": {
+        "type": "String"
+      },
+      "city": {
+        "type": "String"
+      },
+      "median": {
+        "type": "String"
+      },
+      "perM2": {
+        "type": "String"
+      }
+    }
+  },
+  "marketSectorTitle": "Prix au m² dans votre secteur",
+  "@marketSectorTitle": {
+    "description": "Titre de la carte des prix au m² (V8b)"
+  },
+  "marketPriceM2": "{value} €/m²",
+  "@marketPriceM2": {
+    "description": "Prix au m²",
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "marketSectorMedian": "Médiane secteur {value} €/m²",
+  "@marketSectorMedian": {
+    "description": "Médiane du secteur (V8b)",
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "marketBandSemantics": "Prix au m² du secteur de {low} à {high} €, médiane {median} €. Votre bien : {own} €/m².",
+  "@marketBandSemantics": {
+    "description": "Lecture vocale de la bande de prix (V8b)",
+    "placeholders": {
+      "low": {
+        "type": "String"
+      },
+      "high": {
+        "type": "String"
+      },
+      "median": {
+        "type": "String"
+      },
+      "own": {
+        "type": "String"
+      }
+    }
+  },
+  "marketBasisRadius": "{count} ventes comparables à moins de {distance} · {years} dernières années",
+  "@marketBasisRadius": {
+    "description": "Base de calcul : nombre de ventes, rayon, période (V8b)",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "distance": {
+        "type": "String"
+      },
+      "years": {
+        "type": "int"
+      }
+    }
+  },
+  "marketBasisCommune": "{count} ventes comparables · {city} · {years} ans",
+  "@marketBasisCommune": {
+    "description": "Base de calcul : nombre de ventes, commune, période (V8b)",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "city": {
+        "type": "String"
+      },
+      "years": {
+        "type": "int"
+      }
+    }
+  },
+  "marketSales12m": "Ventes sur 12 mois",
+  "@marketSales12m": {
+    "description": "Tuile du nombre de ventes (V8b)"
+  },
+  "marketYoy": "Évolution des prix sur 1 an",
+  "@marketYoy": {
+    "description": "Tuile de l’évolution des prix (V8b)"
+  },
+  "marketPercent": "{value} %",
+  "@marketPercent": {
+    "description": "Pourcentage",
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "marketComparablesTitle": "Ventes comparables récentes",
+  "@marketComparablesTitle": {
+    "description": "Titre de la liste des ventes (V8b)"
+  },
+  "marketComparableTitle": "{type} {area} m² · {rooms} p.",
+  "@marketComparableTitle": {
+    "description": "Vente comparable : type, surface, pièces",
+    "placeholders": {
+      "type": {
+        "type": "String"
+      },
+      "area": {
+        "type": "String"
+      },
+      "rooms": {
+        "type": "int"
+      }
+    }
+  },
+  "marketComparableTitleNoRooms": "{type} {area} m²",
+  "@marketComparableTitleNoRooms": {
+    "description": "Vente comparable : type et surface",
+    "placeholders": {
+      "type": {
+        "type": "String"
+      },
+      "area": {
+        "type": "String"
+      }
+    }
+  },
+  "marketComparableNearby": "Secteur proche",
+  "@marketComparableNearby": {
+    "description": "Lieu d’une vente quand sa rue n’est pas affichée (moins de 3 ventes)"
+  },
+  "marketComparableSold": "{place} · vendue en {year}",
+  "@marketComparableSold": {
+    "description": "Lieu et année d’une vente comparable",
+    "placeholders": {
+      "place": {
+        "type": "String"
+      },
+      "year": {
+        "type": "String"
+      }
+    }
+  },
+  "marketComparableSoldAt": "{place} · vendue en {year} · à {distance}",
+  "@marketComparableSoldAt": {
+    "description": "Lieu, année et distance d’une vente comparable",
+    "placeholders": {
+      "place": {
+        "type": "String"
+      },
+      "year": {
+        "type": "String"
+      },
+      "distance": {
+        "type": "String"
+      }
+    }
+  },
+  "marketDistanceM": "{value} m",
+  "@marketDistanceM": {
+    "description": "Distance en mètres",
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "marketDistanceKm": "{value} km",
+  "@marketDistanceKm": {
+    "description": "Distance en kilomètres",
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "marketPrice": "{value} €",
+  "@marketPrice": {
+    "description": "Prix en euros",
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "marketSeeAll": "Voir les {count} ventes",
+  "@marketSeeAll": {
+    "description": "Bouton vers la liste complète des ventes",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "marketFactorsTitle": "Ce qui influence votre estimation",
+  "@marketFactorsTitle": {
+    "description": "Titre des facteurs (V8b)"
+  },
+  "marketExplanationTitle": "En résumé",
+  "@marketExplanationTitle": {
+    "description": "Titre de l’explication de l’agent (V8b)"
+  },
+  "marketExplanationNote": "Rédigé par l’agent Realesty à partir des chiffres ci-dessus.",
+  "@marketExplanationNote": {
+    "description": "Mention sous l’explication de l’agent (V8b)"
+  },
+  "marketSources": "Sources : ventes notariées (DVF, DGFiP – traitement Etalab, Licence Ouverte 2.0), connues jusqu’en {month}. Chiffres indicatifs et non certifiés, analysés et ajustés par notre expert dans votre avis de valeur.",
+  "@marketSources": {
+    "description": "Mention des sources DVF (V8b)",
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "marketSourcesNoDate": "Sources : ventes notariées (DVF, DGFiP – traitement Etalab, Licence Ouverte 2.0). Chiffres indicatifs et non certifiés, analysés et ajustés par notre expert dans votre avis de valeur.",
+  "@marketSourcesNoDate": {
+    "description": "Mention des sources DVF sans date (V8b)"
+  },
+  "marketBackToDossier": "Retour au suivi de mon dossier",
+  "@marketBackToDossier": {
+    "description": "Bouton de retour vers V8"
+  },
+  "marketUnavailable": "Pas de synthèse du marché pour ce bien : l’expert s’en charge dans votre avis de valeur.",
+  "@marketUnavailable": {
+    "description": "V8b quand il n’y a pas d’estimation"
+  },
+  "marketLoadError": "La synthèse du marché n’a pas pu être chargée.",
+  "@marketLoadError": {
+    "description": "V8b quand la lecture a échoué"
+  },
+  "marketAllSalesTitle": "Ventes comparables",
+  "@marketAllSalesTitle": {
+    "description": "Titre de la feuille listant toutes les ventes (V8b)"
+  },
+  "submittedAiRateLimited": "Trop de demandes de calcul aujourd’hui : réessayez demain.",
+  "@submittedAiRateLimited": {
+    "description": "Carte Tendance IA quand la limite de 3 calculs par 24 h est atteinte"
+  },
+  "submittedAiWidened": "Recherche élargie faute de ventes proches et récentes : ventes jusqu’à {distance}, {years} dernières années.",
+  "@submittedAiWidened": {
+    "description": "Carte Tendance IA quand la recherche des ventes comparables a été élargie (rayon ≥ 5 km ou plus de 2 ans)",
+    "placeholders": {
+      "distance": {
+        "type": "String"
+      },
+      "years": {
+        "type": "int"
+      }
+    }
+  },
+  "marketWidened": "Recherche élargie faute de ventes proches et récentes : ventes jusqu’à {distance}, {years} dernières années.",
+  "@marketWidened": {
+    "description": "V8b quand la recherche des ventes comparables a été élargie (rayon ≥ 5 km ou plus de 2 ans)",
+    "placeholders": {
+      "distance": {
+        "type": "String"
+      },
+      "years": {
+        "type": "int"
+      }
+    }
+  },
+  "sellerHomeSubmitted": "Voir mon dossier envoyé",
+  "@sellerHomeSubmitted": {
+    "description": "Button opening the submitted dossier screen"
+  },
+  "submittedNotifyTitle": "Me prévenir par notification",
+  "@submittedNotifyTitle": {
+    "description": "V8 · interrupteur des notifications"
+  },
+  "submittedNotifyEmail": "Et par e-mail à {email}",
+  "@submittedNotifyEmail": {
+    "description": "V8 · adresse e-mail de notification",
+    "placeholders": {
+      "email": {
+        "type": "String"
       }
     }
   },

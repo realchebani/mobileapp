@@ -855,6 +855,41 @@ void main() {
       expect(patch[PropertyColumns.transparencyScore], 83);
     });
 
+    testWidgets('once sent, requests the non-certified estimate', (
+      tester,
+    ) async {
+      when(() => repository.requestEstimate(any()))
+          .thenAnswer((_) async => throw const EstimateRequestFailure('x'));
+      await pump(
+        tester,
+        state: SellerTunnelState(
+          status: SellerTunnelStatus.success,
+          saveStatus: SellerTunnelSaveStatus.success,
+          property: _mockupState.property,
+          documents: [..._mockupState.documents, _newDocument],
+        ),
+      );
+      await tester.tap(_button('Envoyer mon dossier à l’expert'));
+      await tester.pump();
+      verify(() => repository.requestEstimate(_mockupState.property!.id))
+          .called(1);
+    });
+
+    testWidgets('no estimate is requested when sending failed', (tester) async {
+      await pump(
+        tester,
+        state: SellerTunnelState(
+          status: SellerTunnelStatus.success,
+          saveStatus: SellerTunnelSaveStatus.failure,
+          property: _mockupState.property,
+          documents: [..._mockupState.documents, _newDocument],
+        ),
+      );
+      await tester.tap(_button('Envoyer mon dossier à l’expert'));
+      await tester.pump();
+      verifyNever(() => repository.requestEstimate(any()));
+    });
+
     testWidgets('a dossier sent again keeps its submission date', (
       tester,
     ) async {

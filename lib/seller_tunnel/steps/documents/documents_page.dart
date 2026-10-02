@@ -137,14 +137,34 @@ class _DocumentsViewState extends State<DocumentsView> {
       }
       return;
     }
+    unawaited(_send(tunnel, property, checklist));
+  }
+
+  /// Sends the dossier, then asks the backend for the non-certified
+  /// estimate (EPIC-05) without waiting for it: V8 shows its progress and
+  /// offers to retry when it fails.
+  Future<void> _send(
+    SellerTunnelCubit tunnel,
+    Property property,
+    DocumentChecklist checklist,
+  ) async {
+    final repository = context.read<PropertyRepository>();
+    await tunnel.saveAndContinue(_step, {
+      PropertyColumns.status: PropertyStatus.submitted,
+      // A dossier sent again keeps its first submission date.
+      if (property.submittedAt == null)
+        PropertyColumns.submittedAt: DateTime.now(),
+      PropertyColumns.transparencyScore: checklist.score,
+    });
+    if (tunnel.state.saveStatus != SellerTunnelSaveStatus.success) return;
     unawaited(
-      tunnel.saveAndContinue(_step, {
-        PropertyColumns.status: PropertyStatus.submitted,
-        // A dossier sent again keeps its first submission date.
-        if (property.submittedAt == null)
-          PropertyColumns.submittedAt: DateTime.now(),
-        PropertyColumns.transparencyScore: checklist.score,
-      }),
+      repository
+          .requestEstimate(property.id)
+          .then<void>(
+            (_) {},
+            // V8 requests it again when no attempt was recorded.
+            onError: (Object _) {},
+          ),
     );
   }
 

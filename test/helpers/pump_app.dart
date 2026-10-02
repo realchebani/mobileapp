@@ -12,6 +12,7 @@ import 'package:mobileapp/ui/ui.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:profile_repository/profile_repository.dart';
 import 'package:property_repository/property_repository.dart';
+import 'package:sale_repository/sale_repository.dart';
 
 import 'mocks.dart';
 
@@ -29,6 +30,8 @@ extension PumpApp on WidgetTester {
     PropertyRepository? propertyRepository,
     GeoRepository? geoRepository,
     OnboardingRepository? onboardingRepository,
+    ValuationRepository? valuationRepository,
+    NotificationRepository? notificationRepository,
     AppBloc? appBloc,
     LoginCubit? loginCubit,
     ProfileCubit? profileCubit,
@@ -42,6 +45,8 @@ extension PumpApp on WidgetTester {
         propertyRepository: propertyRepository,
         geoRepository: geoRepository,
         onboardingRepository: onboardingRepository,
+        valuationRepository: valuationRepository,
+        notificationRepository: notificationRepository,
         appBloc: appBloc,
         loginCubit: loginCubit,
         profileCubit: profileCubit,
@@ -66,6 +71,8 @@ extension PumpApp on WidgetTester {
     PropertyRepository? propertyRepository,
     GeoRepository? geoRepository,
     OnboardingRepository? onboardingRepository,
+    ValuationRepository? valuationRepository,
+    NotificationRepository? notificationRepository,
     AppBloc? appBloc,
     LoginCubit? loginCubit,
     ProfileCubit? profileCubit,
@@ -78,6 +85,8 @@ extension PumpApp on WidgetTester {
         propertyRepository: propertyRepository,
         geoRepository: geoRepository,
         onboardingRepository: onboardingRepository,
+        valuationRepository: valuationRepository,
+        notificationRepository: notificationRepository,
         appBloc: appBloc,
         loginCubit: loginCubit,
         profileCubit: profileCubit,
@@ -101,6 +110,8 @@ class _AppProviders extends StatelessWidget {
     this.propertyRepository,
     this.geoRepository,
     this.onboardingRepository,
+    this.valuationRepository,
+    this.notificationRepository,
     this.appBloc,
     this.loginCubit,
     this.profileCubit,
@@ -112,6 +123,8 @@ class _AppProviders extends StatelessWidget {
   final PropertyRepository? propertyRepository;
   final GeoRepository? geoRepository;
   final OnboardingRepository? onboardingRepository;
+  final ValuationRepository? valuationRepository;
+  final NotificationRepository? notificationRepository;
   final AppBloc? appBloc;
   final LoginCubit? loginCubit;
   final ProfileCubit? profileCubit;
@@ -134,6 +147,12 @@ class _AppProviders extends StatelessWidget {
         ),
         RepositoryProvider<OnboardingRepository>.value(
           value: onboardingRepository ?? MockOnboardingRepository(),
+        ),
+        RepositoryProvider<ValuationRepository>.value(
+          value: valuationRepository ?? MockValuationRepository(),
+        ),
+        RepositoryProvider<NotificationRepository>.value(
+          value: notificationRepository ?? MockNotificationRepository(),
         ),
       ],
       child: MultiBlocProvider(

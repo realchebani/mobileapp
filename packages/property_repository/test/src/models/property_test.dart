@@ -63,6 +63,7 @@ void main() {
     'ai_estimate_median_eur': 518000,
     'ai_estimate_high_eur': 540000,
     'ai_estimate_computed_at': '2026-09-24T17:00:00.000Z',
+    'ai_estimate_confidence': 72,
     'created_at': '2026-09-20T10:00:00.000Z',
     'updated_at': '2026-09-24T16:42:00.000Z',
   };
@@ -73,6 +74,7 @@ void main() {
       expect(property.id, 'p1');
       expect(property.ownerId, 'u1');
       expect(property.status, PropertyStatus.submitted);
+      expect(property.aiEstimateConfidence, 72);
       expect(property.currentStep, 3);
       expect(property.ownershipType, OwnershipType.multiple);
       expect(property.lat, 45.7);

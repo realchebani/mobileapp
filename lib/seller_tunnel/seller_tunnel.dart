@@ -1,4 +1,5 @@
 export 'cubit/seller_tunnel_cubit.dart';
+export 'market/market_synthesis_page.dart';
 export 'models/seller_tunnel_step.dart';
 export 'steps/documents/documents_page.dart';
 export 'steps/lifestyle/lifestyle_page.dart';
