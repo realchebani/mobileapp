@@ -7,6 +7,7 @@ import 'package:mobileapp/profile/profile.dart';
 import 'package:mobileapp/seller_space/widgets/seller_space_header.dart';
 import 'package:mobileapp/seller_tunnel/cubit/seller_tunnel_cubit.dart';
 import 'package:mobileapp/ui/ui.dart';
+import 'package:property_repository/property_repository.dart';
 
 /// C2 · Mon compte ("Compte" tab), v1: identity (name from the profile
 /// and the dossier owner, e-mail of the session), sign-in method,
@@ -131,8 +132,8 @@ class AccountPage extends StatelessWidget {
   /// "First Last" from the main owner of the dossier, else the profile's
   /// first name.
   static String? _displayName(BuildContext context) {
-    final ownerName = context.select<SellerTunnelCubit, String?>((cubit) {
-      for (final owner in cubit.state.owners) {
+    final ownerName = context.select<SellerTunnelCubit?, String?>((cubit) {
+      for (final owner in cubit?.state.owners ?? const <PropertyOwner>[]) {
         if (owner.position != 1) continue;
         final name = '${owner.firstName} ${owner.lastName}'.trim();
         return name.isEmpty ? null : name;

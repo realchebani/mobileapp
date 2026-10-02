@@ -1,6 +1,6 @@
 # EPIC-13 · Plusieurs biens par vendeur & lots de vente — étude & conception
 
-Statut : **proposé** (questions ouvertes §13), aucun code écrit. Branche `feat/epic-13-multi-biens`.
+Statut : **livré** (2026-10-02, voir le journal d’exécution ; les arbitrages en fin de document prévalent). Branche `feat/epic-13-multi-biens`.
 
 ## 0. Contexte
 
@@ -369,6 +369,11 @@ Contrôle : chaque tranche vérifiée par un agent indépendant (tests, revue, r
 ## Journal d’exécution
 
 - 2026-10-02 : plan rédigé (aucun code), EPIC-13 créé, arbitrages consignés dans `decisions.md`.
+- 2026-10-02 : **M1** migrations `20261002091529_multi_biens` (index « un brouillon » supprimé, ≤ 5 biens par vendeur via trigger, 8 types, colonnes `land_kind`, `parking_kind`, `commercial_use`, `units_count`, `usable_area_m2`, `parking_level`, `parking_features`, `property_lots` + `properties.lot_id` + triggers même propriétaire / lot figé / bien principal membre, routes des notifications réécrites, `staff_*` recréées) et `20261002091600_estimate_outbuildings` (DVF « Dépendance » seule, `dvf_sources.format_version`) : essai dans une transaction annulée, dry-run, push. Sonde RLS annulée : 15 contrôles OK (deux brouillons, 6ᵉ bien refusé, lot d’un autre vendeur refusé, lot figé après `staff_start_review`, bien principal membre, suppression d’un lot).
+- 2026-10-02 : **M2** `property_repository` : enums, champs, `PropertyLot`, `listProperties`, `createProperty` (id choisi par l’app, 23505 → relecture), `deleteProperty` (fichiers puis ligne, brouillon seulement), `copyOwners`, `copyDocument` (copie Storage), lots ; `getOrCreateDossier` retiré. `sale_repository` : `AppNotification.propertyId`. Couverture 100 %.
+- 2026-10-02 : **A1** agent : types étendus, `VOICE_TYPES` (maison, appartement, autre), 400 pour les autres ; fixture de parité `supabase/functions/tests/fixtures/property_type_profiles.json` lue par les tests Deno et Flutter. **EPIC-05** : estimation des garages / dépendances (ventes d’une seule dépendance, médiane pondérée à l’unité, mêmes paliers rayon → période, < 5 ventes : expert ; explication sans IA). 111 tests Deno ; `estimate-property`, `agent-transcribe`, `agent-turn`, `agent-speech` redéployées.
+- 2026-10-02 : **T1–T4, C1, R1, S1–S4, N1** côté app (détail dans `CLAUDE.md`). Écart au plan : au lieu d’un `SellerTunnelCubit` unique « cache du bien ouvert », un **registre** `SellerTunnelCubits` (un cubit par bien, partagé par tous les écrans de ce bien) — deux pages de biens différents ne se marchent jamais dessus ; `SellerPropertiesCubit` vit dans `lib/seller_tunnel/cubit/` (le shell en a besoin). Liste des biens = `Property` complets (≤ 5), pas de `PropertySummary`. Lot : « Regrouper en lot » depuis Mes biens et « Vendu avec… » à l’ajout. Q9 : V3/V4b n’écrivent plus que les champs du type ; `PropertyTypeProfile.clearedFrom` vide le reste à l’envoi (V7).
+- 2026-10-02 : vérifications — 1 044 tests Flutter, couverture 100 % (lib + paquets), analyse / format / bloc lint / licences OK, build iOS release (development) OK, rendus 390 px dans le scratchpad (`epic13/screens`).
 
 ## Arbitrages du porteur de projet (2026-10-02) — prévalent sur le reste du plan
 - Q1 Pièce d'identité : **copie côté serveur dans le nouveau dossier** ; le titre de propriété peut aussi être repris « Depuis un autre bien », jamais automatiquement.

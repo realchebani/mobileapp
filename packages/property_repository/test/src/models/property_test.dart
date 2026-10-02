@@ -7,6 +7,7 @@ void main() {
     'owner_id': 'u1',
     'status': 'submitted',
     'current_step': 3,
+    'lot_id': 'lot-1',
     'ownership_type': 'multiple',
     'address_label': '12 rue de la Colombe 69630 Chaponost',
     'address_housenumber': '12',
@@ -22,6 +23,10 @@ void main() {
     'special_situation_other': 'Puits commun',
     'property_type': 'maison',
     'property_type_other': null,
+    'land_kind': 'constructible',
+    'parking_kind': 'box',
+    'commercial_use': 'Boutique',
+    'units_count': 6,
     'purchase_year': 2012,
     'purchase_price_eur': 320000,
     'self_built': false,
@@ -32,6 +37,7 @@ void main() {
     'living_area_m2': 115,
     'living_room_area_m2': 38.5,
     'annex_area_m2': 24.5,
+    'usable_area_m2': 14.5,
     'rooms_count': 5,
     'bedrooms_count': 3,
     'levels': 'r1',
@@ -48,6 +54,8 @@ void main() {
     'pool_type': 'Enterrée · liner',
     'pool_length_m': 8,
     'pool_width_m': 4,
+    'parking_level': 'sous_sol',
+    'parking_features': ['electricite', 'unknown', 'borne_recharge'],
     'measurement_method': 'manual',
     'noise_level': 3,
     'overlooking': 'leger',
@@ -76,6 +84,26 @@ void main() {
       expect(property.status, PropertyStatus.submitted);
       expect(property.aiEstimateConfidence, 72);
       expect(property.currentStep, 3);
+      expect(property.lotId, 'lot-1');
+      expect(property.ownersCopiedFrom, isNull);
+      expect(
+        const Property(
+          id: 'p',
+          ownerId: 'u',
+          provenance: {Property.ownersCopiedFromKey: 'p0'},
+        ).ownersCopiedFrom,
+        'p0',
+      );
+      expect(property.landKind, LandKind.buildable);
+      expect(property.parkingKind, ParkingKind.box);
+      expect(property.commercialUse, 'Boutique');
+      expect(property.unitsCount, 6);
+      expect(property.usableAreaM2, 14.5);
+      expect(property.parkingLevel, ParkingLevel.basement);
+      expect(property.parkingFeatures, [
+        ParkingFeature.electricity,
+        ParkingFeature.chargingPoint,
+      ]);
       expect(property.ownershipType, OwnershipType.multiple);
       expect(property.lat, 45.7);
       expect(property.specialSituations, [

@@ -740,4 +740,94 @@ void main() {
       expect(state.isBusy, isFalse);
     });
   });
+
+  group('reuse', () {
+    const other = PropertyDocument(
+      id: 'other',
+      propertyId: 'garage',
+      kind: DocumentKind.titleDeed,
+      storagePath: 'user-id/garage/acte.pdf',
+    );
+    const copy = PropertyDocument(
+      id: 'copy',
+      propertyId: 'property-id',
+      kind: DocumentKind.titleDeed,
+      storagePath: 'user-id/property-id/acte.pdf',
+    );
+
+    DocumentsCubit build({Property property = testProperty}) => DocumentsCubit(
+      propertyRepository: repository,
+      documentPicker: picker,
+      openUrl: (uri) async => true,
+      property: property,
+    );
+
+    test('copies the document of another property', () async {
+      when(
+        () => repository.copyDocument(
+          other,
+          ownerId: 'user-id',
+          toPropertyId: 'property-id',
+        ),
+      ).thenAnswer((_) async => copy);
+      final cubit = build();
+      await cubit.reuse(other);
+      expect(cubit.state.documents, [copy]);
+      expect(cubit.state.notice, DocumentsNotice.uploaded);
+      expect(cubit.state.picking, isFalse);
+      await cubit.close();
+    });
+
+    test('reloads after a failure', () async {
+      when(
+        () => repository.copyDocument(
+          any(),
+          ownerId: any(named: 'ownerId'),
+          toPropertyId: any(named: 'toPropertyId'),
+        ),
+      ).thenAnswer((_) async => throw const DocumentUploadFailure());
+      when(() => repository.getDocuments(any()))
+          .thenAnswer((_) async => [copy]);
+      final cubit = build();
+      await cubit.reuse(other);
+      expect(cubit.state.documents, [copy]);
+      expect(cubit.state.notice, DocumentsNotice.reuseFailed);
+      await cubit.close();
+    });
+
+    test('does nothing on a locked dossier or once closed', () async {
+      final locked = build(property: _locked);
+      await locked.reuse(other);
+      expect(locked.state.documents, isEmpty);
+      await locked.close();
+
+      final closing = Completer<PropertyDocument>();
+      when(
+        () => repository.copyDocument(
+          any(),
+          ownerId: any(named: 'ownerId'),
+          toPropertyId: any(named: 'toPropertyId'),
+        ),
+      ).thenAnswer((_) => closing.future);
+      final cubit = build();
+      final reusing = cubit.reuse(other);
+      await cubit.close();
+      closing.complete(copy);
+      await reusing;
+
+      final failing = Completer<PropertyDocument>();
+      when(
+        () => repository.copyDocument(
+          any(),
+          ownerId: any(named: 'ownerId'),
+          toPropertyId: any(named: 'toPropertyId'),
+        ),
+      ).thenAnswer((_) => failing.future);
+      final other2 = build();
+      final reusing2 = other2.reuse(other);
+      await other2.close();
+      failing.completeError(const DocumentUploadFailure());
+      await reusing2;
+    });
+  });
 }

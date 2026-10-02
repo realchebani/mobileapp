@@ -18,9 +18,12 @@ class MarketComparableRow extends StatelessWidget {
     final l10n = context.l10n;
     final c = context.realestyColors;
     final type = marketTypeLabel(l10n, sale.propertyType);
+    final perUnit = isPricedPerUnit(sale.propertyType);
     final area = frenchNumber(sale.areaM2);
     final rooms = sale.rooms;
-    final title = rooms == null || rooms == 0
+    final title = perUnit
+        ? type
+        : rooms == null || rooms == 0
         ? l10n.marketComparableTitleNoRooms(type, area)
         : l10n.marketComparableTitle(type, area, rooms);
     final place = sale.street ?? l10n.marketComparableNearby;
@@ -52,12 +55,11 @@ class MarketComparableRow extends StatelessWidget {
                 color: c.surface2,
                 borderRadius: BorderRadius.circular(RealestyRadius.field),
               ),
-              child: RealestyIcon(
-                sale.propertyType == PropertyType.apartment
-                    ? RealestyIcons.building
-                    : RealestyIcons.home,
-                color: c.encre,
-              ),
+              child: RealestyIcon(switch (sale.propertyType) {
+                PropertyType.apartment => RealestyIcons.building,
+                _ when perUnit => RealestyIcons.garage,
+                _ => RealestyIcons.home,
+              }, color: c.encre),
             ),
             Expanded(
               child: Column(
@@ -90,13 +92,14 @@ class MarketComparableRow extends StatelessWidget {
                     color: c.encre,
                   ),
                 ),
-                Text(
-                  l10n.marketPriceM2(frenchNumber(sale.priceM2Eur)),
-                  style: RealestyTextStyles.badge.copyWith(
-                    fontWeight: FontWeight.w400,
-                    color: c.texteDiscret,
+                if (!perUnit)
+                  Text(
+                    l10n.marketPriceM2(frenchNumber(sale.priceM2Eur)),
+                    style: RealestyTextStyles.badge.copyWith(
+                      fontWeight: FontWeight.w400,
+                      color: c.texteDiscret,
+                    ),
                   ),
-                ),
               ],
             ),
           ],

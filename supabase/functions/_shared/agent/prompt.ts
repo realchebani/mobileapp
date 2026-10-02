@@ -84,6 +84,10 @@ const PROPERTY_TYPES: Record<string, string> = {
   maison: "maison",
   appartement: "appartement",
   terrain: "terrain",
+  stationnement: "garage, parking ou box",
+  dependance: "cave, cellier ou dépendance",
+  local_commercial: "local commercial ou professionnel",
+  immeuble: "immeuble entier",
   autre: "autre type de bien",
 };
 

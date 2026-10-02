@@ -18,12 +18,9 @@ abstract final class AppRoutes {
   /// 02 · Sélecteur de rôle.
   static const role = '/role';
 
-  /// Seller space, tab "Mon bien": V9 Dashboard once the dossier is sent,
-  /// "Mon dossier vendeur" (start / resume the audit) while it is a draft.
+  /// Seller space, tab "Mon bien": with one property, its home (draft:
+  /// "Mon dossier vendeur", sent: V9 Dashboard); with several, "Mes biens".
   static const seller = '/vendeur';
-
-  /// V9b · Rapport d’avis de valeur (tab "Mon bien").
-  static const sellerReport = '/vendeur/rapport';
 
   /// Tab "Visites" (V13, EPIC-09).
   static const sellerVisits = '/vendeur/visites';
@@ -34,42 +31,42 @@ abstract final class AppRoutes {
   /// Tab "Compte" (C2).
   static const sellerAccount = '/vendeur/compte';
 
-  /// Seller tunnel steps live under this path (see `SellerTunnelStep`).
-  static const sellerAudit = '/vendeur/audit';
+  /// Properties of the seller live under this path (EPIC-13).
+  static const sellerProperties = '/vendeur/biens';
 
-  /// V1 · Propriétaires.
-  static const sellerOwners = '/vendeur/audit/proprietaires';
+  /// "Ajouter un bien" (EPIC-13).
+  static const sellerNewProperty = '/vendeur/biens/nouveau';
 
-  /// V2 · Adresse & cadastre.
-  static const sellerLocation = '/vendeur/audit/localisation';
+  /// Sale lots live under this path (EPIC-13).
+  static const sellerLots = '/vendeur/lots';
 
-  /// V3 · Contexte & type de bien.
-  static const sellerContext = '/vendeur/audit/contexte';
+  /// Path segment of the seller tunnel steps, under a property.
+  static const auditSegment = 'audit';
 
-  /// V4b · Audit technique (mode écran).
-  static const sellerTechnical = '/vendeur/audit/technique';
+  /// Home of the property [id] (draft: start / resume the audit; sent:
+  /// V9 Dashboard).
+  static String sellerProperty(String id) => '$sellerProperties/$id';
 
-  /// V4 · Audit vocal technique (voice mode of V4b, EPIC-06).
-  static const sellerVoiceAudit = '/vendeur/audit/technique-vocal';
+  /// Step [segment] of the seller tunnel of the property [id] (see
+  /// `SellerTunnelStep.location`).
+  static String sellerPropertyAudit(String id, String segment) =>
+      '$sellerProperties/$id/$auditSegment/$segment';
 
-  /// V5 · Méthode de relevé.
-  static const sellerMethod = '/vendeur/audit/methode';
+  /// V9b · Rapport d’avis de valeur of the property [id].
+  static String sellerReport(String id) => '$sellerProperties/$id/rapport';
 
-  /// V5c · Récapitulatif des surfaces.
-  static const sellerSurfaces = '/vendeur/audit/surfaces';
+  /// V8b · Synthèse du marché (non-certified estimate, EPIC-05) of the
+  /// property [id], pushed above the tabs.
+  static String sellerMarket(String id) => '$sellerProperties/$id/marche';
 
-  /// V6 · Cadre de vie.
-  static const sellerLifestyle = '/vendeur/audit/cadre-de-vie';
+  /// Sale lot [id] (EPIC-13).
+  static String sellerLot(String id) => '$sellerLots/$id';
 
-  /// V7 · Coffre de documents.
-  static const sellerDocuments = '/vendeur/audit/documents';
-
-  /// V8 · Dossier envoyé, attente de l’expert.
-  static const sellerSubmitted = '/vendeur/audit/envoye';
-
-  /// V8b · Synthèse du marché (non-certified estimate, EPIC-05), pushed
-  /// above the tabs.
-  static const sellerMarket = '/vendeur/marche';
+  /// Routes before EPIC-13 (one property per seller), still opened by old
+  /// links: they redirect to the open (or only) property.
+  static const legacySellerReport = '/vendeur/rapport';
+  static const legacySellerMarket = '/vendeur/marche';
+  static const legacySellerAudit = '/vendeur/audit';
 
   /// Buyer space (placeholder).
   static const buyer = '/acheteur';

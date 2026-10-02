@@ -25,6 +25,11 @@ class MockGeoRepository extends Mock implements GeoRepository;
 class MockSellerTunnelCubit extends MockCubit<SellerTunnelState>
     implements SellerTunnelCubit;
 
+class MockSellerPropertiesCubit extends MockCubit<SellerPropertiesState>
+    implements SellerPropertiesCubit;
+
+class MockSellerTunnelCubits extends Mock implements SellerTunnelCubits;
+
 class MockOnboardingRepository extends Mock implements OnboardingRepository;
 
 class MockAppBloc extends MockBloc<AppEvent, AppState> implements AppBloc;

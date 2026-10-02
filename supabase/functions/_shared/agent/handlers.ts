@@ -23,7 +23,7 @@ import {
 import { type AgentModels, agentProvider } from "./config.ts";
 import { type AgentDb, LIMITS, type PropertyRow, startOfDay } from "./db.ts";
 import { buildMessages } from "./prompt.ts";
-import { type AgentStep, outputSchema } from "./schema.ts";
+import { type AgentStep, isVoiceType, outputSchema } from "./schema.ts";
 import { type ModelOutput, parseModelOutput, validateTurn } from "./validate.ts";
 
 /** Reply when the agent's answer stays unreadable after a retry. */
@@ -68,7 +68,7 @@ async function draftProperty(
   const property = await db.property(id);
   if (!property) return failure("not_found", 404);
   if (property.status !== "draft") return failure("locked", 409);
-  if (property.property_type === "terrain") return failure("bad_request", 400);
+  if (!isVoiceType(property.property_type)) return failure("bad_request", 400);
   return property;
 }
 

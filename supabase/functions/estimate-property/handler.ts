@@ -7,9 +7,19 @@
 // `running` snapshot is created and the computation continues in the
 // background (202), the app then reads `market_snapshots`.
 import { computeEstimate, insufficient } from "../_shared/estimation/estimate.ts";
-import type { Explanation } from "../_shared/estimation/explain.ts";
-import { type EstimateResult, METHOD_VERSION, type Subject } from "../_shared/estimation/types.ts";
-import type { MarketData } from "./market.ts";
+import { type Explanation, frenchNumber } from "../_shared/estimation/explain.ts";
+import {
+  computeOutbuildingEstimate,
+  outbuildingExplanation,
+} from "../_shared/estimation/outbuilding.ts";
+import {
+  type EstimateResult,
+  METHOD_VERSION,
+  OUTBUILDING_METHOD_VERSION,
+  type OutbuildingSubject,
+  type Subject,
+} from "../_shared/estimation/types.ts";
+import type { MarketData, OutbuildingMarket } from "./market.ts";
 import { type Dossier, hasRequiredDocuments, toSubject } from "./subject.ts";
 
 /** New computations allowed per user over [ATTEMPTS_WINDOW_MS] (cost cap). */
@@ -35,6 +45,7 @@ export interface Deps {
   updateSnapshot(id: string, row: SnapshotRow): Promise<void>;
   savePropertyEstimate(propertyId: string, values: SnapshotRow): Promise<void>;
   loadMarket(subject: Subject): Promise<MarketData>;
+  loadOutbuildingMarket(subject: OutbuildingSubject): Promise<OutbuildingMarket>;
   explain(subject: Subject, result: EstimateResult): Promise<Explanation>;
   /** Keeps the work alive after the response (EdgeRuntime.waitUntil). */
   background(work: Promise<void>): void;
@@ -59,7 +70,7 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 /** Columns of a finished snapshot. */
 export function snapshotColumns(
   result: EstimateResult,
-  subject: Subject | null,
+  subject: Subject | OutbuildingSubject | null,
   explanation: Explanation | null,
   sourceVersion: string | null,
   computedAt: string,
@@ -68,11 +79,11 @@ export function snapshotColumns(
     status: result.status,
     reason: result.reason,
     computed_at: computedAt,
-    method_version: METHOD_VERSION,
+    method_version: subject?.type === "dependance" ? OUTBUILDING_METHOD_VERSION : METHOD_VERSION,
     source_version: sourceVersion,
     data_until: result.dataUntil,
     property_type: subject?.type ?? null,
-    living_area_m2: subject?.livingAreaM2 ?? null,
+    living_area_m2: subject?.type === "dependance" ? null : subject?.livingAreaM2 ?? null,
     city: subject?.city?.slice(0, 100) ?? null,
     estimate_low_eur: result.lowEur,
     estimate_median_eur: result.medianEur,
@@ -121,19 +132,43 @@ export async function compute(
       );
       return;
     }
-    const market = await deps.loadMarket(subject);
-    const result = market.dataUntil === null ? insufficient("too_few_sales") : computeEstimate({
-      subject,
-      communeSales: market.communeSales,
-      nearbySales: market.nearbySales,
-      curve: market.curve,
-      dataUntil: market.dataUntil,
-      today: computedAt.slice(0, 10),
-    });
-    const explanation = result.status === "ok" ? await deps.explain(subject, result) : null;
+    let result: EstimateResult;
+    let explanation: Explanation | null = null;
+    let sourceVersion: string;
+    if (subject.type === "dependance") {
+      const market = await deps.loadOutbuildingMarket(subject);
+      sourceVersion = market.sourceVersion;
+      result = market.dataUntil === null
+        ? insufficient("too_few_sales")
+        : computeOutbuildingEstimate({
+          subject,
+          communeSales: market.communeSales,
+          nearbySales: market.nearbySales,
+          dataUntil: market.dataUntil,
+          today: computedAt.slice(0, 10),
+        });
+      if (result.status === "ok") {
+        explanation = {
+          text: outbuildingExplanation(subject, result, frenchNumber),
+          source: "template",
+        };
+      }
+    } else {
+      const market = await deps.loadMarket(subject);
+      sourceVersion = market.sourceVersion;
+      result = market.dataUntil === null ? insufficient("too_few_sales") : computeEstimate({
+        subject,
+        communeSales: market.communeSales,
+        nearbySales: market.nearbySales,
+        curve: market.curve,
+        dataUntil: market.dataUntil,
+        today: computedAt.slice(0, 10),
+      });
+      if (result.status === "ok") explanation = await deps.explain(subject, result);
+    }
     await deps.updateSnapshot(
       snapshotId,
-      snapshotColumns(result, subject, explanation, market.sourceVersion, computedAt),
+      snapshotColumns(result, subject, explanation, sourceVersion, computedAt),
     );
     if (result.status === "ok") {
       try {

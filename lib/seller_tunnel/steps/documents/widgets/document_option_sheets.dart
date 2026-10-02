@@ -1,28 +1,49 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:mobileapp/l10n/l10n.dart';
-import 'package:mobileapp/seller_tunnel/steps/documents/data/document_picker.dart';
 import 'package:mobileapp/ui/ui.dart';
 
-/// "Importer": files (PDF, images) or the photo library. Returns null when
-/// dismissed.
-Future<DocumentSource?> showDocumentSourceSheet(BuildContext context) {
+/// Where "Importer" takes a document from.
+enum DocumentImportSource {
+  /// A PDF or image from the files.
+  files,
+
+  /// An image from the photo library.
+  photos,
+
+  /// A document of another property of the seller (copied, EPIC-13).
+  otherProperty,
+}
+
+/// "Importer": files (PDF, images), the photo library or, when the seller
+/// has [otherProperties], another property. Returns null when dismissed.
+Future<DocumentImportSource?> showDocumentSourceSheet(
+  BuildContext context, {
+  bool otherProperties = false,
+}) {
   final l10n = context.l10n;
   return _showOptionSheet(
     context,
     title: l10n.documentsSourceSheetTitle,
     options: [
       DocumentOption(
-        value: DocumentSource.files,
+        value: DocumentImportSource.files,
         title: l10n.documentsSourceFiles,
         subtitle: l10n.documentsSourceFilesSubtitle,
         icon: RealestyIcons.file,
       ),
       DocumentOption(
-        value: DocumentSource.photos,
+        value: DocumentImportSource.photos,
         title: l10n.documentsSourcePhotos,
         subtitle: l10n.documentsSourcePhotosSubtitle,
         icon: RealestyIcons.camera,
       ),
+      if (otherProperties)
+        DocumentOption(
+          value: DocumentImportSource.otherProperty,
+          title: l10n.documentsReuseOption,
+          subtitle: l10n.documentsReuseOptionSubtitle,
+          icon: RealestyIcons.swap,
+        ),
     ],
   );
 }

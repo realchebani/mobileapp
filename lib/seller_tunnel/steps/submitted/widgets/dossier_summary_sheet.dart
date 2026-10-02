@@ -1,6 +1,7 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:mobileapp/l10n/l10n.dart';
 import 'package:mobileapp/seller_tunnel/cubit/seller_tunnel_cubit.dart';
+import 'package:mobileapp/seller_tunnel/models/property_type_labels.dart';
 import 'package:mobileapp/seller_tunnel/models/seller_tunnel_step.dart';
 import 'package:mobileapp/seller_tunnel/steps/technical/models/heating_system_label.dart';
 import 'package:mobileapp/seller_tunnel/widgets/widgets.dart';
@@ -91,7 +92,7 @@ class DossierSummarySheet extends StatelessWidget {
         [
           (
             l10n.submittedSummaryPropertyType,
-            _propertyType(l10n, property) ?? missing,
+            propertyTypeLabel(l10n, property) ?? missing,
           ),
           (l10n.submittedSummaryPurchaseYear, orMissing(property.purchaseYear)),
         ],
@@ -241,18 +242,6 @@ class DossierSummarySheet extends StatelessWidget {
       ),
     );
   }
-
-  static String? _propertyType(AppLocalizations l10n, Property property) =>
-      switch (property.propertyType) {
-        PropertyType.house => l10n.contextTypeHouse,
-        PropertyType.apartment => l10n.contextTypeApartment,
-        PropertyType.land => l10n.contextTypeLand,
-        PropertyType.other =>
-          (property.propertyTypeOther?.trim().isEmpty ?? true)
-              ? null
-              : property.propertyTypeOther!.trim(),
-        null => null,
-      };
 
   static String? _levels(AppLocalizations l10n, PropertyLevels? levels) =>
       switch (levels) {

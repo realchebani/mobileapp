@@ -3,7 +3,27 @@
 
 export type AgentStep = "technical" | "lifestyle";
 
-export type PropertyType = "maison" | "appartement" | "terrain" | "autre";
+export type PropertyType =
+  | "maison"
+  | "appartement"
+  | "terrain"
+  | "stationnement"
+  | "dependance"
+  | "local_commercial"
+  | "immeuble"
+  | "autre";
+
+/** Property types the voice agent serves (V4 and V6), like the app's
+ * `PropertyTypeProfile.voice` (parity fixture
+ * tests/fixtures/property_type_profiles.json). The others (land, parking,
+ * outbuilding, commercial premises, whole building) have a short screen
+ * audit only. */
+export const VOICE_TYPES: readonly PropertyType[] = ["maison", "appartement", "autre"];
+
+/** Whether the voice agent serves [type] (null: not chosen yet, allowed). */
+export function isVoiceType(type: string | null): boolean {
+  return type === null || (VOICE_TYPES as readonly string[]).includes(type);
+}
 
 /** Which part of a property a field belongs to (V4b `asks…` getters). */
 export type Scope =

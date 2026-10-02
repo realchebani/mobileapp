@@ -42,6 +42,9 @@ final class TechnicalState extends Equatable {
     this.outdoorEquipment = const [],
     this.poolType,
     this.poolDimensions = '',
+    this.usableArea = '',
+    this.parkingLevel,
+    this.parkingFeatures = const [],
     this.showErrors = false,
     this.submitAttempts = 0,
     this.saveRequests = 0,
@@ -77,6 +80,9 @@ final class TechnicalState extends Equatable {
       poolDimensions: length == null || width == null
           ? ''
           : '${formatDecimal(length)} × ${formatDecimal(width)}',
+      usableArea: formatDecimal(property.usableAreaM2),
+      parkingLevel: property.parkingLevel,
+      parkingFeatures: property.parkingFeatures,
     );
   }
 
@@ -89,6 +95,7 @@ final class TechnicalState extends Equatable {
   /// Accepted areas (m²).
   static const minLivingArea = 5;
   static const minLivingRoomArea = 1;
+  static const minUsableArea = 1;
   static const maxArea = 2000;
 
   /// Accepted number of rooms.
@@ -131,6 +138,13 @@ final class TechnicalState extends Equatable {
   /// "length × width" as typed ("8 × 4").
   final String poolDimensions;
 
+  /// Surface utile as typed (stationnement, dependance, local commercial).
+  final String usableArea;
+  final ParkingLevel? parkingLevel;
+
+  /// Equipment of a parking space or an outbuilding (multiple choice).
+  final List<ParkingFeature> parkingFeatures;
+
   /// Whether errors are shown (after a first "Enregistrer et continuer").
   final bool showErrors;
 
@@ -142,29 +156,31 @@ final class TechnicalState extends Equatable {
 
   PropertyType? get propertyType => property.propertyType;
 
-  /// A plot of land has no building: only sanitation and outdoor
-  /// equipment are asked.
-  bool get asksBuilding => propertyType != PropertyType.land;
+  /// The questions of this type of property (plan §7).
+  PropertyTypeProfile get profile => PropertyTypeProfile.of(propertyType);
 
-  /// Levels, adjacency and roof belong to a whole building, not to an
-  /// apartment (nor to land).
-  bool get asksWholeBuilding =>
-      asksBuilding && propertyType != PropertyType.apartment;
+  /// Whether [field] is asked for this type of property.
+  bool asks(TechnicalField field) => profile.technicalFields.contains(field);
+
+  /// Whether [field] needs an answer for this type of property.
+  bool requires(TechnicalField field) =>
+      profile.requiredTechnicalFields.contains(field);
 
   /// "Niveaux" is required for a house only (spec).
-  bool get requiresLevels => propertyType == PropertyType.house;
+  bool get requiresLevels => requires(TechnicalField.levels);
 
   /// At least one heating system is required for a house or an apartment
-  /// (optional for "Autre", not asked for land).
-  bool get requiresHeating =>
-      propertyType == PropertyType.house ||
-      propertyType == PropertyType.apartment;
+  /// (optional for "Autre", a commercial premises or a building).
+  bool get requiresHeating => requires(TechnicalField.heating);
 
   /// The heat pump details are asked when a heat pump is among the systems.
   bool get asksHeatPump =>
-      asksBuilding && heatingSystems.contains(HeatingSystem.heatPump);
+      asks(TechnicalField.heating) &&
+      heatingSystems.contains(HeatingSystem.heatPump);
 
-  bool get asksPool => outdoorEquipment.contains(OutdoorEquipment.pool);
+  bool get asksPool =>
+      asks(TechnicalField.outdoorEquipment) &&
+      outdoorEquipment.contains(OutdoorEquipment.pool);
 
   /// Earliest roof year: the construction year when valid.
   int get roofMinYear {
@@ -174,16 +190,33 @@ final class TechnicalState extends Equatable {
         : minConstructionYear;
   }
 
-  TechnicalError? get constructionYearError => asksBuilding
-      ? _yearError(constructionYear, minConstructionYear, required: true)
+  TechnicalError? get constructionYearError =>
+      asks(TechnicalField.constructionYear)
+      ? _yearError(
+          constructionYear,
+          minConstructionYear,
+          required: requires(TechnicalField.constructionYear),
+        )
       : null;
 
-  TechnicalError? get livingAreaError => asksBuilding
-      ? _areaError(livingArea, minLivingArea, required: true)
+  TechnicalError? get livingAreaError => asks(TechnicalField.livingArea)
+      ? _areaError(
+          livingArea,
+          minLivingArea,
+          required: requires(TechnicalField.livingArea),
+        )
+      : null;
+
+  TechnicalError? get usableAreaError => asks(TechnicalField.usableArea)
+      ? _areaError(
+          usableArea,
+          minUsableArea,
+          required: requires(TechnicalField.usableArea),
+        )
       : null;
 
   TechnicalError? get livingRoomAreaError {
-    if (!asksBuilding) return null;
+    if (!asks(TechnicalField.livingRoomArea)) return null;
     final error = _areaError(livingRoomArea, minLivingRoomArea);
     final area = parseDecimal(livingRoomArea);
     if (error != null || area == null) return error;
@@ -198,7 +231,7 @@ final class TechnicalState extends Equatable {
       requiresLevels && levels == null ? TechnicalError.required : null;
 
   TechnicalError? get roofYearError =>
-      asksWholeBuilding ? _yearError(roofYear, roofMinYear) : null;
+      asks(TechnicalField.roof) ? _yearError(roofYear, roofMinYear) : null;
 
   TechnicalError? get heatingSystemsError =>
       requiresHeating && heatingSystems.isEmpty
@@ -240,6 +273,7 @@ final class TechnicalState extends Equatable {
   bool get isValid =>
       constructionYearError == null &&
       livingAreaError == null &&
+      usableAreaError == null &&
       livingRoomAreaError == null &&
       levelsError == null &&
       roofYearError == null &&
@@ -247,40 +281,68 @@ final class TechnicalState extends Equatable {
       heatPumpYearError == null &&
       poolDimensionsError == null;
 
-  /// The `properties` columns of this step (questions not asked for this
-  /// type of property are cleared).
+  /// The `properties` columns of the questions of this type of property.
+  /// The questions it does not ask are left as they are (hidden, cleared
+  /// when the dossier is sent: the seller may change the type back); the
+  /// details of a heat pump or a pool no longer selected are cleared.
   Map<String, Object?> get values {
-    final building = asksBuilding;
-    final whole = asksWholeBuilding;
     final heatPump = asksHeatPump;
     final pool = asksPool;
     final dimensions = pool ? parseDimensions(poolDimensions) : null;
+    final choices = profile.parkingFeatureChoices;
     return {
-      PropertyColumns.constructionYear: building
-          ? parseYear(constructionYear)
-          : null,
-      PropertyColumns.orientation: building ? exposure : null,
-      PropertyColumns.livingAreaM2: building ? parseDecimal(livingArea) : null,
-      PropertyColumns.livingRoomAreaM2: building
-          ? parseDecimal(livingRoomArea)
-          : null,
-      PropertyColumns.roomsCount: building ? rooms : null,
-      PropertyColumns.bedroomsCount: building ? bedrooms : null,
-      PropertyColumns.levels: whole ? levels : null,
-      PropertyColumns.wallMaterial: building ? wallMaterial : null,
-      PropertyColumns.adjacency: whole ? adjacency : null,
-      PropertyColumns.roofType: whole ? roofType : null,
-      PropertyColumns.roofYear: whole ? parseYear(roofYear) : null,
-      PropertyColumns.heatingSystems: building
-          ? heatingSystems
-          : const <HeatingSystem>[],
-      PropertyColumns.heatPumpType: heatPump ? heatPumpType : null,
-      PropertyColumns.heatPumpYear: heatPump ? parseYear(heatPumpYear) : null,
-      PropertyColumns.sanitation: sanitation,
-      PropertyColumns.outdoorEquipment: outdoorEquipment,
-      PropertyColumns.poolType: pool ? poolType : null,
-      PropertyColumns.poolLengthM: dimensions?.$1,
-      PropertyColumns.poolWidthM: dimensions?.$2,
+      for (final field in profile.technicalFields)
+        ...switch (field) {
+          TechnicalField.constructionYear => {
+            PropertyColumns.constructionYear: parseYear(constructionYear),
+          },
+          TechnicalField.exposure => {PropertyColumns.orientation: exposure},
+          TechnicalField.livingArea => {
+            PropertyColumns.livingAreaM2: parseDecimal(livingArea),
+          },
+          TechnicalField.livingRoomArea => {
+            PropertyColumns.livingRoomAreaM2: parseDecimal(livingRoomArea),
+          },
+          TechnicalField.rooms => {
+            PropertyColumns.roomsCount: rooms,
+            PropertyColumns.bedroomsCount: bedrooms,
+          },
+          TechnicalField.levels => {PropertyColumns.levels: levels},
+          TechnicalField.wallMaterial => {
+            PropertyColumns.wallMaterial: wallMaterial,
+          },
+          TechnicalField.adjacency => {PropertyColumns.adjacency: adjacency},
+          TechnicalField.roof => {
+            PropertyColumns.roofType: roofType,
+            PropertyColumns.roofYear: parseYear(roofYear),
+          },
+          TechnicalField.heating => {
+            PropertyColumns.heatingSystems: heatingSystems,
+            PropertyColumns.heatPumpType: heatPump ? heatPumpType : null,
+            PropertyColumns.heatPumpYear: heatPump
+                ? parseYear(heatPumpYear)
+                : null,
+          },
+          TechnicalField.sanitation => {PropertyColumns.sanitation: sanitation},
+          TechnicalField.outdoorEquipment => {
+            PropertyColumns.outdoorEquipment: outdoorEquipment,
+            PropertyColumns.poolType: pool ? poolType : null,
+            PropertyColumns.poolLengthM: dimensions?.$1,
+            PropertyColumns.poolWidthM: dimensions?.$2,
+          },
+          TechnicalField.usableArea => {
+            PropertyColumns.usableAreaM2: parseDecimal(usableArea),
+          },
+          TechnicalField.parkingLevel => {
+            PropertyColumns.parkingLevel: parkingLevel,
+          },
+          TechnicalField.parkingFeatures => {
+            PropertyColumns.parkingFeatures: [
+              for (final feature in parkingFeatures)
+                if (choices.contains(feature)) feature,
+            ],
+          },
+        },
     };
   }
 
@@ -384,6 +446,9 @@ final class TechnicalState extends Equatable {
     List<OutdoorEquipment>? outdoorEquipment,
     PoolType? Function()? poolType,
     String? poolDimensions,
+    String? usableArea,
+    ParkingLevel? Function()? parkingLevel,
+    List<ParkingFeature>? parkingFeatures,
     bool? showErrors,
     int? submitAttempts,
     int? saveRequests,
@@ -409,6 +474,9 @@ final class TechnicalState extends Equatable {
       outdoorEquipment: outdoorEquipment ?? this.outdoorEquipment,
       poolType: poolType == null ? this.poolType : poolType(),
       poolDimensions: poolDimensions ?? this.poolDimensions,
+      usableArea: usableArea ?? this.usableArea,
+      parkingLevel: parkingLevel == null ? this.parkingLevel : parkingLevel(),
+      parkingFeatures: parkingFeatures ?? this.parkingFeatures,
       showErrors: showErrors ?? this.showErrors,
       submitAttempts: submitAttempts ?? this.submitAttempts,
       saveRequests: saveRequests ?? this.saveRequests,
@@ -437,6 +505,9 @@ final class TechnicalState extends Equatable {
     outdoorEquipment,
     poolType,
     poolDimensions,
+    usableArea,
+    parkingLevel,
+    parkingFeatures,
     showErrors,
     submitAttempts,
     saveRequests,

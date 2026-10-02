@@ -163,9 +163,10 @@ Deno.test("cleanDvfCsv keeps single-dwelling sales and counts the dropped ones",
     }),
     line({ nature_mutation: "Vente" }),
   ].join("\n");
-  const { sales, dropped } = cleanDvfCsv(csv, "69043", 2025);
+  const { sales, outbuildings, dropped } = cleanDvfCsv(csv, "69043", 2025);
+  // m2 (one outbuilding alone) is kept as an outbuilding sale.
+  assertEquals(outbuildings.map((o) => [o.idMutation, o.priceEur]), [["m2", 10000]]);
   assertEquals(dropped, {
-    dependencies: 1,
     multi_lots: 2,
     not_a_sale: 1,
     missing_area: 2,
@@ -205,8 +206,75 @@ Deno.test("cleanDvfCsv keeps single-dwelling sales and counts the dropped ones",
 });
 
 Deno.test("cleanDvfCsv on the real Chaponost 2025 file", () => {
-  const { sales, dropped } = cleanDvfCsv(fixture(2025), "69043", 2025);
+  const { sales, outbuildings, dropped } = cleanDvfCsv(fixture(2025), "69043", 2025);
   assertEquals(sales.length, 101);
-  assertEquals(dropped, { not_a_sale: 1, dependencies: 48, multi_lots: 4, extreme: 1 });
+  assertEquals(outbuildings.length, 5);
+  assertEquals(dropped, { not_a_sale: 1, dependencies: 43, multi_lots: 4, extreme: 1 });
   assertEquals(sales.every((s) => s.street === null || !/^\d/.test(s.street)), true);
+});
+
+Deno.test("cleanDvfCsv keeps only one outbuilding sold alone, at a plausible price", () => {
+  const base = { nature_mutation: "Vente", date_mutation: "2025-05-10", type_local: "Dépendance" };
+  const csv = [
+    HEADER,
+    // One box (two lines of the same lot, e.g. two cultures): kept.
+    line({
+      ...base,
+      id_mutation: "o1",
+      valeur_fonciere: "18000",
+      adresse_nom_voie: "RUE DES LILAS",
+      id_parcelle: "P1",
+      lot1_numero: "12",
+      longitude: "4.74",
+      latitude: "45.71",
+    }),
+    line({
+      ...base,
+      id_mutation: "o1",
+      valeur_fonciere: "18000",
+      id_parcelle: "P1",
+      lot1_numero: "12",
+    }),
+    // A parking space and a cellar: two lots, dropped.
+    line({
+      ...base,
+      id_mutation: "o2",
+      valeur_fonciere: "25000",
+      id_parcelle: "P2",
+      lot1_numero: "1",
+    }),
+    line({
+      ...base,
+      id_mutation: "o2",
+      valeur_fonciere: "25000",
+      id_parcelle: "P2",
+      lot1_numero: "2",
+    }),
+    // With a shop: dropped.
+    line({ ...base, id_mutation: "o3", valeur_fonciere: "90000", id_parcelle: "P3" }),
+    line({
+      ...base,
+      id_mutation: "o3",
+      valeur_fonciere: "90000",
+      id_parcelle: "P3",
+      type_local: "Local industriel. commercial ou assimilé",
+    }),
+    // Symbolic and implausible prices: dropped.
+    line({ ...base, id_mutation: "o4", valeur_fonciere: "1", id_parcelle: "P4" }),
+    line({ ...base, id_mutation: "o5", valeur_fonciere: "900000", id_parcelle: "P5" }),
+    line({ ...base, id_mutation: "o6", valeur_fonciere: "", id_parcelle: "P6" }),
+  ].join("\n");
+  const { sales, outbuildings, dropped } = cleanDvfCsv(csv, "69043", 2025);
+  assertEquals(sales, []);
+  assertEquals(outbuildings, [{
+    idMutation: "o1",
+    insee: "69043",
+    year: 2025,
+    soldOn: "2025-05-10",
+    priceEur: 18000,
+    street: "Rue des Lilas",
+    lat: 45.71,
+    lng: 4.74,
+  }]);
+  assertEquals(dropped, { dependencies: 5 });
 });

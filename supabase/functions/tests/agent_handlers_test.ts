@@ -211,15 +211,14 @@ Deno.test("transcribe: refusals", async () => {
     await status(audioRequest(`property_id=${OTHER}&step=technical`)),
     409,
   );
-  db.properties.set(OTHER, {
-    id: OTHER,
-    status: "draft",
-    property_type: "terrain",
-  });
-  assertEquals(
-    await status(audioRequest(`property_id=${OTHER}&step=technical`)),
-    400,
-  );
+  for (const type of ["terrain", "stationnement", "dependance", "local_commercial", "immeuble"]) {
+    db.properties.set(OTHER, { id: OTHER, status: "draft", property_type: type });
+    assertEquals(
+      await status(audioRequest(`property_id=${OTHER}&step=technical`)),
+      400,
+      type,
+    );
+  }
   db.usage = { turns: 120, audioSeconds: 0 };
   assertEquals(await status(audioRequest(q)), 429);
   db.usage = { turns: 0, audioSeconds: 1199 };

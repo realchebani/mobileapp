@@ -1,5 +1,4 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mobileapp/app/app.dart';
 import 'package:mobileapp/l10n/gen/app_localizations_fr.dart';
 import 'package:mobileapp/seller_tunnel/seller_tunnel.dart';
 
@@ -9,47 +8,44 @@ void main() {
       expect(SellerTunnelStep.values.map((s) => s.number), [
         1, 2, 3, 4, 5, 5, 6, 7, 8, //
       ]);
-      expect(SellerTunnelStep.values.map((s) => s.path), [
-        AppRoutes.sellerOwners,
-        AppRoutes.sellerLocation,
-        AppRoutes.sellerContext,
-        AppRoutes.sellerTechnical,
-        AppRoutes.sellerMethod,
-        AppRoutes.sellerSurfaces,
-        AppRoutes.sellerLifestyle,
-        AppRoutes.sellerDocuments,
-        AppRoutes.sellerSubmitted,
+      expect(SellerTunnelStep.values.map((s) => s.segment), [
+        'proprietaires',
+        'localisation',
+        'contexte',
+        'technique',
+        'methode',
+        'surfaces',
+        'cadre-de-vie',
+        'documents',
+        'envoye',
       ]);
+    });
+
+    test('builds the route of a property', () {
+      expect(
+        SellerTunnelStep.technical.routeFor('p1'),
+        '/vendeur/biens/p1/audit/technique',
+      );
+    });
+
+    test('finds the step of a segment or a location', () {
       for (final step in SellerTunnelStep.values) {
-        expect(step.path, startsWith('${AppRoutes.sellerAudit}/'));
+        expect(SellerTunnelStep.fromSegment(step.segment), step);
+        expect(SellerTunnelStep.fromLocation(step.routeFor('p1')), step);
       }
-    });
-
-    test('resumes at the first screen of a step', () {
-      expect(SellerTunnelStep.resumeAt(0), SellerTunnelStep.owners);
-      expect(SellerTunnelStep.resumeAt(1), SellerTunnelStep.owners);
-      expect(SellerTunnelStep.resumeAt(4), SellerTunnelStep.technical);
-      expect(SellerTunnelStep.resumeAt(5), SellerTunnelStep.method);
-      expect(SellerTunnelStep.resumeAt(6), SellerTunnelStep.lifestyle);
-      expect(SellerTunnelStep.resumeAt(8), SellerTunnelStep.submitted);
-      expect(SellerTunnelStep.resumeAt(99), SellerTunnelStep.submitted);
-    });
-
-    test('finds the step of a path', () {
-      for (final step in SellerTunnelStep.values) {
-        expect(SellerTunnelStep.fromPath(step.path), step);
-      }
-      expect(SellerTunnelStep.fromPath(AppRoutes.seller), isNull);
-      expect(SellerTunnelStep.fromPath('/vendeur/audit/inconnu'), isNull);
-    });
-
-    test('links the screens', () {
-      expect(SellerTunnelStep.owners.previous, isNull);
-      expect(SellerTunnelStep.owners.next, SellerTunnelStep.location);
-      expect(SellerTunnelStep.surfaces.previous, SellerTunnelStep.method);
-      expect(SellerTunnelStep.documents.next, SellerTunnelStep.submitted);
-      expect(SellerTunnelStep.submitted.next, SellerTunnelStep.submitted);
-      expect(SellerTunnelStep.submitted.previous, isNull);
+      expect(SellerTunnelStep.fromSegment('inconnu'), isNull);
+      expect(SellerTunnelStep.fromLocation('/vendeur'), isNull);
+      expect(SellerTunnelStep.fromLocation('/'), isNull);
+      expect(
+        SellerTunnelStep.fromLocation('/vendeur/biens/p1/rapport'),
+        isNull,
+      );
+      expect(
+        SellerTunnelStep.fromLocation(
+          '/vendeur/biens/p1/audit/technique-vocal',
+        ),
+        isNull,
+      );
     });
 
     test('has French labels', () {

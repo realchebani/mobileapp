@@ -4,7 +4,6 @@ import 'dart:typed_data';
 import 'package:agent_repository/agent_repository.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mobileapp/app/app.dart';
 import 'package:mobileapp/seller_tunnel/seller_tunnel.dart';
 import 'package:mobileapp/seller_tunnel/steps/documents/data/document_picker.dart';
 import 'package:mocktail/mocktail.dart';
@@ -86,7 +85,7 @@ void main() {
   testWidgets('without voice, redirects to V4b', (tester) async {
     await tester.pumpTunnelPage(const VoiceAuditPage(), goRouter: goRouter);
     await tester.pump();
-    verify(() => goRouter.go(AppRoutes.sellerTechnical)).called(1);
+    verify(() => goRouter.go(auditRoute(SellerTunnelStep.technical))).called(1);
   });
 
   testWidgets('with voice, starts listening after the consent', (tester) async {
@@ -140,7 +139,8 @@ void main() {
       goRouter: goRouter,
     );
     await tester.pump();
-    verify(() => goRouter.go(AppRoutes.sellerTechnical)).called(1);
+    verify(() => goRouter.go(SellerTunnelStep.technical.routeFor('p')))
+        .called(1);
   });
 
   test('waits for a save in progress before saving a turn', () async {

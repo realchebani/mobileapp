@@ -5,15 +5,29 @@ import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:mobileapp/l10n/l10n.dart';
 import 'package:mobileapp/seller_space/cubit/notifications_cubit.dart';
+import 'package:mobileapp/seller_tunnel/cubit/seller_properties_cubit.dart';
+import 'package:mobileapp/seller_tunnel/models/property_type_labels.dart';
 import 'package:mobileapp/seller_tunnel/steps/submitted/widgets/submitted_format.dart';
 import 'package:mobileapp/ui/ui.dart';
 import 'package:sale_repository/sale_repository.dart';
 
 /// Opens the notifications list (bell of V9) as a bottom sheet. They are
 /// marked read when it closes; tapping one opens its screen.
+///
+/// With several properties, each title starts with the property it is
+/// about ("Garage · Rue des Lilas · …").
 Future<void> showNotificationsSheet(BuildContext context) async {
   final cubit = context.read<NotificationsCubit>();
   final router = GoRouter.of(context);
+  final l10n = context.l10n;
+  final properties =
+      context.read<SellerPropertiesCubit?>()?.state.properties ?? const [];
+  final labels = properties.length < 2
+      ? const <String, String>{}
+      : {
+          for (final property in properties)
+            property.id: propertyShortLabel(l10n, property),
+        };
   unawaited(cubit.load());
   final route = await showModalBottomSheet<String>(
     context: context,
@@ -27,8 +41,10 @@ Future<void> showNotificationsSheet(BuildContext context) async {
         top: Radius.circular(RealestyRadius.sheet),
       ),
     ),
-    builder: (_) =>
-        BlocProvider.value(value: cubit, child: const NotificationsSheet()),
+    builder: (_) => BlocProvider.value(
+      value: cubit,
+      child: NotificationsSheet(propertyLabels: labels),
+    ),
   );
   await cubit.markAllRead();
   if (route != null) router.go(route);
@@ -36,7 +52,10 @@ Future<void> showNotificationsSheet(BuildContext context) async {
 
 /// The notifications, newest first; pops with the route of the tapped one.
 class NotificationsSheet extends StatelessWidget {
-  const new({super.key});
+  const new({this.propertyLabels = const {}, super.key});
+
+  /// Short label of each property (by id), to prefix the titles.
+  final Map<String, String> propertyLabels;
 
   @override
   Widget build(BuildContext context) {
@@ -50,6 +69,7 @@ class NotificationsSheet extends StatelessWidget {
           for (final (index, notification) in state.notifications.indexed)
             _NotificationTile(
               notification: notification,
+              propertyLabel: propertyLabels[notification.propertyId],
               showDivider: index < state.notifications.length - 1,
             ),
         ],
@@ -112,9 +132,14 @@ class NotificationsSheet extends StatelessWidget {
 }
 
 class _NotificationTile extends StatelessWidget {
-  const new({required this.notification, required this.showDivider});
+  const new({
+    required this.notification,
+    required this.showDivider,
+    this.propertyLabel,
+  });
 
   final AppNotification notification;
+  final String? propertyLabel;
   final bool showDivider;
 
   @override
@@ -159,7 +184,13 @@ class _NotificationTile extends StatelessWidget {
                 spacing: 2,
                 children: [
                   Text(
-                    notification.title,
+                    switch (propertyLabel) {
+                      final label? => l10n.notificationsPropertyPrefix(
+                        label,
+                        notification.title,
+                      ),
+                      null => notification.title,
+                    },
                     style: RealestyTextStyles.listTitle.copyWith(
                       color: c.encre,
                       fontWeight: notification.isRead

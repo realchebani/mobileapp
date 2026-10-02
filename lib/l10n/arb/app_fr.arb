@@ -621,17 +621,17 @@
   "@contextTypeOther": {
     "description": "Contexte (V3) : type de bien"
   },
-  "contextTypeOtherSubtitle": "Immeuble, local, garage…",
+  "contextTypeOtherSubtitle": "Péniche, moulin…",
   "@contextTypeOtherSubtitle": {
-    "description": "Contexte (V3) : exemples sous le type « Autre »"
+    "description": "V3 · sous-titre de la carte « Autre »"
   },
   "contextTypeOtherLabel": "Précisez le type de bien",
   "@contextTypeOtherLabel": {
     "description": "Contexte (V3) : champ libre du type « Autre »"
   },
-  "contextTypeOtherHint": "Ex. : local commercial",
+  "contextTypeOtherHint": "Ex. : péniche, moulin",
   "@contextTypeOtherHint": {
-    "description": "Contexte (V3) : exemple dans le champ libre du type « Autre »"
+    "description": "V3 · exemple dans le champ « Précisez le type de bien »"
   },
   "contextHistoryLabel": "Historique",
   "@contextHistoryLabel": {
@@ -4090,5 +4090,580 @@
   "voiceSuggestScreenMode": "Je n’arrive pas à retenir vos réponses. Préférez-vous continuer à l’écran ?",
   "@voiceSuggestScreenMode": {
     "description": "Voix : proposé après 3 tours sans réponse retenue"
+  },
+  "contextTypeParking": "Garage / parking",
+  "@contextTypeParking": {
+    "description": "V3 · carte du type « stationnement »"
+  },
+  "contextTypeParkingSubtitle": "Box, place…",
+  "@contextTypeParkingSubtitle": {
+    "description": "V3 · sous-titre de la carte « Garage / parking »"
+  },
+  "contextTypeOutbuilding": "Dépendance",
+  "@contextTypeOutbuilding": {
+    "description": "V3 · carte du type « dépendance »"
+  },
+  "contextTypeOutbuildingSubtitle": "Cave, cellier, grange…",
+  "@contextTypeOutbuildingSubtitle": {
+    "description": "V3 · sous-titre de la carte « Dépendance »"
+  },
+  "contextTypeCommercial": "Local commercial",
+  "@contextTypeCommercial": {
+    "description": "V3 · carte du type « local commercial ou professionnel »"
+  },
+  "contextTypeCommercialSubtitle": "Boutique, bureau…",
+  "@contextTypeCommercialSubtitle": {
+    "description": "V3 · sous-titre de la carte « Local commercial »"
+  },
+  "contextTypeBuilding": "Immeuble entier",
+  "@contextTypeBuilding": {
+    "description": "V3 · carte du type « immeuble entier »"
+  },
+  "contextTypeBuildingSubtitle": "Plusieurs logements",
+  "@contextTypeBuildingSubtitle": {
+    "description": "V3 · sous-titre de la carte « Immeuble entier »"
+  },
+  "contextLandKindLabel": "Le terrain est-il constructible ?",
+  "@contextLandKindLabel": {
+    "description": "V3 · question pour un terrain (land_kind)"
+  },
+  "contextLandKindBuildable": "Constructible",
+  "@contextLandKindBuildable": {
+    "description": "V3 · terrain constructible"
+  },
+  "contextLandKindNotBuildable": "Non constructible",
+  "@contextLandKindNotBuildable": {
+    "description": "V3 · terrain non constructible (jardin, agricole, bois)"
+  },
+  "contextLandKindUnknown": "Je ne sais pas",
+  "@contextLandKindUnknown": {
+    "description": "V3 · constructibilité du terrain inconnue"
+  },
+  "contextParkingKindLabel": "Type de stationnement",
+  "@contextParkingKindLabel": {
+    "description": "V3 · question pour un garage / parking (parking_kind)"
+  },
+  "contextParkingKindBox": "Box fermé",
+  "@contextParkingKindBox": {
+    "description": "V3 · box fermé"
+  },
+  "contextParkingKindGarage": "Garage",
+  "@contextParkingKindGarage": {
+    "description": "V3 · garage"
+  },
+  "contextParkingKindCovered": "Place couverte",
+  "@contextParkingKindCovered": {
+    "description": "V3 · place de parking couverte"
+  },
+  "contextParkingKindOutdoor": "Place extérieure",
+  "@contextParkingKindOutdoor": {
+    "description": "V3 · place de parking extérieure"
+  },
+  "contextOutbuildingOtherLabel": "Précisez la dépendance",
+  "@contextOutbuildingOtherLabel": {
+    "description": "V3 · champ de précision d’une dépendance (property_type_other)"
+  },
+  "contextOutbuildingOtherHint": "Ex. : cave, grange, atelier",
+  "@contextOutbuildingOtherHint": {
+    "description": "V3 · exemple du champ « Précisez la dépendance »"
+  },
+  "contextCommercialUseLabel": "Usage du local",
+  "@contextCommercialUseLabel": {
+    "description": "V3 · champ « usage » d’un local commercial (commercial_use)"
+  },
+  "contextCommercialUseHint": "Ex. : boutique, bureau, entrepôt",
+  "@contextCommercialUseHint": {
+    "description": "V3 · exemple du champ « Usage du local »"
+  },
+  "contextUnitsCountLabel": "Nombre de logements",
+  "@contextUnitsCountLabel": {
+    "description": "V3 · champ « nombre de logements » d’un immeuble (units_count)"
+  },
+  "contextErrorUnitsCount": "Entre {min} et {max} logements",
+  "@contextErrorUnitsCount": {
+    "description": "V3 · erreur du nombre de logements hors bornes",
+    "placeholders": {
+      "min": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "myPropertiesTitle": "Mes biens",
+  "@myPropertiesTitle": {
+    "description": "Mes biens · titre de l’écran (onglet Mon bien avec plusieurs biens)"
+  },
+  "myPropertiesSummary": "{count, plural, =1{1 bien} other{{count} biens}}",
+  "@myPropertiesSummary": {
+    "description": "Mes biens · nombre de biens sous le titre",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "myPropertiesLotsLabel": "Lots de vente",
+  "@myPropertiesLotsLabel": {
+    "description": "Mes biens · titre de la section des lots"
+  },
+  "myPropertiesStandaloneLabel": "Biens",
+  "@myPropertiesStandaloneLabel": {
+    "description": "Mes biens · titre de la section des biens hors lot"
+  },
+  "myPropertiesAdd": "Ajouter un bien",
+  "@myPropertiesAdd": {
+    "description": "Mes biens · bouton principal"
+  },
+  "myPropertiesCreateLot": "Regrouper des biens en lot",
+  "@myPropertiesCreateLot": {
+    "description": "Mes biens · bouton de création d’un lot"
+  },
+  "myPropertiesLimit": "Vous avez atteint la limite de {max} biens pendant la phase de test.",
+  "@myPropertiesLimit": {
+    "description": "Mes biens · limite de biens atteinte (phase de test)",
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "myPropertiesUntitled": "Nouveau bien",
+  "@myPropertiesUntitled": {
+    "description": "Libellé d’un bien dont le type n’est pas encore choisi"
+  },
+  "myPropertiesStatusDraft": "Brouillon · étape {step}/{total}",
+  "@myPropertiesStatusDraft": {
+    "description": "Mes biens · statut d’un brouillon",
+    "placeholders": {
+      "step": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "myPropertiesStatusSubmitted": "Envoyé",
+  "@myPropertiesStatusSubmitted": {
+    "description": "Mes biens · statut d’un dossier envoyé"
+  },
+  "myPropertiesStatusInReview": "Analyse en cours",
+  "@myPropertiesStatusInReview": {
+    "description": "Mes biens · statut d’un dossier analysé par l’expert"
+  },
+  "myPropertiesStatusCertified": "Certifié",
+  "@myPropertiesStatusCertified": {
+    "description": "Mes biens · statut d’un dossier certifié"
+  },
+  "myPropertiesUnread": "Nouvelle notification",
+  "@myPropertiesUnread": {
+    "description": "Mes biens · libellé d’accessibilité de la pastille de notification d’un bien"
+  },
+  "myPropertiesDelete": "Supprimer le brouillon",
+  "@myPropertiesDelete": {
+    "description": "Mes biens · bouton de suppression d’un brouillon"
+  },
+  "myPropertiesDeleteMessage": "Le bien et ses documents seront supprimés définitivement.",
+  "@myPropertiesDeleteMessage": {
+    "description": "Mes biens · confirmation intégrée de suppression"
+  },
+  "myPropertiesDeleteConfirm": "Supprimer",
+  "@myPropertiesDeleteConfirm": {
+    "description": "Mes biens · confirmer la suppression"
+  },
+  "myPropertiesDeleteCancel": "Annuler",
+  "@myPropertiesDeleteCancel": {
+    "description": "Mes biens · annuler la suppression"
+  },
+  "myPropertiesDeleteError": "Le bien n’a pas pu être supprimé. Réessayez.",
+  "@myPropertiesDeleteError": {
+    "description": "Mes biens · erreur de suppression"
+  },
+  "myPropertiesRefreshError": "Impossible d’actualiser vos biens.",
+  "@myPropertiesRefreshError": {
+    "description": "Mes biens · erreur de l’actualisation"
+  },
+  "propertyHomeBack": "Mes biens",
+  "@propertyHomeBack": {
+    "description": "Accueil d’un bien · libellé d’accessibilité du retour vers Mes biens"
+  },
+  "propertyHomeAddTitle": "Ajouter un bien",
+  "@propertyHomeAddTitle": {
+    "description": "Accueil du seul bien · carte « Ajouter un bien »"
+  },
+  "propertyHomeAddSubtitle": "Garage, terrain, autre logement…",
+  "@propertyHomeAddSubtitle": {
+    "description": "Accueil du seul bien · sous-titre de la carte « Ajouter un bien »"
+  },
+  "propertyHomeLotTitle": "Fait partie du lot {name}",
+  "@propertyHomeLotTitle": {
+    "description": "Accueil d’un bien · mention du lot de vente",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "lotDefaultName": "{count, plural, =1{Lot d’un bien} other{Lot de {count} biens}}",
+  "@lotDefaultName": {
+    "description": "Nom par défaut d’un lot sans nom",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "lotSaleModeTogether": "Vendus ensemble",
+  "@lotSaleModeTogether": {
+    "description": "Lot · mode de vente « uniquement ensemble »"
+  },
+  "lotSaleModeTogetherOrSeparately": "Ensemble ou séparément",
+  "@lotSaleModeTogetherOrSeparately": {
+    "description": "Lot · mode de vente « ensemble ou séparément »"
+  },
+  "lotEstimate": "Tendance du lot : {low} – {high}",
+  "@lotEstimate": {
+    "description": "Lot · fourchette de l’estimation du lot (somme)",
+    "placeholders": {
+      "low": {
+        "type": "String"
+      },
+      "high": {
+        "type": "String"
+      }
+    }
+  },
+  "lotTitle": "Lot de vente",
+  "@lotTitle": {
+    "description": "Fiche du lot · titre de l’en-tête"
+  },
+  "lotBack": "Retour",
+  "@lotBack": {
+    "description": "Fiche du lot · libellé d’accessibilité du retour"
+  },
+  "lotNameLabel": "Nom du lot",
+  "@lotNameLabel": {
+    "description": "Fiche du lot · champ du nom"
+  },
+  "lotNameHint": "Ex. : Maison + terrain",
+  "@lotNameHint": {
+    "description": "Fiche du lot · exemple de nom"
+  },
+  "lotMembersLabel": "Biens du lot",
+  "@lotMembersLabel": {
+    "description": "Fiche du lot · section des biens"
+  },
+  "lotMainBadge": "Principal",
+  "@lotMainBadge": {
+    "description": "Fiche du lot · badge du bien principal"
+  },
+  "lotSetMain": "Définir comme bien principal",
+  "@lotSetMain": {
+    "description": "Fiche du lot · choisir le bien principal"
+  },
+  "lotRemoveMember": "Retirer du lot",
+  "@lotRemoveMember": {
+    "description": "Fiche du lot · retirer un bien"
+  },
+  "lotAddMember": "Ajouter un bien au lot",
+  "@lotAddMember": {
+    "description": "Fiche du lot · ajouter un bien"
+  },
+  "lotSaleModeLabel": "Mode de vente",
+  "@lotSaleModeLabel": {
+    "description": "Fiche du lot · section du mode de vente"
+  },
+  "lotSaleModeHelp": "« Ensemble ou séparément » : un acquéreur peut aussi acheter un seul des biens.",
+  "@lotSaleModeHelp": {
+    "description": "Fiche du lot · explication du mode de vente"
+  },
+  "lotEstimateLabel": "Estimation du lot",
+  "@lotEstimateLabel": {
+    "description": "Fiche du lot · section de l’estimation"
+  },
+  "lotEstimateSum": "Somme des tendances des biens, indicative et non certifiée.",
+  "@lotEstimateSum": {
+    "description": "Fiche du lot · explication de la somme"
+  },
+  "lotEstimatePending": "La tendance du lot s’affichera quand chaque bien estimable aura la sienne.",
+  "@lotEstimatePending": {
+    "description": "Fiche du lot · somme pas encore disponible"
+  },
+  "lotEstimateByExpert": "Estimé par l’expert",
+  "@lotEstimateByExpert": {
+    "description": "Fiche du lot · bien sans estimation automatique"
+  },
+  "lotEstimateIncluded": "Compris dans l’estimation du bien principal",
+  "@lotEstimateIncluded": {
+    "description": "Fiche du lot · dépendance sur la même parcelle que le bien principal"
+  },
+  "lotEstimateWaiting": "En attente de l’envoi du dossier",
+  "@lotEstimateWaiting": {
+    "description": "Fiche du lot · bien estimable sans estimation pour l’instant"
+  },
+  "lotFrozen": "Un expert analyse un bien de ce lot : le lot ne peut plus être modifié.",
+  "@lotFrozen": {
+    "description": "Fiche du lot · lot figé"
+  },
+  "lotDissolve": "Dissoudre le lot",
+  "@lotDissolve": {
+    "description": "Fiche du lot · bouton de dissolution"
+  },
+  "lotDissolveMessage": "Les biens restent dans Mes biens, vendus chacun séparément.",
+  "@lotDissolveMessage": {
+    "description": "Fiche du lot · confirmation intégrée de la dissolution"
+  },
+  "lotSaveError": "La modification n’a pas pu être enregistrée. Réessayez.",
+  "@lotSaveError": {
+    "description": "Fiche du lot · erreur d’enregistrement"
+  },
+  "lotNotFound": "Ce lot n’existe plus.",
+  "@lotNotFound": {
+    "description": "Fiche du lot · lot introuvable"
+  },
+  "lotCreateTitle": "Regrouper en lot",
+  "@lotCreateTitle": {
+    "description": "Feuille de création d’un lot · titre"
+  },
+  "lotCreateMessage": "Choisissez au moins deux biens vendus ensemble.",
+  "@lotCreateMessage": {
+    "description": "Feuille de création d’un lot · consigne"
+  },
+  "lotCreateConfirm": "Créer le lot",
+  "@lotCreateConfirm": {
+    "description": "Feuille de création d’un lot · bouton"
+  },
+  "lotAddTitle": "Ajouter au lot",
+  "@lotAddTitle": {
+    "description": "Feuille d’ajout d’un bien au lot · titre"
+  },
+  "lotNoCandidate": "Aucun autre bien ne peut rejoindre ce lot.",
+  "@lotNoCandidate": {
+    "description": "Feuille d’ajout d’un bien au lot · aucun bien disponible"
+  },
+  "newPropertyTitle": "Ajouter un bien",
+  "@newPropertyTitle": {
+    "description": "Ajouter un bien · titre"
+  },
+  "newPropertyIntro": "Chaque bien a son propre dossier. Un garage ou un terrain vendu avec votre maison peut former un lot avec elle.",
+  "@newPropertyIntro": {
+    "description": "Ajouter un bien · message de l’agent"
+  },
+  "newPropertyTypeLabel": "Type de bien",
+  "@newPropertyTypeLabel": {
+    "description": "Ajouter un bien · section du type"
+  },
+  "newPropertyTypeError": "Choisissez le type de bien",
+  "@newPropertyTypeError": {
+    "description": "Ajouter un bien · erreur sans type"
+  },
+  "newPropertyLotLabel": "Vendu avec un autre bien ?",
+  "@newPropertyLotLabel": {
+    "description": "Ajouter un bien · question du lot"
+  },
+  "newPropertyLotNone": "Non, vendu seul",
+  "@newPropertyLotNone": {
+    "description": "Ajouter un bien · pas de lot"
+  },
+  "newPropertyLotWith": "Avec {label}",
+  "@newPropertyLotWith": {
+    "description": "Ajouter un bien · vendu avec un bien existant",
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+  "newPropertyReuseLabel": "Reprendre mes informations",
+  "@newPropertyReuseLabel": {
+    "description": "Ajouter un bien · section du pré-remplissage"
+  },
+  "newPropertyReuseFrom": "Depuis {label}",
+  "@newPropertyReuseFrom": {
+    "description": "Ajouter un bien · bien source du pré-remplissage",
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+  "newPropertyReuseOwners": "Les propriétaires",
+  "@newPropertyReuseOwners": {
+    "description": "Ajouter un bien · reprendre les propriétaires"
+  },
+  "newPropertyReuseIdentity": "La pièce d’identité",
+  "@newPropertyReuseIdentity": {
+    "description": "Ajouter un bien · reprendre la pièce d’identité"
+  },
+  "newPropertyReuseHelp": "Copiés dans le nouveau dossier, modifiables ensuite : le dossier d’origine ne change pas.",
+  "@newPropertyReuseHelp": {
+    "description": "Ajouter un bien · explication de la copie"
+  },
+  "newPropertyStart": "Commencer l’audit",
+  "@newPropertyStart": {
+    "description": "Ajouter un bien · bouton principal"
+  },
+  "newPropertyError": "Le bien n’a pas pu être créé. Réessayez.",
+  "@newPropertyError": {
+    "description": "Ajouter un bien · erreur de création"
+  },
+  "newPropertyCopyError": "Le bien est créé, mais certaines informations n’ont pas pu être reprises. Réessayez.",
+  "@newPropertyCopyError": {
+    "description": "Ajouter un bien · erreur de copie après création"
+  },
+  "ownersCopiedFrom": "Repris de {label}",
+  "@ownersCopiedFrom": {
+    "description": "V1 · provenance des propriétaires copiés d’un autre bien",
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+  "notificationsPropertyPrefix": "{label} · {title}",
+  "@notificationsPropertyPrefix": {
+    "description": "Notifications · titre préfixé par le bien concerné",
+    "placeholders": {
+      "label": {
+        "type": "String"
+      },
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "technicalSectionPlace": "L’emplacement",
+  "@technicalSectionPlace": {
+    "description": "V4b · section d’un garage / parking"
+  },
+  "technicalSectionPremises": "Le local",
+  "@technicalSectionPremises": {
+    "description": "V4b · section d’une dépendance ou d’un local commercial"
+  },
+  "technicalSectionBuilding": "L’immeuble",
+  "@technicalSectionBuilding": {
+    "description": "V4b · section d’un immeuble entier"
+  },
+  "technicalSectionEquipment": "Équipements",
+  "@technicalSectionEquipment": {
+    "description": "V4b · section des équipements d’un garage ou d’une dépendance"
+  },
+  "technicalUsableArea": "Surface utile",
+  "@technicalUsableArea": {
+    "description": "V4b · surface utile (usable_area_m2)"
+  },
+  "technicalErrorUsableArea": "Indiquez la surface utile",
+  "@technicalErrorUsableArea": {
+    "description": "V4b · erreur surface utile manquante"
+  },
+  "technicalHeating": "Chauffage",
+  "@technicalHeating": {
+    "description": "V4b · titre de section du chauffage seul (local commercial)"
+  },
+  "technicalParkingLevel": "Niveau",
+  "@technicalParkingLevel": {
+    "description": "V4b · niveau d’un stationnement (parking_level)"
+  },
+  "technicalParkingLevelBasement": "Sous-sol",
+  "@technicalParkingLevelBasement": {
+    "description": "V4b · stationnement en sous-sol"
+  },
+  "technicalParkingLevelGround": "Rez-de-chaussée",
+  "@technicalParkingLevelGround": {
+    "description": "V4b · stationnement au rez-de-chaussée"
+  },
+  "technicalParkingLevelUpper": "Étage",
+  "@technicalParkingLevelUpper": {
+    "description": "V4b · stationnement à l’étage"
+  },
+  "technicalParkingLevelOutdoor": "Extérieur",
+  "@technicalParkingLevelOutdoor": {
+    "description": "V4b · stationnement extérieur"
+  },
+  "technicalParkingFeatures": "Équipements présents",
+  "@technicalParkingFeatures": {
+    "description": "V4b · question des équipements (parking_features)"
+  },
+  "technicalFeatureMotorizedDoor": "Porte motorisée",
+  "@technicalFeatureMotorizedDoor": {
+    "description": "V4b · équipement porte motorisée"
+  },
+  "technicalFeatureElectricity": "Électricité",
+  "@technicalFeatureElectricity": {
+    "description": "V4b · équipement électricité"
+  },
+  "technicalFeatureChargingPoint": "Borne de recharge",
+  "@technicalFeatureChargingPoint": {
+    "description": "V4b · équipement borne de recharge"
+  },
+  "technicalFeatureWater": "Eau",
+  "@technicalFeatureWater": {
+    "description": "V4b · équipement point d’eau"
+  },
+  "technicalFeatureSecuredAccess": "Accès sécurisé",
+  "@technicalFeatureSecuredAccess": {
+    "description": "V4b · équipement accès sécurisé"
+  },
+  "documentsReuseOption": "Depuis un autre bien",
+  "@documentsReuseOption": {
+    "description": "V7 · option « Importer » : reprendre un document d’un autre bien du vendeur"
+  },
+  "documentsReuseOptionSubtitle": "Un document déjà fourni, sans le renvoyer",
+  "@documentsReuseOptionSubtitle": {
+    "description": "V7 · sous-titre de l’option « Depuis un autre bien »"
+  },
+  "documentsReuseTitle": "Reprendre un document",
+  "@documentsReuseTitle": {
+    "description": "V7 · titre de la feuille de reprise d’un document"
+  },
+  "documentsReuseEmpty": "Aucun document de ce type dans vos autres biens.",
+  "@documentsReuseEmpty": {
+    "description": "V7 · aucun document à reprendre"
+  },
+  "documentsReuseLoadError": "Les documents de vos autres biens n’ont pas pu être chargés.",
+  "@documentsReuseLoadError": {
+    "description": "V7 · erreur de chargement des documents à reprendre"
+  },
+  "documentsNoticeReuseFailed": "Le document n’a pas pu être repris. Réessayez.",
+  "@documentsNoticeReuseFailed": {
+    "description": "V7 · échec de la reprise d’un document"
+  },
+  "locationSameAsTitle": "Même adresse que {label} ?",
+  "@locationSameAsTitle": {
+    "description": "V2 · suggestion de reprendre l’adresse d’un autre bien",
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+  "locationSameAsAction": "Reprendre cette adresse",
+  "@locationSameAsAction": {
+    "description": "V2 · bouton de la suggestion d’adresse"
+  },
+  "locationSameAsNote": "Vérifiez ensuite la parcelle : un garage peut être sur une autre parcelle.",
+  "@locationSameAsNote": {
+    "description": "V2 · rappel de confirmer la parcelle après reprise d’adresse"
+  },
+  "marketTypeOutbuilding": "Garage ou dépendance",
+  "@marketTypeOutbuilding": {
+    "description": "V8b · type d’une vente comparable de dépendance seule (garage, parking, cave…)"
+  },
+  "marketSummaryOutbuilding": "{type} · {city} · tendance IA {median} €, d’après les ventes de dépendances seules.",
+  "@marketSummaryOutbuilding": {
+    "description": "V8b · résumé de l’estimation d’un garage ou d’une dépendance (prix à l’unité)",
+    "placeholders": {
+      "type": {
+        "type": "String"
+      },
+      "city": {
+        "type": "String"
+      },
+      "median": {
+        "type": "String"
+      }
+    }
   }
 }

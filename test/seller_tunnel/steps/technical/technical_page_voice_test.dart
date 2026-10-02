@@ -1,7 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:mobileapp/app/app.dart';
 import 'package:mobileapp/seller_tunnel/seller_tunnel.dart';
 import 'package:mobileapp/ui/ui.dart';
 import 'package:mocktail/mocktail.dart';
@@ -70,7 +69,8 @@ void main() {
     await tester.tap(find.byType(RealestyMicButton));
     await tester.pumpAndSettle();
     verifyNever(() => tunnel.save(any()));
-    verify(() => goRouter.go(AppRoutes.sellerVoiceAudit)).called(1);
+    verify(() => goRouter.go('/vendeur/biens/p/audit/technique-vocal'))
+        .called(1);
   });
 
   testWidgets('typed answers are saved before opening V4', (tester) async {
@@ -79,7 +79,8 @@ void main() {
     await tester.tap(find.byType(RealestyMicButton));
     await tester.pumpAndSettle();
     verify(() => tunnel.save(any())).called(1);
-    verify(() => goRouter.go(AppRoutes.sellerVoiceAudit)).called(1);
+    verify(() => goRouter.go('/vendeur/biens/p/audit/technique-vocal'))
+        .called(1);
   });
 
   testWidgets('a failed save stays on V4b', (tester) async {

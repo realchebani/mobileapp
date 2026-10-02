@@ -1,7 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:mobileapp/seller_space/seller_space.dart';
+import 'package:mobileapp/seller_tunnel/seller_tunnel.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:property_repository/property_repository.dart';
 import 'package:sale_repository/sale_repository.dart';
 
 import '../../helpers/helpers.dart';
@@ -18,10 +20,12 @@ void main() {
 
   Future<MockNotificationsCubit> open(
     WidgetTester tester,
-    NotificationsState state,
-  ) async {
+    NotificationsState state, {
+    SellerPropertiesCubit? sellerPropertiesCubit,
+  }) async {
     final cubit = mockNotificationsCubit(state);
     await tester.pumpSellerSpacePage(
+      sellerPropertiesCubit: sellerPropertiesCubit,
       Builder(
         builder: (context) => TextButton(
           onPressed: () => showNotificationsSheet(context),
@@ -37,6 +41,35 @@ void main() {
   }
 
   group('showNotificationsSheet', () {
+    testWidgets('names the property of each notification', (tester) async {
+      await open(
+        tester,
+        NotificationsState(
+          status: NotificationsStatus.success,
+          notifications: [
+            AppNotification(
+              id: 'n',
+              kind: AppNotificationKind.valuationCertified,
+              title: 'Disponible',
+              propertyId: 'garage',
+              createdAt: DateTime(2026, 9, 24),
+            ),
+          ],
+        ),
+        sellerPropertiesCubit: mockSellerPropertiesCubit(
+          properties: const [
+            testProperty,
+            Property(
+              id: 'garage',
+              ownerId: 'user-id',
+              propertyType: PropertyType.parking,
+            ),
+          ],
+        ),
+      );
+      expect(find.text('Garage / parking · Disponible'), findsOneWidget);
+    });
+
     testWidgets('opens the screen of a notification and marks them read', (
       tester,
     ) async {

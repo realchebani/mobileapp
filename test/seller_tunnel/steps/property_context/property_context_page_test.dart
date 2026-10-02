@@ -1,6 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:mobileapp/app/app.dart';
 import 'package:mobileapp/seller_tunnel/seller_tunnel.dart';
 import 'package:mobileapp/seller_tunnel/steps/property_context/widgets/context_question.dart';
 import 'package:mobileapp/seller_tunnel/steps/property_context/widgets/previous_estimate_card.dart';
@@ -105,7 +104,7 @@ void main() {
             .selected,
         isTrue,
       );
-      expect(find.text('Immeuble, local, garage…'), findsOneWidget);
+      expect(find.text('Péniche, moulin…'), findsOneWidget);
       expect(find.text('2012'), findsOneWidget);
       expect(find.text('320${_nbsp}000'), findsOneWidget);
       expect(find.text('Facultatif'), findsOneWidget);
@@ -133,7 +132,8 @@ void main() {
       await pump(tester, goRouter: goRouter);
 
       await tester.tap(find.bySemanticsLabel('Retour'));
-      verify(() => goRouter.go(AppRoutes.sellerLocation)).called(1);
+      verify(() => goRouter.go(auditRoute(SellerTunnelStep.location)))
+          .called(1);
     });
 
     testWidgets('shows the errors and reveals the first one', (tester) async {
@@ -273,7 +273,12 @@ void main() {
       await tester.pump();
       expect(find.text('Précisez le type de bien'), findsNothing);
       expect(find.text('Construit par vous$_nbsp?'), findsNothing);
-      expect(find.byType(ContextQuestion), findsNWidgets(2));
+      // "Le terrain est-il constructible ?", the reason and the estimates.
+      expect(find.byType(ContextQuestion), findsNWidgets(3));
+      expect(
+        find.text('Le terrain est-il constructible$_nbsp?'),
+        findsOneWidget,
+      );
     });
 
     testWidgets('saves the answers and the estimates, then continues', (
@@ -296,9 +301,10 @@ void main() {
       await tester.pump();
       expect(find.text('ESTIMATION PRÉCÉDENTE 1'), findsOneWidget);
       expect(find.text('ESTIMATION PRÉCÉDENTE 2'), findsOneWidget);
-      await tester.tap(
-        find.bySemanticsLabel('Supprimer Estimation précédente 2'),
-      );
+      final remove = find.bySemanticsLabel('Supprimer Estimation précédente 2');
+      await tester.ensureVisible(remove);
+      await tester.pump();
+      await tester.tap(remove);
       await tester.pump();
       expect(find.byType(PreviousEstimateCard), findsOneWidget);
 
@@ -316,7 +322,6 @@ void main() {
       verify(
         () => cubit.saveAndContinue(SellerTunnelStep.context, {
           PropertyColumns.propertyType: PropertyType.house,
-          PropertyColumns.propertyTypeOther: null,
           PropertyColumns.purchaseYear: 2012,
           PropertyColumns.purchasePriceEur: 320000,
           PropertyColumns.selfBuilt: false,

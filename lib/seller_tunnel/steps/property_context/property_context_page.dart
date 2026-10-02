@@ -5,6 +5,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:mobileapp/l10n/l10n.dart';
 import 'package:mobileapp/seller_tunnel/cubit/seller_tunnel_cubit.dart';
+import 'package:mobileapp/seller_tunnel/models/property_type_labels.dart';
+import 'package:mobileapp/seller_tunnel/models/property_type_profile.dart';
 import 'package:mobileapp/seller_tunnel/models/seller_tunnel_step.dart';
 import 'package:mobileapp/seller_tunnel/steps/property_context/cubit/property_context_cubit.dart';
 import 'package:mobileapp/seller_tunnel/steps/property_context/widgets/context_input_formatters.dart';
@@ -52,6 +54,12 @@ class _PropertyContextViewState extends State<PropertyContextView> {
   late final TextEditingController _typeOther = TextEditingController(
     text: _initial.propertyTypeOther,
   );
+  late final TextEditingController _commercialUse = TextEditingController(
+    text: _initial.commercialUse,
+  );
+  late final TextEditingController _units = TextEditingController(
+    text: _initial.unitsCount,
+  );
   late final TextEditingController _year = TextEditingController(
     text: _initial.purchaseYear,
   );
@@ -67,6 +75,8 @@ class _PropertyContextViewState extends State<PropertyContextView> {
   @override
   void dispose() {
     _typeOther.dispose();
+    _commercialUse.dispose();
+    _units.dispose();
     _year.dispose();
     _price.dispose();
     super.dispose();
@@ -92,7 +102,7 @@ class _PropertyContextViewState extends State<PropertyContextView> {
 
   /// Scrolls to the first unanswered or invalid question.
   void _revealFirstError(PropertyContextState state) {
-    final key = state.propertyTypeError != null
+    final key = state.propertyTypeError != null || state.unitsCountError != null
         ? _typeKey
         : state.purchaseYearError != null || state.purchasePriceError != null
         ? _historyKey
@@ -137,6 +147,10 @@ class _PropertyContextViewState extends State<PropertyContextView> {
           PropertyContextState.minYear.toString(),
         ),
         PropertyContextError.monthFuture => l10n.contextErrorMonthFuture,
+        PropertyContextError.unitsRange => l10n.contextErrorUnitsCount(
+          PropertyContextState.minUnits,
+          PropertyContextState.maxUnits,
+        ),
       };
     }
 
@@ -180,11 +194,9 @@ class _PropertyContextViewState extends State<PropertyContextView> {
                 children: [
                   for (final type in PropertyType.values)
                     SelectableCard(
-                      icon: _typeIcon(type),
-                      title: _typeLabel(l10n, type),
-                      subtitle: type == PropertyType.other
-                          ? l10n.contextTypeOtherSubtitle
-                          : null,
+                      icon: propertyTypeIcon(type),
+                      title: propertyTypeName(l10n, type),
+                      subtitle: propertyTypeSubtitle(l10n, type),
                       selected: state.propertyType == type,
                       onTap: () => cubit.propertyTypeSelected(type),
                     ),
@@ -196,19 +208,7 @@ class _PropertyContextViewState extends State<PropertyContextView> {
                   )
                   case final message?)
                 ContextErrorText(message),
-              if (state.propertyType == PropertyType.other)
-                RealestyTextField(
-                  label: l10n.contextTypeOtherLabel,
-                  hint: l10n.contextTypeOtherHint,
-                  controller: _typeOther,
-                  textInputAction: TextInputAction.next,
-                  inputFormatters: [
-                    LengthLimitingTextInputFormatter(
-                      PropertyContextState.maxOtherTypeLength,
-                    ),
-                  ],
-                  onChanged: cubit.propertyTypeOtherChanged,
-                ),
+              ..._detail(context, state, error),
             ],
           ),
           Column(
@@ -360,20 +360,109 @@ class _PropertyContextViewState extends State<PropertyContextView> {
     );
   }
 
-  static RealestyIcons _typeIcon(PropertyType type) => switch (type) {
-    PropertyType.house => RealestyIcons.home,
-    PropertyType.apartment => RealestyIcons.building,
-    PropertyType.land => RealestyIcons.land,
-    PropertyType.other => RealestyIcons.grid,
-  };
-
-  static String _typeLabel(AppLocalizations l10n, PropertyType type) =>
-      switch (type) {
-        PropertyType.house => l10n.contextTypeHouse,
-        PropertyType.apartment => l10n.contextTypeApartment,
-        PropertyType.land => l10n.contextTypeLand,
-        PropertyType.other => l10n.contextTypeOther,
-      };
+  /// The precision asked with the selected type (plan §2).
+  List<Widget> _detail(
+    BuildContext context,
+    PropertyContextState state,
+    String? Function(PropertyContextError?, String Function()) error,
+  ) {
+    final l10n = context.l10n;
+    final cubit = context.read<PropertyContextCubit>();
+    return switch (state.detail) {
+      PropertyTypeDetail.none => const [],
+      PropertyTypeDetail.otherText => [
+        RealestyTextField(
+          label: state.propertyType == PropertyType.outbuilding
+              ? l10n.contextOutbuildingOtherLabel
+              : l10n.contextTypeOtherLabel,
+          hint: state.propertyType == PropertyType.outbuilding
+              ? l10n.contextOutbuildingOtherHint
+              : l10n.contextTypeOtherHint,
+          controller: _typeOther,
+          textInputAction: TextInputAction.next,
+          inputFormatters: [
+            LengthLimitingTextInputFormatter(
+              PropertyContextState.maxOtherTypeLength,
+            ),
+          ],
+          onChanged: cubit.propertyTypeOtherChanged,
+        ),
+      ],
+      PropertyTypeDetail.landKind => [
+        ContextQuestion(
+          label: l10n.contextLandKindLabel,
+          spacing: RealestySpacing.xs,
+          child: Wrap(
+            spacing: RealestySpacing.xs,
+            runSpacing: RealestySpacing.xs,
+            children: [
+              for (final kind in LandKind.values)
+                RealestyChoiceChip(
+                  label: switch (kind) {
+                    LandKind.buildable => l10n.contextLandKindBuildable,
+                    LandKind.notBuildable => l10n.contextLandKindNotBuildable,
+                    LandKind.unknown => l10n.contextLandKindUnknown,
+                  },
+                  selected: state.landKind == kind,
+                  onSelected: (_) => cubit.landKindToggled(kind),
+                ),
+            ],
+          ),
+        ),
+      ],
+      PropertyTypeDetail.parkingKind => [
+        ContextQuestion(
+          label: l10n.contextParkingKindLabel,
+          spacing: RealestySpacing.xs,
+          child: Wrap(
+            spacing: RealestySpacing.xs,
+            runSpacing: RealestySpacing.xs,
+            children: [
+              for (final kind in ParkingKind.values)
+                RealestyChoiceChip(
+                  label: switch (kind) {
+                    ParkingKind.box => l10n.contextParkingKindBox,
+                    ParkingKind.garage => l10n.contextParkingKindGarage,
+                    ParkingKind.coveredSpace => l10n.contextParkingKindCovered,
+                    ParkingKind.outdoorSpace => l10n.contextParkingKindOutdoor,
+                  },
+                  selected: state.parkingKind == kind,
+                  onSelected: (_) => cubit.parkingKindToggled(kind),
+                ),
+            ],
+          ),
+        ),
+      ],
+      PropertyTypeDetail.commercialUse => [
+        RealestyTextField(
+          label: l10n.contextCommercialUseLabel,
+          hint: l10n.contextCommercialUseHint,
+          controller: _commercialUse,
+          textInputAction: TextInputAction.next,
+          inputFormatters: [
+            LengthLimitingTextInputFormatter(
+              PropertyContextState.maxCommercialUseLength,
+            ),
+          ],
+          onChanged: cubit.commercialUseChanged,
+        ),
+      ],
+      PropertyTypeDetail.unitsCount => [
+        RealestyTextField(
+          label: l10n.contextUnitsCountLabel,
+          controller: _units,
+          errorText: error(state.unitsCountError, () => ''),
+          keyboardType: TextInputType.number,
+          textInputAction: TextInputAction.next,
+          inputFormatters: [
+            FilteringTextInputFormatter.digitsOnly,
+            LengthLimitingTextInputFormatter(3),
+          ],
+          onChanged: cubit.unitsCountChanged,
+        ),
+      ],
+    };
+  }
 
   static String _reasonLabel(AppLocalizations l10n, SaleReason reason) =>
       switch (reason) {

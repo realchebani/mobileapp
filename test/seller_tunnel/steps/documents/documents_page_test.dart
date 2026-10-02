@@ -4,7 +4,6 @@ import 'dart:typed_data';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:mobileapp/app/app.dart';
 import 'package:mobileapp/seller_tunnel/seller_tunnel.dart';
 import 'package:mobileapp/seller_tunnel/steps/documents/data/document_picker.dart';
 import 'package:mobileapp/seller_tunnel/steps/documents/data/scan_pdf_builder.dart';
@@ -143,6 +142,7 @@ void main() {
     SellerTunnelState? state,
     double height = 3000,
     MockGoRouter? goRouter,
+    SellerPropertiesCubit? sellerPropertiesCubit,
   }) async {
     final view = tester.view
       ..physicalSize = Size(390, height)
@@ -159,6 +159,7 @@ void main() {
         },
       ),
       sellerTunnelCubit: cubit,
+      sellerPropertiesCubit: sellerPropertiesCubit,
       propertyRepository: repository,
       goRouter: goRouter,
     );
@@ -413,6 +414,104 @@ void main() {
       await tester.pumpAndSettle();
 
       verifyNever(() => picker.pick(any()));
+    });
+
+    testWidgets('"Importer" reuses a document of another property', (
+      tester,
+    ) async {
+      const deed = PropertyDocument(
+        id: 'other-deed',
+        propertyId: 'garage',
+        kind: DocumentKind.titleDeed,
+        storagePath: 'user-id/garage/acte.pdf',
+        fileName: 'acte.pdf',
+      );
+      when(() => repository.getDocuments('garage')).thenAnswer(
+        (_) async => const [
+          deed,
+          PropertyDocument(
+            id: 'other-id',
+            propertyId: 'garage',
+            kind: DocumentKind.identityDocument,
+            storagePath: 'user-id/garage/id.pdf',
+          ),
+        ],
+      );
+      when(
+        () => repository.copyDocument(
+          deed,
+          ownerId: 'user-id',
+          toPropertyId: 'property-id',
+        ),
+      ).thenAnswer(
+        (_) async => const PropertyDocument(
+          id: 'copy',
+          propertyId: 'property-id',
+          kind: DocumentKind.titleDeed,
+          storagePath: 'user-id/property-id/acte.pdf',
+          fileName: 'acte.pdf',
+        ),
+      );
+      await pump(
+        tester,
+        sellerPropertiesCubit: mockSellerPropertiesCubit(
+          properties: const [
+            testProperty,
+            Property(
+              id: 'garage',
+              ownerId: 'user-id',
+              propertyType: PropertyType.parking,
+            ),
+          ],
+        ),
+      );
+      await tester.tap(find.bySemanticsLabel('Importer · Titre de propriété'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Depuis un autre bien'));
+      await tester.pumpAndSettle();
+      expect(find.text('Reprendre un document'), findsOneWidget);
+      expect(find.text('acte.pdf'), findsOneWidget);
+      await tester.tap(find.text('acte.pdf'));
+      await tester.pumpAndSettle();
+      verify(
+        () => repository.copyDocument(
+          deed,
+          ownerId: 'user-id',
+          toPropertyId: 'property-id',
+        ),
+      ).called(1);
+    });
+
+    testWidgets('"Importer" from another property can be dismissed', (
+      tester,
+    ) async {
+      when(() => repository.getDocuments('garage')).thenAnswer((_) async => []);
+      await pump(
+        tester,
+        sellerPropertiesCubit: mockSellerPropertiesCubit(
+          properties: const [
+            testProperty,
+            Property(id: 'garage', ownerId: 'user-id'),
+          ],
+        ),
+      );
+      await tester.tap(find.bySemanticsLabel('Importer · Titre de propriété'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Depuis un autre bien'));
+      await tester.pumpAndSettle();
+      expect(
+        find.text('Aucun document de ce type dans vos autres biens.'),
+        findsOneWidget,
+      );
+      await tester.tapAt(const Offset(10, 10));
+      await tester.pumpAndSettle();
+      verifyNever(
+        () => repository.copyDocument(
+          any(),
+          ownerId: any(named: 'ownerId'),
+          toPropertyId: any(named: 'toPropertyId'),
+        ),
+      );
     });
 
     testWidgets('"Importer" of the diagnostics row uploads diagnostics', (
@@ -938,7 +1037,8 @@ void main() {
       await tester.tap(_button('Envoyer mon dossier à l’expert'));
       await tester.pump();
 
-      verify(() => goRouter.go(AppRoutes.sellerTechnical)).called(1);
+      verify(() => goRouter.go(SellerTunnelStep.technical.routeFor('p')))
+          .called(1);
       verifyNever(() => tunnel.saveAndContinue(any(), any()));
       expect(
         find.text(
@@ -1083,7 +1183,8 @@ void main() {
       await pump(tester, goRouter: goRouter);
 
       await tester.tap(find.bySemanticsLabel('Retour'));
-      verify(() => goRouter.go(AppRoutes.sellerLifestyle)).called(1);
+      verify(() => goRouter.go(auditRoute(SellerTunnelStep.lifestyle)))
+          .called(1);
     });
   });
 }

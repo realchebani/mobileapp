@@ -90,7 +90,7 @@ void main() {
 
       await tester.tap(find.byType(RealestyIconButton).first);
 
-      verify(() => router.go(SellerTunnelStep.technical.path)).called(1);
+      verify(() => router.go(auditRoute(SellerTunnelStep.technical))).called(1);
     });
   });
 }

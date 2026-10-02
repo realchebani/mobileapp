@@ -43,15 +43,11 @@ void main() {
   });
 
   group(SellerSpaceProviders, () {
-    late ValuationRepository valuationRepository;
     late NotificationRepository notificationRepository;
     late MockProfileCubit profileCubit;
 
     setUp(() {
-      valuationRepository = MockValuationRepository();
       notificationRepository = MockNotificationRepository();
-      when(() => valuationRepository.getLatestValuation(any()))
-          .thenAnswer((_) async => testValuation);
       when(() => notificationRepository.getNotifications(any()))
           .thenAnswer((_) async => [testNotification]);
       profileCubit = MockProfileCubit();
@@ -59,33 +55,63 @@ void main() {
           .thenReturn(const ProfileState(profile: Profile(id: 'user-id')));
     });
 
-    Future<void> pump(WidgetTester tester, SellerTunnelCubit tunnel) =>
-        tester.pumpApp(
-          BlocProvider<SellerTunnelCubit>.value(
-            value: tunnel,
-            child: SellerSpaceProviders(
-              child: Builder(
-                builder: (context) {
-                  final valuation = context.watch<ValuationCubit>().state;
-                  final unread = context.watch<NotificationsCubit>().state;
-                  return Text(
-                    '${valuation.valuation?.valueEur} ${unread.unreadCount}',
-                  );
-                },
-              ),
+    Future<void> pump(WidgetTester tester) => tester.pumpApp(
+      SellerSpaceProviders(
+        child: Builder(
+          builder: (context) =>
+              Text('${context.watch<NotificationsCubit>().state.unreadCount}'),
+        ),
+      ),
+      notificationRepository: notificationRepository,
+      profileCubit: profileCubit,
+    );
+
+    testWidgets('loads the notifications of the user', (tester) async {
+      await pump(tester);
+      await tester.pumpAndSettle();
+      expect(find.text('1'), findsOneWidget);
+      verify(() => notificationRepository.getNotifications('user-id'))
+          .called(1);
+    });
+
+    testWidgets('works without a profile', (tester) async {
+      when(() => profileCubit.state).thenReturn(const ProfileState());
+      await pump(tester);
+      await tester.pumpAndSettle();
+      verify(() => notificationRepository.getNotifications('')).called(1);
+    });
+  });
+
+  group(PropertyValuationScope, () {
+    late ValuationRepository valuationRepository;
+
+    setUp(() {
+      valuationRepository = MockValuationRepository();
+      when(() => valuationRepository.getLatestValuation(any()))
+          .thenAnswer((_) async => testValuation);
+    });
+
+    Future<void> pump(
+      WidgetTester tester,
+      SellerTunnelCubit tunnel,
+    ) => tester.pumpApp(
+      BlocProvider<SellerTunnelCubit>.value(
+        value: tunnel,
+        child: PropertyValuationScope(
+          child: Builder(
+            builder: (context) => Text(
+              '${context.watch<ValuationCubit>().state.valuation?.valueEur}',
             ),
           ),
-          valuationRepository: valuationRepository,
-          notificationRepository: notificationRepository,
-          profileCubit: profileCubit,
-        );
+        ),
+      ),
+      valuationRepository: valuationRepository,
+    );
 
     testWidgets('loads the valuation of a certified dossier', (tester) async {
       await pump(tester, mockSellerTunnelCubit(certifiedState));
       await tester.pumpAndSettle();
-      expect(find.text('525000 1'), findsOneWidget);
-      verify(() => notificationRepository.getNotifications('user-id'))
-          .called(1);
+      expect(find.text('525000'), findsOneWidget);
     });
 
     testWidgets('loads it once the dossier becomes certified', (tester) async {
@@ -103,19 +129,12 @@ void main() {
       whenListen(tunnel, states.stream, initialState: submitted);
       await pump(tester, tunnel);
       await tester.pumpAndSettle();
-      expect(find.text('null 1'), findsOneWidget);
+      expect(find.text('null'), findsOneWidget);
       verifyNever(() => valuationRepository.getLatestValuation(any()));
 
       states.add(certifiedState);
       await tester.pumpAndSettle();
-      expect(find.text('525000 1'), findsOneWidget);
-    });
-
-    testWidgets('works without a profile', (tester) async {
-      when(() => profileCubit.state).thenReturn(const ProfileState());
-      await pump(tester, mockSellerTunnelCubit(certifiedState));
-      await tester.pumpAndSettle();
-      verify(() => notificationRepository.getNotifications('')).called(1);
+      expect(find.text('525000'), findsOneWidget);
     });
   });
 }

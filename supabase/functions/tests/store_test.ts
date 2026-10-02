@@ -56,6 +56,7 @@ Deno.test("ensureLoaded downloads, stores, revalidates and skips fresh files", a
       etag: '"a"',
       last_modified: "Mon, 18 May 2026 13:10:01 GMT",
       fetched_at: "2026-09-30T10:00:00Z",
+      format_version: 2,
     },
     // stale: revalidated (304)
     {
@@ -64,6 +65,7 @@ Deno.test("ensureLoaded downloads, stores, revalidates and skips fresh files", a
       etag: '"b"',
       last_modified: "Sun, 17 May 2026 13:10:01 GMT",
       fetched_at: "2026-09-01T10:00:00Z",
+      format_version: 2,
     },
   ];
   const { db, log } = fakeDb((table, calls) =>
@@ -100,7 +102,37 @@ Deno.test("ensureLoaded downloads, stores, revalidates and skips fresh files", a
   );
   assertEquals(writes.some((l) => l.startsWith("dvf_sales.upsert") && l.includes("m1")), true);
   assertEquals(
-    writes.some((l) => l.startsWith("dvf_sources.upsert") && l.includes('"rows_kept":1')),
+    // The house and the outbuilding sold alone (m2).
+    writes.some((l) => l.startsWith("dvf_sources.upsert") && l.includes('"rows_kept":2')),
+    true,
+  );
+});
+
+Deno.test("ensureLoaded reloads in full the files cleaned by an older version", async () => {
+  const sources = [{
+    insee: "69043",
+    year: 2025,
+    etag: '"a"',
+    last_modified: "Mon, 18 May 2026 13:10:01 GMT",
+    fetched_at: "2026-09-30T10:00:00Z",
+  }];
+  const { db, log } = fakeDb((table, calls) =>
+    table === "dvf_sources" && calls[0].startsWith("select")
+      ? { data: sources, error: null }
+      : { error: null }
+  );
+  const headers: (string | null)[] = [];
+  const store = new DvfStore(db, (_url, init) => {
+    headers.push(new Headers(init?.headers).get("If-None-Match"));
+    return Promise.resolve(new Response(CSV));
+  }, now);
+  await store.ensureLoaded(["69043"], [2025]);
+  assertEquals(headers, [null]);
+  const upsert = log.find((l) => l.startsWith("dvf_sales.upsert"))!;
+  assertEquals(upsert.includes('"property_type":"dependance"'), true);
+  assertEquals(upsert.includes('"built_area_m2":null'), true);
+  assertEquals(
+    log.some((l) => l.startsWith("dvf_sources.upsert") && l.includes('"format_version":2')),
     true,
   );
 });
@@ -163,4 +195,31 @@ Deno.test("communeSales and nearbySales page through the cache", async () => {
     now,
   );
   await assertRejects(() => failing.communeSales("69043", "maison"), Error, "dvf_sales: x");
+});
+
+Deno.test("outbuilding sales page through the cache", async () => {
+  const { db, log } = fakeDb(() => ({
+    data: [{ ...row(1), property_type: "dependance", built_area_m2: null, price_eur: 15000 }],
+    error: null,
+  }));
+  const store = new DvfStore(db, fetch, now);
+  const commune = await store.communeOutbuildingSales("69043");
+  assertEquals(commune, [{
+    idMutation: "m1",
+    insee: "69043",
+    year: 2025,
+    soldOn: "2025-03-02",
+    priceEur: 15000,
+    street: "Rue A",
+    lat: 45.7,
+    lng: 4.7,
+  }]);
+  const nearby = await store.nearbyOutbuildingSales({
+    insees: ["69043"],
+    box: { minLat: 45, maxLat: 46, minLng: 4, maxLng: 5 },
+    since: "2021-12-31",
+  });
+  assertEquals(nearby.length, 1);
+  assertEquals(log.every((l) => l.includes('"property_type","dependance"')), true);
+  assertEquals(log.some((l) => l.includes('gte("built_area_m2"')), false);
 });

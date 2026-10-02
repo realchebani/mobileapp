@@ -104,6 +104,7 @@ void main() {
     SellerTunnelCubit cubit, {
     String? firstName,
     String? email,
+    SellerPropertiesCubit? sellerPropertiesCubit,
   }) async {
     usePhoneSurface();
     final profileCubit = MockProfileCubit();
@@ -123,6 +124,7 @@ void main() {
         child: const OwnersPage(),
       ),
       sellerTunnelCubit: cubit,
+      sellerPropertiesCubit: sellerPropertiesCubit,
       propertyRepository: repository,
       appBloc: appBloc,
       goRouter: goRouter,
@@ -387,5 +389,54 @@ void main() {
         isNull,
       );
     });
+  });
+
+  testWidgets('tells the owners were copied from another property', (
+    tester,
+  ) async {
+    const copied = Property(
+      id: 'property-id',
+      ownerId: 'user-id',
+      provenance: {Property.ownersCopiedFromKey: 'house'},
+    );
+    await pump(
+      tester,
+      mockSellerTunnelCubit(
+        const SellerTunnelState(
+          status: SellerTunnelStatus.success,
+          property: copied,
+        ),
+      ),
+      sellerPropertiesCubit: mockSellerPropertiesCubit(
+        properties: const [
+          copied,
+          Property(
+            id: 'house',
+            ownerId: 'user-id',
+            propertyType: PropertyType.house,
+            addressCity: 'Chaponost',
+          ),
+        ],
+      ),
+    );
+    expect(find.text('Repris de Maison · Chaponost'), findsOneWidget);
+  });
+
+  testWidgets('no mention when the source is unknown', (tester) async {
+    await pump(
+      tester,
+      mockSellerTunnelCubit(
+        const SellerTunnelState(
+          status: SellerTunnelStatus.success,
+          property: Property(
+            id: 'property-id',
+            ownerId: 'user-id',
+            provenance: {Property.ownersCopiedFromKey: 'deleted'},
+          ),
+        ),
+      ),
+      sellerPropertiesCubit: mockSellerPropertiesCubit(),
+    );
+    expect(find.textContaining('Repris de'), findsNothing);
   });
 }

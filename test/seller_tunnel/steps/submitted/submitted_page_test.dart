@@ -274,7 +274,9 @@ void main() {
       await tester.ensureVisible(find.text('Voir la synthèse du marché'));
       await tester.tap(find.text('Voir la synthèse du marché'));
       // Pushed: back returns to V8.
-      verify(() => goRouter.push<Object?>(AppRoutes.sellerMarket)).called(1);
+      verify(
+        () => goRouter.push<Object?>(AppRoutes.sellerMarket('property-id')),
+      ).called(1);
       verifyNever(() => repository.requestEstimate(any()));
     });
 

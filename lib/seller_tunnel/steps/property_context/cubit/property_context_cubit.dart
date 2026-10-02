@@ -1,5 +1,6 @@
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
+import 'package:mobileapp/seller_tunnel/models/property_type_profile.dart';
 import 'package:mobileapp/ui/format/realesty_format.dart';
 import 'package:property_repository/property_repository.dart';
 
@@ -45,6 +46,10 @@ class PropertyContextCubit extends Cubit<PropertyContextState> {
       today: today,
       propertyType: property.propertyType,
       propertyTypeOther: property.propertyTypeOther ?? '',
+      landKind: property.landKind,
+      parkingKind: property.parkingKind,
+      commercialUse: property.commercialUse ?? '',
+      unitsCount: property.unitsCount?.toString() ?? '',
       purchaseYear: property.purchaseYear?.toString() ?? '',
       purchasePrice: purchasePrice == null ? '' : frenchNumber(purchasePrice),
       selfBuilt: property.selfBuilt,
@@ -72,6 +77,22 @@ class PropertyContextCubit extends Cubit<PropertyContextState> {
 
   void propertyTypeOtherChanged(String value) =>
       emit(state.copyWith(propertyTypeOther: value));
+
+  /// Selects [kind], or clears it when it was selected (optional answer).
+  void landKindToggled(LandKind kind) => emit(
+    state.copyWith(landKind: () => state.landKind == kind ? null : kind),
+  );
+
+  /// Selects [kind], or clears it when it was selected (optional answer).
+  void parkingKindToggled(ParkingKind kind) => emit(
+    state.copyWith(parkingKind: () => state.parkingKind == kind ? null : kind),
+  );
+
+  void commercialUseChanged(String value) =>
+      emit(state.copyWith(commercialUse: value));
+
+  void unitsCountChanged(String value) =>
+      emit(state.copyWith(unitsCount: value));
 
   void purchaseYearChanged(String value) =>
       emit(state.copyWith(purchaseYear: value));

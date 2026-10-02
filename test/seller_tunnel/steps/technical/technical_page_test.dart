@@ -1,6 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:mobileapp/app/app.dart';
 import 'package:mobileapp/seller_tunnel/seller_tunnel.dart';
 import 'package:mobileapp/seller_tunnel/steps/technical/models/technical_options.dart';
 import 'package:mobileapp/seller_tunnel/steps/technical/widgets/technical_question.dart';
@@ -204,7 +203,7 @@ void main() {
       await pump(tester, goRouter: goRouter);
 
       await tester.tap(find.bySemanticsLabel('Retour'));
-      verify(() => goRouter.go(AppRoutes.sellerContext)).called(1);
+      verify(() => goRouter.go(auditRoute(SellerTunnelStep.context))).called(1);
     });
 
     testWidgets('hides back while saving', (tester) async {

@@ -234,7 +234,11 @@ class _AiEstimate extends StatelessWidget {
           computedAt: snapshot!.computedAt,
           confidence: snapshot.confidenceLevel,
           widenedNote: _widenedNote(l10n, snapshot),
-          onSynthesis: () => context.push(AppRoutes.sellerMarket),
+          onSynthesis: () => context.push(
+            AppRoutes.sellerMarket(
+              context.read<SellerTunnelCubit>().state.property!.id,
+            ),
+          ),
         ),
       AiEstimateStatus.computing => AiEstimateStatusCard(
         message: l10n.submittedAiComputing,

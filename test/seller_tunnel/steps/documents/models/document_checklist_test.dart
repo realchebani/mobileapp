@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobileapp/seller_tunnel/models/property_type_profile.dart';
 import 'package:mobileapp/seller_tunnel/steps/documents/models/document_checklist.dart';
 import 'package:property_repository/property_repository.dart';
 
@@ -39,7 +40,7 @@ void main() {
 
       expect(
         checklist.rows.map((row) => row.kind),
-        DocumentChecklist.listedKinds,
+        PropertyTypeProfile.of(null).documentKinds,
       );
       expect(
         {for (final row in checklist.rows) row.kind: row.status},
@@ -155,7 +156,8 @@ void main() {
 
     test('scores 100 with everything provided', () {
       final checklist = DocumentChecklist.of(_complete, [
-        for (final kind in DocumentChecklist.listedKinds) _document(kind),
+        for (final kind in PropertyTypeProfile.of(null).documentKinds)
+          _document(kind),
       ]);
 
       expect(checklist.missingCount, 0);

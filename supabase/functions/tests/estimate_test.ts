@@ -59,7 +59,7 @@ Deno.test("Chaponost house of 115 m²: 500 m and 2 years are enough", () => {
   assertEquals(first.distance_m, 400);
   assert(result.comparables.some((c) => c.street === null));
   assert(result.comparables.some((c) => c.street === "Rue Hippolyte Bonnet"));
-  for (const c of result.comparables) assert(c.area_m2 >= 80 && c.area_m2 <= 150);
+  for (const c of result.comparables) assert(c.area_m2! >= 80 && c.area_m2! <= 150);
   // Median within the range, range within ±5 %…±20 %.
   assert(result.lowEur! <= result.medianEur! && result.medianEur! <= result.highEur!);
   assert(result.highEur! / result.medianEur! <= 1.21);
