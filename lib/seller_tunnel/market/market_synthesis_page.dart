@@ -11,6 +11,7 @@ import 'package:mobileapp/seller_tunnel/market/widgets/market_format.dart';
 import 'package:mobileapp/seller_tunnel/market/widgets/market_range_bar.dart';
 import 'package:mobileapp/seller_tunnel/models/seller_tunnel_step.dart';
 import 'package:mobileapp/seller_tunnel/steps/submitted/widgets/submitted_format.dart';
+import 'package:mobileapp/seller_tunnel/view/seller_tunnel_navigation.dart';
 import 'package:mobileapp/seller_tunnel/widgets/widgets.dart';
 import 'package:mobileapp/ui/ui.dart';
 import 'package:property_repository/property_repository.dart';
@@ -54,7 +55,7 @@ class MarketSynthesisView extends StatelessWidget {
     // Back to where V8b was opened from (V8 or V9), else to V8.
     void back() => context.canPop()
         ? context.pop()
-        : context.go(SellerTunnelStep.submitted.path);
+        : context.goToTunnelStep(SellerTunnelStep.submitted);
     final snapshot = state.snapshot;
     return TunnelScaffold(
       header: _Header(onBack: back),
@@ -134,14 +135,19 @@ class MarketSynthesisView extends StatelessWidget {
             ),
           ),
           Text(
-            l10n
-                .marketSummary(
-                  marketTypeLabel(l10n, snapshot.propertyType),
-                  frenchNumber(area),
-                  snapshot.city ?? '',
-                  frenchNumber(median),
-                  frenchNumber(ownM2),
-                )
+            (isPricedPerUnit(snapshot.propertyType)
+                    ? l10n.marketSummaryOutbuilding(
+                        marketTypeLabel(l10n, snapshot.propertyType),
+                        snapshot.city ?? '',
+                        frenchNumber(median),
+                      )
+                    : l10n.marketSummary(
+                        marketTypeLabel(l10n, snapshot.propertyType),
+                        frenchNumber(area),
+                        snapshot.city ?? '',
+                        frenchNumber(median),
+                        frenchNumber(ownM2),
+                      ))
                 .replaceAll(' ·  · ', ' · '),
             style: RealestyTextStyles.body.copyWith(
               fontSize: 14,

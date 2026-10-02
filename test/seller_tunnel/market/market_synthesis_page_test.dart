@@ -1,6 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:mobileapp/app/app.dart';
 import 'package:mobileapp/seller_tunnel/market/widgets/market_comparables.dart';
 import 'package:mobileapp/seller_tunnel/market/widgets/market_range_bar.dart';
 import 'package:mobileapp/seller_tunnel/seller_tunnel.dart';
@@ -159,6 +158,43 @@ void main() {
     expect(find.byType(MarketComparablesSheet), findsNothing);
   });
 
+  testWidgets('a garage is priced per unit', (tester) async {
+    await pump(
+      tester,
+      snapshot: MarketSnapshot(
+        id: 's1',
+        propertyId: 'property-id',
+        status: MarketSnapshotStatus.ok,
+        createdAt: DateTime(2026, 10),
+        propertyType: PropertyType.outbuilding,
+        city: 'Chaponost',
+        medianEur: 18000,
+        scope: MarketScope.radius,
+        radiusM: 2000,
+        months: 24,
+        comparables: const [
+          ComparableSale(
+            propertyType: PropertyType.outbuilding,
+            areaM2: 0,
+            soldYear: 2025,
+            priceEur: 17500,
+            priceM2Eur: 0,
+          ),
+        ],
+      ),
+    );
+    await tester.pump();
+    expect(
+      find.text(
+        'Garage ou dépendance · Chaponost · tendance IA 18${nb}000$nb€, '
+        'd’après les ventes de dépendances seules.',
+      ),
+      findsOne,
+    );
+    expect(find.text('Garage ou dépendance'), findsOne);
+    expect(find.textContaining('€/m²'), findsNothing);
+  });
+
   testWidgets('a minimal result: commune scope, no tiles nor lists', (
     tester,
   ) async {
@@ -244,7 +280,7 @@ void main() {
     await tester.pump();
     await tester.tap(find.text('Retour au suivi de mon dossier'));
     await tester.tap(find.bySemanticsLabel('Retour'));
-    verify(() => goRouter.go(AppRoutes.sellerSubmitted)).called(2);
+    verify(() => goRouter.go(auditRoute(SellerTunnelStep.submitted))).called(2);
   });
 
   testWidgets('back buttons pop to the screen that opened V8b', (tester) async {

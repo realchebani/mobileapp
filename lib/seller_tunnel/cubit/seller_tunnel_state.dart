@@ -21,12 +21,13 @@ final class SellerTunnelState extends Equatable {
     this.documents = const [],
     this.nextStep,
     this.continuedFrom,
+    this.notFound = false,
   });
 
   final SellerTunnelStatus status;
   final SellerTunnelSaveStatus saveStatus;
 
-  /// The draft, once loaded.
+  /// The property, once loaded.
   final Property? property;
 
   final List<PropertyOwner> owners;
@@ -43,6 +44,10 @@ final class SellerTunnelState extends Equatable {
   /// The step [nextStep] continues from (same lifetime as [nextStep]).
   final SellerTunnelStep? continuedFrom;
 
+  /// After a failed load: the property does not exist (deleted, or not the
+  /// user's).
+  final bool notFound;
+
   /// Whether the dossier was sent: its steps can no longer be edited in
   /// the tunnel, only V8 is shown.
   ///
@@ -52,23 +57,35 @@ final class SellerTunnelState extends Equatable {
   bool get isLocked =>
       property != null && property!.status != PropertyStatus.draft;
 
+  /// How the tunnel adapts to the type of the property.
+  PropertyTypeProfile get profile =>
+      PropertyTypeProfile.of(property?.propertyType);
+
   /// The screen where the dossier resumes (V8 once sent).
   SellerTunnelStep get resumeStep => isLocked
       ? SellerTunnelStep.submitted
-      : SellerTunnelStep.resumeAt(property?.currentStep ?? 1);
+      : profile.resumeAt(property?.currentStep ?? 1);
 
-  /// Where to send the user opening [location] instead: V8 when the
-  /// dossier [isLocked] and [location] is an editable step; null
-  /// otherwise.
-  String? lockRedirect(String location) {
-    if (!isLocked) return null;
-    final step = SellerTunnelStep.fromPath(location);
-    if (step == SellerTunnelStep.submitted) return null;
-    // Every audit screen, steps and their variants (V4 voice) alike.
-    if (step == null && !location.startsWith('${AppRoutes.sellerAudit}/')) {
-      return null;
+  /// Where to send the user opening the audit screen [segment] (last path
+  /// segment, e.g. `technique` or `technique-vocal`) instead, or null:
+  /// - V8 when the dossier [isLocked] and the screen is editable;
+  /// - the next screen of this type of property when it skips that one
+  ///   (e.g. the rooms of a garage).
+  String? redirectFor(String segment) {
+    final property = this.property;
+    if (property == null) return null;
+    final step = segment == SellerTunnelStep.voiceAuditSegment
+        ? SellerTunnelStep.technical
+        : SellerTunnelStep.fromSegment(segment);
+    if (step == null || step == SellerTunnelStep.submitted) return null;
+    if (isLocked) return SellerTunnelStep.submitted.routeFor(property.id);
+    if (segment == SellerTunnelStep.voiceAuditSegment && !profile.voice) {
+      return SellerTunnelStep.technical.routeFor(property.id);
     }
-    return SellerTunnelStep.submitted.path;
+    if (!profile.includes(step)) {
+      return profile.nextAfter(step).routeFor(property.id);
+    }
+    return null;
   }
 
   bool get isSaving => saveStatus == SellerTunnelSaveStatus.inProgress;
@@ -114,5 +131,6 @@ final class SellerTunnelState extends Equatable {
     documents,
     nextStep,
     continuedFrom,
+    notFound,
   ];
 }

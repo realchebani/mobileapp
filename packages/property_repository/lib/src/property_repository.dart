@@ -84,6 +84,24 @@ final class EstimateRateLimitFailure extends PropertyFailure {
   String get _name => 'EstimateRateLimitFailure';
 }
 
+/// Thrown when creating a property would exceed
+/// [PropertyRepository.maxProperties] (test phase limit).
+final class PropertyLimitFailure extends PropertyFailure {
+  const new([super.error]);
+
+  @override
+  String get _name => 'PropertyLimitFailure';
+}
+
+/// Thrown when a sale lot cannot change because one of its properties is
+/// reviewed by the expert or certified (the lot is frozen).
+final class LotFrozenFailure extends PropertyFailure {
+  const new([super.error]);
+
+  @override
+  String get _name => 'LotFrozenFailure';
+}
+
 /// {@template property_repository}
 /// Reads and writes seller dossiers: the `properties` table, its child
 /// tables and the private `property-documents` Storage bucket.
@@ -108,49 +126,124 @@ class PropertyRepository {
   // Properties.
   // ---------------------------------------------------------------------
 
-  /// Returns the dossier of [ownerId]: the most recently updated one, in
-  /// any status (so a submitted dossier is found again), or a new draft
-  /// when the user has none.
+  /// Most properties a user may have (test phase, enforced by the
+  /// database).
+  static const maxProperties = 5;
+
+  static const _uniqueViolation = '23505';
+
+  /// Every property of [ownerId], oldest first.
   ///
-  /// A user has at most one draft (unique index): when a concurrent call
-  /// created it first, that draft is returned.
+  /// Throws [PropertyLoadFailure] on error.
+  Future<List<Property>> listProperties(String ownerId) async {
+    try {
+      final rows = await _client
+          .from(_properties)
+          .select()
+          .eq(PropertyColumns.ownerId, ownerId)
+          .order(PropertyColumns.createdAt, ascending: true);
+      return [for (final row in rows) Property.fromJson(row)];
+    } on Object catch (error, stackTrace) {
+      Error.throwWithStackTrace(PropertyLoadFailure(error), stackTrace);
+    }
+  }
+
+  /// Creates the draft [id] of [ownerId] (the app chooses the id, e.g.
+  /// with [generateUuidV4]) with its [type] and [lotId] if known, and
+  /// returns it.
   ///
-  /// Throws [PropertyLoadFailure] or [PropertySaveFailure] on error.
-  Future<Property> getOrCreateDossier(String ownerId) async {
-    final existing = await _latestDossier(ownerId);
-    if (existing != null) return existing;
+  /// Retry-safe: when the property was already created (an earlier answer
+  /// was lost), it is returned as is.
+  ///
+  /// Throws [PropertyLimitFailure] when the user already has
+  /// [maxProperties] properties, [LotFrozenFailure] when the lot is frozen
+  /// and [PropertySaveFailure] on any other error.
+  Future<Property> createProperty({
+    required String id,
+    required String ownerId,
+    PropertyType? type,
+    String? typeOther,
+    String? lotId,
+  }) async {
     try {
       final row = await _client
           .from(_properties)
-          .insert({PropertyColumns.ownerId: ownerId})
+          .insert({
+            PropertyColumns.id: id,
+            PropertyColumns.ownerId: ownerId,
+            PropertyColumns.propertyType: ?type?.value,
+            PropertyColumns.propertyTypeOther: ?typeOther,
+            PropertyColumns.lotId: ?lotId,
+          })
           .select()
           .single();
       return Property.fromJson(row);
     } on PostgrestException catch (error, stackTrace) {
       if (error.code == _uniqueViolation) {
-        final created = await _latestDossier(ownerId);
-        if (created != null) return created;
+        try {
+          return await getProperty(id);
+        } on PropertyFailure {
+          // Not the user's property: report the original error.
+        }
       }
-      Error.throwWithStackTrace(PropertySaveFailure(error), stackTrace);
+      Error.throwWithStackTrace(_saveFailure(error), stackTrace);
     } on Object catch (error, stackTrace) {
       Error.throwWithStackTrace(PropertySaveFailure(error), stackTrace);
     }
   }
 
-  static const _uniqueViolation = '23505';
+  /// Maps the errors raised by the database rules (limit, frozen lot).
+  static PropertyFailure _saveFailure(Object error) {
+    if (error is PostgrestException) {
+      if (error.message == 'property_limit_reached') {
+        return PropertyLimitFailure(error);
+      }
+      if (error.message == 'lot_frozen') return LotFrozenFailure(error);
+    }
+    return PropertySaveFailure(error);
+  }
 
-  Future<Property?> _latestDossier(String ownerId) async {
+  /// Files listed per page when deleting a property (the storage
+  /// default).
+  static const _filesPage = 100;
+
+  /// Deletes the draft [property]: its document files first (the storage
+  /// rules need the property to still exist), then the property, whose
+  /// child rows go with it. The status is read again first: the files of a
+  /// dossier sent meanwhile are never deleted.
+  ///
+  /// Throws [PropertyDeleteFailure] when the property is not a draft (or
+  /// belongs to a frozen lot) or on error.
+  Future<void> deleteProperty(Property property) async {
     try {
-      final row = await _client
+      final current = await getProperty(property.id);
+      if (current.status != PropertyStatus.draft) {
+        throw PropertyDeleteFailure('${property.id} is not a draft');
+      }
+      final folder = '${property.ownerId}/${property.id}';
+      final bucket = _client.storage.from(documentsBucket);
+      final paths = <String>[];
+      for (var offset = 0; ; offset += _filesPage) {
+        final files = await bucket.list(
+          path: folder,
+          searchOptions: SearchOptions(offset: offset),
+        );
+        paths.addAll([for (final file in files) '$folder/${file.name}']);
+        if (files.length < _filesPage) break;
+      }
+      if (paths.isNotEmpty) await bucket.remove(paths);
+      final deleted = await _client
           .from(_properties)
-          .select()
-          .eq(PropertyColumns.ownerId, ownerId)
-          .order(PropertyColumns.updatedAt)
-          .limit(1)
-          .maybeSingle();
-      return row == null ? null : Property.fromJson(row);
+          .delete()
+          .eq(PropertyColumns.id, property.id)
+          .select(PropertyColumns.id);
+      if (deleted.isEmpty) {
+        throw PropertyDeleteFailure('${property.id} was not deleted');
+      }
+    } on PropertyDeleteFailure {
+      rethrow;
     } on Object catch (error, stackTrace) {
-      Error.throwWithStackTrace(PropertyLoadFailure(error), stackTrace);
+      Error.throwWithStackTrace(PropertyDeleteFailure(error), stackTrace);
     }
   }
 
@@ -213,6 +306,34 @@ class PropertyRepository {
 
   /// Deletes the owner [id].
   Future<void> deleteOwner(String id) => _delete(_owners, id);
+
+  /// Copies the owners of [fromPropertyId] to [toPropertyId] (new rows,
+  /// same positions, the user's profile link kept) and returns the copies.
+  ///
+  /// Retry-safe: rows are matched by position, so copying again updates
+  /// them instead of adding duplicates.
+  ///
+  /// Throws [PropertyLoadFailure] or [PropertySaveFailure] on error.
+  Future<List<PropertyOwner>> copyOwners({
+    required String fromPropertyId,
+    required String toPropertyId,
+  }) async {
+    final owners = await getOwners(fromPropertyId);
+    if (owners.isEmpty) return const [];
+    try {
+      final rows = await _client
+          .from(_owners.name)
+          .upsert([
+            for (final owner in owners)
+              {...owner.toJson()..remove('id'), 'property_id': toPropertyId},
+          ], onConflict: 'property_id,position')
+          .select()
+          .order('position', ascending: true);
+      return [for (final row in rows) PropertyOwner.fromJson(row)];
+    } on Object catch (error, stackTrace) {
+      Error.throwWithStackTrace(PropertySaveFailure(error), stackTrace);
+    }
+  }
 
   /// Cadastral parcels of [propertyId].
   Future<List<PropertyParcel>> getParcels(String propertyId) =>
@@ -387,6 +508,54 @@ class PropertyRepository {
     }
   }
 
+  /// Copies [document] (of another property of [ownerId]) into the
+  /// property [toPropertyId]: the file is copied inside the bucket (no
+  /// upload from the phone) to `<ownerId>/<toPropertyId>/…`, then recorded
+  /// as a new document of the same kind; returns the saved row.
+  ///
+  /// The copy is independent of the original (deleting one keeps the
+  /// other). Throws [DocumentUploadFailure] when the file cannot be copied
+  /// (e.g. the destination is locked) and [PropertySaveFailure] when
+  /// recording it fails (the copied file is removed).
+  Future<PropertyDocument> copyDocument(
+    PropertyDocument document, {
+    required String ownerId,
+    required String toPropertyId,
+  }) async {
+    final name = document.fileName ?? document.storagePath.split('/').last;
+    final path =
+        '$ownerId/$toPropertyId/'
+        '${_now().microsecondsSinceEpoch}_${_safeFileName(name)}';
+    final bucket = _client.storage.from(documentsBucket);
+    try {
+      await bucket.copy(document.storagePath, path);
+    } on Object catch (error, stackTrace) {
+      Error.throwWithStackTrace(DocumentUploadFailure(error), stackTrace);
+    }
+    try {
+      final row = await _client
+          .from(_documents.name)
+          .insert({
+            'property_id': toPropertyId,
+            'kind': document.kind.value,
+            'storage_path': path,
+            'file_name': document.fileName,
+            'mime_type': document.mimeType,
+            'size_bytes': document.sizeBytes,
+          })
+          .select()
+          .single();
+      return PropertyDocument.fromJson(row);
+    } on Object catch (error, stackTrace) {
+      try {
+        await bucket.remove([path]);
+      } on Object {
+        // Best effort: an orphan file only wastes storage.
+      }
+      Error.throwWithStackTrace(PropertySaveFailure(error), stackTrace);
+    }
+  }
+
   /// Changes the [kind] of the document [id]; returns the saved row.
   ///
   /// Throws [PropertySaveFailure] on error.
@@ -441,6 +610,110 @@ class PropertyRepository {
           .createSignedUrl(storagePath, expiresIn.inSeconds);
     } on Object catch (error, stackTrace) {
       Error.throwWithStackTrace(PropertyLoadFailure(error), stackTrace);
+    }
+  }
+
+  // ---------------------------------------------------------------------
+  // Sale lots (EPIC-13).
+  // ---------------------------------------------------------------------
+
+  static const _lots = 'property_lots';
+
+  /// Every sale lot of [ownerId], oldest first.
+  ///
+  /// Throws [PropertyLoadFailure] on error.
+  Future<List<PropertyLot>> listLots(String ownerId) async {
+    try {
+      final rows = await _client
+          .from(_lots)
+          .select()
+          .eq(PropertyLotColumns.ownerId, ownerId)
+          .order(PropertyLotColumns.createdAt, ascending: true);
+      return [for (final row in rows) PropertyLot.fromJson(row)];
+    } on Object catch (error, stackTrace) {
+      Error.throwWithStackTrace(PropertyLoadFailure(error), stackTrace);
+    }
+  }
+
+  /// Creates the lot [id] (chosen by the app) with [propertyIds] as its
+  /// properties, the first one as main property, and returns it: all or
+  /// nothing, in one transaction (database function `create_property_lot`).
+  /// Retry-safe: an existing lot [id] is reused.
+  ///
+  /// Throws [LotFrozenFailure] when a property is in a frozen lot and
+  /// [PropertySaveFailure] on any other error.
+  Future<PropertyLot> createLotWith({
+    required String id,
+    required List<String> propertyIds,
+    LotSaleMode saleMode = LotSaleMode.together,
+    String? name,
+  }) async {
+    try {
+      final row = await _client.rpc<Map<String, dynamic>>(
+        'create_property_lot',
+        params: {
+          'p_lot_id': id,
+          'p_property_ids': propertyIds,
+          'p_sale_mode': saleMode.value,
+          'p_name': name,
+        },
+      );
+      return PropertyLot.fromJson(row);
+    } on Object catch (error, stackTrace) {
+      Error.throwWithStackTrace(_saveFailure(error), stackTrace);
+    }
+  }
+
+  /// Updates the columns of [patch] (`name`, `sale_mode`,
+  /// `main_property_id`, keys from [PropertyLotColumns]) of the lot [id]
+  /// and returns it.
+  ///
+  /// Throws [LotFrozenFailure] when nothing was updated (the lot is frozen,
+  /// or gone) and [PropertySaveFailure] on error.
+  Future<PropertyLot> updateLot(String id, Map<String, Object?> patch) async {
+    final List<Map<String, dynamic>> rows;
+    try {
+      rows = await _client
+          .from(_lots)
+          .update(encodeDbValue(patch)! as Map<String, Object?>)
+          .eq(PropertyLotColumns.id, id)
+          .select();
+    } on Object catch (error, stackTrace) {
+      Error.throwWithStackTrace(PropertySaveFailure(error), stackTrace);
+    }
+    if (rows.isEmpty) throw LotFrozenFailure(id);
+    return PropertyLot.fromJson(rows.single);
+  }
+
+  /// Deletes the lot [id]; its properties leave it.
+  ///
+  /// Throws [LotFrozenFailure] when it was not deleted (frozen) and
+  /// [PropertyDeleteFailure] on error.
+  Future<void> deleteLot(String id) async {
+    final List<Map<String, dynamic>> rows;
+    try {
+      rows = await _client
+          .from(_lots)
+          .delete()
+          .eq(PropertyLotColumns.id, id)
+          .select(PropertyLotColumns.id);
+    } on Object catch (error, stackTrace) {
+      Error.throwWithStackTrace(PropertyDeleteFailure(error), stackTrace);
+    }
+    if (rows.isEmpty) throw LotFrozenFailure(id);
+  }
+
+  /// Puts the property [propertyId] in the lot [lotId] (null: out of its
+  /// lot) and returns it.
+  ///
+  /// Throws [LotFrozenFailure] when the lot it joins or leaves is frozen,
+  /// [PropertyNotFoundFailure] when the property cannot change (locked) and
+  /// [PropertySaveFailure] on error.
+  Future<Property> setPropertyLot(String propertyId, String? lotId) async {
+    try {
+      return await updateProperty(propertyId, {PropertyColumns.lotId: lotId});
+    } on PropertySaveFailure catch (failure, stackTrace) {
+      Error.throwWithStackTrace(_saveFailure(failure.error!), stackTrace);
     }
   }
 

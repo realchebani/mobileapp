@@ -58,7 +58,7 @@ void main() {
       final notifications = await repository.getNotifications(userId);
       expect(notifications.single.id, 'n1');
       expect(requests.single.url.queryParameters, {
-        'select': 'id,kind,title,body,route,read_at,created_at',
+        'select': 'id,kind,title,body,property_id,route,read_at,created_at',
         'user_id': 'eq.$userId',
         'order': 'created_at.desc.nullslast',
         'limit': '50',

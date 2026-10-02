@@ -20,6 +20,10 @@ enum PropertyContextError {
 
   /// The month is in the future.
   monthFuture,
+
+  /// The number of dwellings is not between [PropertyContextState.minUnits]
+  /// and [PropertyContextState.maxUnits].
+  unitsRange,
 }
 
 /// Progress of "Continuer": the previous estimates are saved first, then
@@ -79,6 +83,10 @@ final class PropertyContextState extends Equatable {
     required this.today,
     this.propertyType,
     this.propertyTypeOther = '',
+    this.landKind,
+    this.parkingKind,
+    this.commercialUse = '',
+    this.unitsCount = '',
     this.purchaseYear = '',
     this.purchasePrice = '',
     this.selfBuilt,
@@ -100,6 +108,11 @@ final class PropertyContextState extends Equatable {
 
   /// Maximum length of the free texts.
   static const maxOtherTypeLength = 100;
+  static const maxCommercialUseLength = 100;
+
+  /// Accepted number of dwellings of a building.
+  static const minUnits = 2;
+  static const maxUnits = 500;
   static const maxAgencyLength = 120;
 
   /// Reference date for the "not in the future" checks.
@@ -107,8 +120,20 @@ final class PropertyContextState extends Equatable {
 
   final PropertyType? propertyType;
 
-  /// Precision when [propertyType] is `Autre`.
+  /// Precision of an outbuilding or of "Autre" (free text).
   final String propertyTypeOther;
+
+  /// Terrain: constructible or not.
+  final LandKind? landKind;
+
+  /// Garage / parking: its kind.
+  final ParkingKind? parkingKind;
+
+  /// Local commercial: its use, as typed.
+  final String commercialUse;
+
+  /// Immeuble: number of dwellings, as typed.
+  final String unitsCount;
 
   /// Year as typed.
   final String purchaseYear;
@@ -134,8 +159,25 @@ final class PropertyContextState extends Equatable {
 
   final PropertyContextSubmission submission;
 
-  /// "Construit par vous ?" is not asked for a plot of land.
-  bool get asksSelfBuilt => propertyType != PropertyType.land;
+  /// How the tunnel adapts to the selected type.
+  PropertyTypeProfile get profile => PropertyTypeProfile.of(propertyType);
+
+  /// The precision asked with the selected type.
+  PropertyTypeDetail get detail => profile.detail;
+
+  /// "Construit par vous ?" (not for land, parkings, commercial premises
+  /// nor whole buildings).
+  bool get asksSelfBuilt => profile.asksSelfBuilt;
+
+  /// The number of dwellings is optional; when typed it must be between
+  /// [minUnits] and [maxUnits].
+  PropertyContextError? get unitsCountError {
+    if (detail != PropertyTypeDetail.unitsCount) return null;
+    final units = parseDigits(unitsCount);
+    return units == null || (units >= minUnits && units <= maxUnits)
+        ? null
+        : PropertyContextError.unitsRange;
+  }
 
   PropertyContextError? get propertyTypeError =>
       propertyType == null ? PropertyContextError.required : null;
@@ -181,6 +223,7 @@ final class PropertyContextState extends Equatable {
       purchaseYearError == null &&
       purchasePriceError == null &&
       selfBuiltError == null &&
+      unitsCountError == null &&
       (!hasEstimates ||
           estimates.every(
             (draft) =>
@@ -188,16 +231,32 @@ final class PropertyContextState extends Equatable {
                 estimateMonthError(draft) == null,
           ));
 
-  /// The `properties` columns of this step.
+  /// The `properties` columns of this step. The answers this type does
+  /// not ask are left as they are (hidden, cleared when the dossier is
+  /// sent: the seller may come back to the previous type).
   Map<String, Object?> get patch {
-    final other = propertyTypeOther.trim();
+    String? text(String value) => value.trim().isEmpty ? null : value.trim();
     return {
       PropertyColumns.propertyType: propertyType,
-      PropertyColumns.propertyTypeOther:
-          propertyType == PropertyType.other && other.isNotEmpty ? other : null,
+      ...switch (detail) {
+        PropertyTypeDetail.none => const {},
+        PropertyTypeDetail.otherText => {
+          PropertyColumns.propertyTypeOther: text(propertyTypeOther),
+        },
+        PropertyTypeDetail.landKind => {PropertyColumns.landKind: landKind},
+        PropertyTypeDetail.parkingKind => {
+          PropertyColumns.parkingKind: parkingKind,
+        },
+        PropertyTypeDetail.commercialUse => {
+          PropertyColumns.commercialUse: text(commercialUse),
+        },
+        PropertyTypeDetail.unitsCount => {
+          PropertyColumns.unitsCount: parseDigits(unitsCount),
+        },
+      },
       PropertyColumns.purchaseYear: parseDigits(purchaseYear),
       PropertyColumns.purchasePriceEur: parseDigits(purchasePrice),
-      PropertyColumns.selfBuilt: asksSelfBuilt ? selfBuilt : null,
+      if (asksSelfBuilt) PropertyColumns.selfBuilt: selfBuilt,
       PropertyColumns.saleReason: saleReason,
       PropertyColumns.previouslyEstimated: previouslyEstimated,
     };
@@ -231,6 +290,10 @@ final class PropertyContextState extends Equatable {
   PropertyContextState copyWith({
     PropertyType? propertyType,
     String? propertyTypeOther,
+    LandKind? Function()? landKind,
+    ParkingKind? Function()? parkingKind,
+    String? commercialUse,
+    String? unitsCount,
     String? purchaseYear,
     String? purchasePrice,
     bool? selfBuilt,
@@ -246,6 +309,10 @@ final class PropertyContextState extends Equatable {
       today: today,
       propertyType: propertyType ?? this.propertyType,
       propertyTypeOther: propertyTypeOther ?? this.propertyTypeOther,
+      landKind: landKind == null ? this.landKind : landKind(),
+      parkingKind: parkingKind == null ? this.parkingKind : parkingKind(),
+      commercialUse: commercialUse ?? this.commercialUse,
+      unitsCount: unitsCount ?? this.unitsCount,
       purchaseYear: purchaseYear ?? this.purchaseYear,
       purchasePrice: purchasePrice ?? this.purchasePrice,
       selfBuilt: selfBuilt ?? this.selfBuilt,
@@ -264,6 +331,10 @@ final class PropertyContextState extends Equatable {
     today,
     propertyType,
     propertyTypeOther,
+    landKind,
+    parkingKind,
+    commercialUse,
+    unitsCount,
     purchaseYear,
     purchasePrice,
     selfBuilt,

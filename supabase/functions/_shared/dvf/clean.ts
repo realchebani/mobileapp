@@ -1,7 +1,7 @@
 // Cleans a geo-dvf commune file: groups the lines by mutation and keeps
 // the sales of exactly one dwelling (plan §3.2).
 import { parseCsv } from "./csv.ts";
-import type { DvfSale, PropertyType } from "../estimation/types.ts";
+import type { DvfSale, OutbuildingSale, PropertyType } from "../estimation/types.ts";
 
 const SALE_NATURES = new Set([
   "Vente",
@@ -13,6 +13,16 @@ const DWELLINGS: Record<string, PropertyType> = {
   Appartement: "appartement",
 };
 const COMMERCIAL = "Local industriel. commercial ou assimilé";
+const OUTBUILDING = "Dépendance";
+
+/** Version of the cleaning (dvf_sources.format_version): 2 also keeps the
+ * sales of one outbuilding alone (EPIC-13). */
+export const CLEAN_FORMAT_VERSION = 2;
+
+/** Fixed bounds of a plausible outbuilding price (€): a parking space in a
+ * small town to a garage in a dense city. */
+export const MIN_OUTBUILDING_PRICE = 1000;
+export const MAX_OUTBUILDING_PRICE = 250000;
 
 /** Fixed bounds of a plausible price per m² (€). */
 export const MIN_PRICE_M2 = 500;
@@ -28,6 +38,8 @@ export type DropReason =
 
 export interface CleanResult {
   sales: DvfSale[];
+  /** Sales of one outbuilding alone (no dwelling, no commercial premises). */
+  outbuildings: OutbuildingSale[];
   dropped: Partial<Record<DropReason, number>>;
 }
 
@@ -88,6 +100,7 @@ export function cleanDvfCsv(text: string, insee: string, year: number): CleanRes
     else groups.set(id, [record]);
   }
   const sales: DvfSale[] = [];
+  const outbuildings: OutbuildingSale[] = [];
   const dropped: Partial<Record<DropReason, number>> = {};
   const drop = (reason: DropReason) => {
     dropped[reason] = (dropped[reason] ?? 0) + 1;
@@ -99,10 +112,15 @@ export function cleanDvfCsv(text: string, insee: string, year: number): CleanRes
       continue;
     }
     const locals = new Map<string, Record<string, string>>();
+    const annexes = new Map<string, Record<string, string>>();
     let commercial = false;
     for (const row of rows) {
       const kind = row["type_local"];
       if (kind === COMMERCIAL) commercial = true;
+      if (kind === OUTBUILDING) {
+        const key = `${row["id_parcelle"]}|${row["lot1_numero"] ?? ""}`;
+        if (!annexes.has(key)) annexes.set(key, row);
+      }
       if (!(kind in DWELLINGS)) continue;
       const key = [
         kind,
@@ -113,7 +131,25 @@ export function cleanDvfCsv(text: string, insee: string, year: number): CleanRes
       if (!locals.has(key)) locals.set(key, row);
     }
     if (locals.size === 0) {
-      drop("dependencies");
+      const price = num(first["valeur_fonciere"]);
+      if (
+        !commercial && annexes.size === 1 && price !== null &&
+        price >= MIN_OUTBUILDING_PRICE && price <= MAX_OUTBUILDING_PRICE
+      ) {
+        const annex = [...annexes.values()][0];
+        outbuildings.push({
+          idMutation: id,
+          insee,
+          year,
+          soldOn: first["date_mutation"],
+          priceEur: Math.round(price),
+          street: formatStreet(annex["adresse_nom_voie"] ?? ""),
+          lat: num(annex["latitude"]),
+          lng: num(annex["longitude"]),
+        });
+      } else {
+        drop("dependencies");
+      }
       continue;
     }
     if (locals.size > 1 || commercial) {
@@ -161,5 +197,5 @@ export function cleanDvfCsv(text: string, insee: string, year: number): CleanRes
       lng: num(dwelling["longitude"]),
     });
   }
-  return { sales, dropped };
+  return { sales, outbuildings, dropped };
 }

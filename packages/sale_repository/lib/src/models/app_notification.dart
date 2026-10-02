@@ -28,6 +28,7 @@ class AppNotification extends Equatable {
     required this.title,
     required this.createdAt,
     this.body,
+    this.propertyId,
     this.route,
     this.readAt,
   });
@@ -37,6 +38,7 @@ class AppNotification extends Equatable {
     kind: AppNotificationKind.parse(json['kind']),
     title: json['title'] as String,
     body: json['body'] as String?,
+    propertyId: json['property_id'] as String?,
     route: json['route'] as String?,
     readAt: json['read_at'] == null
         ? null
@@ -48,6 +50,9 @@ class AppNotification extends Equatable {
   final AppNotificationKind kind;
   final String title;
   final String? body;
+
+  /// The property the notification is about, if any.
+  final String? propertyId;
 
   /// App location to open (e.g. `/vendeur/rapport`).
   final String? route;
@@ -61,11 +66,21 @@ class AppNotification extends Equatable {
     kind: kind,
     title: title,
     body: body,
+    propertyId: propertyId,
     route: route,
     readAt: readAt ?? at,
     createdAt: createdAt,
   );
 
   @override
-  List<Object?> get props => [id, kind, title, body, route, readAt, createdAt];
+  List<Object?> get props => [
+    id,
+    kind,
+    title,
+    body,
+    propertyId,
+    route,
+    readAt,
+    createdAt,
+  ];
 }

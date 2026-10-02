@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:mobileapp/seller_tunnel/models/property_type_profile.dart';
 import 'package:property_repository/property_repository.dart';
 
 /// Computed status of a kind of document in the vault.
@@ -72,8 +73,12 @@ final class DocumentChecklist extends Equatable {
     required this.nextBestKind,
   });
 
-  /// Computes the checklist of [property] given its [documents].
+  /// Computes the checklist of [property] given its [documents]; the
+  /// listed documents and the answers of the score depend on its type
+  /// (`PropertyTypeProfile`).
   factory of(Property property, List<PropertyDocument> documents) {
+    final profile = PropertyTypeProfile.of(property.propertyType);
+    final listed = profile.documentKinds;
     final sanitationRule = switch (property.sanitation) {
       Sanitation.mainsSewer => SanitationReportRule.mainsSewer,
       Sanitation.septicTank ||
@@ -86,7 +91,7 @@ final class DocumentChecklist extends Equatable {
         for (final document in documents)
           if (document.kind == kind) document,
       ];
-      final isListed = listedKinds.contains(kind);
+      final isListed = listed.contains(kind);
       if (!isListed && files.isEmpty) continue;
       final isRequired =
           requiredKinds.contains(kind) ||
@@ -133,7 +138,7 @@ final class DocumentChecklist extends Equatable {
         nextBestWeight = weight;
       }
     }
-    final answers = _answers(property);
+    final answers = profile.scoredAnswers(property);
     final answered = answers.where((answered) => answered).length;
     final score =
         documentsShare * provided / expected +
@@ -146,18 +151,6 @@ final class DocumentChecklist extends Equatable {
       nextBestKind: nextBest,
     );
   }
-
-  /// Kinds always listed, in this order (others only once provided).
-  static const List<DocumentKind> listedKinds = [
-    DocumentKind.titleDeed,
-    DocumentKind.propertyTax,
-    DocumentKind.energyBills,
-    DocumentKind.worksInvoice,
-    DocumentKind.identityDocument,
-    DocumentKind.diagnostics,
-    DocumentKind.sanitationReport,
-    DocumentKind.other,
-  ];
 
   /// Kinds required for every property (the sanitation report is required
   /// when the sanitation is individual). The diagnostics are optional: they
@@ -251,21 +244,6 @@ final class DocumentChecklist extends Equatable {
     }
     return DocumentRowStatus.received;
   }
-
-  /// Whether each answer of the tunnel counted by the score is given.
-  static List<bool> _answers(Property property) => [
-    property.addressLabel != null,
-    property.parcelConfirmed,
-    property.propertyType != null,
-    property.purchaseYear != null,
-    property.constructionYear != null,
-    property.livingAreaM2 != null,
-    property.roomsCount != null,
-    property.heatingSystems.isNotEmpty,
-    property.sanitation != null,
-    property.measurementMethod != null,
-    property.noiseLevel != null,
-  ];
 
   @override
   List<Object?> get props => [rows, sanitationRule, score, nextBestKind];

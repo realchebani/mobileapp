@@ -380,7 +380,7 @@ void main() {
 
       await tester.tap(find.bySemanticsLabel('Retour'));
 
-      verify(() => goRouter.go(SellerTunnelStep.method.path)).called(1);
+      verify(() => goRouter.go(auditRoute(SellerTunnelStep.method))).called(1);
     });
 
     testWidgets('reveals the error on a small screen', (tester) async {

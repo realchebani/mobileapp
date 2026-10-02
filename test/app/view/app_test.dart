@@ -61,6 +61,7 @@ void main() {
   late PropertyRepository propertyRepository;
   late ValuationRepository valuationRepository;
   late NotificationRepository notificationRepository;
+  late Property dossier;
   late StreamController<AuthUser?> userController;
 
   setUpAll(() async {
@@ -98,9 +99,12 @@ void main() {
         .thenAnswer((_) async => []);
     when(() => notificationRepository.markRead(any()))
         .thenAnswer((_) async => DateTime(2026));
-    when(() => propertyRepository.getOrCreateDossier(any())).thenAnswer(
-      (_) async => const Property(id: 'property-id', ownerId: 'user-id'),
-    );
+    dossier = const Property(id: 'property-id', ownerId: 'user-id');
+    when(() => propertyRepository.listProperties(any()))
+        .thenAnswer((_) async => [dossier]);
+    when(() => propertyRepository.listLots(any())).thenAnswer((_) async => []);
+    when(() => propertyRepository.getProperty(any()))
+        .thenAnswer((_) async => dossier);
     when(() => propertyRepository.getOwners(any())).thenAnswer((_) async => []);
     when(() => propertyRepository.getParcels(any()))
         .thenAnswer((_) async => []);
@@ -274,16 +278,19 @@ void main() {
       );
       when(() => propertyRepository.updateProperty(any(), any())).thenAnswer(
         (invocation) async => _patched(
-          const Property(id: 'property-id', ownerId: 'user-id'),
+          const Property(
+            id: 'property-id',
+            ownerId: 'user-id',
+            propertyType: PropertyType.house,
+          ),
           invocation.positionalArguments[1] as Map<String, Object?>,
         ),
       );
-      when(() => propertyRepository.getOrCreateDossier(any())).thenAnswer(
-        (_) async => const Property(
-          id: 'property-id',
-          ownerId: 'user-id',
-          currentStep: 7,
-        ),
+      dossier = const Property(
+        id: 'property-id',
+        ownerId: 'user-id',
+        propertyType: PropertyType.house,
+        currentStep: 7,
       );
       when(() => propertyRepository.getDocuments(any())).thenAnswer(
         (_) async => [
@@ -571,7 +578,7 @@ void main() {
 
       // The sent dossier can no longer be edited.
       GoRouter.of(tester.element(find.byType(SubmittedPage)))
-          .go(AppRoutes.sellerTechnical);
+          .go(SellerTunnelStep.technical.routeFor('property-id'));
       await tester.pumpAndSettle();
       expect(find.byType(SubmittedPage), findsOneWidget);
       expect(find.byType(TechnicalPage), findsNothing);
@@ -583,24 +590,86 @@ void main() {
       when(() => profileRepository.getProfile(any())).thenAnswer(
         (_) async => const Profile(id: 'user-id', role: UserRole.seller),
       );
-      when(() => propertyRepository.getOrCreateDossier(any())).thenAnswer(
-        (_) async => const Property(
-          id: 'property-id',
-          ownerId: 'user-id',
-          status: PropertyStatus.inReview,
-          currentStep: 8,
-        ),
+      dossier = const Property(
+        id: 'property-id',
+        ownerId: 'user-id',
+        status: PropertyStatus.inReview,
+        currentStep: 8,
       );
       await pumpApp(tester);
       await emitUser(tester, user);
       expect(find.byType(DashboardPage), findsOneWidget);
 
       for (final step in SellerTunnelStep.values) {
-        GoRouter.of(tester.element(find.byType(Navigator).first)).go(step.path);
+        GoRouter.of(tester.element(find.byType(Navigator).first))
+            .go(step.routeFor('property-id'));
         await tester.pumpAndSettle();
         expect(find.byType(SubmittedPage), findsOneWidget, reason: step.name);
       }
       verifyNever(() => propertyRepository.updateProperty(any(), any()));
+    });
+
+    testWidgets('lets a seller with several properties open each one', (
+      tester,
+    ) async {
+      when(() => profileRepository.getProfile(any())).thenAnswer(
+        (_) async => const Profile(id: 'user-id', role: UserRole.seller),
+      );
+      const house = Property(
+        id: 'property-id',
+        ownerId: 'user-id',
+        propertyType: PropertyType.house,
+        status: PropertyStatus.submitted,
+        currentStep: 8,
+        lotId: 'lot',
+      );
+      const garage = Property(
+        id: 'garage-id',
+        ownerId: 'user-id',
+        propertyType: PropertyType.parking,
+        lotId: 'lot',
+      );
+      when(() => propertyRepository.listProperties(any()))
+          .thenAnswer((_) async => [house, garage]);
+      when(() => propertyRepository.listLots(any())).thenAnswer(
+        (_) async => const [PropertyLot(id: 'lot', ownerId: 'user-id')],
+      );
+      when(() => propertyRepository.getProperty(any())).thenAnswer(
+        (invocation) async =>
+            invocation.positionalArguments.first == 'garage-id'
+            ? garage
+            : house,
+      );
+      await pumpApp(tester);
+      await emitUser(tester, user);
+      expect(find.byType(MyPropertiesPage), findsOneWidget);
+
+      GoRouter router() =>
+          GoRouter.of(tester.element(find.byType(Navigator).first));
+
+      router().go('/vendeur/biens/garage-id');
+      await tester.pumpAndSettle();
+      expect(find.byType(SellerHomePage), findsOneWidget);
+
+      router().go('/vendeur/lots/lot');
+      await tester.pumpAndSettle();
+      expect(find.byType(LotPage), findsOneWidget);
+
+      router().go('/vendeur/biens/nouveau');
+      await tester.pumpAndSettle();
+      expect(find.byType(NewPropertyPage), findsOneWidget);
+
+      // Old links open the most recently updated property (here, the first).
+      router().go('/vendeur/marche');
+      await tester.pumpAndSettle();
+      expect(find.byType(MarketSynthesisPage), findsOneWidget);
+      router().go('/vendeur/audit/proprietaires');
+      await tester.pumpAndSettle();
+      expect(find.byType(SubmittedPage), findsOneWidget);
+
+      router().go('/vendeur/compte');
+      await tester.pumpAndSettle();
+      expect(find.byType(AccountPage), findsOneWidget);
     });
 
     testWidgets('shows a certified seller the dashboard and the report', (
@@ -613,8 +682,7 @@ void main() {
           firstName: 'Sophie',
         ),
       );
-      when(() => propertyRepository.getOrCreateDossier(any()))
-          .thenAnswer((_) async => certifiedProperty);
+      dossier = certifiedProperty;
       when(() => valuationRepository.getLatestValuation(any()))
           .thenAnswer((_) async => testValuation);
       when(() => notificationRepository.getNotifications(any()))

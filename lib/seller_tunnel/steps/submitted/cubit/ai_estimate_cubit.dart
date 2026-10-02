@@ -50,6 +50,7 @@ class AiEstimateCubit extends Cubit<AiEstimateState> {
     required this._propertyRepository,
     required this._propertyId,
     required this._enabled,
+    this._estimable = true,
     this._pollInterval = const Duration(seconds: 3),
     this._maxPolls = 60,
     DateTime Function()? now,
@@ -62,6 +63,10 @@ class AiEstimateCubit extends Cubit<AiEstimateState> {
   final PropertyRepository _propertyRepository;
   final String _propertyId;
   final bool _enabled;
+
+  /// Whether the estimate covers this type of property; when not, the
+  /// expert values it directly and nothing is requested (no quota used).
+  final bool _estimable;
   final Duration _pollInterval;
   final int _maxPolls;
   final DateTime Function() _now;
@@ -73,6 +78,10 @@ class AiEstimateCubit extends Cubit<AiEstimateState> {
   /// was never any attempt).
   Future<void> load() async {
     if (!_enabled) return;
+    if (!_estimable) {
+      emit(const AiEstimateState(status: AiEstimateStatus.unavailable));
+      return;
+    }
     emit(const AiEstimateState(status: AiEstimateStatus.computing));
     final MarketSnapshot? snapshot;
     try {

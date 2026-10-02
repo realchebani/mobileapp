@@ -9,6 +9,7 @@ abstract final class PropertyColumns {
   static const ownerId = 'owner_id';
   static const status = 'status';
   static const currentStep = 'current_step';
+  static const lotId = 'lot_id';
   static const ownershipType = 'ownership_type';
   static const addressLabel = 'address_label';
   static const addressHousenumber = 'address_housenumber';
@@ -24,6 +25,10 @@ abstract final class PropertyColumns {
   static const specialSituationOther = 'special_situation_other';
   static const propertyType = 'property_type';
   static const propertyTypeOther = 'property_type_other';
+  static const landKind = 'land_kind';
+  static const parkingKind = 'parking_kind';
+  static const commercialUse = 'commercial_use';
+  static const unitsCount = 'units_count';
   static const purchaseYear = 'purchase_year';
   static const purchasePriceEur = 'purchase_price_eur';
   static const selfBuilt = 'self_built';
@@ -34,6 +39,7 @@ abstract final class PropertyColumns {
   static const livingAreaM2 = 'living_area_m2';
   static const livingRoomAreaM2 = 'living_room_area_m2';
   static const annexAreaM2 = 'annex_area_m2';
+  static const usableAreaM2 = 'usable_area_m2';
   static const roomsCount = 'rooms_count';
   static const bedroomsCount = 'bedrooms_count';
   static const levels = 'levels';
@@ -50,6 +56,8 @@ abstract final class PropertyColumns {
   static const poolType = 'pool_type';
   static const poolLengthM = 'pool_length_m';
   static const poolWidthM = 'pool_width_m';
+  static const parkingLevel = 'parking_level';
+  static const parkingFeatures = 'parking_features';
   static const measurementMethod = 'measurement_method';
   static const noiseLevel = 'noise_level';
   static const overlooking = 'overlooking';
@@ -78,6 +86,7 @@ class Property extends Equatable {
     required this.ownerId,
     this.status = PropertyStatus.draft,
     this.currentStep = 1,
+    this.lotId,
     this.ownershipType,
     this.addressLabel,
     this.addressHousenumber,
@@ -93,6 +102,10 @@ class Property extends Equatable {
     this.specialSituationOther,
     this.propertyType,
     this.propertyTypeOther,
+    this.landKind,
+    this.parkingKind,
+    this.commercialUse,
+    this.unitsCount,
     this.purchaseYear,
     this.purchasePriceEur,
     this.selfBuilt,
@@ -103,6 +116,7 @@ class Property extends Equatable {
     this.livingAreaM2,
     this.livingRoomAreaM2,
     this.annexAreaM2,
+    this.usableAreaM2,
     this.roomsCount,
     this.bedroomsCount,
     this.levels,
@@ -119,6 +133,8 @@ class Property extends Equatable {
     this.poolType,
     this.poolLengthM,
     this.poolWidthM,
+    this.parkingLevel,
+    this.parkingFeatures = const [],
     this.measurementMethod,
     this.noiseLevel,
     this.overlooking,
@@ -145,6 +161,7 @@ class Property extends Equatable {
           parseDbEnum(PropertyStatus.values, json[PropertyColumns.status]) ??
           PropertyStatus.draft,
       currentStep: readInt(json[PropertyColumns.currentStep]) ?? 1,
+      lotId: json[PropertyColumns.lotId] as String?,
       ownershipType: parseDbEnum(
         OwnershipType.values,
         json[PropertyColumns.ownershipType],
@@ -170,6 +187,13 @@ class Property extends Equatable {
         json[PropertyColumns.propertyType],
       ),
       propertyTypeOther: json[PropertyColumns.propertyTypeOther] as String?,
+      landKind: parseDbEnum(LandKind.values, json[PropertyColumns.landKind]),
+      parkingKind: parseDbEnum(
+        ParkingKind.values,
+        json[PropertyColumns.parkingKind],
+      ),
+      commercialUse: json[PropertyColumns.commercialUse] as String?,
+      unitsCount: readInt(json[PropertyColumns.unitsCount]),
       purchaseYear: readInt(json[PropertyColumns.purchaseYear]),
       purchasePriceEur: readInt(json[PropertyColumns.purchasePriceEur]),
       selfBuilt: json[PropertyColumns.selfBuilt] as bool?,
@@ -183,6 +207,7 @@ class Property extends Equatable {
       livingAreaM2: readDouble(json[PropertyColumns.livingAreaM2]),
       livingRoomAreaM2: readDouble(json[PropertyColumns.livingRoomAreaM2]),
       annexAreaM2: readDouble(json[PropertyColumns.annexAreaM2]),
+      usableAreaM2: readDouble(json[PropertyColumns.usableAreaM2]),
       roomsCount: readInt(json[PropertyColumns.roomsCount]),
       bedroomsCount: readInt(json[PropertyColumns.bedroomsCount]),
       levels: parseDbEnum(PropertyLevels.values, json[PropertyColumns.levels]),
@@ -214,6 +239,14 @@ class Property extends Equatable {
       poolType: json[PropertyColumns.poolType] as String?,
       poolLengthM: readDouble(json[PropertyColumns.poolLengthM]),
       poolWidthM: readDouble(json[PropertyColumns.poolWidthM]),
+      parkingLevel: parseDbEnum(
+        ParkingLevel.values,
+        json[PropertyColumns.parkingLevel],
+      ),
+      parkingFeatures: parseDbEnumList(
+        ParkingFeature.values,
+        json[PropertyColumns.parkingFeatures],
+      ),
       measurementMethod: parseDbEnum(
         MeasurementMethod.values,
         json[PropertyColumns.measurementMethod],
@@ -252,6 +285,9 @@ class Property extends Equatable {
   /// Resume point: 1–7 = V1–V7, 8 once submitted.
   final int currentStep;
 
+  /// The sale lot this property belongs to, if any.
+  final String? lotId;
+
   final OwnershipType? ownershipType;
   final String? addressLabel;
   final String? addressHousenumber;
@@ -271,6 +307,18 @@ class Property extends Equatable {
   final String? specialSituationOther;
   final PropertyType? propertyType;
   final String? propertyTypeOther;
+
+  /// V3 · terrain: constructible or not.
+  final LandKind? landKind;
+
+  /// V3 · stationnement: box, garage, covered or outdoor space.
+  final ParkingKind? parkingKind;
+
+  /// V3 · local commercial: its use (boutique, bureau…).
+  final String? commercialUse;
+
+  /// V3 · immeuble: number of dwellings.
+  final int? unitsCount;
   final int? purchaseYear;
   final int? purchasePriceEur;
   final bool? selfBuilt;
@@ -284,6 +332,10 @@ class Property extends Equatable {
   /// Surface of the annexes (garage, cellier…), not part of
   /// [livingAreaM2].
   final double? annexAreaM2;
+
+  /// Surface utile of a non-dwelling property (stationnement, dependance,
+  /// local commercial).
+  final double? usableAreaM2;
   final int? roomsCount;
   final int? bedroomsCount;
   final PropertyLevels? levels;
@@ -303,6 +355,12 @@ class Property extends Equatable {
   final String? poolType;
   final double? poolLengthM;
   final double? poolWidthM;
+
+  /// V4b · stationnement: level of the space.
+  final ParkingLevel? parkingLevel;
+
+  /// V4b · equipment of a stationnement or a dependance.
+  final List<ParkingFeature> parkingFeatures;
   final MeasurementMethod? measurementMethod;
 
   /// 1 (very calm) → 10 (very noisy).
@@ -336,6 +394,16 @@ class Property extends Equatable {
     return parseDbEnum(Provenance.values, value) ?? Provenance.declared;
   }
 
+  /// Key of [provenance] recording the property whose owners were copied
+  /// into this one ("Ajouter un bien", EPIC-13).
+  static const ownersCopiedFromKey = 'owners_copied_from';
+
+  /// The property whose owners were copied into this one, if any.
+  String? get ownersCopiedFrom {
+    final value = provenance[ownersCopiedFromKey];
+    return value is String ? value : null;
+  }
+
   /// The [provenance] map with [updates] (column → [Provenance]) applied,
   /// to send as the `provenance` column of a patch; other entries are kept.
   Map<String, Object?> mergeProvenance(Map<String, Provenance> updates) => {
@@ -351,6 +419,7 @@ class Property extends Equatable {
       PropertyColumns.ownerId: ownerId,
       PropertyColumns.status: status.value,
       PropertyColumns.currentStep: currentStep,
+      PropertyColumns.lotId: lotId,
       PropertyColumns.ownershipType: ownershipType?.value,
       PropertyColumns.addressLabel: addressLabel,
       PropertyColumns.addressHousenumber: addressHousenumber,
@@ -366,6 +435,10 @@ class Property extends Equatable {
       PropertyColumns.specialSituationOther: specialSituationOther,
       PropertyColumns.propertyType: propertyType?.value,
       PropertyColumns.propertyTypeOther: propertyTypeOther,
+      PropertyColumns.landKind: landKind?.value,
+      PropertyColumns.parkingKind: parkingKind?.value,
+      PropertyColumns.commercialUse: commercialUse,
+      PropertyColumns.unitsCount: unitsCount,
       PropertyColumns.purchaseYear: purchaseYear,
       PropertyColumns.purchasePriceEur: purchasePriceEur,
       PropertyColumns.selfBuilt: selfBuilt,
@@ -376,6 +449,7 @@ class Property extends Equatable {
       PropertyColumns.livingAreaM2: livingAreaM2,
       PropertyColumns.livingRoomAreaM2: livingRoomAreaM2,
       PropertyColumns.annexAreaM2: annexAreaM2,
+      PropertyColumns.usableAreaM2: usableAreaM2,
       PropertyColumns.roomsCount: roomsCount,
       PropertyColumns.bedroomsCount: bedroomsCount,
       PropertyColumns.levels: levels?.value,
@@ -392,6 +466,8 @@ class Property extends Equatable {
       PropertyColumns.poolType: poolType,
       PropertyColumns.poolLengthM: poolLengthM,
       PropertyColumns.poolWidthM: poolWidthM,
+      PropertyColumns.parkingLevel: parkingLevel?.value,
+      PropertyColumns.parkingFeatures: encodeDbValue(parkingFeatures),
       PropertyColumns.measurementMethod: measurementMethod?.value,
       PropertyColumns.noiseLevel: noiseLevel,
       PropertyColumns.overlooking: overlooking?.value,
@@ -416,6 +492,7 @@ class Property extends Equatable {
     ownerId,
     status,
     currentStep,
+    lotId,
     ownershipType,
     addressLabel,
     addressHousenumber,
@@ -431,6 +508,10 @@ class Property extends Equatable {
     specialSituationOther,
     propertyType,
     propertyTypeOther,
+    landKind,
+    parkingKind,
+    commercialUse,
+    unitsCount,
     purchaseYear,
     purchasePriceEur,
     selfBuilt,
@@ -441,6 +522,7 @@ class Property extends Equatable {
     livingAreaM2,
     livingRoomAreaM2,
     annexAreaM2,
+    usableAreaM2,
     roomsCount,
     bedroomsCount,
     levels,
@@ -457,6 +539,8 @@ class Property extends Equatable {
     poolType,
     poolLengthM,
     poolWidthM,
+    parkingLevel,
+    parkingFeatures,
     measurementMethod,
     noiseLevel,
     overlooking,

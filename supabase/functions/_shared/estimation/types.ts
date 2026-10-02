@@ -2,6 +2,37 @@
 
 export type PropertyType = "maison" | "appartement";
 
+/** DVF type of a cached sale: a dwelling, or one outbuilding alone
+ * (garage, parking, box, cave… : DVF « Dépendance »). */
+export type DvfType = PropertyType | "dependance";
+
+/** A cleaned DVF sale of one outbuilding alone in its mutation (EPIC-13):
+ * priced per unit, DVF has no surface for most of them. */
+export interface OutbuildingSale {
+  idMutation: string;
+  insee: string;
+  year: number;
+  /** ISO date `YYYY-MM-DD`. */
+  soldOn: string;
+  priceEur: number;
+  /** Street name (adresse_nom_voie), never the house number. */
+  street: string | null;
+  lat: number | null;
+  lng: number | null;
+}
+
+/** A garage / parking (stationnement) or an outbuilding (dependance) to
+ * estimate from the sales of single outbuildings. */
+export interface OutbuildingSubject {
+  type: "dependance";
+  /** The `property_type` of the dossier. */
+  kind: "stationnement" | "dependance";
+  lat: number;
+  lng: number;
+  insee: string;
+  city: string | null;
+}
+
 /** A cleaned DVF sale: one dwelling sold in one mutation. */
 export interface DvfSale {
   idMutation: string;
@@ -53,10 +84,11 @@ export interface SemesterPoint {
 }
 
 export interface Comparable {
-  type: PropertyType;
+  type: DvfType;
   /** Street name, or null when the street has fewer than 3 sales. */
   street: string | null;
-  area_m2: number;
+  /** Null for an outbuilding (priced per unit). */
+  area_m2: number | null;
   rooms: number | null;
   land_m2: number | null;
   /** Year of the sale only (owner decision: no month, for discretion). */
@@ -64,8 +96,9 @@ export interface Comparable {
   /** Distance rounded to 100 m; null when unknown. */
   distance_m: number | null;
   price_eur: number;
-  price_m2_eur: number;
-  price_m2_today_eur: number;
+  /** Null for an outbuilding. */
+  price_m2_eur: number | null;
+  price_m2_today_eur: number | null;
   weight: number;
 }
 
@@ -105,3 +138,6 @@ export interface EstimateResult {
 }
 
 export const METHOD_VERSION = "dvf-v1";
+
+/** Method of the outbuilding estimate (median of single outbuilding sales). */
+export const OUTBUILDING_METHOD_VERSION = "dvf-dependance-v1";

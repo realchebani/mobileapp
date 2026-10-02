@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:mobileapp/app/router/app_routes.dart';
 import 'package:mobileapp/l10n/l10n.dart';
 import 'package:mobileapp/seller_tunnel/seller_tunnel.dart';
 import 'package:mobileapp/seller_tunnel/steps/lifestyle/models/lifestyle_item_draft.dart';
@@ -139,7 +138,8 @@ void main() {
     testWidgets('goes back to the surfaces', (tester) async {
       await pump(tester, tunnel());
       await tester.tap(find.bySemanticsLabel('Retour'));
-      verify(() => goRouter.go(AppRoutes.sellerSurfaces)).called(1);
+      verify(() => goRouter.go(auditRoute(SellerTunnelStep.surfaces)))
+          .called(1);
     });
 
     testWidgets('adds, edits and deletes items', (tester) async {

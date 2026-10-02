@@ -7,6 +7,7 @@ import 'package:mobileapp/profile/profile.dart';
 import 'package:mobileapp/seller_space/seller_space.dart';
 import 'package:mobileapp/seller_tunnel/seller_tunnel.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:property_repository/property_repository.dart';
 import 'package:sale_repository/sale_repository.dart';
 
 import '../helpers/helpers.dart';
@@ -41,23 +42,33 @@ const certifiedState = SellerTunnelState(
 );
 
 extension PumpSellerSpace on WidgetTester {
-  /// Pumps a seller space [widget] under the tunnel, valuation and
-  /// notifications cubits (mocks by default: a certified dossier).
+  /// Pumps a seller space [widget] under the tunnel, properties, valuation
+  /// and notifications cubits (mocks by default: a certified dossier, the
+  /// seller's only property).
   Future<void> pumpSellerSpacePage(
     Widget widget, {
     SellerTunnelCubit? sellerTunnelCubit,
+    SellerPropertiesCubit? sellerPropertiesCubit,
     ValuationCubit? valuationCubit,
     NotificationsCubit? notificationsCubit,
     ValuationRepository? valuationRepository,
+    PropertyRepository? propertyRepository,
     ProfileCubit? profileCubit,
     AppBloc? appBloc,
     GoRouter? goRouter,
   }) {
+    final tunnel = sellerTunnelCubit ?? mockSellerTunnelCubit(certifiedState);
     return pumpApp(
       MultiBlocProvider(
         providers: [
-          BlocProvider<SellerTunnelCubit>.value(
-            value: sellerTunnelCubit ?? mockSellerTunnelCubit(certifiedState),
+          BlocProvider<SellerTunnelCubit>.value(value: tunnel),
+          BlocProvider<SellerPropertiesCubit>.value(
+            value:
+                sellerPropertiesCubit ??
+                mockSellerPropertiesCubit(properties: [?tunnel.state.property]),
+          ),
+          RepositoryProvider<SellerTunnelCubits>.value(
+            value: mockSellerTunnelCubits(tunnel),
           ),
           BlocProvider<ValuationCubit>.value(
             value: valuationCubit ?? mockValuationCubit(),
@@ -70,6 +81,7 @@ extension PumpSellerSpace on WidgetTester {
         child: Scaffold(body: widget),
       ),
       valuationRepository: valuationRepository,
+      propertyRepository: propertyRepository,
       profileCubit: profileCubit,
       appBloc: appBloc,
       goRouter: goRouter,

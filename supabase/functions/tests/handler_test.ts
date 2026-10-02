@@ -72,6 +72,13 @@ function fakeDeps(overrides: Partial<Deps> = {}) {
       saved.push(values);
       return Promise.resolve();
     },
+    loadOutbuildingMarket: () =>
+      Promise.resolve({
+        communeSales: [],
+        nearbySales: [],
+        dataUntil: null,
+        sourceVersion: "geo-dvf 2026-05-18",
+      }),
     loadMarket: () =>
       Promise.resolve({
         communeSales: houses,
@@ -252,14 +259,96 @@ Deno.test("toSubject validates the dossier", () => {
   assertEquals(toSubject(dossier({ living_area_m2: 5000 })), "missing_area");
   assertEquals(toSubject(dossier({ address_citycode: "67482" })), "no_dvf_coverage");
   const subject = toSubject(dossier({ outdoor_equipment: ["garage"] }));
-  if (typeof subject === "string") throw new Error(subject);
+  if (typeof subject === "string" || subject.type === "dependance") throw new Error("dwelling");
   assertEquals(subject.livingAreaM2, 115);
   assertEquals(subject.landM2, 540);
   assertEquals(subject.assets, ["Parc"]);
   assertEquals(subject.watchPoints, ["Route"]);
   assertEquals(subject.outdoorEquipment, ["garage"]);
   const noLand = toSubject({ ...dossier(), parcelAreas: [] });
-  if (typeof noLand === "string") throw new Error(noLand);
+  if (typeof noLand === "string" || noLand.type === "dependance") throw new Error("dwelling");
   assertEquals(noLand.landM2, null);
   assertEquals(noLand.outdoorEquipment, []);
+});
+
+Deno.test("estimates a garage from single outbuilding sales (EPIC-13)", async () => {
+  const garages = [15000, 18000, 20000, 22000, 25000].map((priceEur, i) => ({
+    idMutation: `g${i}`,
+    insee: "69043",
+    year: 2025,
+    soldOn: "2025-06-01",
+    priceEur,
+    street: null,
+    lat: 45.7104,
+    lng: 4.7469,
+  }));
+  const { deps, updates, saved } = fakeDeps({
+    loadMarket: () => Promise.reject(new Error("not for a garage")),
+    loadOutbuildingMarket: () =>
+      Promise.resolve({
+        communeSales: garages,
+        nearbySales: [],
+        dataUntil: "2025-12-19",
+        sourceVersion: "geo-dvf 2026-05-18",
+      }),
+  });
+  await compute(deps, "s", ID, dossier({ property_type: "stationnement", living_area_m2: null }));
+  const row = updates[0][1];
+  assertEquals(row.status, "ok");
+  assertEquals(row.method_version, "dvf-dependance-v1");
+  assertEquals(row.property_type, "dependance");
+  assertEquals(row.living_area_m2, null);
+  assertEquals(row.estimate_median_eur, 20000);
+  assertEquals(row.explanation_source, "template");
+  assertEquals(row.source_version, "geo-dvf 2026-05-18");
+  assertEquals(saved[0].ai_estimate_median_eur, 20000);
+
+  const none = fakeDeps();
+  await compute(none.deps, "s", ID, dossier({ property_type: "dependance" }));
+  assertEquals(none.updates[0][1].reason, "too_few_sales");
+  assertEquals(none.updates[0][1].explanation_fr, null);
+
+  const few = fakeDeps({
+    loadOutbuildingMarket: () =>
+      Promise.resolve({
+        communeSales: garages.slice(0, 2),
+        nearbySales: [],
+        dataUntil: "2025-12-19",
+        sourceVersion: "geo-dvf",
+      }),
+  });
+  await compute(few.deps, "s", ID, dossier({ property_type: "dependance" }));
+  assertEquals(few.updates[0][1].reason, "too_few_sales");
+});
+
+Deno.test("toSubject maps garages and outbuildings, not the other types", () => {
+  const garage = toSubject(dossier({ property_type: "stationnement", living_area_m2: null }));
+  assertEquals(garage, {
+    type: "dependance",
+    kind: "stationnement",
+    lat: 45.7104,
+    lng: 4.7469,
+    insee: "69043",
+    city: "Chaponost",
+  });
+  assertEquals(
+    toSubject(dossier({ property_type: "dependance", address_citycode: "67482" })),
+    "no_dvf_coverage",
+  );
+  assertEquals(toSubject(dossier({ property_type: "dependance", lat: null })), "missing_location");
+  for (const type of ["terrain", "local_commercial", "immeuble", "autre"]) {
+    assertEquals(toSubject(dossier({ property_type: type })), "unsupported_type");
+  }
+});
+
+Deno.test("a type never estimated is answered at once, without quota", async () => {
+  const { deps, counted, work } = fakeDeps({
+    loadDossier: () => Promise.resolve(dossier({ property_type: "local_commercial" })),
+    startSnapshot: () => Promise.reject(new Error("must not store")),
+  });
+  const response = await handle(post({ property_id: ID }), deps);
+  assertEquals(response.status, 200);
+  assertEquals(await response.json(), { status: "insufficient", reason: "unsupported_type" });
+  assertEquals(counted, []);
+  assertEquals(work, []);
 });

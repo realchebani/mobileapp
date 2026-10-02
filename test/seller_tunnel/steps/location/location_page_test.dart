@@ -4,11 +4,11 @@ import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:geo_repository/geo_repository.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:mobileapp/app/app.dart';
 import 'package:mobileapp/seller_tunnel/seller_tunnel.dart';
 import 'package:mobileapp/seller_tunnel/steps/location/data/device_locator.dart';
 import 'package:mobileapp/seller_tunnel/steps/location/widgets/parcel_card.dart';
 import 'package:mobileapp/seller_tunnel/steps/location/widgets/parcel_map.dart';
+import 'package:mobileapp/seller_tunnel/steps/location/widgets/same_address_card.dart';
 import 'package:mobileapp/ui/ui.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:property_repository/property_repository.dart';
@@ -89,6 +89,7 @@ void main() {
     MockGoRouter? goRouter,
     double width = 390,
     double textScale = 1,
+    SellerPropertiesCubit? sellerPropertiesCubit,
   }) async {
     tester.platformDispatcher.textScaleFactorTestValue = textScale;
     addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
@@ -107,6 +108,7 @@ void main() {
     await tester.pumpTunnelPage(
       LocationPage(deviceLocator: locator, tileBuilder: testTile),
       sellerTunnelCubit: cubit,
+      sellerPropertiesCubit: sellerPropertiesCubit,
       propertyRepository: properties,
       geoRepository: geo,
       goRouter: goRouter,
@@ -531,6 +533,57 @@ void main() {
     final goRouter = MockGoRouter();
     await pump(tester, goRouter: goRouter);
     await tester.tap(find.bySemanticsLabel('Retour'));
-    verify(() => goRouter.go(AppRoutes.sellerOwners)).called(1);
+    verify(() => goRouter.go(auditRoute(SellerTunnelStep.owners))).called(1);
+  });
+
+  group('"Même adresse que…"', () {
+    const house = Property(
+      id: 'house',
+      ownerId: 'user-id',
+      propertyType: PropertyType.house,
+      addressLabel: '12 rue des Lilas 69630 Chaponost',
+      addressHousenumber: '12',
+      addressStreet: 'rue des Lilas',
+      addressCity: 'Chaponost',
+      addressCitycode: '69043',
+      lat: 45.71,
+      lng: 4.74,
+    );
+
+    testWidgets('reuses the address of another property', (tester) async {
+      await pump(
+        tester,
+        sellerPropertiesCubit: mockSellerPropertiesCubit(
+          properties: const [testProperty, house],
+        ),
+      );
+      expect(
+        find.text('Même adresse que Maison · 12 rue des Lilas$_nbsp?'),
+        findsOneWidget,
+      );
+      await tester.tap(find.text('Reprendre cette adresse'));
+      await tester.pumpAndSettle();
+      verify(() => geo.parcelAt(const GeoPoint(45.71, 4.74))).called(1);
+      expect(find.text('Reprendre cette adresse'), findsNothing);
+    });
+
+    test('prefers a property of the same lot', () {
+      const garage = Property(id: 'g', ownerId: 'u', lotId: 'lot');
+      const other = Property(
+        id: 'o',
+        ownerId: 'u',
+        addressLabel: 'x',
+        lat: 1,
+        lng: 1,
+      );
+      final inLot = Property.fromJson({
+        ...house.toJson(),
+        PropertyColumns.lotId: 'lot',
+      });
+      expect(sameAddressCandidate(garage, [garage, inLot, other]), inLot);
+      expect(sameAddressCandidate(garage, [garage, other]), other);
+      expect(sameAddressCandidate(garage, const [garage]), isNull);
+      expect(addressOf(other).id, 'property:o');
+    });
   });
 }

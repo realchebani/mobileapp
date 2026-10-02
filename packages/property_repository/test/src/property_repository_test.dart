@@ -56,97 +56,6 @@ void main() {
   Matcher failure<T extends PropertyFailure>() =>
       throwsA(isA<T>().having((e) => e.error, 'error', isNotNull));
 
-  group('getOrCreateDossier', () {
-    test('returns the latest dossier, whatever its status', () async {
-      respond = (_) => json([propertyRow]);
-
-      expect(await repository.getOrCreateDossier(ownerId), property);
-      final request = requests.single;
-      expect(request.method, 'GET');
-      expect(request.url.path, '/rest/v1/properties');
-      expect(request.url.queryParameters, {
-        'select': '*',
-        'owner_id': 'eq.$ownerId',
-        'order': 'updated_at.desc.nullslast',
-        'limit': '1',
-      });
-    });
-
-    test('creates a draft when there is none', () async {
-      respond = (request) =>
-          request.method == 'GET' ? json(<Object>[]) : json([propertyRow]);
-
-      expect(await repository.getOrCreateDossier(ownerId), property);
-      final insert = requests.last;
-      expect(insert.method, 'POST');
-      expect(jsonDecode(insert.body), {'owner_id': ownerId});
-    });
-
-    test('throws PropertyLoadFailure when reading fails', () async {
-      respond = (_) => error();
-      await expectLater(
-        repository.getOrCreateDossier(ownerId),
-        failure<PropertyLoadFailure>(),
-      );
-    });
-
-    test('returns the draft created concurrently', () async {
-      var reads = 0;
-      respond = (request) {
-        if (request.method == 'POST') {
-          return json({
-            'message': 'duplicate key value',
-            'code': '23505',
-          }, status: 409);
-        }
-        return json(reads++ == 0 ? <Object>[] : [propertyRow]);
-      };
-
-      expect(await repository.getOrCreateDossier(ownerId), property);
-      expect(requests.map((r) => r.method), ['GET', 'POST', 'GET']);
-    });
-
-    test('throws PropertySaveFailure on a conflict without dossier', () async {
-      respond = (request) => request.method == 'POST'
-          ? json({'message': 'duplicate', 'code': '23505'}, status: 409)
-          : json(<Object>[]);
-      await expectLater(
-        repository.getOrCreateDossier(ownerId),
-        failure<PropertySaveFailure>(),
-      );
-    });
-
-    test('throws PropertySaveFailure on a network error', () async {
-      final failing = SupabaseClient(
-        'https://project.supabase.co',
-        'publishable-key',
-        httpClient: MockClient((request) async {
-          if (request.method == 'POST') throw http.ClientException('offline');
-          return http.Response(
-            '[]',
-            200,
-            headers: {'content-type': 'application/json'},
-            request: request,
-          );
-        }),
-      );
-      addTearDown(failing.dispose);
-      await expectLater(
-        PropertyRepository(client: failing).getOrCreateDossier(ownerId),
-        failure<PropertySaveFailure>(),
-      );
-    });
-
-    test('throws PropertySaveFailure when creating fails', () async {
-      respond = (request) =>
-          request.method == 'GET' ? json(<Object>[]) : error();
-      await expectLater(
-        repository.getOrCreateDossier(ownerId),
-        failure<PropertySaveFailure>(),
-      );
-    });
-  });
-
   group('getProperty', () {
     test('returns the property', () async {
       respond = (_) => json([propertyRow]);
@@ -527,6 +436,11 @@ void main() {
       const DocumentUploadFailure().toString(),
       'DocumentUploadFailure(null)',
     );
+    expect(
+      const PropertyLimitFailure().toString(),
+      'PropertyLimitFailure(null)',
+    );
+    expect(const LotFrozenFailure().toString(), 'LotFrozenFailure(null)');
   });
 
   group('market snapshots', () {

@@ -3,9 +3,14 @@
 // revalidated with its ETag at most once every 7 days. Each file is stored
 // as soon as it is processed, so an interrupted first load resumes on retry.
 import type { SupabaseClient } from "jsr:@supabase/supabase-js@2";
-import { cleanDvfCsv } from "../_shared/dvf/clean.ts";
+import { CLEAN_FORMAT_VERSION, cleanDvfCsv } from "../_shared/dvf/clean.ts";
 import { downloadCommuneCsv, type FetchLike } from "../_shared/dvf/sources.ts";
-import type { DvfSale, PropertyType } from "../_shared/estimation/types.ts";
+import type {
+  DvfSale,
+  DvfType,
+  OutbuildingSale,
+  PropertyType,
+} from "../_shared/estimation/types.ts";
 
 const REVALIDATE_MS = 7 * 24 * 60 * 60 * 1000;
 const PAGE = 1000;
@@ -20,9 +25,9 @@ interface SaleRow {
   insee: string;
   year: number;
   sold_on: string;
-  property_type: PropertyType;
+  property_type: DvfType;
   price_eur: number;
-  built_area_m2: number | string;
+  built_area_m2: number | string | null;
   rooms: number | null;
   land_m2: number | null;
   street: string | null;
@@ -36,7 +41,8 @@ function toSale(row: SaleRow): DvfSale {
     insee: row.insee,
     year: row.year,
     soldOn: row.sold_on,
-    type: row.property_type,
+    // Only queried by dwelling type: never an outbuilding here.
+    type: row.property_type as PropertyType,
     priceEur: row.price_eur,
     areaM2: Number(row.built_area_m2),
     rooms: row.rooms,
@@ -44,6 +50,36 @@ function toSale(row: SaleRow): DvfSale {
     street: row.street,
     lat: row.lat,
     lng: row.lng,
+  };
+}
+
+function toOutbuildingSale(row: SaleRow): OutbuildingSale {
+  return {
+    idMutation: row.id_mutation,
+    insee: row.insee,
+    year: row.year,
+    soldOn: row.sold_on,
+    priceEur: row.price_eur,
+    street: row.street,
+    lat: row.lat,
+    lng: row.lng,
+  };
+}
+
+function outbuildingRow(sale: OutbuildingSale): SaleRow {
+  return {
+    id_mutation: sale.idMutation,
+    insee: sale.insee,
+    year: sale.year,
+    sold_on: sale.soldOn,
+    property_type: "dependance",
+    price_eur: sale.priceEur,
+    built_area_m2: null,
+    rooms: null,
+    land_m2: null,
+    street: sale.street,
+    lat: sale.lat,
+    lng: sale.lng,
   };
 }
 
@@ -88,7 +124,7 @@ export class DvfStore {
   async ensureLoaded(insees: string[], years: number[]): Promise<string | null> {
     const { data, error } = await this.db
       .from("dvf_sources")
-      .select("insee, year, etag, last_modified, fetched_at")
+      .select("insee, year, etag, last_modified, fetched_at, format_version")
       .in("insee", insees)
       .in("year", years);
     if (error) throw new Error(`dvf_sources: ${error.message}`);
@@ -107,10 +143,17 @@ export class DvfStore {
     await inParallel(jobs, PARALLEL_DOWNLOADS, async ([insee, year]) => {
       const source = known.get(`${insee}|${year}`);
       remember(source?.last_modified);
-      const fresh = source &&
+      // A file cleaned by an older version is downloaded again in full.
+      const current = (source?.format_version ?? 1) >= CLEAN_FORMAT_VERSION;
+      const fresh = source && current &&
         this.now().getTime() - Date.parse(source.fetched_at) < REVALIDATE_MS;
       if (fresh) return;
-      const download = await downloadCommuneCsv(this.fetcher, insee, year, source?.etag ?? null);
+      const download = await downloadCommuneCsv(
+        this.fetcher,
+        insee,
+        year,
+        current ? source?.etag ?? null : null,
+      );
       const fetchedAt = this.now().toISOString();
       if (download.status === "not_modified") {
         await this.check(
@@ -131,15 +174,15 @@ export class DvfStore {
             available: false,
             rows_kept: 0,
             rows_dropped: {},
+            format_version: CLEAN_FORMAT_VERSION,
           }),
         );
         return;
       }
-      const { sales, dropped } = cleanDvfCsv(download.text, insee, year);
-      for (let i = 0; i < sales.length; i += INSERT_CHUNK) {
-        await this.check(
-          this.db.from("dvf_sales").upsert(sales.slice(i, i + INSERT_CHUNK).map(toRow)),
-        );
+      const { sales, outbuildings, dropped } = cleanDvfCsv(download.text, insee, year);
+      const rows = [...sales.map(toRow), ...outbuildings.map(outbuildingRow)];
+      for (let i = 0; i < rows.length; i += INSERT_CHUNK) {
+        await this.check(this.db.from("dvf_sales").upsert(rows.slice(i, i + INSERT_CHUNK)));
       }
       remember(download.lastModified);
       await this.check(
@@ -150,8 +193,9 @@ export class DvfStore {
           last_modified: download.lastModified?.slice(0, 100) ?? null,
           fetched_at: fetchedAt,
           available: true,
-          rows_kept: sales.length,
+          rows_kept: rows.length,
           rows_dropped: dropped,
+          format_version: CLEAN_FORMAT_VERSION,
         }),
       );
     });
@@ -188,16 +232,49 @@ export class DvfStore {
     );
   }
 
+  /** Every cached sale of a single outbuilding in commune [insee]. */
+  communeOutbuildingSales(insee: string): Promise<OutbuildingSale[]> {
+    return this.pagedRows((from) =>
+      this.db.from("dvf_sales").select(SALE_COLUMNS)
+        .eq("insee", insee).eq("property_type", "dependance")
+        .order("id_mutation").range(from, from + PAGE - 1)
+    ).then((rows) => rows.map(toOutbuildingSale));
+  }
+
+  /** Cached sales of a single outbuilding in [insees] inside a box and period. */
+  nearbyOutbuildingSales(options: {
+    insees: string[];
+    box: { minLat: number; maxLat: number; minLng: number; maxLng: number };
+    since: string;
+  }): Promise<OutbuildingSale[]> {
+    const { box } = options;
+    return this.pagedRows((from) =>
+      this.db.from("dvf_sales").select(SALE_COLUMNS)
+        .in("insee", options.insees).eq("property_type", "dependance")
+        .gte("lat", box.minLat).lte("lat", box.maxLat)
+        .gte("lng", box.minLng).lte("lng", box.maxLng)
+        .gt("sold_on", options.since)
+        .order("id_mutation").order("insee").range(from, from + PAGE - 1)
+    ).then((rows) => rows.map(toOutbuildingSale));
+  }
+
   private async paged(
     // deno-lint-ignore no-explicit-any
     page: (from: number) => PromiseLike<{ data: any[] | null; error: { message: string } | null }>,
   ): Promise<DvfSale[]> {
-    const sales: DvfSale[] = [];
+    return (await this.pagedRows(page)).map(toSale);
+  }
+
+  private async pagedRows(
+    // deno-lint-ignore no-explicit-any
+    page: (from: number) => PromiseLike<{ data: any[] | null; error: { message: string } | null }>,
+  ): Promise<SaleRow[]> {
+    const rows: SaleRow[] = [];
     for (let from = 0;; from += PAGE) {
       const { data, error } = await page(from);
       if (error) throw new Error(`dvf_sales: ${error.message}`);
-      sales.push(...(data ?? []).map(toSale));
-      if (!data || data.length < PAGE) return sales;
+      rows.push(...(data ?? []));
+      if (!data || data.length < PAGE) return rows;
     }
   }
 

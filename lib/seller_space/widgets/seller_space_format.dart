@@ -4,6 +4,9 @@ import 'package:mobileapp/l10n/l10n.dart';
 import 'package:mobileapp/ui/ui.dart';
 import 'package:property_repository/property_repository.dart';
 
+export 'package:mobileapp/seller_tunnel/models/property_type_labels.dart'
+    show propertyTypeLabel;
+
 /// "525 000 €".
 String euros(AppLocalizations l10n, int amount) =>
     l10n.reportEuros(frenchNumber(amount));
@@ -23,19 +26,6 @@ String longDate(BuildContext context, DateTime date) => withRenderableSpaces(
   DateFormat.yMMMMd(Localizations.localeOf(context).toLanguageTag())
       .format(date.toLocal()),
 );
-
-/// "Maison", "Appartement"… (null when unknown).
-String? propertyTypeLabel(AppLocalizations l10n, Property property) =>
-    switch (property.propertyType) {
-      PropertyType.house => l10n.contextTypeHouse,
-      PropertyType.apartment => l10n.contextTypeApartment,
-      PropertyType.land => l10n.contextTypeLand,
-      PropertyType.other =>
-        (property.propertyTypeOther?.trim().isNotEmpty ?? false)
-            ? property.propertyTypeOther!.trim()
-            : l10n.contextTypeOther,
-      null => null,
-    };
 
 /// "12 rue de la Colombe, Chaponost" (or the geocoded label).
 String? propertyAddress(Property property) {

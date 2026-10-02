@@ -13,6 +13,7 @@ import 'package:mobileapp/seller_tunnel/steps/owners/models/owner_draft.dart';
 import 'package:mobileapp/seller_tunnel/steps/owners/widgets/co_owner_card.dart';
 import 'package:mobileapp/seller_tunnel/steps/owners/widgets/co_owner_sheet.dart';
 import 'package:mobileapp/seller_tunnel/steps/owners/widgets/owner_field_error_text.dart';
+import 'package:mobileapp/seller_tunnel/steps/owners/widgets/owners_copied_note.dart';
 import 'package:mobileapp/seller_tunnel/view/seller_tunnel_navigation.dart';
 import 'package:mobileapp/seller_tunnel/widgets/widgets.dart';
 import 'package:mobileapp/ui/ui.dart';
@@ -194,6 +195,10 @@ class _OwnersViewState extends State<OwnersView> {
         ),
         children: [
           AgentIntro(message: l10n.ownersIntro),
+          if (context.select<SellerTunnelCubit, bool>(
+            (cubit) => cubit.state.property?.ownersCopiedFrom != null,
+          ))
+            const OwnersCopiedNote(),
           Column(
             key: _ownershipKey,
             crossAxisAlignment: CrossAxisAlignment.stretch,

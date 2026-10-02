@@ -8,7 +8,7 @@ import 'package:mobileapp/seller_space/cubit/notifications_cubit.dart';
 import 'package:mobileapp/seller_space/cubit/valuation_cubit.dart';
 import 'package:mobileapp/seller_space/dashboard/widgets/dossier_card.dart';
 import 'package:mobileapp/seller_space/dashboard/widgets/property_summary_card.dart';
-import 'package:mobileapp/seller_space/notifications/notifications_sheet.dart';
+import 'package:mobileapp/seller_space/notifications/notifications_bell.dart';
 import 'package:mobileapp/seller_space/widgets/route_available.dart';
 import 'package:mobileapp/seller_space/widgets/seller_space_format.dart';
 import 'package:mobileapp/seller_tunnel/cubit/seller_tunnel_cubit.dart';
@@ -16,6 +16,7 @@ import 'package:mobileapp/seller_tunnel/models/seller_tunnel_step.dart';
 import 'package:mobileapp/seller_tunnel/steps/submitted/widgets/ai_estimate_card.dart';
 import 'package:mobileapp/seller_tunnel/steps/submitted/widgets/dossier_summary_sheet.dart';
 import 'package:mobileapp/seller_tunnel/steps/submitted/widgets/submitted_format.dart';
+import 'package:mobileapp/seller_tunnel/view/seller_tunnel_navigation.dart';
 import 'package:mobileapp/ui/ui.dart';
 import 'package:property_repository/property_repository.dart';
 import 'package:sale_repository/sale_repository.dart';
@@ -31,11 +32,22 @@ import 'package:sale_repository/sale_repository.dart';
 /// Uses the dossier ([SellerTunnelCubit]), the [ValuationCubit] and the
 /// [NotificationsCubit] of the seller space; pull to refresh reloads them.
 class DashboardPage extends StatelessWidget {
-  const new({this.marketSynthesisAvailable, super.key});
+  const new({
+    this.marketSynthesisAvailable,
+    this.onBack,
+    this.footer,
+    super.key,
+  });
 
   /// Whether V8b can be opened; by default, whether the app router has
   /// its route (built by EPIC-05).
   final bool? marketSynthesisAvailable;
+
+  /// Back to "Mes biens" (seller with several properties).
+  final VoidCallback? onBack;
+
+  /// Shown at the end (lot of the property, "Ajouter un bien").
+  final Widget? footer;
 
   @override
   Widget build(BuildContext context) {
@@ -45,7 +57,7 @@ class DashboardPage extends StatelessWidget {
     final certified = property.status == PropertyStatus.certified;
     final showMarket =
         marketSynthesisAvailable ??
-        isRouteAvailable(context, AppRoutes.sellerMarket);
+        isRouteAvailable(context, AppRoutes.sellerMarket(property.id));
     return _ReloadOnResume(
       // Back from the background: the expert may have certified meanwhile.
       onResume: () => _refresh(context, reportFailure: false),
@@ -65,7 +77,7 @@ class DashboardPage extends StatelessWidget {
                 RealestySpacing.xl,
               ),
               children: [
-                const _Header(),
+                _Header(onBack: onBack),
                 const SizedBox(height: RealestySpacing.md),
                 ..._spaced([
                   AgentBubble(message: _agentMessage(context.l10n, property)),
@@ -90,6 +102,7 @@ class DashboardPage extends StatelessWidget {
                     state: state,
                     onOpen: () => showDossierSummarySheet(context, state),
                   ),
+                  ?footer,
                 ]),
               ],
             ),
@@ -174,7 +187,9 @@ class _ReloadOnResumeState extends State<_ReloadOnResume> {
 }
 
 class _Header extends StatelessWidget {
-  const new();
+  const new({this.onBack});
+
+  final VoidCallback? onBack;
 
   @override
   Widget build(BuildContext context) {
@@ -193,11 +208,16 @@ class _Header extends StatelessWidget {
       firstName,
       ownerFirstName,
     ].whereType<String>().where((name) => name.isNotEmpty).firstOrNull;
-    final unread = context.select<NotificationsCubit, int>(
-      (cubit) => cubit.state.unreadCount,
-    );
     return Row(
       children: [
+        if (onBack != null) ...[
+          RealestyIconButton(
+            icon: RealestyIcons.chevronLeft,
+            semanticLabel: l10n.propertyHomeBack,
+            onPressed: onBack,
+          ),
+          const SizedBox(width: RealestySpacing.xs),
+        ],
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -219,34 +239,7 @@ class _Header extends StatelessWidget {
             ],
           ),
         ),
-        Stack(
-          clipBehavior: Clip.none,
-          children: [
-            RealestyIconButton(
-              icon: RealestyIcons.bell,
-              semanticLabel: unread > 0
-                  ? l10n.notificationsButtonUnread(unread)
-                  : l10n.notificationsButton,
-              onPressed: () => showNotificationsSheet(context),
-            ),
-            if (unread > 0)
-              Positioned(
-                right: 2,
-                top: 2,
-                child: IgnorePointer(
-                  child: Container(
-                    width: 12,
-                    height: 12,
-                    decoration: BoxDecoration(
-                      color: c.erreur,
-                      shape: BoxShape.circle,
-                      border: Border.all(color: c.surface, width: 2),
-                    ),
-                  ),
-                ),
-              ),
-          ],
-        ),
+        const NotificationsBell(),
       ],
     );
   }
@@ -287,7 +280,7 @@ class _PendingHero extends StatelessWidget {
             label: l10n.dashboardMarketLink,
             variant: RealestyButtonVariant.text,
             trailingIcon: RealestyIcons.chevronRight,
-            onPressed: () => context.push(AppRoutes.sellerMarket),
+            onPressed: () => context.push(AppRoutes.sellerMarket(property.id)),
           ),
         const SizedBox(height: RealestySpacing.xxs),
         ActionCard(
@@ -296,7 +289,7 @@ class _PendingHero extends StatelessWidget {
           subtitle: property.status == PropertyStatus.inReview
               ? l10n.submittedStepReviewInProgress
               : l10n.submittedStepReviewEstimate,
-          onPressed: () => context.go(SellerTunnelStep.submitted.path),
+          onPressed: () => context.goToTunnelStep(SellerTunnelStep.submitted),
         ),
       ],
     );
@@ -317,7 +310,11 @@ class _CertifiedHero extends StatelessWidget {
     if (valuation != null) {
       return CertifiedValueCard(
         valuation: valuation,
-        onOpen: () => context.go(AppRoutes.sellerReport),
+        onOpen: () => context.go(
+          AppRoutes.sellerReport(
+            context.read<SellerTunnelCubit>().state.property!.id,
+          ),
+        ),
       );
     }
     return switch (state.status) {

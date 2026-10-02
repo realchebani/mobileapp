@@ -7,7 +7,7 @@
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import { explainEstimate } from "../_shared/estimation/explain.ts";
 import { type Deps, handle } from "./handler.ts";
-import { loadMarket } from "./market.ts";
+import { loadMarket, loadOutbuildingMarket } from "./market.ts";
 import { DvfStore } from "./store.ts";
 import { type Dossier, PROPERTY_COLUMNS, type PropertyRow } from "./subject.ts";
 
@@ -67,7 +67,9 @@ function depsFor(request: Request): Deps {
     async countRecentAttempts(ownerId, since) {
       const { count, error } = await service.from("market_snapshots")
         .select("id, properties!inner(owner_id)", { count: "exact", head: true })
-        .eq("properties.owner_id", ownerId).gte("created_at", since);
+        .eq("properties.owner_id", ownerId).gte("created_at", since)
+        // Snapshots of types never estimated (before EPIC-13) cost nothing.
+        .or("reason.is.null,reason.neq.unsupported_type");
       fail("market_snapshots", error);
       return count ?? 0;
     },
@@ -92,6 +94,7 @@ function depsFor(request: Request): Deps {
       fail("properties", error);
     },
     loadMarket: (subject) => loadMarket(subject, store, fetch, now()),
+    loadOutbuildingMarket: (subject) => loadOutbuildingMarket(subject, store, fetch, now()),
     explain: (subject, result) =>
       explainEstimate(subject, result, {
         apiKey: Deno.env.get("OPENROUTER_API_KEY"),

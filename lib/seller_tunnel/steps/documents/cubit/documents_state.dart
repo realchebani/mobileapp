@@ -17,6 +17,9 @@ enum DocumentsNotice {
   /// The upload failed.
   uploadFailed,
 
+  /// Copying a document of another property failed.
+  reuseFailed,
+
   /// The document was uploaded.
   uploaded,
 
