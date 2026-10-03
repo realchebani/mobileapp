@@ -1,5 +1,7 @@
 import 'package:auth_repository/auth_repository.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:mobileapp/app/app.dart';
 import 'package:mobileapp/profile/profile.dart';
 import 'package:mobileapp/seller_space/seller_space.dart';
@@ -9,6 +11,7 @@ import 'package:profile_repository/profile_repository.dart';
 import 'package:property_repository/property_repository.dart';
 
 import '../../helpers/helpers.dart';
+import '../fixtures.dart';
 import '../pump_seller_space.dart';
 
 void main() {
@@ -67,15 +70,89 @@ void main() {
       expect(find.text('SD'), findsOneWidget);
       expect(find.text('sophie@example.com'), findsOneWidget);
       expect(find.text('Lien de connexion par e-mail'), findsOneWidget);
+      expect(find.text('Marc Durand, Sophie Durand'), findsOneWidget);
 
-      await tester.ensureVisible(find.text('Se déconnecter'));
-      await tester.pumpAndSettle();
+      await tester.tap(find.bySemanticsLabel('Modifier mes informations'));
+      await tester.tap(find.text('Propriétaires'));
+      await tester.tap(find.text('Informations personnelles'));
+      verify(() => goRouter.push<Object?>(AppRoutes.sellerProfile)).called(3);
+
+      await tester.dragUntilVisible(
+        find.text('Se déconnecter'),
+        find.byType(ListView),
+        const Offset(0, -200),
+      );
+      await tester.tap(find.text('Notifications'));
+      verify(() => goRouter.push<Object?>(AppRoutes.sellerNotifications))
+          .called(1);
+      await tester.tap(find.text('Mes données'));
+      verify(() => goRouter.push<Object?>(AppRoutes.accountDeletion)).called(1);
       await tester.tap(find.text('Se déconnecter'));
       verify(() => appBloc.add(const AppLogoutPressed())).called(1);
-      await tester.ensureVisible(find.text('Design system'));
-      await tester.pumpAndSettle();
+      await tester.dragUntilVisible(
+        find.text('Design system'),
+        find.byType(ListView),
+        const Offset(0, -200),
+      );
       await tester.tap(find.text('Design system'));
       verify(() => goRouter.push<Object?>(AppRoutes.designSystem)).called(1);
+    });
+
+    testWidgets('shows the unread notifications and the language', (
+      tester,
+    ) async {
+      final localeCubit = LocaleCubit();
+      await localeCubit.select('en');
+      await tester.pumpSellerSpacePage(
+        BlocProvider.value(value: localeCubit, child: const AccountPage()),
+        notificationsCubit: mockNotificationsCubit(
+          NotificationsState(
+            status: NotificationsStatus.success,
+            notifications: [testNotification],
+          ),
+        ),
+        appBloc: appBloc,
+        profileCubit: profileCubit,
+      );
+      expect(find.text('1 non lue'), findsOneWidget);
+      expect(find.text('English'), findsOneWidget);
+      await tester.tap(find.text('Langue'));
+      await tester.pumpAndSettle();
+      expect(find.text('Langue de l’appareil'), findsOneWidget);
+    });
+
+    testWidgets('prefers the profile name once it has a last name', (
+      tester,
+    ) async {
+      when(() => profileCubit.state).thenReturn(
+        const ProfileState(
+          profile: Profile(
+            id: 'user-id',
+            firstName: 'Sophie',
+            lastName: 'Martin',
+          ),
+        ),
+      );
+      await tester.pumpSellerSpacePage(
+        const AccountPage(),
+        sellerTunnelCubit: mockSellerTunnelCubit(
+          const SellerTunnelState(
+            status: SellerTunnelStatus.success,
+            property: testProperty,
+            owners: [
+              PropertyOwner(
+                propertyId: 'property-id',
+                position: 1,
+                firstName: 'Sophie',
+                lastName: 'Durand',
+              ),
+            ],
+          ),
+        ),
+        appBloc: appBloc,
+        profileCubit: profileCubit,
+      );
+      expect(find.text('Sophie Martin'), findsOneWidget);
     });
 
     testWidgets('falls back on the profile first name', (tester) async {

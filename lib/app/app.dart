@@ -1,6 +1,7 @@
 export 'app_bloc_observer.dart';
 export 'bloc/app_bloc.dart';
 export 'data/onboarding_repository.dart';
+export 'locale/locale_cubit.dart';
 export 'router/app_redirect.dart';
 export 'router/app_router.dart';
 export 'router/app_routes.dart';

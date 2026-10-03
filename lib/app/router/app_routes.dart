@@ -31,6 +31,27 @@ abstract final class AppRoutes {
   /// Tab "Compte" (C2).
   static const sellerAccount = '/vendeur/compte';
 
+  /// V18 · Mes documents of the property [id] (EPIC-11), opened on the
+  /// rubric [rubric] (`VaultRubric.code`) when given.
+  static String sellerVaultProperty(String id, {String? rubric}) =>
+      '$sellerVault/biens/$id${rubric == null ? '' : '?rubrique=$rubric'}';
+
+  /// V18 · Mes documents of the sale lot [id] (EPIC-11).
+  static String sellerVaultLot(String id) => '$sellerVault/lots/$id';
+
+  /// V19 · Informations & sécurité (EPIC-11).
+  static const sellerProfile = '/vendeur/compte/profil';
+
+  /// Notifications, the full list (EPIC-11).
+  static const sellerNotifications = '/vendeur/compte/notifications';
+
+  /// Supprimer mon compte (EPIC-11), reachable from every space.
+  static const accountDeletion = '/compte/suppression';
+
+  /// Compte désactivé — réactiver (EPIC-11): where a deactivated account
+  /// lands after signing in.
+  static const accountDeactivated = '/compte/desactive';
+
   /// Properties of the seller live under this path (EPIC-13).
   static const sellerProperties = '/vendeur/biens';
 

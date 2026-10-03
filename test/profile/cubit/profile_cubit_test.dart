@@ -187,6 +187,34 @@ void main() {
       );
     });
 
+    group('profileUpdated', () {
+      blocTest<ProfileCubit, ProfileState>(
+        'shows the saved profile of the signed-in user only',
+        build: buildCubit,
+        act: (cubit) async {
+          cubit.profileUpdated(profile);
+          userController.add(user);
+          await Future<void>.delayed(Duration.zero);
+          cubit
+            ..profileUpdated(const Profile(id: 'other'))
+            ..profileUpdated(
+              Profile(id: profile.id, firstName: 'Saved', role: profile.role),
+            );
+        },
+        skip: 2,
+        expect: () => [
+          ProfileState(
+            status: ProfileStatus.success,
+            profile: Profile(
+              id: profile.id,
+              firstName: 'Saved',
+              role: profile.role,
+            ),
+          ),
+        ],
+      );
+    });
+
     group('selectRole', () {
       blocTest<ProfileCubit, ProfileState>(
         'does nothing without a profile',

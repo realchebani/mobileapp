@@ -161,6 +161,28 @@ La fonction refuse un chemin qui ne commence pas par `<owner id>/<property id>/`
 
 Le bouton « Télécharger le rapport (PDF · 11 pages) » apparaît alors sur V9b.
 
+## 4 bis. Vérifier ou refuser un document (EPIC-11)
+
+Jusqu’au back-office (EPIC-12), dans l’éditeur SQL. Les documents ajoutés après l’envoi portent `added_after_submission = true` (« Ajouté après l’envoi » dans l’app) ; un document remplacé pointe vers son remplaçant (`replaced_by`).
+
+```sql
+-- Documents d'un dossier, les plus récents d'abord
+select id, kind, title, file_name, status, added_after_submission,
+       verified_at, rejected_reason, replaced_by, uploaded_at
+from public.property_documents
+where property_id = '<property id>'
+order by uploaded_at desc;
+
+-- Vérifié par l'expert (« Vérifié expert ») ; p_notify => notification au vendeur
+select public.staff_verify_document('<document id>', null, false);
+
+-- Refusé : le vendeur reçoit « Un document est à remplacer », qui ouvre
+-- la bonne rubrique du coffre-fort (motif de 1 à 300 caractères)
+select public.staff_reject_document('<document id>', 'Page 2 illisible');
+```
+
+Un document vérifié ne peut plus être supprimé par le vendeur ; un document refusé peut être remplacé (l’ancien reste visible, `replaced_by` renseigné). Les documents présents à l’envoi du dossier restent verrouillés (seul leur titre peut changer).
+
 ## 5. Fichiers orphelins (ménage du stockage, facultatif)
 
 Un fichier du bucket `property-documents` peut rester sans ligne en base : envoi dont la ligne a été refusée et dont la suppression a échoué, suppression d’une photo ou d’un document dont le fichier n’a pas pu être effacé, bien supprimé pendant une coupure réseau. Ces fichiers ne sont visibles par personne dans l’app, mais ce sont des données personnelles (pièces d’identité, photos) : faire le ménage **une fois par mois** environ.

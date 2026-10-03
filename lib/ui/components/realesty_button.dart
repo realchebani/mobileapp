@@ -18,6 +18,9 @@ enum RealestyButtonVariant {
 
   /// Transparent, Vert texte label.
   text,
+
+  /// Erreur background, white text — an irreversible action (delete).
+  destructive,
 }
 
 /// Full-width Realesty button (height 52, radius 14, 1.5 border).
@@ -80,6 +83,11 @@ class RealestyButton extends StatelessWidget {
         colors.surface,
         colors.encre,
         colors.ligne,
+      ),
+      RealestyButtonVariant.destructive => (
+        colors.erreur,
+        colors.surface,
+        colors.erreur,
       ),
       RealestyButtonVariant.text => (
         Colors.transparent,

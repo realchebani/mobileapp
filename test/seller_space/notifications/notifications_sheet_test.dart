@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:mobileapp/app/app.dart';
 import 'package:mobileapp/seller_space/seller_space.dart';
 import 'package:mobileapp/seller_tunnel/seller_tunnel.dart';
 import 'package:mocktail/mocktail.dart';
@@ -104,6 +105,30 @@ void main() {
       expect(find.text('Notifications'), findsNothing);
       verify(cubit.markAllRead).called(1);
       verify(() => goRouter.go('/vendeur/rapport')).called(1);
+    });
+
+    testWidgets('shows the 10 latest and opens the full list', (tester) async {
+      await open(
+        tester,
+        NotificationsState(
+          status: NotificationsStatus.success,
+          notifications: [
+            for (var i = 0; i < 12; i++)
+              AppNotification(
+                id: 'n$i',
+                kind: AppNotificationKind
+                    .values[i % AppNotificationKind.values.length],
+                title: 'Notification $i',
+                createdAt: DateTime(2026, 9, 24),
+              ),
+          ],
+        ),
+      );
+      expect(find.text('Notification 9'), findsOneWidget);
+      expect(find.text('Notification 10'), findsNothing);
+      await tester.tap(find.text('Tout voir'));
+      await tester.pumpAndSettle();
+      verify(() => goRouter.go(AppRoutes.sellerNotifications)).called(1);
     });
 
     testWidgets('closes without navigating', (tester) async {

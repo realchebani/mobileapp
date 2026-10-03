@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:mobileapp/app/router/app_routes.dart';
 import 'package:mobileapp/l10n/l10n.dart';
 import 'package:mobileapp/seller_space/cubit/notifications_cubit.dart';
 import 'package:mobileapp/seller_tunnel/cubit/seller_properties_cubit.dart';
@@ -57,20 +58,28 @@ class NotificationsSheet extends StatelessWidget {
   /// Short label of each property (by id), to prefix the titles.
   final Map<String, String> propertyLabels;
 
+  /// Notifications shown (the latest); "Tout voir" opens the full list.
+  static const sheetLimit = 10;
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final c = context.realestyColors;
     final state = context.watch<NotificationsCubit>().state;
+    final latest = state.notifications.take(sheetLimit).toList();
     final Widget content;
     if (state.notifications.isNotEmpty) {
       content = Column(
         children: [
-          for (final (index, notification) in state.notifications.indexed)
-            _NotificationTile(
+          for (final (index, notification) in latest.indexed)
+            NotificationTile(
               notification: notification,
               propertyLabel: propertyLabels[notification.propertyId],
-              showDivider: index < state.notifications.length - 1,
+              showDivider: index < latest.length - 1,
+              onTap: switch (notification.route) {
+                final route? => () => Navigator.of(context).pop(route),
+                null => null,
+              },
             ),
         ],
       );
@@ -115,6 +124,14 @@ class NotificationsSheet extends StatelessWidget {
                     ),
                   ),
                 ),
+                RealestyButton(
+                  label: l10n.notificationsSeeAll,
+                  variant: RealestyButtonVariant.text,
+                  expand: false,
+                  height: 36,
+                  onPressed: () =>
+                      Navigator.of(context).pop(AppRoutes.sellerNotifications),
+                ),
                 RealestyIconButton(
                   icon: RealestyIcons.close,
                   semanticLabel: MaterialLocalizations.of(context)
@@ -131,26 +148,30 @@ class NotificationsSheet extends StatelessWidget {
   }
 }
 
-class _NotificationTile extends StatelessWidget {
+/// A notification: icon, title (prefixed by its property), body, date and
+/// an unread dot; [onTap] opens it.
+class NotificationTile extends StatelessWidget {
   const new({
     required this.notification,
     required this.showDivider,
     this.propertyLabel,
+    this.onTap,
+    super.key,
   });
 
   final AppNotification notification;
   final String? propertyLabel;
   final bool showDivider;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final c = context.realestyColors;
     final body = notification.body;
-    final route = notification.route;
     final date = notification.createdAt;
     return RealestyPressable(
-      onPressed: route == null ? null : () => Navigator.of(context).pop(route),
+      onPressed: onTap,
       showDisabled: false,
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: RealestySpacing.sm),
@@ -171,12 +192,19 @@ class _NotificationTile extends StatelessWidget {
                 color: c.vertTeinte,
                 borderRadius: BorderRadius.circular(RealestyRadius.field),
               ),
-              child: RealestyIcon(
-                notification.kind == AppNotificationKind.valuationCertified
-                    ? RealestyIcons.shield
-                    : RealestyIcons.bell,
-                color: c.vertTexte,
-              ),
+              child: RealestyIcon(switch (notification.kind) {
+                AppNotificationKind.valuationCertified => RealestyIcons.shield,
+                AppNotificationKind.documentRejected ||
+                AppNotificationKind.documentVerified => RealestyIcons.file,
+                AppNotificationKind.mandateSigned => RealestyIcons.pen,
+                AppNotificationKind.identityVerified => RealestyIcons.user,
+                AppNotificationKind.listingPublished => RealestyIcons.home,
+                AppNotificationKind.saleRequestUpdated =>
+                  RealestyIcons.calendar,
+                AppNotificationKind.reviewStarted ||
+                AppNotificationKind.saleWithdrawn ||
+                AppNotificationKind.other => RealestyIcons.bell,
+              }, color: c.vertTexte),
             ),
             Expanded(
               child: Column(

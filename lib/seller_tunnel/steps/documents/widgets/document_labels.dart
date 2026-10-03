@@ -16,6 +16,10 @@ extension DocumentLabels on AppLocalizations {
     DocumentKind.sanitationReport => documentsKindSanitationReport,
     DocumentKind.plan => documentsKindPlan,
     DocumentKind.other => documentsKindOther,
+    DocumentKind.dpe => vaultKindDpe,
+    DocumentKind.maintenanceContract => vaultKindMaintenanceContract,
+    DocumentKind.insurance => vaultKindInsurance,
+    DocumentKind.coOwnership => vaultKindCoOwnership,
   };
 
   /// The kind inside a sentence ("votre titre de propriété").
@@ -29,6 +33,10 @@ extension DocumentLabels on AppLocalizations {
     DocumentKind.sanitationReport => documentsHintSanitationReport,
     DocumentKind.plan => documentsKindPlan.toLowerCase(),
     DocumentKind.other => documentsKindOther.toLowerCase(),
+    DocumentKind.dpe => vaultKindDpe,
+    DocumentKind.maintenanceContract ||
+    DocumentKind.insurance ||
+    DocumentKind.coOwnership => documentKind(kind).toLowerCase(),
   };
 
   /// Subtitle of a row: what is expected, or the files and their status.
@@ -59,7 +67,11 @@ extension DocumentLabels on AppLocalizations {
         SanitationReportRule.unknown => documentsSubtitleSanitationUnknown,
       },
       DocumentKind.plan => documentsSubtitlePlan,
-      DocumentKind.other => documentsSubtitleOther,
+      DocumentKind.other ||
+      DocumentKind.dpe ||
+      DocumentKind.maintenanceContract ||
+      DocumentKind.insurance ||
+      DocumentKind.coOwnership => documentsSubtitleOther,
     };
   }
 

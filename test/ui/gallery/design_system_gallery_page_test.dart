@@ -72,6 +72,11 @@ void main() {
       await tapAndExpectToast(tester, find.text('Passer cette étape'), 'Texte');
       await tapAndExpectToast(
         tester,
+        find.text('Supprimer mon compte'),
+        'Destructif',
+      );
+      await tapAndExpectToast(
+        tester,
         find.bySemanticsLabel('Retour'),
         'Retour',
       );

@@ -312,6 +312,13 @@ void main() {
         verify(() => auth.signOut()).called(1);
       });
 
+      test('revokes every session when asked to', () async {
+        when(() => auth.signOut(scope: SignOutScope.global))
+            .thenAnswer((_) async {});
+        await repository.signOut(everywhere: true);
+        verify(() => auth.signOut(scope: SignOutScope.global)).called(1);
+      });
+
       test('throws SignOutFailure on error', () async {
         final error = Exception('oops');
         when(() => auth.signOut()).thenThrow(error);

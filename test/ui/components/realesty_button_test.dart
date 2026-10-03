@@ -38,6 +38,7 @@ void main() {
         RealestyButtonVariant.accent: (c.vert, c.encre),
         RealestyButtonVariant.secondary: (c.surface, c.encre),
         RealestyButtonVariant.text: (Colors.transparent, c.vertTexte),
+        RealestyButtonVariant.destructive: (c.erreur, c.surface),
       };
       for (final MapEntry(key: variant, value: (bg, fg)) in expected.entries) {
         await tester.pumpRealesty(

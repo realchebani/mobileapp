@@ -1,5 +1,6 @@
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:mobileapp/account_deletion/account_deletion.dart';
 import 'package:mobileapp/app/bloc/app_bloc.dart';
 import 'package:mobileapp/app/data/onboarding_repository.dart';
 import 'package:mobileapp/app/router/app_redirect.dart';
@@ -165,9 +166,31 @@ GoRouter createAppRouter({
               ),
               StatefulShellBranch(
                 routes: [
+                  // C1 · Coffre-fort and V18 · Mes documents (EPIC-11).
                   GoRoute(
                     path: AppRoutes.sellerVault,
-                    builder: (context, state) => ComingSoonPage.vault(context),
+                    builder: (context, state) => const VaultPage(),
+                    routes: [
+                      GoRoute(
+                        path: 'biens/:$_propertyId',
+                        builder: (context, state) => VaultDocumentsPage(
+                          target: VaultTarget.property(
+                            state.pathParameters[_propertyId]!,
+                          ),
+                          rubric: VaultRubric.fromCode(
+                            state.uri.queryParameters['rubrique'],
+                          ),
+                        ),
+                      ),
+                      GoRoute(
+                        path: 'lots/:lotId',
+                        builder: (context, state) => VaultDocumentsPage(
+                          target: VaultTarget.lot(
+                            state.pathParameters['lotId']!,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -180,12 +203,36 @@ GoRouter createAppRouter({
                         showDesignSystemLink: enableDesignSystem,
                       ),
                     ),
+                    // V19 and the notifications (EPIC-11), full screen.
+                    routes: [
+                      GoRoute(
+                        parentNavigatorKey: sellerNavigatorKey,
+                        path: 'profil',
+                        builder: (context, state) =>
+                            const FirstPropertyScope(child: ProfilePage()),
+                      ),
+                      GoRoute(
+                        parentNavigatorKey: sellerNavigatorKey,
+                        path: 'notifications',
+                        builder: (context, state) => const NotificationsPage(),
+                      ),
+                    ],
                   ),
                 ],
               ),
             ],
           ),
         ],
+      ),
+      // Account deletion (EPIC-11): from every space, and the screen of a
+      // deactivated account.
+      GoRoute(
+        path: AppRoutes.accountDeletion,
+        builder: (context, state) => const AccountDeletionPage(),
+      ),
+      GoRoute(
+        path: AppRoutes.accountDeactivated,
+        builder: (context, state) => const AccountDeactivatedPage(),
       ),
       GoRoute(
         path: AppRoutes.buyer,

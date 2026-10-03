@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:auth_repository/auth_repository.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -6,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:mobileapp/app/bloc/app_bloc.dart';
 import 'package:mobileapp/app/data/onboarding_repository.dart';
+import 'package:mobileapp/app/locale/locale_cubit.dart';
 import 'package:mobileapp/app/router/app_router.dart';
 import 'package:mobileapp/app/router/stream_listenable.dart';
 import 'package:mobileapp/l10n/l10n.dart';
@@ -34,6 +37,7 @@ class App extends StatelessWidget {
     this.saleRepository,
     this.voiceServices,
     this.photoServices,
+    this.localePreferences,
     this.enableDesignSystem,
     super.key,
   });
@@ -58,6 +62,10 @@ class App extends StatelessWidget {
   /// Room photos and the vision AI (EPIC-15); the device defaults, without
   /// the vision AI, when null.
   final PhotoServices? photoServices;
+
+  /// Where the language chosen in the app is remembered (EPIC-11); in
+  /// memory only when null.
+  final LocalePreferences? localePreferences;
 
   /// Whether the design system gallery is reachable; defaults to the
   /// development flavor.
@@ -101,6 +109,9 @@ class App extends StatelessWidget {
           BlocProvider(
             lazy: false,
             create: (_) => LoginCubit(authRepository: authRepository),
+          ),
+          BlocProvider(
+            create: (_) => LocaleCubit(preferences: localePreferences),
           ),
         ],
         child: AppView(
@@ -153,15 +164,33 @@ class _AppViewState extends State<AppView> {
 
   @override
   Widget build(BuildContext context) {
-    // Forgets the e-mail and the accepted terms on sign-out.
-    return BlocListener<AppBloc, AppState>(
-      listenWhen: (previous, current) =>
-          previous.status == AppStatus.authenticated &&
-          current.status == AppStatus.unauthenticated,
-      listener: (context, _) => context.read<LoginCubit>().reset(),
+    final locale = context.watch<LocaleCubit>().state;
+    return MultiBlocListener(
+      listeners: [
+        // Forgets the e-mail and the accepted terms on sign-out.
+        BlocListener<AppBloc, AppState>(
+          listenWhen: (previous, current) =>
+              previous.status == AppStatus.authenticated &&
+              current.status == AppStatus.unauthenticated,
+          listener: (context, _) => context.read<LoginCubit>().reset(),
+        ),
+        // The language saved in the profile (chosen on another device).
+        BlocListener<ProfileCubit, ProfileState>(
+          listenWhen: (previous, current) =>
+              current.profile?.locale != null &&
+              previous.profile?.locale != current.profile?.locale,
+          listener: (context, state) {
+            final code = state.profile!.locale;
+            if (code != context.read<LocaleCubit>().state) {
+              unawaited(context.read<LocaleCubit>().select(code));
+            }
+          },
+        ),
+      ],
       child: MaterialApp.router(
         title: 'Realesty',
         theme: realestyTheme(),
+        locale: locale == null ? null : Locale(locale),
         localizationsDelegates: appLocalizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         routerConfig: _router,
