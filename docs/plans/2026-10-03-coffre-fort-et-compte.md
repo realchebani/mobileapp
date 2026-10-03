@@ -259,3 +259,7 @@ Légende : **🔴 bloquante** · **🟢 défaut réversible**.
 ## Journal d’exécution
 
 - 2026-10-03 : plan rédigé (aucun code), EPIC-11 créé (📋), README mis à jour.
+
+## Arbitrages du porteur de projet (2026-10-03) — prévalent sur le reste du plan
+- Q2/Q3 : après l'envoi, **ajout libre** (marqué « Ajouté après l'envoi »), suppression uniquement des ajouts non vérifiés, un document refusé se remplace.
+- Q8 : suppression du compte = **désactivation immédiate puis suppression définitive sous 30 jours** (réactivation possible pendant ce délai ; refus si une vente est active à préciser dans le plan).

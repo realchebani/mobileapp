@@ -302,3 +302,5 @@ Total ≈ **15 à 19 tranches**, entièrement compatible iPhone 14 Plus, coût d
 - Q6 : **lecture d’un plan en v1** (pièces et surfaces imprimées seulement, validation ligne par ligne, provenance « Extrait d’un document »).
 - Q7 : **carte « Scanner avec la caméra » retirée** pour l’instant.
 - Questions 8–10 : à trancher. Mise en œuvre : [Photos du bien](2026-10-02-photos-du-bien.md) (EPIC-15).
+
+- Q8 (2026-10-03) : promesse « visite 360° / vidéo immersive » **retirée jusqu'à la v3**.
