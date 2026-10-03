@@ -37,9 +37,10 @@ interface PropertyRow {
   address_label: string | null;
   living_area_m2: number | null;
   usable_area_m2: number | null;
+  rooms_count: number | null;
 }
 
-const PROPERTY_COLUMNS = "id,property_type,address_label,living_area_m2,usable_area_m2";
+const PROPERTY_COLUMNS = "id,property_type,address_label,living_area_m2,usable_area_m2,rooms_count";
 
 export class SupabaseMandateDb implements MandateDb {
   constructor(
@@ -68,8 +69,8 @@ export class SupabaseMandateDb implements MandateDb {
 
   private async signatureRow(mandateId: string) {
     const { data, error } = await this.caller.from("mandate_signatures")
-      .select("signer_name,signed_at,user_agent,app_version,signature_path")
-      .eq("mandate_id", mandateId).eq("method", "drawn_test")
+      .select("signer_name,signed_at,user_agent,app_version,signature_path,method,typed_signature")
+      .eq("mandate_id", mandateId).in("method", ["drawn_test", "typed_test"])
       .order("signed_at").limit(1).maybeSingle();
     fail(error);
     return data as {
@@ -78,13 +79,16 @@ export class SupabaseMandateDb implements MandateDb {
       user_agent: string | null;
       app_version: string | null;
       signature_path: string | null;
+      method: string;
+      typed_signature: string | null;
     } | null;
   }
 
   async facts(mandate: MandateRow): Promise<MandateFacts> {
     const { data: m, error } = await this.caller.from("mandates")
       .select(
-        "formula,kind,terms_version,presentation_price_eur,fee_rate,duration_months,signed_at," +
+        "formula,kind,terms_version,presentation_price_eur,fee_rate,duration_months,minimum_days," +
+          "signed_at," +
           "sale:sales(property_id,lot_id)",
       )
       .eq("id", mandate.id).single();
@@ -96,6 +100,7 @@ export class SupabaseMandateDb implements MandateDb {
       presentation_price_eur: number | null;
       fee_rate: number | string;
       duration_months: number | null;
+      minimum_days: number | null;
       signed_at: string;
       sale: { property_id: string | null; lot_id: string | null };
     };
@@ -124,6 +129,16 @@ export class SupabaseMandateDb implements MandateDb {
       .select("first_name,last_name").eq("property_id", mainId ?? "").order("position");
     fail(ownersError);
     const signature = await this.signatureRow(mandate.id);
+    const { data: parcels, error: parcelsError } = await this.caller.from("property_parcels")
+      .select("property_id,section,numero,area_m2")
+      .in("property_id", properties.map((p) => p.id));
+    fail(parcelsError);
+    const parcelRows = (parcels ?? []) as {
+      property_id: string;
+      section: string | null;
+      numero: string | null;
+      area_m2: number | null;
+    }[];
     return {
       mandateId: mandate.id,
       formula: row.formula,
@@ -132,18 +147,27 @@ export class SupabaseMandateDb implements MandateDb {
       presentationPriceEur: row.presentation_price_eur,
       feeRate: Number(row.fee_rate),
       durationMonths: row.duration_months,
+      minimumDays: row.minimum_days,
       owners: ((owners ?? []) as { first_name: string; last_name: string }[])
         .map((o) => `${o.first_name} ${o.last_name}`.trim()),
       properties: properties.map((p): MandateProperty => ({
         type: p.property_type,
         address: p.address_label,
         areaM2: p.living_area_m2 ?? p.usable_area_m2,
+        roomsCount: p.rooms_count,
+        parcels: parcelRows.filter((parcel) => parcel.property_id === p.id).map((parcel) => ({
+          section: parcel.section,
+          numero: parcel.numero,
+          areaM2: parcel.area_m2,
+        })),
       })),
       isLot: !row.sale.property_id,
       signerName: signature?.signer_name ?? "",
       signedAt: new Date(signature?.signed_at ?? row.signed_at),
       userAgent: signature?.user_agent ?? null,
       appVersion: signature?.app_version ?? null,
+      signatureMethod: signature?.method === "typed_test" ? "typed" : "drawn",
+      typedSignature: signature?.typed_signature ?? null,
     };
   }
 

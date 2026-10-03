@@ -154,6 +154,10 @@ void main() {
       );
       const undated = Property(id: 'x', ownerId: 'u', lotId: 'lot');
       expect(SaleEntry.lotMembers(together, const [undated]), [undated]);
+      // Same date: by id, like the database.
+      const b = Property(id: 'b', ownerId: 'u', lotId: 'lot');
+      const a = Property(id: 'a', ownerId: 'u', lotId: 'lot');
+      expect(SaleEntry.lotMembers(together, const [b, a]), [a, b]);
     });
 
     test('target of an existing sale', () {

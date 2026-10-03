@@ -1,6 +1,7 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:mobileapp/l10n/l10n.dart';
 import 'package:mobileapp/seller_space/widgets/seller_space_format.dart';
+import 'package:mobileapp/seller_tunnel/steps/submitted/widgets/submitted_format.dart';
 import 'package:mobileapp/ui/ui.dart';
 import 'package:sale_repository/sale_repository.dart';
 
@@ -71,6 +72,20 @@ String saleFailureMessage(
   SaleFailureReason.signatureMissing => l10n.saleErrorSignature,
   SaleFailureReason.identityDocumentMissing => l10n.saleErrorIdentityDocument,
   SaleFailureReason.identityNotVerified => l10n.saleErrorIdentityNotVerified,
+  SaleFailureReason.priceOutOfBounds => switch (failure.priceBounds) {
+    (final low, final high) => l10n.saleErrorPriceBounds(
+      frenchNumber(low),
+      frenchNumber(high),
+    ),
+    null => l10n.saleErrorPriceOut,
+  },
+  SaleFailureReason.missingPrice => l10n.saleErrorMissingPrice,
+  SaleFailureReason.mandateMinimumPeriod => switch (failure.endableFrom) {
+    final date? => l10n.saleErrorMinimumPeriod(fullDate(date)),
+    null => l10n.saleErrorMinimumPeriodGeneric,
+  },
+  SaleFailureReason.premiumOnly => l10n.saleErrorPremiumOnly,
+  SaleFailureReason.slotInPast => l10n.saleErrorSlotInPast,
   SaleFailureReason.requestAlreadyOpen => l10n.saleErrorRequestOpen,
   SaleFailureReason.publishIncomplete => l10n.listingPublishIncomplete,
   SaleFailureReason.mandateNotSigned => l10n.saleErrorMandateNotSigned,

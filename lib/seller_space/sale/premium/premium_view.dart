@@ -150,10 +150,10 @@ class _PremiumViewState extends State<PremiumView> {
                       RealestyChoiceChip(
                         label: kind == SaleRequestKind.shootingPhoto
                             ? l10n.premiumShootingPhoto(
-                                frenchNumber(kind.priceEurTtc),
+                                frenchNumber(SalePrices.shootingPhotoEur),
                               )
                             : l10n.premiumShootingVideo(
-                                frenchNumber(kind.priceEurTtc),
+                                frenchNumber(SalePrices.shootingPhotoVideoEur),
                               ),
                         selected: _shooting == kind,
                         onSelected: (_) => setState(() => _shooting = kind),

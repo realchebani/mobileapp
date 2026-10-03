@@ -175,6 +175,59 @@ void main() {
       expect(find.text('Signature du mandat'), findsNothing);
     });
 
+    testWidgets('signature by typing the name', (tester) async {
+      final cubit = await pump(tester, saleState());
+      await tester.tap(find.text('Signer le mandat en ligne'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Signer en tapant mon nom'));
+      await tester.pump();
+      await tester.tap(find.byType(RealestyCheckbox));
+      await tester.pump();
+      await tester.tap(find.text('Signer'));
+      await tester.pump();
+      expect(
+        find.text('Tapez votre nom (2 caractères au moins).'),
+        findsOneWidget,
+      );
+      await tester.enterText(find.byType(TextField), ' Sophie Durand ');
+      await tester.tap(find.text('Signer'));
+      await tester.pumpAndSettle();
+      verify(
+        () => cubit.signMandate(typedName: 'Sophie Durand', accepted: true),
+      ).called(1);
+      await tester.tap(find.text('Signer le mandat en ligne'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Signer en tapant mon nom'));
+      await tester.pump();
+      await tester.tap(find.text('Signer à la main'));
+      await tester.pump();
+      expect(find.byType(SignaturePad), findsOneWidget);
+    });
+
+    testWidgets('activation steps', (tester) async {
+      await pump(
+        tester,
+        saleState(
+          sale: Sale(
+            id: 'sale-id',
+            propertyId: 'property-id',
+            formula: SaleFormula.essentiel,
+            stage: SaleStage.mandateSigned,
+            askingPriceEur: 525000,
+            photosImportedAt: DateTime(2026, 10, 3),
+          ),
+          mandate: testMandate,
+          documents: const {
+            DocumentKind.identityDocument,
+            DocumentKind.diagnostics,
+          },
+        ),
+      );
+      expect(find.text('1 · Mandat'), findsOneWidget);
+      expect(find.text('3 · Diagnostics'), findsOneWidget);
+      expect(find.text('Exemples de bonnes photos'), findsOneWidget);
+    });
+
     testWidgets('signature refused: the sheet stays', (tester) async {
       await pump(
         tester,
@@ -268,7 +321,7 @@ void main() {
       await tester.tap(find.textContaining('Besoin d’être plus accompagné'));
       await tester.pumpAndSettle();
       expect(find.byType(OfferChoiceSheet), findsOneWidget);
-      await tester.tap(find.text('1\u00a0% Premium'));
+      await tester.tap(find.text('Premium'));
       await tester.pump();
       await tester.tap(find.text('Choisir Le Premium'));
       await tester.pumpAndSettle();
@@ -460,7 +513,7 @@ void main() {
       await tester.pumpAndSettle();
       verify(() => cubit.changeFormula(SaleFormula.expert)).called(1);
       expect(find.textContaining('Le mandat est signé'), findsOneWidget);
-      await tester.tap(find.text('1\u00a0% Premium'));
+      await tester.tap(find.text('Premium'));
       await tester.pump();
       await tester.tap(find.text('Garder cette formule'));
       await tester.pumpAndSettle();

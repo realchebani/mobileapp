@@ -5,6 +5,8 @@ import type { MandateDb, MandateRow } from "../_shared/mandate/db.ts";
 import { handleRenderMandate, mandatePdfPath } from "../_shared/mandate/handler.ts";
 import { renderMandatePdf, sha256Hex, winAnsi, wrap } from "../_shared/mandate/pdf.ts";
 import {
+  euros,
+  fees,
   frenchDateTime,
   frenchNumber,
   MANDATE_TERMS_VERSION,
@@ -47,25 +49,50 @@ function text(sections: ReturnType<typeof mandateSections>): string {
   return sections.map((s) => `${s.title}\n${s.lines.join("\n")}`).join("\n");
 }
 
-Deno.test("template: single property, L'Essentiel", () => {
-  const all = text(mandateSections(facts()));
-  assertStringIncludes(all, "Désignation du bien");
-  assertStringIncludes(all, "Maison de 115 m², 12 rue de la Colombe, Chaponost");
-  assertStringIncludes(all, "Prix de présentation : 525 000 €.");
-  assertStringIncludes(all, "Honoraires : 1 % du prix de vente");
-  assertStringIncludes(all, "sans engagement de durée");
+Deno.test("template: single property, L'Essentiel, articles 1 to 15", () => {
+  const all = text(mandateSections(facts({
+    properties: [{
+      type: "maison",
+      address: "12 rue de la Colombe, Chaponost",
+      areaM2: 115,
+      roomsCount: 5,
+      parcels: [{ section: "AB", numero: "12", areaM2: 540 }, {
+        section: null,
+        numero: null,
+        areaM2: null,
+      }],
+    }],
+  })));
+  for (let article = 1; article <= 15; article++) {
+    assertStringIncludes(all, `Article ${article}.`);
+  }
+  assertStringIncludes(all, "Article 3. Bien objet du MANDAT");
+  assertStringIncludes(
+    all,
+    "Maison de 115\u00a0m², 5\u00a0pièce(s), 12 rue de la Colombe, Chaponost",
+  );
+  assertStringIncludes(all, "Cadastre : section AB, n° 12, 540\u00a0m²");
+  assertStringIncludes(all, "Cadastre : section ?, n° ?");
+  assertStringIncludes(all, "Prix de présentation : 525\u00a0000,00\u00a0€");
+  assertStringIncludes(all, "5\u00a0250,00\u00a0€ TTC, soit 4\u00a0375,00\u00a0€ HT");
+  assertStringIncludes(all, "période minimale de 30 jours");
+  assertStringIncludes(all, "RCS Lyon 988 966 099");
+  assertStringIncludes(all, "T CPI 6901 2025 000 000 091");
+  assertStringIncludes(all, "FR49988966099");
   assertStringIncludes(all, "le 03/10/2026 à 10h30");
+  assertStringIncludes(all, "signature de test dessinée");
   assertStringIncludes(all, "application 1.0.0");
+  assert(!all.includes("Formule Le Premium : frais"));
   assert(!all.includes("signeront hors de l’application"));
+  assertEquals(fees(facts({ presentationPriceEur: null })), null);
 });
 
-Deno.test("template: lot, L'Expert, co-owners, unknown values", () => {
+Deno.test("template: lot, Premium, typed, co-owners, unknown values", () => {
   const all = text(mandateSections(facts({
-    formula: "expert",
-    kind: "exclusif_3_mois",
+    formula: "premium",
     feeRate: 2.5,
-    durationMonths: null,
     presentationPriceEur: null,
+    minimumDays: 45,
     owners: ["Sophie Durand", "Marc Durand"],
     properties: [
       { type: "maison", address: null, areaM2: null },
@@ -75,21 +102,28 @@ Deno.test("template: lot, L'Expert, co-owners, unknown values", () => {
     isLot: true,
     userAgent: null,
     appVersion: null,
+    signatureMethod: "typed",
+    typedSignature: "Sophie Durand",
   })));
-  assertStringIncludes(all, "Désignation des biens (vente en lot)");
+  assertStringIncludes(all, "Biens objet du MANDAT (vente en lot)");
   assertStringIncludes(all, "• Maison\n");
-  assertStringIncludes(all, "• Bien de 18 m², Chaponost");
-  assertStringIncludes(all, "à définir avec le vendeur");
-  assertStringIncludes(all, "2,5 %");
-  assertStringIncludes(all, "durée de 3 mois");
+  assertStringIncludes(all, "• Bien de 18\u00a0m², Chaponost");
+  assertStringIncludes(all, "à définir avec le MANDANT");
+  assertStringIncludes(all, "Montant calculé sur le prix de vente définitif.");
+  assertStringIncludes(all, "2,5\u00a0%");
+  assertStringIncludes(all, "Formule Le Premium : frais de dossier de 299\u00a0€");
+  assertStringIncludes(all, "période minimale de 45 jours");
+  assertStringIncludes(all, "par nom tapé");
+  assertStringIncludes(all, "Nom tapé : « Sophie Durand »");
   assertStringIncludes(all, "Appareil : non renseigné.");
-  assertStringIncludes(all, "Mandant(s) : Sophie Durand, Marc Durand.");
+  assertStringIncludes(all, "Le MANDANT : Sophie Durand, Marc Durand,");
   assertStringIncludes(all, "signeront hors de l’application");
   const noOwner = text(mandateSections(facts({ owners: [] })));
-  assertStringIncludes(noOwner, "Mandant(s) : Sophie Durand.");
+  assertStringIncludes(noOwner, "Le MANDANT : Sophie Durand,");
 });
 
 Deno.test("formats", () => {
+  assertEquals(euros(1234.5), "1\u00a0234,50\u00a0€");
   assertEquals(frenchNumber(1234567), "1 234 567");
   assertEquals(frenchDateTime(new Date("2026-01-05T23:05:00Z")), "06/01/2026 à 00h05");
   assertEquals(winAnsi("a b c\nd\te’€✓"), "a b c d e’€?");
@@ -120,8 +154,13 @@ Deno.test("PDF: SPÉCIMEN metadata, signature, several pages, deterministic", as
   assertStringIncludes(doc.getSubject() ?? "", "sans valeur juridique");
   assertStringIncludes(doc.getKeywords() ?? "", MANDATE_TERMS_VERSION);
   assertEquals(await sha256Hex(bytes), await sha256Hex(await renderMandatePdf(many, PNG)));
+  const typed = await renderMandatePdf(
+    facts({ signatureMethod: "typed", typedSignature: "Sophie Durand" }),
+    null,
+  );
+  assertEquals((await PDFDocument.load(typed)).getPageCount() >= 1, true);
   const plain = await renderMandatePdf(facts(), null);
-  assertEquals((await PDFDocument.load(plain)).getPageCount(), 1);
+  assert((await PDFDocument.load(plain)).getPageCount() >= 2);
   assertMatch(await sha256Hex(plain), /^[0-9a-f]{64}$/);
 });
 

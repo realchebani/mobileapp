@@ -85,6 +85,32 @@ void main() {
         SaleFailureReason.unknown,
       );
       expect(SaleFailure.from(Exception()).reason, SaleFailureReason.unknown);
+      final period = SaleFailure.from(
+        const PostgrestException(
+          message: 'mandate_minimum_period',
+          details: '2026-11-02 08:00:00+00',
+        ),
+      );
+      expect(period.reason, SaleFailureReason.mandateMinimumPeriod);
+      expect(period.endableFrom, DateTime.utc(2026, 11, 2, 8));
+      expect(period.priceBounds, isNull);
+      final price = SaleFailure.from(
+        const PostgrestException(
+          message: 'price_out_of_bounds',
+          details: '140000,640000',
+        ),
+      );
+      expect(price.priceBounds, (140000, 640000));
+      expect(
+        SaleFailure.from(
+          const PostgrestException(
+            message: 'price_out_of_bounds',
+            details: 'a,b',
+          ),
+        ).priceBounds,
+        isNull,
+      );
+      expect(const SaleFailure(SaleFailureReason.unknown).endableFrom, isNull);
     });
   });
 
@@ -188,12 +214,30 @@ void main() {
       expect(jsonDecode(requests.last.body), {
         'p_sale_id': 's1',
         'p_mandate_id': 'm1',
-        'p_terms_version': 'test-2026-10',
+        'p_terms_version': 'test-2026-10-b',
         'p_signature_path': 'o1/s1/m1.png',
         'p_accepted': true,
         'p_user_agent': 'ios',
         'p_app_version': '1.0',
+        'p_typed_name': null,
       });
+    });
+
+    test('a typed name signs without upload', () async {
+      respond = (_) => json('m1');
+      expect(
+        await repository.signTestMandate(
+          ownerId: 'o1',
+          saleId: 's1',
+          mandateId: 'm1',
+          accepted: true,
+          typedName: 'Anne Probe',
+        ),
+        'm1',
+      );
+      final body = jsonDecode(requests.single.body) as Map<String, dynamic>;
+      expect(body['p_signature_path'], isNull);
+      expect(body['p_typed_name'], 'Anne Probe');
     });
 
     test('a signature already sent is reused', () async {
@@ -404,6 +448,63 @@ void main() {
       };
       await expectLater(
         repository.copyRoomPhoto(photo, sourcePath: 'x'),
+        throwsA(isA<SaleFailure>()),
+      );
+    });
+
+    test('copyRoomPhoto: an earlier copy of the source wins', () async {
+      const copied = ListingPhoto(
+        id: 'ph1',
+        saleId: 's1',
+        storagePath: 'o1/s1/ph1.jpg',
+        sourceRoomPhotoId: 'rp',
+      );
+      final first = {...photoRow, 'id': 'old', 'source_room_photo_id': 'rp'};
+      // Already copied before: returned without copying.
+      respond = (request) =>
+          request.url.queryParameters.containsKey('source_room_photo_id')
+          ? json(first)
+          : json(null);
+      expect(
+        (await repository.copyRoomPhoto(copied, sourcePath: 'x')).id,
+        'old',
+      );
+      // Copied concurrently: the insert fails, the file is removed.
+      var lookups = 0;
+      requests.clear();
+      respond = (request) {
+        if (request.url.path == '/storage/v1/object/copy') {
+          return json({'Key': 'k'});
+        }
+        if (request.method == 'DELETE') return json([]);
+        if (request.method == 'POST') {
+          return json({'message': 'duplicate', 'code': '23505'}, status: 409);
+        }
+        if (request.url.queryParameters.containsKey('source_room_photo_id')) {
+          return lookups++ == 0 ? json(null) : json(first);
+        }
+        return json(null);
+      };
+      expect(
+        (await repository.copyRoomPhoto(copied, sourcePath: 'x')).id,
+        'old',
+      );
+      expect(requests.where((r) => r.method == 'DELETE'), hasLength(1));
+      // Nothing recorded: the failure goes up (a failed removal is ignored).
+      respond = (request) {
+        if (request.url.path == '/storage/v1/object/copy') {
+          return json({'Key': 'k'});
+        }
+        if (request.method == 'DELETE') {
+          return json({'statusCode': '500', 'message': 'x'}, status: 500);
+        }
+        if (request.method == 'POST') {
+          return json({'message': 'boom', 'code': 'P0001'}, status: 400);
+        }
+        return json(null);
+      };
+      await expectLater(
+        repository.copyRoomPhoto(copied, sourcePath: 'x'),
         throwsA(isA<SaleFailure>()),
       );
     });

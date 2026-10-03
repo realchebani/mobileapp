@@ -103,6 +103,7 @@ MockSaleCubit mockSaleCubit(SaleState state) {
   when(
     () => cubit.signMandate(
       signaturePng: any(named: 'signaturePng'),
+      typedName: any(named: 'typedName'),
       accepted: any(named: 'accepted'),
     ),
   ).thenAnswer((_) async {});
@@ -201,7 +202,7 @@ MockSalesCubit salesCubit([List<Sale> sales = const []]) {
 }
 
 /// A 390 px wide surface tall enough for a whole sale screen.
-void useTallSurface([double height = 3200]) {
+void useTallSurface([double height = 4500]) {
   final view = TestWidgetsFlutterBinding.instance.platformDispatcher.views.first
     ..physicalSize = Size(390, height)
     ..devicePixelRatio = 1;

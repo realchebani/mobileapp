@@ -28,7 +28,7 @@ join public.mandate_signatures sig on sig.mandate_id = m.id
 order by m.signed_at desc;
 ```
 
-- Le PDF est généré par l’Edge Function `render-mandate` dans le bucket privé `sale-documents` (`<owner id>/<sale id>/mandat-<mandate id>.pdf`, empreinte `document_sha256`). Si `document_path` est vide, le vendeur le régénère en ouvrant « Voir le mandat (PDF) ».
+- Signature dessinée (`drawn_test`, PNG) ou nom tapé (`typed_test`, `typed_signature`, accessibilité). Le PDF est généré par l’Edge Function `render-mandate` dans le bucket privé `sale-documents` (`<owner id>/<sale id>/mandat-<mandate id>.pdf`, empreinte `document_sha256`). Si `document_path` est vide, le vendeur le régénère en ouvrant « Voir le mandat (PDF) ».
 - La signature dessinée est dans `mandate-signatures` (`<owner id>/<sale id>/<mandate id>.png`).
 - Co-propriétaires : ils « signeront hors de l’application ». Une fois leur signature recueillie :
 
@@ -63,6 +63,7 @@ order by r.created_at;
 
 - `premium_setup` : rappeler le vendeur pour mettre en place Le Premium (aucun prélèvement dans l’app) ;
 - `shooting_photo` / `shooting_photo_video` : jusqu’à 3 créneaux souhaités (`preferred_slots`, 10 h / 14 h des 3 jours ouvrés suivants) ;
+- Tarifs indicatifs (`sale_service_price`) : rappel Premium 299 € (+ 99 €/mois), photographe 200 €, photo + vidéo 350 €, diagnostics **sur devis** (`price_eur_ttc` vide).
 - `diagnostics` : liste présélectionnée par des règles explicites (DPE + ERP toujours, électricité / gaz > 15 ans, amiante avant 1997, plomb avant 1949), modifiable par le vendeur.
 
 ```sql
@@ -85,7 +86,13 @@ Photos d’annonce : `listing_photos` (la première par `sort_order` est la couv
 
 ## 6. Retrait
 
-Le vendeur retire sa vente depuis la carte « Ma vente » : annonce retirée, mandat `terminated`, demandes ouvertes annulées, photos d’annonce conservées. L’équipe peut vérifier :
+Le vendeur retire sa vente depuis la carte « Ma vente » : annonce retirée, mandat `terminated`, demandes ouvertes annulées, photos d’annonce conservées. Un mandat signé n’est résiliable qu’après **30 jours** (`mandates.minimum_days`) ; pendant les tests, l’équipe peut retirer une vente à tout moment :
+
+```sql
+select public.staff_withdraw_sale('<sale id>', 'Fin de test');
+```
+
+L’équipe peut vérifier :
 
 ```sql
 select id, stage, withdrawn_at, withdraw_reason from public.sales

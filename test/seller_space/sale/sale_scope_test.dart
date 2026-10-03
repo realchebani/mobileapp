@@ -192,6 +192,26 @@ void main() {
           saleFailureMessage(l10n, SaleFailure(reason)),
       };
       expect(messages, hasLength(SaleFailureReason.values.length));
+      expect(
+        saleFailureMessage(
+          l10n,
+          const SaleFailure(
+            SaleFailureReason.priceOutOfBounds,
+            details: '140000,640000',
+          ),
+        ),
+        contains('140\u00a0000'),
+      );
+      expect(
+        saleFailureMessage(
+          l10n,
+          const SaleFailure(
+            SaleFailureReason.mandateMinimumPeriod,
+            details: '2026-11-02 08:00:00+00',
+          ),
+        ),
+        contains('02/11/2026'),
+      );
     });
   });
 }

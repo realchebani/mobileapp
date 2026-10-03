@@ -18,6 +18,7 @@ const _lot = PropertyLot(
   id: 'lot',
   ownerId: 'user-id',
   saleMode: LotSaleMode.togetherOrSeparately,
+  mainPropertyId: 'property-id',
 );
 
 const _member = Property(
@@ -204,7 +205,13 @@ void main() {
         tester,
         const PropertySaleCard(property: _other),
         properties: const [_member, _other],
-        lots: const [PropertyLot(id: 'lot', ownerId: 'user-id')],
+        lots: const [
+          PropertyLot(
+            id: 'lot',
+            ownerId: 'user-id',
+            mainPropertyId: 'property-id',
+          ),
+        ],
       );
       expect(find.text('Mettre le lot en vente'), findsOneWidget);
       await pump(

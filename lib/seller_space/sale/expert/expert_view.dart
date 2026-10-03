@@ -33,9 +33,8 @@ class ExpertView extends StatelessWidget {
     final signer = state.signerFor(userId ?? '');
     final verified = signer != null && state.isVerified(signer);
     final signedAt = state.mandate?.signedAt;
-    final owners = [
-      for (final owner in state.owners) '${owner.firstName} ${owner.lastName}',
-    ].join(', ');
+    final signerName = '${signer?.firstName ?? ''} ${signer?.lastName ?? ''}'
+        .trim();
     return SaleScaffold(
       title: l10n.activationTitle(formulaName(l10n, sale.formula)),
       badges: [FormulaBadge(sale.formula)],
@@ -63,7 +62,7 @@ class ExpertView extends StatelessWidget {
               TimelineEntry(
                 title: l10n.expertStepIdentity,
                 subtitle: verified
-                    ? owners
+                    ? signerName
                     : state.hasIdentityDocument
                     ? l10n.expertStepIdentityPending
                     : l10n.expertStepIdentityMissing,

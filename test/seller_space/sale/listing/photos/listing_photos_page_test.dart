@@ -178,7 +178,7 @@ void main() {
         find.textContaining('Aucune photo pour l’instant'),
         findsOneWidget,
       );
-      await tester.tap(find.text('Reprendre les photos de mon dossier'));
+      await tester.tap(find.text('Reprendre mes photos'));
       await tester.pumpAndSettle();
       expect(find.text('Une photo n’a pas pu être ajoutée.'), findsOneWidget);
     });

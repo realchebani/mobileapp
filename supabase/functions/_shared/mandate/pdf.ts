@@ -129,7 +129,23 @@ export async function renderMandatePdf(
     y -= 8;
   }
 
-  if (signaturePng) {
+  const typed = facts.signatureMethod === "typed" ? facts.typedSignature?.trim() : null;
+  if (typed) {
+    const oblique = await doc.embedFont(StandardFonts.HelveticaOblique);
+    const text = winAnsi(typed);
+    const size = 22;
+    const width = Math.min(oblique.widthOfTextAtSize(text, size), A4[0] - 2 * MARGIN);
+    ensure(size + 30);
+    page.drawRectangle({
+      x: MARGIN - 4,
+      y: y - size - 10,
+      width: width + 16,
+      height: size + 16,
+      borderColor: rgb(0.8, 0.8, 0.78),
+      borderWidth: 1,
+    });
+    page.drawText(text, { x: MARGIN + 4, y: y - size, size, font: oblique });
+  } else if (signaturePng) {
     const image = await doc.embedPng(signaturePng);
     const scale = Math.min(220 / image.width, 90 / image.height, 1);
     ensure(image.height * scale + 20);

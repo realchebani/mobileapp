@@ -86,6 +86,7 @@ class _EssentielViewState extends State<EssentielView> {
             message: l10n.saleTestBanner,
             variant: InlineBannerVariant.info,
           ),
+        const ActivationSteps(),
         AgentBubble(message: l10n.activationEssentielAgent),
         const FormulaSummaryCard(),
         KeyedSubtree(

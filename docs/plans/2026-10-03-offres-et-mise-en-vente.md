@@ -315,8 +315,13 @@ Légende : **🔴 bloquante** (à trancher avant la tranche indiquée) · **🟢
 - 2026-10-03 · O0 : `SignaturePad` (gagne l’arène des gestes au premier contact : pas de défilement en signant), `OfferPlanCard`, `PriceRangeSlider`, `RealestySwitch` / `SwitchRow` (+ galerie). `PlanTabs` = `RealestySegmentedControl` ; la chronologie V11c réutilise `SubmittedTimeline` (pas de promotion dans `lib/ui`).
 - 2026-10-03 · O4–O9 : `lib/seller_space/sale/` (routes `/vendeur/ventes/<id>`, `…/annonce`, `…/annonce/photos`, `…/annonce/apercu` ; `SalesScope` dans `SellerTunnelShell` : `SalesCubit` + registre `SaleCubits`), V10, carte « Ma vente » (V9, fiche du lot), statut dans « Mes biens », V11 / V11b / V11c, feuille de signature, V11a, photos d’annonce (écran de prise de vue d’EPIC-15 rendu réutilisable via `PhotoCaptureTarget`), aperçu, retrait.
 - 2026-10-03 · O10 : types de notifications EPIC-08 dans `AppNotificationKind`, parcours V9 → V10 → V11 → « Ma vente » dans `test/app/view/app_test.dart`, docs.
+- 2026-10-03 · revue + arbitrages du porteur de projet : migration `20261003093204_mise_en_vente_ajustements.sql` (sonde annulée, dry-run, poussée ; `20261003081101_account_purge_fallback.sql` d’EPIC-11, déjà poussée, copiée telle quelle) — prix des services centralisés (`sale_service_price` / `SalePrices` : Premium 299 € + 99 €/mois, photographe 200 €, photo + vidéo 350 €, diagnostics « sur devis ») ; prix de présentation borné côté serveur à [50 % de la borne basse, 200 % de la borne haute] certifiées (trigger + contrôle à la signature ; l’app affiche « Hors fourchette » dans [×0,5 ; ×2] et bloque au-delà) ; mandat « sans engagement » résiliable après 30 jours minimum (`mandates.minimum_days`, `withdraw_sale` refuse avant, `staff_withdraw_sale` pour l’équipe) ; signature par nom tapé (`typed_test`, accessibilité) rendue dans le PDF ; `request_sale_service` refuse les créneaux passés et le rappel Premium hors Premium ; `listing_photos` contrôlé contre la cible de la vente. Modèle du mandat refondu sur la structure articles 1 à 15 du mandat exclusif Realesty (clauses génériques, **aucune donnée du mandat source**, variables du dossier, coordonnées Realesty SARL, honoraires TTC / HT, filigrane « SPÉCIMEN »), version `test-2026-10-b`, `render-mandate` redéployée. App : badges sans débordement (texte ×1,3 testé), onglets V10 « 1 % / Premium / 3 % », étapes « 1 · Mandat / 2 · Photos / 3 · Diagnostics » sur V11, exemples de bonnes photos (5 photos du porteur compressées sans métadonnées dans `assets/sale_examples/`, conseils de cadrage ; jeu de test IA brut dans `local_test_sets/`, ignoré par git), honoraires TTC + HT, identité du seul signataire sur V11c, ordre des biens d’un lot aligné sur la base (date puis id), copie de photo idempotente (la copie déjà faite gagne, fichier orphelin supprimé), aperçu sans promesse d’adresse.
+- `has_active_sale(owner)` est laissée telle quelle : elle convergera avec `account_has_active_sale` d’EPIC-11 après sa fusion (EPIC-08 fusionne avant EPIC-11).
 
 ## Choix par défaut en attendant le porteur de projet
+
+- **Durée (à confirmer)** : interprétation la plus simple de « sans engagement, résiliable à tout moment après 30 jours minimum » — appliquée à **toutes** les formules (y compris L’Expert, qui n’a plus de durée de 3 mois) ; avant 30 jours le retrait est refusé dans l’app (message avec la date), l’équipe peut toujours retirer une vente de test.
+- **Bornes de prix** : [50 % de la somme des bornes basses certifiées ; 200 % de la somme des bornes hautes] ; sans avis de valeur, pas de borne.
 
 Questions non bloquantes du §10, codées avec l’option recommandée (réversibles) :
 
@@ -333,9 +338,9 @@ Questions non bloquantes du §10, codées avec l’option recommandée (réversi
 - **Q11 publication / créneaux** : 5 photos minimum, la première est la couverture ; créneaux de shooting = 3 jours ouvrés suivants à 10 h / 14 h, jusqu’à 3 souhaités, confirmés par l’équipe.
 - **Q12 (arbitrée) précision** : copie dans `listing-media` à la première ouverture des photos (puis « Reprendre les photos de mon dossier ») ; copie Storage inter-bucket faite par l’app.
 - **Q13 adresse** : commune seulement dans l’aperçu.
-- **Q14 tarifs** : montants de la maquette affichés « indicatifs, rien n’est prélevé » (299 €, 99 €/mois, 200 / 350 / 250 € TTC) — **montants à confirmer**.
+- **Q14 tarifs** (arbitré) : 299 € + 99 €/mois (Premium), 200 € (photographe), 350 € (photo + vidéo), diagnostics « sur devis » ; affichés « indicatifs, rien n’est prélevé ».
 - **Q15 retrait** : carte « Ma vente » (V9 et fiche du lot) ; « Ma formule » dans Compte avec EPIC-11 ; L’Expert peut se retirer à tout moment pendant les tests.
-- **Q16** : changer de formule après signature = retirer puis recommencer.
+- **Q16** : changer de formule après signature = retirer (après 30 jours) puis recommencer.
 - **Q17** : l’équipe joue l’agent (« Un agent vous contacte sous 24 h »).
 - **Q18** : tout bien (ou lot) certifié, quel que soit le type (garage / terrain : seul l’ERP est présélectionné).
 

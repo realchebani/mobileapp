@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
@@ -39,25 +40,37 @@ class MandateSignatureForm extends StatefulWidget {
 
 class _MandateSignatureFormState extends State<MandateSignatureForm> {
   final _pad = SignaturePadController();
+  final _typed = TextEditingController();
   bool _accepted = false;
   bool _showErrors = false;
+
+  /// The seller types their name instead of drawing (accessibility).
+  bool _typing = false;
+
+  bool get _typedValid => _typed.text.trim().length >= 2;
 
   @override
   void dispose() {
     _pad.dispose();
+    _typed.dispose();
     super.dispose();
   }
 
   Future<void> _sign() async {
     final l10n = context.l10n;
     final cubit = context.read<SaleCubit>();
-    if (!_accepted || _pad.isEmpty) {
+    final signed = _typing ? _typedValid : !_pad.isEmpty;
+    if (!_accepted || !signed) {
       setState(() => _showErrors = true);
       return;
     }
-    final png = await _pad.toPng();
-    if (!mounted || png == null) return;
-    await cubit.signMandate(signaturePng: png, accepted: _accepted);
+    if (_typing) {
+      await cubit.signMandate(typedName: _typed.text.trim(), accepted: true);
+    } else {
+      final png = await _pad.toPng();
+      if (!mounted || png == null) return;
+      await cubit.signMandate(signaturePng: png, accepted: true);
+    }
     final failure = cubit.state.failure;
     if (!mounted) return;
     if (failure != null) {
@@ -88,7 +101,7 @@ class _MandateSignatureFormState extends State<MandateSignatureForm> {
     ];
     final busy = state.busy == SaleAction.sign;
     final enabled = widget.enabled && !busy;
-    final padError = _showErrors && _pad.isEmpty;
+    final padError = _showErrors && !_typing && _pad.isEmpty;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: RealestySpacing.sm,
@@ -106,19 +119,44 @@ class _MandateSignatureFormState extends State<MandateSignatureForm> {
               color: c.texteDiscret,
             ),
           ),
-        SignaturePad(
-          controller: _pad,
-          hint: l10n.mandateSignatureHint,
-          clearLabel: l10n.mandateSignatureClear,
-          semanticLabel: l10n.mandateSignatureArea,
-          enabled: enabled,
-          hasError: padError,
-        ),
-        if (padError)
-          Text(
-            l10n.saleErrorSignature,
-            style: RealestyTextStyles.fieldError.copyWith(color: c.erreur),
+        if (_typing)
+          RealestyTextField(
+            label: l10n.mandateTypedLabel,
+            controller: _typed,
+            enabled: enabled,
+            autofillHints: const [AutofillHints.name],
+            inputFormatters: [LengthLimitingTextInputFormatter(200)],
+            errorText: _showErrors && !_typedValid
+                ? l10n.mandateTypedError
+                : null,
+            onChanged: (_) => setState(() {}),
+          )
+        else ...[
+          SignaturePad(
+            controller: _pad,
+            hint: l10n.mandateSignatureHint,
+            clearLabel: l10n.mandateSignatureClear,
+            semanticLabel: l10n.mandateSignatureArea,
+            enabled: enabled,
+            hasError: padError,
           ),
+          if (padError)
+            Text(
+              l10n.saleErrorSignature,
+              style: RealestyTextStyles.fieldError.copyWith(color: c.erreur),
+            ),
+        ],
+        RealestyButton(
+          label: _typing ? l10n.mandateDrawInstead : l10n.mandateTypeInstead,
+          variant: RealestyButtonVariant.text,
+          height: 40,
+          onPressed: enabled
+              ? () => setState(() {
+                  _typing = !_typing;
+                  _showErrors = false;
+                })
+              : null,
+        ),
         RealestyCheckbox(
           value: _accepted,
           label: l10n.mandateAccept(formulaName(l10n, sale.formula)),
@@ -255,15 +293,13 @@ class MandateCard extends StatelessWidget {
           KeyValueRow(label: l10n.mandateType, value: l10n.mandateExclusive),
           KeyValueRow(
             label: l10n.mandateDuration,
-            value: expert
-                ? l10n.mandateDurationMonths(SaleFormula.expertDurationMonths)
-                : l10n.mandateNoCommitment,
+            value: l10n.mandateNoCommitment,
           ),
           KeyValueRow(
             label: l10n.mandateTermination,
-            value: expert
-                ? l10n.mandateTerminationExpert
-                : l10n.mandateTerminationAnytime,
+            value: l10n.mandateTerminationAnytime(
+              SalePrices.mandateMinimumDays,
+            ),
           ),
           if (price != null)
             KeyValueRow(

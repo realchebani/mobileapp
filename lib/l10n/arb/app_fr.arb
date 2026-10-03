@@ -5903,7 +5903,7 @@
   "@saleWithdrawTitle": {
     "description": "EPIC-08 · feuille de retrait · titre"
   },
-  "saleWithdrawMessage": "Votre annonce sera retirée et le mandat de test résilié. Les demandes en cours seront annulées.",
+  "saleWithdrawMessage": "Votre annonce sera retirée et le mandat de test résilié. Les demandes en cours seront annulées. Un mandat signé est résiliable à tout moment après 30 jours.",
   "@saleWithdrawMessage": {
     "description": "EPIC-08 · feuille de retrait · conséquences"
   },
@@ -5948,7 +5948,7 @@
   "@offerChoiceTabEssentiel": {
     "description": "EPIC-08 · V10 · onglet L’Essentiel"
   },
-  "offerChoiceTabPremium": "1 % Premium",
+  "offerChoiceTabPremium": "Premium",
   "@offerChoiceTabPremium": {
     "description": "EPIC-08 · V10 · onglet Premium"
   },
@@ -6128,7 +6128,7 @@
       }
     }
   },
-  "activationCommissionAmount": "{rate} % au succès, soit ~{amount} €",
+  "activationCommissionAmount": "{rate} % au succès, soit ~{amount} € TTC ({ht} € HT)",
   "@activationCommissionAmount": {
     "description": "EPIC-08 · commission estimée",
     "placeholders": {
@@ -6136,6 +6136,9 @@
         "type": "int"
       },
       "amount": {
+        "type": "String"
+      },
+      "ht": {
         "type": "String"
       }
     }
@@ -6482,9 +6485,14 @@
   "@mandateTermination": {
     "description": "EPIC-08 · carte mandat · résiliation"
   },
-  "mandateTerminationAnytime": "À tout moment, en un clic",
+  "mandateTerminationAnytime": "À tout moment après {days} jours, en un clic",
   "@mandateTerminationAnytime": {
-    "description": "EPIC-08 · carte mandat · résiliation libre"
+    "description": "EPIC-08 · carte mandat · résiliation après la période minimale",
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
   },
   "mandateTerminationExpert": "À l’échéance (test : à tout moment)",
   "@mandateTerminationExpert": {
@@ -6717,7 +6725,7 @@
   "@listingCommission": {
     "description": "EPIC-08 · V11a · commission"
   },
-  "listingCommissionValue": "{rate} % · {amount} €",
+  "listingCommissionValue": "{rate} % · {amount} € TTC ({ht} € HT)",
   "@listingCommissionValue": {
     "description": "EPIC-08 · V11a · commission (taux · montant)",
     "placeholders": {
@@ -6725,6 +6733,9 @@
         "type": "int"
       },
       "amount": {
+        "type": "String"
+      },
+      "ht": {
         "type": "String"
       }
     }
@@ -6794,7 +6805,7 @@
   "@listingPreviewTitle": {
     "description": "EPIC-08 · aperçu · titre"
   },
-  "listingPreviewIntro": "Ce que verront les acquéreurs (commune seulement : l’adresse exacte est donnée après une visite acceptée).",
+  "listingPreviewIntro": "Ce que verront les acquéreurs : la commune seulement, l’adresse exacte n’est jamais affichée publiquement.",
   "@listingPreviewIntro": {
     "description": "EPIC-08 · aperçu · intro"
   },
@@ -6838,7 +6849,7 @@
   "@listingPhotosLibrary": {
     "description": "EPIC-08 · photos · photothèque"
   },
-  "listingPhotosReimport": "Reprendre les photos de mon dossier",
+  "listingPhotosReimport": "Reprendre mes photos",
   "@listingPhotosReimport": {
     "description": "EPIC-08 · photos · réimporter"
   },
@@ -6969,5 +6980,98 @@
         "type": "int"
       }
     }
+  },
+  "saleErrorPriceBounds": "Ce prix s’écarte trop de l’avis de valeur : choisissez entre {low} € et {high} €.",
+  "@saleErrorPriceBounds": {
+    "description": "EPIC-08 · prix hors des bornes (montants formatés)",
+    "placeholders": {
+      "low": {
+        "type": "String"
+      },
+      "high": {
+        "type": "String"
+      }
+    }
+  },
+  "saleErrorPriceOut": "Ce prix s’écarte trop de l’avis de valeur.",
+  "@saleErrorPriceOut": {
+    "description": "EPIC-08 · prix hors des bornes"
+  },
+  "saleErrorMissingPrice": "Indiquez votre prix de présentation.",
+  "@saleErrorMissingPrice": {
+    "description": "EPIC-08 · prix manquant"
+  },
+  "saleErrorPremiumOnly": "Ce service est réservé au Premium.",
+  "@saleErrorPremiumOnly": {
+    "description": "EPIC-08 · service réservé au Premium"
+  },
+  "saleErrorSlotInPast": "Un créneau choisi est déjà passé.",
+  "@saleErrorSlotInPast": {
+    "description": "EPIC-08 · créneau passé"
+  },
+  "saleErrorMinimumPeriod": "Votre mandat est résiliable à partir du {date} (30 jours après la signature).",
+  "@saleErrorMinimumPeriod": {
+    "description": "EPIC-08 · résiliation avant la période minimale (date)",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "saleErrorMinimumPeriodGeneric": "Votre mandat est résiliable 30 jours après la signature.",
+  "@saleErrorMinimumPeriodGeneric": {
+    "description": "EPIC-08 · résiliation avant la période minimale"
+  },
+  "activationOnQuote": "Sur devis",
+  "@activationOnQuote": {
+    "description": "EPIC-08 · prix des diagnostics (sur devis)"
+  },
+  "activationStepMandate": "1 · Mandat",
+  "@activationStepMandate": {
+    "description": "EPIC-08 · V11 · étape 1"
+  },
+  "activationStepPhotos": "2 · Photos",
+  "@activationStepPhotos": {
+    "description": "EPIC-08 · V11 · étape 2"
+  },
+  "activationStepDiagnostics": "3 · Diagnostics",
+  "@activationStepDiagnostics": {
+    "description": "EPIC-08 · V11 · étape 3"
+  },
+  "activationStepDone": "fait",
+  "@activationStepDone": {
+    "description": "EPIC-08 · V11 · étape faite (accessibilité)"
+  },
+  "activationStepTodo": "à faire",
+  "@activationStepTodo": {
+    "description": "EPIC-08 · V11 · étape à faire (accessibilité)"
+  },
+  "mandateTypeInstead": "Signer en tapant mon nom",
+  "@mandateTypeInstead": {
+    "description": "EPIC-08 · signature tapée (accessibilité)"
+  },
+  "mandateDrawInstead": "Signer à la main",
+  "@mandateDrawInstead": {
+    "description": "EPIC-08 · revenir à la signature dessinée"
+  },
+  "mandateTypedLabel": "Votre nom complet",
+  "@mandateTypedLabel": {
+    "description": "EPIC-08 · champ du nom tapé"
+  },
+  "mandateTypedError": "Tapez votre nom (2 caractères au moins).",
+  "@mandateTypedError": {
+    "description": "EPIC-08 · nom tapé trop court"
+  },
+  "photoExamplesTitle": "Exemples de bonnes photos",
+  "@photoExamplesTitle": {
+    "description": "EPIC-08 · exemples de photos · titre"
+  },
+  "photoExamplesCaption": "Exemple de bonne photo",
+  "@photoExamplesCaption": {
+    "description": "EPIC-08 · exemples de photos · légende"
+  },
+  "photoExamplesTips": "Lumière du jour, rideaux ouverts et lampes allumées · téléphone droit, à hauteur de poitrine, depuis un angle de la pièce · pièce rangée, sans personne ni objet personnel.",
+  "@photoExamplesTips": {
+    "description": "EPIC-08 · conseils de cadrage des photos"
   }
 }

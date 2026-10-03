@@ -18,13 +18,13 @@ Légende : ✅ fait · 🚧 partiel · 📋 à faire
 
 ## US-08.2 · Signer mon mandat de test ✅
 *En tant que vendeur, je veux accepter et signer mon mandat dans l’app.*
-- ✅ Case obligatoire + signature dessinée (`SignaturePad`) ; « Signer » toujours actif, erreurs affichées si l’une manque.
-- ✅ Horodatage, version des conditions (`test-2026-10`), appareil conservés ; PDF « SPÉCIMEN » généré par `render-mandate` (empreinte SHA-256), consultable (« Voir le mandat (PDF) »).
+- ✅ Case obligatoire + signature dessinée (`SignaturePad`) ou nom tapé (« Signer en tapant mon nom », accessibilité) ; « Signer » toujours actif, erreurs affichées si l’une manque.
+- ✅ Mandat sur la structure du mandat exclusif Realesty (articles 1 à 15, honoraires TTC / HT), résiliable à tout moment après 30 jours ; horodatage, version des conditions (`test-2026-10-b`), appareil conservés ; PDF « SPÉCIMEN » généré par `render-mandate` (empreinte SHA-256), consultable (« Voir le mandat (PDF) »).
 - ✅ Pièce d’identité exigée (lien vers le coffre-fort) ; pour L’Expert, identité vérifiée par l’équipe (`staff_verify_identity`).
 - ✅ Co-propriétaires indiqués « signeront hors de l’application » (`staff_record_offline_signature`).
 
 ## US-08.3 · Activer L’Essentiel (V11) ✅
-- ✅ Récapitulatif de la formule et du mandat, préférences photo (« Bientôt »), assistant photo, options à la carte transformées en demandes (« Un conseiller vous recontacte »).
+- ✅ Étapes « 1 · Mandat / 2 · Photos / 3 · Diagnostics », récapitulatif de la formule et du mandat, préférences photo (« Bientôt »), exemples de bonnes photos et conseils de cadrage, assistant photo, options à la carte transformées en demandes (« Un conseiller vous recontacte »).
 - ✅ « Activer et préparer mon annonce » seulement après signature (sinon message et défilement vers le mandat).
 
 ## US-08.4 · Activer Le Premium (V11b) ✅
@@ -42,7 +42,7 @@ Légende : ✅ fait · 🚧 partiel · 📋 à faire
 - 🚧 Ordre libre par glisser-déposer : pas en v1 (seulement « Mettre en couverture »).
 
 ## US-08.7 · Préparer et publier mon annonce (V11a) ✅
-- ✅ Titre et description générés depuis le dossier (modèle déterministe, aucun chiffre inventé), modifiables ou régénérés ; prix avec position dans la fourchette certifiée et commission en direct.
+- ✅ Titre et description générés depuis le dossier (modèle déterministe, aucun chiffre inventé), modifiables ou régénérés ; prix avec position dans la fourchette certifiée (bloqué au-delà de ×0,5 / ×2, aussi côté serveur) et commission TTC / HT en direct.
 - ✅ « Publier » refusé avec la liste de ce qui manque (prix, titre, description, 5 photos) ; aperçu « ce que verront les acquéreurs » (commune seulement) ; diffusion « Realesty » seulement.
 
 ## US-08.8 · Suivre et retirer ma vente 🚧

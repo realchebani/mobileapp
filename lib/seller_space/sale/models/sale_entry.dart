@@ -94,10 +94,15 @@ final class SaleEntry extends Equatable {
   /// The members of [lot], its main property first (its main_property_id,
   /// else the oldest member — same rule as the database).
   static List<Property> lotMembers(PropertyLot lot, List<Property> properties) {
-    final members = [
-      for (final property in properties)
-        if (property.lotId == lot.id) property,
-    ]..sort((a, b) => _created(a).compareTo(_created(b)));
+    final members =
+        [
+          for (final property in properties)
+            if (property.lotId == lot.id) property,
+        ]..sort((a, b) {
+          // Same order as the database: oldest first, then by id.
+          final byDate = _created(a).compareTo(_created(b));
+          return byDate != 0 ? byDate : a.id.compareTo(b.id);
+        });
     final main =
         members.where((p) => p.id == lot.mainPropertyId).firstOrNull ??
         members.firstOrNull;

@@ -9,6 +9,7 @@ import 'package:mobileapp/seller_space/sale/cubit/sale_cubit.dart';
 import 'package:mobileapp/seller_space/sale/models/sale_entry.dart';
 import 'package:mobileapp/seller_space/sale/offer_choice/offer_choice_sheet.dart';
 import 'package:mobileapp/seller_space/sale/premium/diagnostics_rules.dart';
+import 'package:mobileapp/seller_space/sale/widgets/photo_examples.dart';
 import 'package:mobileapp/seller_space/sale/widgets/sale_labels.dart';
 import 'package:mobileapp/seller_space/widgets/seller_space_header.dart';
 import 'package:mobileapp/seller_tunnel/steps/submitted/widgets/submitted_format.dart';
@@ -63,9 +64,7 @@ class FormulaSummaryCard extends StatelessWidget {
             label: l10n.activationSetupFee,
             value: premium
                 ? l10n.activationIndicative(
-                    l10n.reportEuros(
-                      frenchNumber(SaleFormula.premiumSetupFeeEur),
-                    ),
+                    l10n.reportEuros(frenchNumber(SalePrices.premiumSetupEur)),
                   )
                 : l10n.reportEuros('0'),
           ),
@@ -74,7 +73,7 @@ class FormulaSummaryCard extends StatelessWidget {
             value: premium
                 ? l10n.activationIndicative(
                     l10n.activationMonthly(
-                      frenchNumber(SaleFormula.premiumMonthlyFeeEur),
+                      frenchNumber(SalePrices.premiumMonthlyEur),
                     ),
                   )
                 : l10n.activationNone,
@@ -86,6 +85,7 @@ class FormulaSummaryCard extends StatelessWidget {
                 : l10n.activationCommissionAmount(
                     formula.feePercent,
                     frenchNumber(formula.commissionOn(price)),
+                    frenchNumber(SalePrices.ht(formula.commissionOn(price))),
                   ),
           ),
           KeyValueRow(
@@ -188,6 +188,7 @@ class PhotoPreferencesCard extends StatelessWidget {
                     save(SaleColumns.homeStagingWanted, value: value),
                   ),
           ),
+          if (showAssistant) const PhotoExamples(),
           if (showAssistant)
             RealestyButton(
               label: l10n.activationPhotosAssistant,
@@ -254,10 +255,10 @@ class ServiceRequestRow extends StatelessWidget {
                 ],
               ),
             ),
-            Text(
-              l10n.activationPriceTtc(frenchNumber(kind.priceEurTtc)),
-              style: RealestyTextStyles.listTitle.copyWith(color: c.encre),
-            ),
+            Text(switch (kind.priceEurTtc) {
+              final price? => l10n.activationPriceTtc(frenchNumber(price)),
+              null => l10n.activationOnQuote,
+            }, style: RealestyTextStyles.listTitle.copyWith(color: c.encre)),
           ],
         ),
         if (request == null)
@@ -455,6 +456,75 @@ class UpsellCard extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// V11 · « 1 · Mandat / 2 · Photos / 3 · Diagnostics »: where the
+/// activation stands (mandate signed, dossier photos copied, diagnostics
+/// in the dossier or asked).
+class ActivationSteps extends StatelessWidget {
+  const new({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final c = context.realestyColors;
+    final state = context.watch<SaleCubit>().state;
+    final sale = state.sale!;
+    final steps = [
+      (l10n.activationStepMandate, sale.isSigned),
+      (l10n.activationStepPhotos, sale.photosImportedAt != null),
+      (
+        l10n.activationStepDiagnostics,
+        state.hasDiagnostics ||
+            state.openRequest(SaleRequestKind.diagnostics) != null,
+      ),
+    ];
+    return Row(
+      spacing: RealestySpacing.xs,
+      children: [
+        for (final (label, done) in steps)
+          Expanded(
+            child: Semantics(
+              label: [
+                label,
+                if (done) l10n.activationStepDone else l10n.activationStepTodo,
+              ].join(', '),
+              excludeSemantics: true,
+              child: Container(
+                height: 36,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: RealestySpacing.xs,
+                ),
+                decoration: BoxDecoration(
+                  color: done ? c.vertTeinte : c.surface2,
+                  borderRadius: BorderRadius.circular(RealestyRadius.pill),
+                ),
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Row(
+                    spacing: RealestySpacing.xxs,
+                    children: [
+                      if (done)
+                        RealestyIcon(
+                          RealestyIcons.check,
+                          size: 14,
+                          color: c.vertTexte,
+                        ),
+                      Text(
+                        label,
+                        style: RealestyTextStyles.label.copyWith(
+                          color: done ? c.vertTexte : c.encre2,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+      ],
     );
   }
 }

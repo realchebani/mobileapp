@@ -2,6 +2,12 @@ import 'package:sale_repository/sale_repository.dart';
 import 'package:test/test.dart';
 
 void main() {
+  test('SalePrices', () {
+    expect(SalePrices.ht(5250), 4375);
+    expect(SalePrices.hardBounds(505000, 545000), (252500, 1090000));
+    expect(SalePrices.shootingPhotoVideoEur, 350);
+  });
+
   group('SaleFormula', () {
     test('rates, commission and helpers', () {
       expect(SaleFormula.essentiel.feePercent, 1);
@@ -82,6 +88,7 @@ void main() {
       'presentation_price_eur': 525000,
       'fee_rate': 3.0,
       'duration_months': 3,
+      'minimum_days': 30,
       'is_test': true,
       'document_path': 'p.pdf',
       'signed_at': '2026-10-03T08:00:00Z',
@@ -89,7 +96,8 @@ void main() {
     });
     expect(mandate.status, MandateStatus.terminated);
     expect(mandate.feeRate, 3);
-    expect(mandate.props, hasLength(12));
+    expect(mandate.props, hasLength(13));
+    expect(mandate.endableFrom, DateTime.utc(2026, 11, 2, 8));
     final other = Mandate.fromJson(const {
       'id': 'm',
       'sale_id': 's',
@@ -132,6 +140,7 @@ void main() {
     expect(SaleRequestKind.shootingPhoto.isShooting, isTrue);
     expect(SaleRequestKind.diagnostics.isShooting, isFalse);
     expect(SaleRequestKind.premiumSetup.priceEurTtc, 299);
+    expect(SaleRequestKind.diagnostics.priceEurTtc, isNull);
   });
 
   test('ListingPhoto json round trip', () {

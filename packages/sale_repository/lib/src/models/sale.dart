@@ -17,6 +17,38 @@ DateTime? _date(Object? value) =>
 
 int? _int(Object? value) => (value as num?)?.toInt();
 
+/// The prices of Realesty (owner decision 2026-10-03), in one place: the
+/// same values as the SQL `sale_service_price` and the mandate template of
+/// `render-mandate`. Indicative: nothing is charged in the app in v1.
+abstract final class SalePrices {
+  /// Le Premium · set-up fee (TTC).
+  static const premiumSetupEur = 299;
+
+  /// Le Premium · monthly fee (TTC).
+  static const premiumMonthlyEur = 99;
+
+  /// Professional photographer (TTC).
+  static const shootingPhotoEur = 200;
+
+  /// Photographer + video (TTC).
+  static const shootingPhotoVideoEur = 350;
+
+  /// TVA rate of the fees.
+  static const vatRate = 0.2;
+
+  /// Days after its signature before a mandate can be ended.
+  static const mandateMinimumDays = 30;
+
+  /// The amount HT of [ttc] (rounded to the euro).
+  static int ht(int ttc) => (ttc / (1 + vatRate)).round();
+
+  /// How far the asking price may go from the certified range: from half
+  /// of the low bound to twice the high bound (same rule as the SQL
+  /// `sale_price_bounds`).
+  static (int, int) hardBounds(int low, int high) =>
+      ((low * 0.5).floor(), high * 2);
+}
+
 /// The three formulas (`sales.formula`): the single source of their rates
 /// and indicative prices in the app (mirror of the SQL checks).
 enum SaleFormula implements SaleDbEnum {
@@ -37,15 +69,6 @@ enum SaleFormula implements SaleDbEnum {
 
   /// Success fee, in percent of the sale price.
   final int feePercent;
-
-  /// Indicative set-up fee of Le Premium (TTC).
-  static const premiumSetupFeeEur = 299;
-
-  /// Indicative monthly fee of Le Premium (TTC).
-  static const premiumMonthlyFeeEur = 99;
-
-  /// Duration of the Expert mandate, in months.
-  static const expertDurationMonths = 3;
 
   /// Whether the seller prepares and publishes the listing (V11a).
   bool get selfPublished => this != expert;
@@ -242,6 +265,7 @@ class Mandate extends Equatable {
     this.presentationPriceEur,
     this.feeRate,
     this.durationMonths,
+    this.minimumDays,
     this.isTest = true,
     this.documentPath,
     this.terminatedAt,
@@ -257,6 +281,7 @@ class Mandate extends Equatable {
     presentationPriceEur: _int(json['presentation_price_eur']),
     feeRate: (json['fee_rate'] as num?)?.toDouble(),
     durationMonths: _int(json['duration_months']),
+    minimumDays: _int(json['minimum_days']),
     isTest: json['is_test'] != false,
     documentPath: json['document_path'] as String?,
     signedAt: DateTime.parse(json['signed_at'] as String),
@@ -271,7 +296,15 @@ class Mandate extends Equatable {
   final int? presentationPriceEur;
   final double? feeRate;
   final int? durationMonths;
+
+  /// Days after [signedAt] before the seller can end the mandate.
+  final int? minimumDays;
   final bool isTest;
+
+  /// The first day the seller can end the mandate.
+  DateTime get endableFrom => signedAt.add(
+    Duration(days: minimumDays ?? SalePrices.mandateMinimumDays),
+  );
 
   /// Path of the PDF in `sale-documents` (null until rendered).
   final String? documentPath;
@@ -288,6 +321,7 @@ class Mandate extends Equatable {
     presentationPriceEur,
     feeRate,
     durationMonths,
+    minimumDays,
     isTest,
     documentPath,
     signedAt,
@@ -298,18 +332,21 @@ class Mandate extends Equatable {
 /// A service asked without payment (`sale_requests.kind`).
 enum SaleRequestKind implements SaleDbEnum {
   /// Le Premium: a Realesty adviser calls back to set it up.
-  premiumSetup('premium_setup', SaleFormula.premiumSetupFeeEur),
-  shootingPhoto('shooting_photo', 200),
-  shootingPhotoVideo('shooting_photo_video', 350),
-  diagnostics('diagnostics', 250);
+  premiumSetup('premium_setup', SalePrices.premiumSetupEur),
+  shootingPhoto('shooting_photo', SalePrices.shootingPhotoEur),
+  shootingPhotoVideo('shooting_photo_video', SalePrices.shootingPhotoVideoEur),
+
+  /// Diagnostics: « sur devis » (the price depends on the property).
+  diagnostics('diagnostics', null);
 
   new(this.value, this.priceEurTtc);
 
   @override
   final String value;
 
-  /// Indicative price (TTC); nothing is charged in the app.
-  final int priceEurTtc;
+  /// Indicative price (TTC), null when « sur devis »; nothing is charged in
+  /// the app.
+  final int? priceEurTtc;
 
   bool get isShooting => this == shootingPhoto || this == shootingPhotoVideo;
 }

@@ -176,11 +176,12 @@ class SaleCubit extends Cubit<SaleState> {
         );
       });
 
-  /// Signs the TEST mandate with the drawn [signaturePng], then asks for
-  /// its PDF in the background.
+  /// Signs the TEST mandate with the drawn [signaturePng] or the typed
+  /// [typedName], then asks for its PDF in the background.
   Future<void> signMandate({
-    required Uint8List signaturePng,
     required bool accepted,
+    Uint8List? signaturePng,
+    String? typedName,
   }) => _act(SaleAction.sign, () async {
     final mandateId = _mandateId ??= _generateId();
     await _saleRepository.signTestMandate(
@@ -188,6 +189,7 @@ class SaleCubit extends Cubit<SaleState> {
       saleId: _saleId,
       mandateId: mandateId,
       signaturePng: signaturePng,
+      typedName: typedName,
       accepted: accepted,
       userAgent: _userAgent,
       appVersion: _appVersion,

@@ -125,6 +125,13 @@ void main() {
       ).called(1);
     });
 
+    testWidgets('the 4th tile shows its photo under the count', (tester) async {
+      when(() => repository.listingPhotoUrls(any()))
+          .thenAnswer((_) async => {'user-id/sale-id/p3.jpg': 'https://x'});
+      await pump(tester, saleState(sale: _signed));
+      expect(find.text('+ 2'), findsOneWidget);
+    });
+
     testWidgets('photos that cannot be read leave the strip empty', (
       tester,
     ) async {
@@ -146,6 +153,13 @@ void main() {
       await tester.enterText(find.byType(TextField), '');
       await tester.pump();
       expect(tester.widget<Slider>(find.byType(Slider)).value, 525000);
+      await tester.enterText(find.byType(TextField), '100000');
+      await tester.pump(const Duration(seconds: 1));
+      expect(
+        find.textContaining('choisissez entre 252\u00a0500\u00a0€'),
+        findsOneWidget,
+      );
+      verifyNever(() => cubit.updateListing({'asking_price_eur': 100000}));
       await tester.enterText(find.byType(TextField), '500');
       await tester.pump(const Duration(seconds: 1));
       expect(find.textContaining('Indiquez un prix'), findsOneWidget);

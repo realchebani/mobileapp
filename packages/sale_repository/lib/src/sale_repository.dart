@@ -16,6 +16,11 @@ enum SaleFailureReason {
   signatureMissing('signature_missing'),
   identityDocumentMissing('identity_document_missing'),
   identityNotVerified('identity_not_verified'),
+  priceOutOfBounds('price_out_of_bounds'),
+  missingPrice('missing_price'),
+  mandateMinimumPeriod('mandate_minimum_period'),
+  premiumOnly('premium_only'),
+  slotInPast('slot_in_past'),
   requestAlreadyOpen('request_already_open'),
   publishIncomplete('publish_incomplete'),
   mandateNotSigned('mandate_not_signed'),
@@ -57,7 +62,7 @@ enum PublishMissing {
 /// {@endtemplate}
 class SaleFailure implements Exception {
   /// {@macro sale_failure}
-  const new(this.reason, {this.missing = const [], this.error});
+  const new(this.reason, {this.missing = const [], this.details, this.error});
 
   /// A failure built from a database / network [error].
   factory from(Object error) {
@@ -69,8 +74,25 @@ class SaleFailure implements Exception {
         for (final item in PublishMissing.values)
           if (details.contains(item.code)) item,
       ],
+      details: details.isEmpty || details == 'null' ? null : details,
       error: error,
     );
+  }
+
+  /// Detail of the database error (bounds of a price, end of a period).
+  final String? details;
+
+  /// The first day the mandate can be ended
+  /// ([SaleFailureReason.mandateMinimumPeriod]).
+  DateTime? get endableFrom => DateTime.tryParse(details ?? '');
+
+  /// The allowed bounds of the price ([SaleFailureReason.priceOutOfBounds]).
+  (int, int)? get priceBounds {
+    final parts = (details ?? '').split(',');
+    if (parts.length != 2) return null;
+    final low = int.tryParse(parts.first);
+    final high = int.tryParse(parts.last);
+    return low == null || high == null ? null : (low, high);
   }
 
   final SaleFailureReason reason;
@@ -82,7 +104,7 @@ class SaleFailure implements Exception {
   final Object? error;
 
   @override
-  String toString() => 'SaleFailure($reason, $missing, $error)';
+  String toString() => 'SaleFailure($reason, $missing, $details, $error)';
 }
 
 /// {@template sale_repository}
@@ -119,7 +141,7 @@ class SaleRepository {
 
   /// Version of the test mandate terms (same as the SQL
   /// `sale_terms_version()` and the Edge Function template).
-  static const termsVersion = 'test-2026-10';
+  static const termsVersion = 'test-2026-10-b';
 
   /// Columns of `sale_requests` the app can read.
   static const _requestColumns =
@@ -209,33 +231,34 @@ class SaleRepository {
   }) => '$ownerId/$saleId/$mandateId.png';
 
   /// Signs the TEST mandate [mandateId] (id chosen by the app, retry-safe)
-  /// of the sale [saleId] with the drawn [signaturePng]; returns the
-  /// mandate id.
+  /// of the sale [saleId] with the drawn [signaturePng], or the name the
+  /// seller typed ([typedName], accessibility); returns the mandate id.
   Future<String> signTestMandate({
     required String ownerId,
     required String saleId,
     required String mandateId,
-    required Uint8List signaturePng,
     required bool accepted,
+    Uint8List? signaturePng,
+    String? typedName,
     String? userAgent,
     String? appVersion,
   }) => _run(() async {
-    final path = signaturePath(
-      ownerId: ownerId,
-      saleId: saleId,
-      mandateId: mandateId,
-    );
-    try {
-      await _client.storage
-          .from(signaturesBucket)
-          .uploadBinary(
-            path,
-            signaturePng,
-            fileOptions: const FileOptions(contentType: 'image/png'),
-          );
-    } on StorageException catch (error) {
-      // Sent by an earlier attempt whose answer was lost.
-      if (!_alreadyExists(error)) rethrow;
+    final path = signaturePng == null
+        ? null
+        : signaturePath(ownerId: ownerId, saleId: saleId, mandateId: mandateId);
+    if (signaturePng != null) {
+      try {
+        await _client.storage
+            .from(signaturesBucket)
+            .uploadBinary(
+              path!,
+              signaturePng,
+              fileOptions: const FileOptions(contentType: 'image/png'),
+            );
+      } on StorageException catch (error) {
+        // Sent by an earlier attempt whose answer was lost.
+        if (!_alreadyExists(error)) rethrow;
+      }
     }
     return await _client.rpc<String>(
       'sign_test_mandate',
@@ -247,6 +270,7 @@ class SaleRepository {
         'p_accepted': accepted,
         'p_user_agent': userAgent,
         'p_app_version': appVersion,
+        'p_typed_name': typedName,
       },
     );
   });
@@ -398,7 +422,7 @@ class SaleRepository {
     ListingPhoto photo, {
     required String sourcePath,
   }) => _run(() async {
-    final existing = await _existing(photo.id);
+    final existing = await _existing(photo.id) ?? await _copyOf(photo);
     if (existing != null) return existing;
     try {
       await _client.storage
@@ -422,8 +446,38 @@ class SaleRepository {
             );
       }
     }
-    return await _insert(photo);
+    try {
+      return await _insert(photo);
+    } on Object {
+      // Recorded meanwhile by another attempt (one copy per source photo):
+      // that row wins and this file is removed.
+      await _removeQuietly(photo.storagePath);
+      final other = await _copyOf(photo);
+      if (other != null) return other;
+      rethrow;
+    }
   });
+
+  /// The listing row already copied from the source of [photo], if any.
+  Future<ListingPhoto?> _copyOf(ListingPhoto photo) async {
+    final source = photo.sourceRoomPhotoId;
+    if (source == null) return null;
+    final row = await _client
+        .from(_photos)
+        .select()
+        .eq('sale_id', photo.saleId)
+        .eq('source_room_photo_id', source)
+        .maybeSingle();
+    return row == null ? null : ListingPhoto.fromJson(row);
+  }
+
+  Future<void> _removeQuietly(String path) async {
+    try {
+      await _client.storage.from(mediaBucket).remove([path]);
+    } on Object {
+      // Orphan file: listed by the team (runbook).
+    }
+  }
 
   /// Adds [photo] to its listing with the JPEG [bytes] (a new photo);
   /// retry-safe.

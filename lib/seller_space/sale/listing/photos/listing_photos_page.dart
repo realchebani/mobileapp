@@ -6,6 +6,7 @@ import 'package:mobileapp/l10n/l10n.dart';
 import 'package:mobileapp/profile/profile.dart';
 import 'package:mobileapp/seller_space/sale/cubit/sale_cubit.dart';
 import 'package:mobileapp/seller_space/sale/listing/photos/listing_photos_cubit.dart';
+import 'package:mobileapp/seller_space/sale/widgets/photo_examples.dart';
 import 'package:mobileapp/seller_space/sale/widgets/sale_scaffold.dart';
 import 'package:mobileapp/seller_tunnel/photos/photo_services.dart';
 import 'package:mobileapp/seller_tunnel/photos/view/photo_capture_page.dart';
@@ -151,6 +152,7 @@ class ListingPhotosView extends StatelessWidget {
               ),
             ],
             children: [
+              const PhotoExamples(),
               Text(
                 l10n.listingPhotosIntro,
                 style: RealestyTextStyles.bodySmall.copyWith(color: c.encre2),
@@ -257,9 +259,14 @@ class _Tile extends StatelessWidget {
               Positioned(
                 left: RealestySpacing.xxs,
                 top: RealestySpacing.xxs,
-                child: RealestyBadge(
-                  label: l10n.listingPhotosCover,
-                  variant: RealestyBadgeVariant.premium,
+                right: RealestySpacing.xxs,
+                child: Align(
+                  alignment: Alignment.topLeft,
+                  child: RealestyBadge(
+                    label: l10n.listingPhotosCover,
+                    variant: RealestyBadgeVariant.premium,
+                    showIcon: false,
+                  ),
                 ),
               ),
             if (caption != null)

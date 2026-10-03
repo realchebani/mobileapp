@@ -198,8 +198,8 @@ class _OfferChoiceSheetState extends State<OfferChoiceSheet> {
               fees: switch (_formula) {
                 SaleFormula.essentiel => l10n.offerChoiceEssentielFees,
                 SaleFormula.premium => l10n.offerChoicePremiumFees(
-                  frenchNumber(SaleFormula.premiumSetupFeeEur),
-                  frenchNumber(SaleFormula.premiumMonthlyFeeEur),
+                  frenchNumber(SalePrices.premiumSetupEur),
+                  frenchNumber(SalePrices.premiumMonthlyEur),
                 ),
                 SaleFormula.expert => l10n.offerChoiceExpertFees,
               },

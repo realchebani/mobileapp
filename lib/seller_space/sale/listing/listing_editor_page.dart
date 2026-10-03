@@ -72,6 +72,28 @@ class _ListingEditorViewState extends State<ListingEditorView> {
   static const _minPrice = 1000;
   static const _maxPrice = 100000000;
 
+  /// The bounds the server accepts (from half of the certified low bound to
+  /// twice the high bound), when the valuations are known.
+  (int, int)? get _hardBounds {
+    final low = _cubit.state.certifiedLow;
+    final high = _cubit.state.certifiedHigh;
+    return low == null || high == null
+        ? null
+        : SalePrices.hardBounds(low, high);
+  }
+
+  /// The error of [price], or null when it can be saved.
+  String? _priceError(int? price) {
+    final l10n = context.l10n;
+    if (price == null) return null;
+    if (price < _minPrice || price > _maxPrice) return l10n.listingPriceInvalid;
+    if (_hardBounds case (final low, final high)
+        when price < low || price > high) {
+      return l10n.saleErrorPriceBounds(frenchNumber(low), frenchNumber(high));
+    }
+    return null;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -141,7 +163,7 @@ class _ListingEditorViewState extends State<ListingEditorView> {
     setState(() => _price = price);
     if (fromSlider) _priceField.text = price == null ? '' : '$price';
     _saveTimer?.cancel();
-    if (price == null || price < _minPrice || price > _maxPrice) {
+    if (price == null || _priceError(price) != null) {
       _pendingPrice = null;
       return;
     }
@@ -163,8 +185,12 @@ class _ListingEditorViewState extends State<ListingEditorView> {
     final l10n = context.l10n;
     final cubit = context.read<SaleCubit>();
     final price = _price;
-    if (price == null || price < _minPrice || price > _maxPrice) {
-      showRealestySnackBar(context, l10n.listingPriceInvalid, isError: true);
+    if (price == null || _priceError(price) != null) {
+      showRealestySnackBar(
+        context,
+        _priceError(price) ?? l10n.listingPriceInvalid,
+        isError: true,
+      );
       return;
     }
     _saveTimer?.cancel();
@@ -296,10 +322,13 @@ class _ListingEditorViewState extends State<ListingEditorView> {
                             child: Stack(
                               fit: StackFit.expand,
                               children: [
-                                PhotoImage(url: _urls[photo.storagePath]),
-                                if (index == 3 && _photos.length > 4)
+                                if (index < 3 || _photos.length <= 4)
+                                  PhotoImage(url: _urls[photo.storagePath])
+                                else ...[
+                                  if (_urls[photo.storagePath] case final url?)
+                                    PhotoImage(url: url),
                                   ColoredBox(
-                                    color: c.nuit.withValues(alpha: 0.55),
+                                    color: c.nuit.withValues(alpha: 0.7),
                                     child: Center(
                                       child: Text(
                                         l10n.listingMorePhotos(
@@ -310,6 +339,7 @@ class _ListingEditorViewState extends State<ListingEditorView> {
                                       ),
                                     ),
                                   ),
+                                ],
                               ],
                             ),
                           ),
@@ -397,10 +427,7 @@ class _ListingEditorViewState extends State<ListingEditorView> {
                   FilteringTextInputFormatter.digitsOnly,
                   LengthLimitingTextInputFormatter(9),
                 ],
-                errorText:
-                    price != null && (price < _minPrice || price > _maxPrice)
-                    ? l10n.listingPriceInvalid
-                    : null,
+                errorText: _priceError(price),
                 onChanged: (text) => _setPrice(int.tryParse(text)),
               ),
               Text(
@@ -433,6 +460,9 @@ class _ListingEditorViewState extends State<ListingEditorView> {
                   value: l10n.listingCommissionValue(
                     sale.formula.feePercent,
                     frenchNumber(sale.formula.commissionOn(price)),
+                    frenchNumber(
+                      SalePrices.ht(sale.formula.commissionOn(price)),
+                    ),
                   ),
                 ),
               KeyValueRow(

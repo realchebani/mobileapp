@@ -119,3 +119,6 @@ supabase/.temp/
 
 # Local secrets (e.g. dev test account credentials)
 config/*.local.json
+
+# Local AI test photos (never committed)
+local_test_sets/
