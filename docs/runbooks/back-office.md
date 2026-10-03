@@ -98,3 +98,28 @@ Un brouillon d’avis de valeur bloqué (conflit, partenaire désactivé) :
 select property_id, version, status, updated_by, submitted_by, updated_at from public.valuation_drafts;
 update public.valuation_drafts set status = 'editing' where property_id = '<property id>';
 ```
+
+## 7. Lancer en local et héberger
+
+Local (port 3000 = `site_url` de Supabase : le lien magique revient sur l’app locale, aucune URL de redirection à ajouter) :
+
+```sh
+cd backoffice
+flutter run -d chrome --web-port 3000 --dart-define-from-file=config/development.json
+```
+
+`config/development.json` active aussi une connexion par mot de passe (comptes de test seulement, `DEV_PASSWORD_LOGIN`). Les fichiers `config/*.json` ne contiennent que la clé publishable.
+
+Hébergement — **pas encore fait** (en attente du porteur de projet). À fournir :
+1. le **sous-domaine** (proposé : `expert.realesty.fr`) et l’**accès DNS** de `realesty.fr` ;
+2. un **compte Cloudflare** (Pages, gratuit) : créer le projet `realesty-backoffice`, puis les secrets GitHub `CLOUDFLARE_API_TOKEN` (droit « Cloudflare Pages: Edit ») et `CLOUDFLARE_ACCOUNT_ID` ;
+3. en option, **Cloudflare Access** devant le site (seconde barrière, OTP e-mail).
+
+Ensuite :
+- vérifier `AUTH_REDIRECT_URL` dans `backoffice/config/production.json` (aujourd’hui `https://expert.realesty.fr/`) ;
+- ajouter cette URL aux URL autorisées : `additional_redirect_urls` de `supabase/config.toml`, puis `supabase config push` (relire le diff : il ne doit rien retirer des réglages du tableau de bord) ;
+- secret de l’Edge Function : `supabase secrets set BO_ALLOWED_ORIGINS=https://expert.realesty.fr` (origines autorisées pour `bo-files`, séparées par des virgules ; `http://localhost:3000` par défaut — le garder dans la liste pour le développement local) ;
+- adapter la CSP de `backoffice/web/_headers` si l’URL Supabase change (projet de production séparé) ;
+- lancer le workflow **backoffice_deploy** (onglet Actions, manuel) : il construit le site (`--no-web-resources-cdn`), vérifie qu’aucune clé secrète n’y figure et le déploie sur Cloudflare Pages.
+
+Avant d’inviter un expert **partenaire** externe : SMTP personnalisé (Brevo, backlog), accord de confidentialité signé.

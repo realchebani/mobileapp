@@ -1,5 +1,7 @@
 # Runbook · Fiche de remplissage et fil de conversation (EPIC-16)
 
+> Depuis EPIC-12, la fiche et le fil se lisent dans le back-office (onglets « Synthèse » et « Voix » du dossier, [back-office.md](back-office.md)) ; les requêtes ci-dessous restent le repli.
+
 Avant de certifier un dossier ([certifier-un-dossier.md](certifier-un-dossier.md)), l’expert relit **d’où vient chaque valeur** (fiche de remplissage) et, si besoin, **ce que le vendeur a dit** à l’assistant vocal (fil de conversation). En attendant le back-office EPIC-12, les deux se lisent dans le **SQL Editor** du tableau de bord Supabase (rôle `postgres`) ou avec `supabase db query --linked` (rôle `service_role`). Les fonctions ne sont pas appelables depuis l’application (exécution retirée à `public`, `anon` et `authenticated`).
 
 Migrations : `supabase/migrations/20261002175436_voix_prioritaire.sql`, `20261002200016_fill_sheet_sources.sql` (corrections de la fiche). Plan : [Voix prioritaire](../plans/2026-10-03-voix-prioritaire.md) §5.

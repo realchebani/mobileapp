@@ -173,6 +173,8 @@ Deno.test("maps SQL errors to HTTP statuses and hides internal ones", async () =
     [new RpcError("P0002", "dossier_not_found"), 404, "dossier_not_found"],
     [new RpcError("22023", "invalid_items"), 400, "invalid_items"],
     [new RpcError("55000", "not_certified"), 409, "not_certified"],
+    [new RpcError("PT404", "file_not_found"), 404, "file_not_found"],
+    [new RpcError("PT409", "not_certified"), 409, "not_certified"],
     [new RpcError("XX000", "boom"), 500, "internal"],
     [new Error("network"), 500, "internal"],
   ];
@@ -190,7 +192,7 @@ Deno.test("maps SQL errors to HTTP statuses and hides internal ones", async () =
 });
 
 Deno.test("origins come from a comma-separated setting", () => {
-  assertEquals(parseOrigins(undefined), ["http://localhost:8080"]);
-  assertEquals(parseOrigins(" "), ["http://localhost:8080"]);
+  assertEquals(parseOrigins(undefined), ["http://localhost:3000"]);
+  assertEquals(parseOrigins(" "), ["http://localhost:3000"]);
   assertEquals(parseOrigins("https://a, https://b"), ["https://a", "https://b"]);
 });

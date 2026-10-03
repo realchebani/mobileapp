@@ -58,7 +58,7 @@ const TYPES: ReadonlySet<string> = new Set(["document", "photo", "report"]);
 /** Origins from a comma-separated setting; localhost dev ports by default. */
 export function parseOrigins(value: string | undefined): string[] {
   const list = (value ?? "").split(",").map((o) => o.trim()).filter((o) => o.length > 0);
-  return list.length > 0 ? list : ["http://localhost:8080"];
+  return list.length > 0 ? list : ["http://localhost:3000"];
 }
 
 function corsHeaders(request: Request, allowed: string[]): Record<string, string> {
@@ -75,6 +75,9 @@ function corsHeaders(request: Request, allowed: string[]): Record<string, string
 
 /** HTTP status of a bo_* SQL error. */
 export function statusOf(error: RpcError): number {
+  // PTxyz: the HTTP status chosen by the SQL function.
+  const explicit = /^PT([45]\d\d)$/.exec(error.code);
+  if (explicit) return Number(explicit[1]);
   switch (error.code) {
     case "42501":
       return 403;

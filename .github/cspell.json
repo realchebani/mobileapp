@@ -32,7 +32,10 @@
     "Realesty",
     "OPENROUTER",
     "OpenRouter",
-    "openrouter"
+    "openrouter",
+    "backoffice",
+    "Cloudflare",
+    "TOTP"
   ],
   "ignorePaths": [
     "**/docs/**",
