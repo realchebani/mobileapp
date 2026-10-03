@@ -23,7 +23,7 @@ class FormSections extends StatelessWidget {
     final state = context.watch<ValuationFormCubit>().state;
     final cubit = context.read<ValuationFormCubit>();
     final p = state.payload;
-    final errors = state.errors;
+    final errors = state.visibleErrors;
     final canPickSigner = context.select<SessionCubit, bool>(
       (s) => s.state.me?.can(BackOfficeCapability.assign) ?? false,
     );
@@ -144,16 +144,22 @@ class FormSections extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              row([
-                input('expert_display_name', l10n.formExpertName),
-                input('expert_initials', l10n.formExpertInitials),
-                if (canPickSigner)
-                  SignatoryPicker(
-                    value: p['expert_user_id'] as String?,
-                    enabled: enabled,
-                    onChanged: (id) => cubit.setField('expert_user_id', id),
+              if (canPickSigner)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: RealestySpacing.sm),
+                  child: SizedBox(
+                    width: 420,
+                    child: SignatoryPicker(
+                      value: p['expert_user_id'] as String?,
+                      enabled: enabled,
+                      onChanged: (id) => cubit.setField('expert_user_id', id),
+                    ),
                   ),
-              ]),
+                )
+              else
+                Text(l10n.formSignedByDefault, style: RealestyTextStyles.label),
+              if (errorAt(l10n, errors, 'expert_user_id') case final String e)
+                Text(e, style: TextStyle(color: c.erreur)),
               Text(
                 l10n.formExpertHint,
                 style: RealestyTextStyles.bodySmall.copyWith(

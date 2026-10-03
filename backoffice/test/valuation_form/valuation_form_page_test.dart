@@ -341,4 +341,22 @@ void main() {
     expect(find.text('Choisir le PDF et l’envoyer'), findsNothing);
     expect(find.text('Ouvrir le PDF'), findsNothing);
   });
+
+  testWidgets('a bad signatory shows once certification is tried', (
+    tester,
+  ) async {
+    current = dossierFixture(
+      role: 'expert',
+      draft: {
+        'payload': {...validPayload, 'expert_user_id': 'x'},
+        'version': 1,
+      },
+    );
+    await pump(tester, me: expertMe);
+    expect(find.text('Signataire\u00a0: par défaut'), findsOneWidget);
+    expect(find.text('Identifiant invalide'), findsNothing);
+    await tester.tap(find.text('Certifier'));
+    await tester.pump();
+    expect(find.text('Identifiant invalide'), findsOneWidget);
+  });
 }

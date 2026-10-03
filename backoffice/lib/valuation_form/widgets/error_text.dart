@@ -18,6 +18,7 @@ String validationMessage(AppLocalizations l10n, String code) => switch (code) {
   'too_many' => l10n.errTooMany,
   'not_object' => l10n.errNotObject,
   'street_number' => l10n.errStreetNumber,
+  'unknown_signatory' => l10n.errUnknownSignatory,
   _ => l10n.errUnknownField,
 };
 

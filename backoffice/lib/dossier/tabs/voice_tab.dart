@@ -107,12 +107,18 @@ class _TurnTile extends StatelessWidget {
           if (turn.reply != null)
             Text('${l10n.voiceAgent} : ${turn.reply}', style: small),
           if (retained.values.any(_present))
-            Text(l10n.voiceRetained(compactJson(retained)), style: small),
+            Text(
+              l10n.voiceRetained(compactJson(retained, display: true)),
+              style: small,
+            ),
           if (turn.rejected.isNotEmpty)
-            Text(l10n.voiceRejected(compactJson(turn.rejected)), style: small),
+            Text(
+              l10n.voiceRejected(compactJson(turn.rejected, display: true)),
+              style: small,
+            ),
           if (turn.crossStep.isNotEmpty)
             Text(
-              l10n.voiceCrossStep(compactJson(turn.crossStep)),
+              l10n.voiceCrossStep(compactJson(turn.crossStep, display: true)),
               style: small,
             ),
           if (turn.error != null)

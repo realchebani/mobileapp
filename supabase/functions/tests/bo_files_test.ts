@@ -79,7 +79,22 @@ Deno.test("preflight answers the allowed origin only", async () => {
     new Request("http://localhost", { method: "OPTIONS", headers: { Origin: "https://evil" } }),
     deps(null),
   );
+  assertEquals(other.status, 403);
   assertEquals(other.headers.get("access-control-allow-origin"), null);
+  const forged = await handleBoFiles(
+    post({ action: "sign_upload", property_id: PROPERTY }, "https://evil"),
+    deps(),
+  );
+  assertEquals(forged.status, 403);
+  assertEquals(await forged.json(), { error: "origin_not_allowed" });
+  const serverToServer = await handleBoFiles(
+    new Request("http://localhost", {
+      method: "POST",
+      body: JSON.stringify({ action: "sign_upload", property_id: PROPERTY }),
+    }),
+    deps(),
+  );
+  assertEquals(serverToServer.status, 200);
 });
 
 Deno.test("refuses other methods, no JWT and bad bodies", async () => {

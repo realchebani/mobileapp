@@ -4,6 +4,7 @@ import 'package:backoffice_repository/backoffice_repository.dart';
 import 'package:flutter/widgets.dart';
 import 'package:realesty_backoffice/app/app.dart';
 import 'package:realesty_backoffice/app/browser/web_browser.dart';
+import 'package:realesty_backoffice/app/view/config_error.dart';
 import 'package:realesty_ui/realesty_ui.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -19,10 +20,11 @@ Future<void> bootstrap() async {
   const supabaseUrl = String.fromEnvironment('SUPABASE_URL');
   const supabaseKey = String.fromEnvironment('SUPABASE_PUBLISHABLE_KEY');
   const redirectUrl = String.fromEnvironment('AUTH_REDIRECT_URL');
-  assert(
-    supabaseUrl != '' && supabaseKey != '' && redirectUrl != '',
-    'Missing config: run with --dart-define-from-file=config/<env>.json',
-  );
+  if (supabaseUrl.isEmpty || supabaseKey.isEmpty || redirectUrl.isEmpty) {
+    // Built without --dart-define-from-file=config/<env>.json.
+    runApp(const ConfigErrorApp());
+    return;
+  }
   // PKCE: the magic link brings ?code= back to this site, exchanged here.
   await Supabase.initialize(url: supabaseUrl, publishableKey: supabaseKey);
   final client = Supabase.instance.client;

@@ -28,6 +28,10 @@ class FakeBrowser implements Browser {
   Future<void> open(String url) async => opened.add(url);
 
   @override
+  Future<void> openPending(Future<String> Function() load) async =>
+      opened.add(await load());
+
+  @override
   Future<PickedFile?> pickPdf() async => nextPdf;
 
   @override

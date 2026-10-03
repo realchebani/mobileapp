@@ -94,7 +94,7 @@ void main() {
 
     await tester.tap(find.text('Voir sur Géoportail'));
     expect(browser.opened.single, contains('c=4.74,45.7'));
-    await tester.tap(find.text('Identité vérifiée'));
+    await tester.tap(find.text('Marquer l’identité comme vérifiée'));
     await tester.pump();
     verify(() => repository.verifyIdentity('o1')).called(1);
     await tester.tap(find.textContaining('Terrain'));
@@ -231,7 +231,7 @@ void main() {
     await tester.pump();
     expect(find.textContaining('Dossier ouvert · Julien M.'), findsOneWidget);
     expect(find.textContaining('Certifié · Éditeur SQL'), findsOneWidget);
-    expect(find.text('value_eur: 525000'), findsOneWidget);
+    expect(find.text('value_eur: 525\u00a0000'), findsOneWidget);
   });
 
   testWidgets('journal: empty', (tester) async {

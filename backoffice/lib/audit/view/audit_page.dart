@@ -131,29 +131,56 @@ class _AuditViewState extends State<AuditView> {
     final l10n = context.l10n;
     final c = context.realestyColors;
     final state = context.watch<AuditCubit>().state;
-    Widget sized(double width, Widget child) =>
-        SizedBox(width: width, child: child);
+    Widget labeled(String label, Widget child, {int flex = 2}) => Expanded(
+      flex: flex,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: RealestyTextStyles.label),
+          const SizedBox(height: RealestySpacing.xs),
+          child,
+        ],
+      ),
+    );
+    const gap = SizedBox(width: RealestySpacing.sm);
     return ListView(
       padding: const EdgeInsets.all(RealestySpacing.xxl),
       children: [
-        Text(l10n.auditTitle, style: RealestyTextStyles.title1),
-        Text(
-          '${l10n.auditSubtitle} ${l10n.auditLimit}',
-          style: RealestyTextStyles.bodySmall.copyWith(color: c.encre2),
+        Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(l10n.auditTitle, style: RealestyTextStyles.title1),
+                  Text(
+                    '${l10n.auditSubtitle} ${l10n.auditLimit}',
+                    style: RealestyTextStyles.bodySmall.copyWith(
+                      color: c.encre2,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            RealestyButton(
+              label: l10n.auditExport,
+              expand: false,
+              variant: RealestyButtonVariant.secondary,
+              leadingIcon: RealestyIcons.download,
+              onPressed: state.entries.isEmpty ? null : _export,
+            ),
+          ],
         ),
         const SizedBox(height: RealestySpacing.lg),
-        Wrap(
-          spacing: RealestySpacing.md,
-          runSpacing: RealestySpacing.sm,
-          crossAxisAlignment: WrapCrossAlignment.end,
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            sized(
-              220,
+            labeled(
+              l10n.auditFilterActor,
               DropdownButtonFormField<String?>(
                 key: ValueKey('actor-${state.team.length}'),
                 initialValue: _actor,
                 isExpanded: true,
-                decoration: InputDecoration(labelText: l10n.auditFilterActor),
                 items: [
                   DropdownMenuItem(child: Text(l10n.auditAll)),
                   for (final m in state.team)
@@ -165,12 +192,12 @@ class _AuditViewState extends State<AuditView> {
                 onChanged: (value) => setState(() => _actor = value),
               ),
             ),
-            sized(
-              240,
+            gap,
+            labeled(
+              l10n.auditFilterAction,
               DropdownButtonFormField<String?>(
                 initialValue: _action,
                 isExpanded: true,
-                decoration: InputDecoration(labelText: l10n.auditFilterAction),
                 items: [
                   DropdownMenuItem(child: Text(l10n.auditAll)),
                   for (final action in auditActions)
@@ -182,38 +209,35 @@ class _AuditViewState extends State<AuditView> {
                 onChanged: (value) => setState(() => _action = value),
               ),
             ),
-            sized(
-              300,
-              RealestyTextField(
+            gap,
+            Expanded(
+              flex: 3,
+              child: RealestyTextField(
                 label: l10n.auditFilterDossier,
                 controller: _dossier,
               ),
             ),
-            sized(
-              170,
-              RealestyTextField(
+            gap,
+            Expanded(
+              flex: 2,
+              child: RealestyTextField(
                 label: l10n.auditFilterSince,
                 controller: _since,
               ),
             ),
-            sized(
-              190,
-              RealestyTextField(
+            gap,
+            Expanded(
+              flex: 2,
+              child: RealestyTextField(
                 label: l10n.auditFilterUntil,
                 controller: _until,
               ),
             ),
+            gap,
             RealestyButton(
               label: l10n.auditApply,
               expand: false,
               onPressed: _apply,
-            ),
-            RealestyButton(
-              label: l10n.auditExport,
-              expand: false,
-              variant: RealestyButtonVariant.secondary,
-              leadingIcon: RealestyIcons.download,
-              onPressed: state.entries.isEmpty ? null : _export,
             ),
           ],
         ),
@@ -244,7 +268,8 @@ class _AuditViewState extends State<AuditView> {
                         '${auditActorLabel(l10n, e)}',
                     detail: [
                       ?e.propertyId,
-                      if (e.details.isNotEmpty) compactJson(e.details),
+                      if (e.details.isNotEmpty)
+                        compactJson(e.details, display: true),
                     ].join(' · '),
                   ),
               ],

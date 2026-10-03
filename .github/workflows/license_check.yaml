@@ -11,6 +11,7 @@ on:
     paths:
       - "pubspec.yaml"
       - "packages/*/pubspec.yaml"
+      - "backoffice/pubspec.yaml"
       - ".github/workflows/license_check.yaml"
   push:
     branches:
@@ -18,6 +19,7 @@ on:
     paths:
       - "pubspec.yaml"
       - "packages/*/pubspec.yaml"
+      - "backoffice/pubspec.yaml"
       - ".github/workflows/license_check.yaml"
 
 jobs:
@@ -34,6 +36,13 @@ jobs:
       # Skipped: gtk (MPL-2.0) is only used by app_links on Linux, which we do not ship;
       # pubspec_lock_parse (no declared license) only comes from the dev tool flutter_launcher_icons.
       - name: Check licenses
+        run: |
+          flutter pub get
+          very_good packages check licenses --dependency-type="direct-main,transitive" --allowed="MIT,BSD-3-Clause,BSD-2-Clause,Apache-2.0" --skip-packages="gtk,pubspec_lock_parse"
+      # The back-office (Flutter web) has its own dependencies, including
+      # packages/backoffice_repository.
+      - name: Check licenses (back-office)
+        working-directory: backoffice
         run: |
           flutter pub get
           very_good packages check licenses --dependency-type="direct-main,transitive" --allowed="MIT,BSD-3-Clause,BSD-2-Clause,Apache-2.0" --skip-packages="gtk,pubspec_lock_parse"

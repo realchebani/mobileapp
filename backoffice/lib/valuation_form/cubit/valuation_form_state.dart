@@ -15,6 +15,8 @@ class ValuationFormState extends Equatable {
     this.action = FormAction.none,
     this.approvalNote,
     this.submittedByName,
+    this.touched = const {},
+    this.showAllErrors = false,
   });
 
   final JsonMap payload;
@@ -31,8 +33,23 @@ class ValuationFormState extends Equatable {
   final String? approvalNote;
   final String? submittedByName;
 
+  /// Fields changed by the user (their errors show at once).
+  final Set<String> touched;
+
+  /// A certification or a submission was attempted: every error shows.
+  final bool showAllErrors;
+
   /// Same rules as the database (`bo_validate_draft`).
   List<ValidationError> get errors => ValuationDraftValidator.validate(payload);
+
+  /// The errors to show next to the fields: those of the fields already
+  /// changed, or all of them after an attempt.
+  List<ValidationError> get visibleErrors => [
+    for (final error in errors)
+      if (showAllErrors || touched.contains(_root(error.path))) error,
+  ];
+
+  static String _root(String path) => path.split(RegExp(r'[\[.]')).first;
 
   bool get isSubmitted =>
       draftStatus == ValuationDraftStatus.submittedForApproval;
@@ -46,6 +63,8 @@ class ValuationFormState extends Equatable {
     DateTime? savedAt,
     FormAction? action,
     String? Function()? approvalNote,
+    Set<String>? touched,
+    bool? showAllErrors,
   }) => ValuationFormState(
     payload: payload ?? this.payload,
     version: version ?? this.version,
@@ -56,6 +75,8 @@ class ValuationFormState extends Equatable {
     action: action ?? this.action,
     approvalNote: approvalNote == null ? this.approvalNote : approvalNote(),
     submittedByName: submittedByName,
+    touched: touched ?? this.touched,
+    showAllErrors: showAllErrors ?? this.showAllErrors,
   );
 
   @override
@@ -69,5 +90,7 @@ class ValuationFormState extends Equatable {
     action,
     approvalNote,
     submittedByName,
+    touched,
+    showAllErrors,
   ];
 }

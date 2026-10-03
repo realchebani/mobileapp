@@ -2,7 +2,12 @@ import 'package:backoffice_repository/backoffice_repository.dart';
 import 'package:realesty_backoffice/app/app.dart';
 import 'package:realesty_backoffice/l10n/l10n.dart';
 
-String _cell(String value) {
+/// Cells a spreadsheet would read as a formula get a leading quote.
+String _defuse(String value) =>
+    value.isNotEmpty && '=+-@\t\r'.contains(value[0]) ? "'$value" : value;
+
+String _cell(String raw) {
+  final value = _defuse(raw);
   final needsQuotes = RegExp('[;"\n\r]').hasMatch(value);
   final escaped = value.replaceAll('"', '""');
   return needsQuotes ? '"$escaped"' : escaped;

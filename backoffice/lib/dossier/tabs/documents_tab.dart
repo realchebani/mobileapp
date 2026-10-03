@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:backoffice_repository/backoffice_repository.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -106,14 +108,21 @@ class _DocumentRow extends StatelessWidget {
         if (document.addedAfterSubmission) BoChip(l10n.docsAfter),
         if (document.isReplaced) BoChip(l10n.docsReplaced),
         TextButton(
-          onPressed: () => runGuarded(context, () async {
-            final browser = context.read<Browser>();
-            final signed = await context.read<BackOfficeRepository>().signFiles(
-              cubit.state.dossier!.id,
-              [FileRequest(FileKind.document, document.id)],
+          onPressed: () {
+            final repository = context.read<BackOfficeRepository>();
+            final id = cubit.state.dossier!.id;
+            unawaited(
+              runGuarded(
+                context,
+                () => context.read<Browser>().openPending(() async {
+                  final signed = await repository.signFiles(id, [
+                    FileRequest(FileKind.document, document.id),
+                  ]);
+                  return signed.single.url;
+                }),
+              ),
             );
-            await browser.open(signed.single.url);
-          }),
+          },
           child: Text(l10n.docsOpen),
         ),
         if (canVerify && !document.isVerified && !document.isReplaced)

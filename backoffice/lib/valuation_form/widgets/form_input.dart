@@ -24,8 +24,10 @@ Object? parseInput(InputKind kind, String text) {
   }
 }
 
+/// The value as shown in the field (« 525 000 », « 32,5 »).
 String formatInput(Object? value) => switch (value) {
   null => '',
+  final int i => frenchNumber(i),
   final double d => '$d'.replaceAll('.', ','),
   _ => '$value',
 };

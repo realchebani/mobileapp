@@ -31,6 +31,10 @@ enum BackOfficeFailureReason {
   noteRequired('note_required'),
   invalidSignatory('invalid_signatory'),
   invalidRole('invalid_role'),
+  signatoryNotAllowed('signatory_not_allowed'),
+  invalidPath('invalid_path'),
+  invalidPages('invalid_pages'),
+  originNotAllowed('origin_not_allowed'),
   unauthorized('unauthorized'),
   unknown('');
 

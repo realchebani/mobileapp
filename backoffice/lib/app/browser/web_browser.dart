@@ -12,6 +12,25 @@ class WebBrowser implements Browser {
   }
 
   @override
+  Future<void> openPending(Future<String> Function() load) async {
+    // Opened before the await: a tab opened after it would be blocked.
+    final tab = web.window.open('', '_blank');
+    try {
+      final url = await load();
+      if (tab == null) {
+        web.window.open(url, '_blank', 'noopener,noreferrer');
+      } else {
+        tab
+          ..opener = null
+          ..location.href = url;
+      }
+    } catch (_) {
+      tab?.close();
+      rethrow;
+    }
+  }
+
+  @override
   Future<void> saveText(
     String fileName,
     String text, {
@@ -27,7 +46,13 @@ class WebBrowser implements Browser {
       ..href = url
       ..download = fileName
       ..click();
-    web.URL.revokeObjectURL(url);
+    // Revoked later: some browsers start the download asynchronously.
+    unawaited(
+      Future<void>.delayed(
+        const Duration(minutes: 1),
+        () => web.URL.revokeObjectURL(url),
+      ),
+    );
   }
 
   @override
@@ -55,6 +80,20 @@ class WebBrowser implements Browser {
         if (!completer.isCompleted) completer.complete(null);
       }.toJS
       ..click();
+    // Browsers without `cancel`: the window gets the focus back when the
+    // dialog closes; no file a moment later means it was cancelled.
+    late final JSFunction onFocus;
+    onFocus = (web.Event _) {
+      web.window.removeEventListener('focus', onFocus);
+      unawaited(
+        Future<void>.delayed(const Duration(seconds: 1), () {
+          if (!completer.isCompleted && (input.files?.length ?? 0) == 0) {
+            completer.complete(null);
+          }
+        }),
+      );
+    }.toJS;
+    web.window.addEventListener('focus', onFocus);
     return completer.future;
   }
 }

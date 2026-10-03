@@ -43,7 +43,9 @@ class _JournalTabState extends State<JournalTab> {
               value:
                   '${auditActionLabel(l10n, entry.action)} · '
                   '${auditActorLabel(l10n, entry)}',
-              detail: entry.details.isEmpty ? null : compactJson(entry.details),
+              detail: entry.details.isEmpty
+                  ? null
+                  : compactJson(entry.details, display: true),
             ),
         ],
       ),

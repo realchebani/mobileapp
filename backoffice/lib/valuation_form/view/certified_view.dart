@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:backoffice_repository/backoffice_repository.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -6,6 +8,21 @@ import 'package:realesty_backoffice/app/app.dart';
 import 'package:realesty_backoffice/dossier/cubit/dossier_cubit.dart';
 import 'package:realesty_backoffice/l10n/l10n.dart';
 import 'package:realesty_ui/realesty_ui.dart';
+
+/// Largest report accepted (the bucket allows 30 MB).
+const int maxReportBytes = 20 * 1024 * 1024;
+
+/// Why [bytes] cannot be sent as the report, or null.
+String? pdfProblem(AppLocalizations l10n, Uint8List bytes) {
+  if (bytes.length > maxReportBytes) return l10n.formReportTooLarge;
+  const header = [0x25, 0x50, 0x44, 0x46]; // %PDF
+  if (bytes.length < header.length ||
+      [for (var i = 0; i < header.length; i++) bytes[i]].join() !=
+          header.join()) {
+    return l10n.formReportNotPdf;
+  }
+  return null;
+}
 
 /// A certified dossier: the valuation summary and its PDF (upload, open).
 class CertifiedView extends StatefulWidget {
@@ -38,6 +55,11 @@ class _CertifiedViewState extends State<CertifiedView> {
     final dossierCubit = context.read<DossierCubit>();
     final file = await context.read<Browser>().pickPdf();
     if (file == null || !mounted) return;
+    final problem = pdfProblem(l10n, file.bytes);
+    if (problem != null) {
+      showRealestySnackBar(context, problem, isError: true);
+      return;
+    }
     setState(() => _uploading = true);
     final done = await runGuarded(
       context,
@@ -100,15 +122,26 @@ class _CertifiedViewState extends State<CertifiedView> {
                     Text(l10n.formReportAttached(reportPages ?? 0)),
                     const SizedBox(width: RealestySpacing.sm),
                     TextButton(
-                      onPressed: () => runGuarded(context, () async {
-                        final browser = context.read<Browser>();
-                        final signed = await context
-                            .read<BackOfficeRepository>()
-                            .signFiles(widget.dossier.id, [
-                              FileRequest(FileKind.report, v['id'] as String),
-                            ]);
-                        await browser.open(signed.single.url);
-                      }),
+                      onPressed: () {
+                        final repository = context.read<BackOfficeRepository>();
+                        unawaited(
+                          runGuarded(
+                            context,
+                            () => context.read<Browser>().openPending(() async {
+                              final signed = await repository.signFiles(
+                                widget.dossier.id,
+                                [
+                                  FileRequest(
+                                    FileKind.report,
+                                    v['id'] as String,
+                                  ),
+                                ],
+                              );
+                              return signed.single.url;
+                            }),
+                          ),
+                        );
+                      },
                       child: Text(l10n.formReportOpen),
                     ),
                   ],

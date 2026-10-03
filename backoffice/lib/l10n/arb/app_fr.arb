@@ -323,7 +323,7 @@
   "@queueScopeUnassigned": {
     "description": "Portée : non attribués"
   },
-  "queueSearchHint": "Commune, code postal, lot ou identifiant",
+  "queueSearchHint": "Commune, code postal ou lot",
   "@queueSearchHint": {
     "description": "Indice de recherche"
   },
@@ -633,7 +633,7 @@
   "@synthOwnerNotVerified": {
     "description": "Identité non vérifiée"
   },
-  "synthVerifyIdentity": "Identité vérifiée",
+  "synthVerifyIdentity": "Marquer l’identité comme vérifiée",
   "@synthVerifyIdentity": {
     "description": "Bouton identité vérifiée"
   },
@@ -747,13 +747,13 @@
     "description": "Périmètre de l’estimation",
     "placeholders": {
       "count": {
-        "type": "int"
+        "type": "String"
       },
       "radius": {
-        "type": "int"
+        "type": "String"
       },
       "months": {
-        "type": "int"
+        "type": "String"
       }
     }
   },
@@ -1332,14 +1332,6 @@
       }
     }
   },
-  "formExpertName": "Nom affiché au vendeur",
-  "@formExpertName": {
-    "description": "Champ"
-  },
-  "formExpertInitials": "Initiales",
-  "@formExpertInitials": {
-    "description": "Champ"
-  },
   "formExpertFor": "Rapport saisi pour",
   "@formExpertFor": {
     "description": "Champ admin : signataire"
@@ -1348,7 +1340,7 @@
   "@formExpertSelf": {
     "description": "Option signataire"
   },
-  "formExpertHint": "Par défaut : la personne qui certifie, ou le partenaire qui a soumis le brouillon.",
+  "formExpertHint": "Le nom et les initiales affichés au vendeur sont ceux de la fiche d’équipe du signataire. Par défaut : la personne qui certifie, ou le partenaire qui a soumis le brouillon.",
   "@formExpertHint": {
     "description": "Aide signataire"
   },
@@ -1980,5 +1972,46 @@
   "auditLimit": "Les 1 000 dernières lignes au plus sont affichées et exportées.",
   "@auditLimit": {
     "description": "Limite du journal"
+  },
+  "failureSignatory": "Vous ne pouvez signer un avis que pour vous-même.",
+  "@failureSignatory": {
+    "description": "Erreur signataire non autorisé"
+  },
+  "failureInvalidSignatory": "Le signataire doit être un membre actif de l’équipe.",
+  "@failureInvalidSignatory": {
+    "description": "Erreur signataire invalide"
+  },
+  "errUnknownSignatory": "Le signataire n’est pas un membre actif de l’équipe",
+  "@errUnknownSignatory": {
+    "description": "Erreur"
+  },
+  "formSignedBy": "Signataire : {name}",
+  "@formSignedBy": {
+    "description": "Signataire choisi",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "formSignedByDefault": "Signataire : par défaut",
+  "@formSignedByDefault": {
+    "description": "Signataire par défaut"
+  },
+  "formReportNotPdf": "Ce fichier n’est pas un PDF.",
+  "@formReportNotPdf": {
+    "description": "Erreur PDF"
+  },
+  "formReportTooLarge": "Le PDF dépasse 20 Mo.",
+  "@formReportTooLarge": {
+    "description": "Erreur taille PDF"
+  },
+  "configErrorTitle": "Configuration manquante",
+  "@configErrorTitle": {
+    "description": "Titre configuration manquante"
+  },
+  "configErrorBody": "Le back-office a été construit sans sa configuration Supabase (--dart-define-from-file=config/<env>.json). Reconstruisez le site avec le bon fichier.",
+  "@configErrorBody": {
+    "description": "Texte configuration manquante"
   }
 }

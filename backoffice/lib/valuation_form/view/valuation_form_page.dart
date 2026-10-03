@@ -109,6 +109,7 @@ class _ActionBar extends StatelessWidget {
     final cubit = context.read<ValuationFormCubit>();
     final p = cubit.state.payload;
     if (cubit.state.errors.isNotEmpty) {
+      cubit.revealErrors();
       showRealestySnackBar(context, l10n.formFixErrors, isError: true);
       return;
     }
@@ -124,10 +125,7 @@ class _ActionBar extends StatelessWidget {
               euros(p['value_eur'] as int),
               euros(p['low_eur'] as int),
               euros(p['high_eur'] as int),
-              (p['expert_display_name'] as String?) ??
-                  cubit.state.submittedByName ??
-                  me?.displayName ??
-                  '',
+              cubit.state.submittedByName ?? me?.displayName ?? '',
             ),
           ),
         ),
@@ -237,6 +235,7 @@ class _ActionBar extends StatelessWidget {
                   ? null
                   : () {
                       if (errors > 0) {
+                        cubit.revealErrors();
                         showRealestySnackBar(
                           context,
                           l10n.formFixErrors,

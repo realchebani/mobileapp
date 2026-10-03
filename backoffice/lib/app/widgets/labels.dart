@@ -1,5 +1,6 @@
 import 'package:backoffice_repository/backoffice_repository.dart';
 import 'package:realesty_backoffice/l10n/l10n.dart';
+import 'package:realesty_ui/realesty_ui.dart';
 
 extension StaffRoleLabel on StaffRole {
   String label(AppLocalizations l10n) => switch (this) {
@@ -38,6 +39,8 @@ String propertyTypeLabel(
 String failureText(AppLocalizations l10n, Object error) {
   if (error is! BackOfficeFailure) return l10n.failureUnknown;
   return switch (error.reason) {
+    BackOfficeFailureReason.signatoryNotAllowed => l10n.failureSignatory,
+    BackOfficeFailureReason.invalidSignatory => l10n.failureInvalidSignatory,
     BackOfficeFailureReason.forbidden ||
     BackOfficeFailureReason.cannotDeactivateSelf ||
     BackOfficeFailureReason.cannotDemoteSelf => l10n.failureForbidden,
@@ -92,11 +95,19 @@ String auditActorLabel(AppLocalizations l10n, AuditEntry entry) =>
     ? l10n.actorSqlEditor
     : entry.actorName ?? entry.actorRole;
 
-/// Short text of a JSON value (journal details, voice values).
-String compactJson(Object? value) => switch (value) {
+/// Short text of a JSON value (journal details, voice values); [display]
+/// writes the numbers the French way (not for exports).
+String compactJson(Object? value, {bool display = false}) => switch (value) {
   null => '—',
   final Map<dynamic, dynamic> map =>
-    map.entries.map((e) => '${e.key}: ${compactJson(e.value)}').join(', '),
-  final List<dynamic> list => list.map(compactJson).join(' ; '),
+    map.entries
+        .map((e) => '${e.key}: ${compactJson(e.value, display: display)}')
+        .join(', '),
+  final List<dynamic> list =>
+    list.map((v) => compactJson(v, display: display)).join(' ; '),
+  final num n when display => frenchNumber(
+    n,
+    decimalDigits: n == n.truncate() ? 0 : 2,
+  ),
   _ => '$value',
 };

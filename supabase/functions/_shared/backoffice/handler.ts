@@ -8,6 +8,11 @@
 //   → { files: [{ type, id, url, file_name, mime_type }], expires_in }
 // POST { action: "sign_upload", property_id }
 //   → { bucket, path, token, signed_url, valuation_id }
+//   The upload URL lives 2 hours: Supabase Storage fixes it, the API takes no
+//   expiry (createSignedUploadUrl). It only allows that one path, once.
+//
+// A browser request from an Origin not listed in BO_ALLOWED_ORIGINS gets 403
+// (requests without Origin — server to server — are judged on the JWT).
 
 export const DOWNLOAD_SECONDS = 300;
 export const MAX_ITEMS = 60;
@@ -114,6 +119,10 @@ export async function handleBoFiles(request: Request, deps: BoFilesDeps): Promis
       headers: { ...cors, "content-type": "application/json; charset=utf-8" },
     });
 
+  const origin = request.headers.get("Origin");
+  if (origin && !deps.allowedOrigins.includes(origin)) {
+    return json({ error: "origin_not_allowed" }, 403);
+  }
   if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: cors });
   if (request.method !== "POST") return json({ error: "method_not_allowed" }, 405);
   if (!deps.db) return json({ error: "unauthorized" }, 401);

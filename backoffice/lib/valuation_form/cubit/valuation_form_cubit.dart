@@ -79,10 +79,19 @@ class ValuationFormCubit extends Cubit<ValuationFormState> {
     } else {
       payload[key] = value;
     }
-    emit(state.copyWith(payload: payload, saveStatus: SaveStatus.dirty));
+    emit(
+      state.copyWith(
+        payload: payload,
+        saveStatus: SaveStatus.dirty,
+        touched: {...state.touched, key},
+      ),
+    );
     _timer?.cancel();
     _timer = Timer(_autosaveDelay, () => unawaited(save().catchError((_) {})));
   }
+
+  /// Shows every error (after a certification or submission attempt).
+  void revealErrors() => emit(state.copyWith(showAllErrors: true));
 
   /// Saves now (waits for a save in progress, then saves again if needed).
   Future<void> save() async {

@@ -318,9 +318,9 @@ class _MarketCard extends StatelessWidget {
               label: l10n.synthMarketConfidence,
               value: '$confidence %',
               detail: l10n.synthMarketScope(
-                Json.integer(m['comparables_count']) ?? 0,
-                Json.integer(m['radius_m']) ?? 0,
-                Json.integer(m['months']) ?? 0,
+                frenchNumber(Json.integer(m['comparables_count']) ?? 0),
+                frenchNumber(Json.integer(m['radius_m']) ?? 0),
+                frenchNumber(Json.integer(m['months']) ?? 0),
               ),
             ),
           for (final sale in Json.maps(m['comparables']))

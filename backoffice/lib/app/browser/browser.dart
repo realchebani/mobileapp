@@ -17,6 +17,10 @@ abstract class Browser {
   /// Opens [url] in a new tab.
   Future<void> open(String url);
 
+  /// Opens a new tab at once (still within the click, so it is not blocked)
+  /// and sends it to the URL [load] returns (a signed URL).
+  Future<void> openPending(Future<String> Function() load);
+
   /// Saves [text] as a downloaded file.
   Future<void> saveText(String fileName, String text, {String mimeType});
 

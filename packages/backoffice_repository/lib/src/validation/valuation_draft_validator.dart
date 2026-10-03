@@ -5,7 +5,8 @@ import 'package:equatable/equatable.dart';
 /// `comparables[0].street`…) and [code] (`required`, `not_integer`,
 /// `out_of_range`, `not_number`, `not_text`, `too_long`, `not_bool`,
 /// `invalid_choice`, `invalid_date`, `invalid_uuid`, `unknown_field`,
-/// `range_order`, `not_list`, `too_many`, `not_object`, `street_number`).
+/// `range_order`, `not_list`, `too_many`, `not_object`, `street_number`;
+/// from the database only: `unknown_signatory`).
 /// {@endtemplate}
 class ValidationError extends Equatable {
   /// {@macro validation_error}
