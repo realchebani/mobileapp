@@ -111,3 +111,7 @@ from storage.objects
 where bucket_id in ('listing-media', 'mandate-signatures', 'sale-documents')
 group by 1;
 ```
+
+## 8. Visites (EPIC-09)
+
+Créneaux, demandes de visite, décisions de l’agent, comptes rendus et démonstration : runbook [Organiser les visites](organiser-les-visites.md). Un retrait de la vente annule ses visites à venir (prévenir les acquéreurs).
