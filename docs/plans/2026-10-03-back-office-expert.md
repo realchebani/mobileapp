@@ -1,6 +1,6 @@
 # EPIC-12 · Back-office expert (mini back-office web de certification) — plan d’implémentation
 
-> Date : 2026-10-03. Statut : **proposition, questions ouvertes** (aucun code écrit).
+> Date : 2026-10-03. Statut : **codé** (tranches B0–B8, B10, B11 ; B9 « aperçu vendeur » reste planifiée) avec les **choix par défaut** des questions non tranchées (§12 bis), branche `feat/epic-12-back-office`. **Pas encore hébergé** : domaine, DNS et compte d’hébergement à fournir (§12 bis, Q3).
 > Sources lues : `CLAUDE.md`, `docs/decisions.md`, `docs/epics/*.md`, [spec V8b → V19](2026-10-01-parcours-vendeur-v8b-v19.md) (§4.1, §4.6, §5.1, §7 Q1–Q2, §9, §10 journal EPIC-07 : note sur les `staff_*` en `SECURITY INVOKER`), [runbook « Certifier un dossier »](../runbooks/certifier-un-dossier.md), [runbook « Suivi voix »](../runbooks/suivi-voix.md), `supabase/migrations/*` (`valuations_and_notifications`, `valuation_report_path_check`, `agent_conversations`, `voix_etendue`, `multi_biens*`, `market_estimation`, `room_photos` d’EPIC-15), `packages/sale_repository` (`Valuation`), `lib/seller_space/report/**` (V9b), plan EPIC-15 « Photos du bien », décisions EPIC-16 (traçabilité vocale).
 > Plans frères (même date) : [Formules & mise en vente](2026-10-03-offres-et-mise-en-vente.md) (EPIC-08), [Coffre-fort & compte](2026-10-03-coffre-fort-et-compte.md) (EPIC-11).
 
@@ -254,11 +254,46 @@ Légende : **🔴 bloquante** · **🟢 défaut réversible**.
 
 **Bloquantes pour coder EPIC-12 : Q1 (technologie), Q4 (rôles), Q6 (périmètre partenaire), Q7 (certification partenaire).**
 
+## 12 bis. Choix par défaut en attendant le porteur de projet
+
+Les questions tranchées le 2026-10-03 (Q1, Q4, Q6, Q7, voir « Arbitrages » en fin de plan) sont appliquées telles quelles. Pour les autres, l’option **recommandée (a)** est codée, sauf mention contraire du brief de l’epic :
+
+| Q | Choix codé | Où le changer |
+|---|---|---|
+| 2 | (a) `lib/ui` extrait en `packages/realesty_ui` ; `lib/ui/ui.dart` le réexporte (aucun import de l’app changé) ; polices et icônes dans le paquet (familles `packages/realesty_ui/<Famille>`) | — |
+| 3 | **Non déployé** : site construit (`flutter build web --no-web-resources-cdn`), en-têtes `backoffice/web/_headers` (CSP, HSTS, `frame-ancestors 'none'`) prêts pour Cloudflare Pages ; workflow `backoffice_deploy.yaml` manuel (`workflow_dispatch`) qui s’arrête sans les secrets Cloudflare ; `config/production.json` vise `https://expert.realesty.fr/` à confirmer. En local, le site tourne sur `http://localhost:3000` (`site_url` de Supabase) : aucune URL de redirection ajoutée, `config.toml` inchangé | `backoffice/config/production.json`, `web/_headers`, `.github/workflows/backoffice_deploy.yaml`, runbook §7 |
+| 5 | (a) TOTP obligatoire pour toute l’équipe : chaque `bo_*` exige `aal2` | `bo_aal2()` / `_bo_actor` (migration) |
+| 8 | (a) prévu en tranche B9, **non livré** (facultatif) | — |
+| 9 | (a) correction d’un avis certifié par le runbook SQL ; pas de `bo_amend` | runbook « Corriger une erreur » |
+| 10 | (a) journal conservé sans limite pendant les tests ; purge possible seulement au SQL Editor (`realesty.audit_purge`) | runbook back-office §5 |
+| 11 | (a) l’admin attribue ; un admin ou un expert qui « prend en charge » un dossier non attribué se l’attribue ; un partenaire ne prend que ses dossiers | `bo_start_review` |
+| 12 | (a) demandes de services d’EPIC-08 hors back-office : runbook SQL `suivre-une-vente.md` §4 | — |
+
+Précisions de mise en œuvre (non tranchées par le plan) :
+- **Signataire** de l’avis : `expert_user_id` du brouillon, sinon le partenaire qui l’a soumis, sinon la personne qui certifie ; nom et initiales repris de `staff_members` quand le brouillon ne les donne pas. L’admin peut choisir le signataire (« Rapport saisi pour »).
+- Un expert ou l’admin peut **renvoyer** un brouillon soumis à son auteur avec un commentaire (`bo_return_draft`).
+- « Vérifier » un document **ne notifie pas** le vendeur (comme `staff_verify_document` par défaut) ; « Refuser » le notifie toujours.
+- Comparables importés de l’instantané DVF : seulement les ventes dont la rue est publique (≥ 3 ventes), **sans date** (la DVF publiée ne garde que l’année ; aucune date inventée).
+- Back-office **en français seul** (`lib/l10n/arb/app_fr.arb`).
+- Pagination par décalage (`p_offset`) plutôt que par curseur.
+- Codes d’erreur HTTP : `PT404` (introuvable) et `PT409` (conflit, état incompatible) — migration `back_office_http_codes` ; `40001` faisait réessayer PostgREST en boucle.
+- Signataire (revue du 2026-10-03, migration `back_office_hardening`) : membre **actif** obligatoire ; un non-admin ne peut désigner que lui-même (ou garder le signataire déjà dans le brouillon) ; nom et initiales toujours repris de `staff_members`. Le formulaire n’a plus de champs « nom / initiales ».
+
+## 12 ter. Données visibles par un partenaire (à confirmer)
+
+Tout ce qu’un partenaire voit d’un dossier est façonné en un seul endroit, la fonction SQL `_bo_partner_view` (appelée par `bo_get_dossier`) : pas d’identifiant ni de coordonnées du vendeur, propriétaires réduits aux initiales + commune, aucune pièce d’identité, aucun chemin de fichier (le chemin du PDF contient l’identifiant du vendeur : `valuation.report_storage_path` vaut `null`).
+
+**Données visibles par un partenaire : adresse complète, note secrète, notes d’étape, prix d’achat, transcriptions vocales — à confirmer par le porteur.** Pour en retirer, ajouter les clés à `_bo_partner_view` (une migration).
+
 ---
 
 ## Journal d’exécution
 
 - 2026-10-03 : plan rédigé (aucun code), EPIC-12 créé (📋), README mis à jour.
+- 2026-10-03 (codage) : **B0** `lib/ui` → `packages/realesty_ui` (réexport, polices et icônes dans le paquet, `registerFontLicenses` et `loadRealestyFonts` via `RealestyFonts.files`, job CI). **B1** migration `back_office` (tables `staff_members`, `dossier_assignments`, `valuation_drafts`, `staff_audit_log` en ajout seul ; `bo_role`, `bo_can_access_property`, 20 RPC `bo_*` ; `staff_*` redéfinies à l’identique + ligne de journal `sql_editor`) : `migration list` synchronisée, sonde annulée (vendeur refusé, expert sans `aal2` refusé, partenaire limité aux dossiers attribués, propriétaires masqués, pièce d’identité refusée, certification refusée au partenaire, conflit de brouillon, désactivation immédiate, journal non modifiable, tables vendeur inchangées), dry-run, push. **B2** Edge Function `bo-files` (vérification avec le JWT de l’appelant, URL signées 5 min, CORS par liste d’origines `BO_ALLOWED_ORIGINS`), 7 tests Deno, déployée. **B3** paquet `backoffice_repository` + `ValuationDraftValidator` ; fixture de parité de 35 cas calculée par la fonction SQL (`supabase/functions/tests/fixtures/valuation_drafts.json`), parité exacte. **B4/B5** `backoffice/` : session (lien magique, TOTP, accès refusé), routeur avec `?from=`, coque bureau, file des dossiers (filtres, lots regroupés, prise en charge, attribution), CI `backoffice.yaml`. **B6–B8** vue dossier (synthèse avec provenance, photos, documents, voix, journal) et formulaire de l’avis (enregistrement auto, verrou optimiste, validation partagée, pré-remplissages, certification, soumission / renvoi, PDF). **B10** équipe et journal (export CSV). **B11** identité (bouton par propriétaire), docs.
+- 2026-10-03 (B11, essai de bout en bout sur le projet distant) : 3 comptes jetables créés par l’API admin (admin et partenaire avec TOTP enrôlé par programme, vendeur), 2 dossiers de test « TEST EPIC-12 » envoyés + 2 fichiers. Vérifié : MFA exigée, vendeur refusé, attribution, isolation du partenaire (file, dossier non attribué, pièce d’identité refusée par `bo-files`, fichier d’un autre dossier refusé), URL signée servie, prise en charge, brouillon refusé (rue avec numéro), conflit de version, soumission, certification refusée au partenaire puis faite par l’admin, PDF envoyé par URL signée et lié, **avis visible par le vendeur via RLS** (signé par le partenaire), notifications, journal complet, partenaire coupé à la désactivation. Le blocage `40001` (PostgREST réessayait) a conduit à la migration `back_office_http_codes` (sonde annulée, push) et à `bo-files` redéployée. **Tout a été supprimé ensuite** : comptes (facteurs TOTP et données en cascade), fichiers Storage, lignes du journal ; contrôle final : 0 utilisateur, 0 bien, 0 ligne de journal, 0 fichier restants. Aucun compte réel touché.
+- 2026-10-03 (revue) : migration `back_office_hardening` (signataire actif et non falsifiable, `_bo_partner_view`, chemin du PDF masqué aux partenaires, `bo_attach_report` vérifie chemin et fichier → 404) : `migration list` synchronisée, sonde annulée (suite complète + cas signataire, chemin, vue partenaire), dry-run, push. `bo-files` : 403 pour une origine non listée ; durée de l’URL d’envoi documentée (2 h, fixée par Storage). Back-office : onglet ouvert avant l’attente de l’URL signée, révocation différée du lien CSV, repli « focus » quand `cancel` n’existe pas, contrôle `%PDF` et 20 Mo, CSV neutralisé (`=`, `+`, `-`, `@`, tabulation, retour chariot), « Marquer l’identité comme vérifiée », nombres en `frenchNumber`, erreurs « Obligatoire » après saisie ou tentative, filtres du journal sur une ligne, écran « Configuration manquante ». Contrôle de licences étendu à `backoffice/`.
+- 2026-10-03 (fin) : vérifications — app racine 1 524 tests à 100 %, `realesty_ui` 109 tests à 100 %, `backoffice_repository` 71 tests à 100 %, `backoffice/` 92 tests à 100 %, Deno 219 tests (dont 7 pour `bo-files`), analyse / format / bloc lint propres, `flutter build web` OK (aucune clé secrète dans `build/web`), build iOS release (development) OK. Captures 1 440 px dans le scratchpad `epic12/shots/`. Reste : B9 (aperçu vendeur), hébergement et domaine, premier administrateur, SMTP avant tout partenaire externe.
 
 ## Arbitrages du porteur de projet (2026-10-03) — prévalent sur le reste du plan
 - Q1 : **Flutter web dans le dépôt**. Q4 : **table `staff_members`** (TOTP obligatoire). Q6 : partenaires limités aux **dossiers assignés** (initiales + commune, pas de pièce d'identité). Q7 : le partenaire **soumet**, un expert interne ou l'admin **certifie**.

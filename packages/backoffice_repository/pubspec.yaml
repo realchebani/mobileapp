@@ -1,0 +1,17 @@
+name: backoffice_repository
+description: Realesty back-office data access (EPIC-12) — bo_* RPCs, bo-files signed URLs, MFA sign-in and the shared valuation draft validator.
+version: 0.1.0+1
+publish_to: none
+
+environment:
+  sdk: ^3.13.0
+
+dependencies:
+  equatable: ^3.0.0
+  supabase: ^2.16.2
+
+dev_dependencies:
+  http: ^1.6.0
+  mocktail: ^1.0.5
+  test: ^1.32.0
+  very_good_analysis: ^11.0.0

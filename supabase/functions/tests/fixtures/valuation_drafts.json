@@ -1,0 +1,1058 @@
+{
+  "_comment": "EPIC-12: parity of the valuation draft validation between SQL (_bo_valuation_errors, *_back_office.sql) and Dart (ValuationDraftValidator, packages/backoffice_repository). Expected errors computed by the SQL function.",
+  "cases": [
+    {
+      "name": "minimal valid",
+      "payload": {
+        "value_eur": 525000,
+        "low_eur": 505000,
+        "high_eur": 545000
+      },
+      "errors": []
+    },
+    {
+      "name": "empty",
+      "payload": {},
+      "errors": [
+        {
+          "code": "required",
+          "path": "value_eur"
+        },
+        {
+          "code": "required",
+          "path": "low_eur"
+        },
+        {
+          "code": "required",
+          "path": "high_eur"
+        }
+      ]
+    },
+    {
+      "name": "not an object",
+      "payload": [
+        1,
+        2
+      ],
+      "errors": [
+        {
+          "code": "not_object",
+          "path": ""
+        }
+      ]
+    },
+    {
+      "name": "full example of the runbook",
+      "payload": {
+        "value_eur": 525000,
+        "low_eur": 505000,
+        "high_eur": 545000,
+        "estimated_delay_weeks": 8,
+        "expert_display_name": "Julien M.",
+        "expert_initials": "JM",
+        "valid_until": "2027-01-03",
+        "expert_user_id": "11111111-1111-4111-8111-111111111111",
+        "method_steps": [
+          {
+            "label": "Tendance IA",
+            "detail": "avant la visite",
+            "amount_eur": 518000
+          },
+          {
+            "label": "Constat",
+            "amount_eur": 4000,
+            "is_delta": true
+          }
+        ],
+        "reasons": [
+          {
+            "positive": true,
+            "text": "Piscine"
+          },
+          {
+            "positive": false,
+            "text": "Vis-à-vis"
+          }
+        ],
+        "delay_curve": [
+          {
+            "price_eur": 505000,
+            "label": "≈ 5 semaines"
+          }
+        ],
+        "expert_quote": "Ce bien…",
+        "description": "Maison familiale",
+        "technical_sheet": [
+          {
+            "label": "DPE",
+            "value": "Classe C",
+            "provenance": "verified"
+          }
+        ],
+        "comparables": [
+          {
+            "street": "rue Lucien Cozon",
+            "sold_on": "2025-10-01",
+            "area_m2": 107.5,
+            "land_m2": 576,
+            "price_eur": 457000,
+            "excluded": false
+          }
+        ],
+        "comparables_note": "Médiane 4 250 €/m².",
+        "competitors_summary": "19 maisons",
+        "competitors": [
+          {
+            "label": "T5",
+            "price_eur": 429000,
+            "note": "Comparable",
+            "days_online": 114,
+            "retained": true
+          }
+        ],
+        "risks_note": "aucun",
+        "adjustments": [
+          {
+            "label": "Base",
+            "amount_eur": 489000,
+            "kind": "base"
+          },
+          {
+            "label": "Vis-à-vis",
+            "amount_eur": -5000
+          }
+        ],
+        "method_summary": [
+          {
+            "label": "Pondération",
+            "amount_eur": 521000,
+            "kind": "total"
+          }
+        ],
+        "works_label": "Salle de bain",
+        "works_estimate_eur": 0,
+        "sources": "DVF"
+      },
+      "errors": []
+    },
+    {
+      "name": "required amounts null",
+      "payload": {
+        "value_eur": null,
+        "low_eur": null,
+        "high_eur": null
+      },
+      "errors": [
+        {
+          "code": "required",
+          "path": "value_eur"
+        },
+        {
+          "code": "required",
+          "path": "low_eur"
+        },
+        {
+          "code": "required",
+          "path": "high_eur"
+        }
+      ]
+    },
+    {
+      "name": "amounts not integers",
+      "payload": {
+        "value_eur": 525000.5,
+        "low_eur": "505000",
+        "high_eur": true
+      },
+      "errors": [
+        {
+          "code": "not_integer",
+          "path": "value_eur"
+        },
+        {
+          "code": "not_integer",
+          "path": "low_eur"
+        },
+        {
+          "code": "not_integer",
+          "path": "high_eur"
+        }
+      ]
+    },
+    {
+      "name": "integral decimals accepted",
+      "payload": {
+        "value_eur": 525000.0,
+        "low_eur": 505000,
+        "high_eur": 545000
+      },
+      "errors": []
+    },
+    {
+      "name": "amounts out of range",
+      "payload": {
+        "value_eur": 999,
+        "low_eur": 500,
+        "high_eur": 100000001
+      },
+      "errors": [
+        {
+          "code": "out_of_range",
+          "path": "value_eur"
+        },
+        {
+          "code": "out_of_range",
+          "path": "low_eur"
+        },
+        {
+          "code": "out_of_range",
+          "path": "high_eur"
+        }
+      ]
+    },
+    {
+      "name": "range order",
+      "payload": {
+        "value_eur": 600000,
+        "low_eur": 505000,
+        "high_eur": 545000
+      },
+      "errors": [
+        {
+          "code": "range_order",
+          "path": "value_eur"
+        }
+      ]
+    },
+    {
+      "name": "range order with decimals still compared",
+      "payload": {
+        "value_eur": 1000.5,
+        "low_eur": 2000,
+        "high_eur": 3000
+      },
+      "errors": [
+        {
+          "code": "not_integer",
+          "path": "value_eur"
+        },
+        {
+          "code": "range_order",
+          "path": "value_eur"
+        }
+      ]
+    },
+    {
+      "name": "optional integers",
+      "payload": {
+        "value_eur": 525000,
+        "low_eur": 505000,
+        "high_eur": 545000,
+        "price_m2_eur": 0,
+        "estimated_delay_weeks": 105,
+        "works_estimate_eur": -1
+      },
+      "errors": [
+        {
+          "code": "out_of_range",
+          "path": "price_m2_eur"
+        },
+        {
+          "code": "out_of_range",
+          "path": "estimated_delay_weeks"
+        },
+        {
+          "code": "out_of_range",
+          "path": "works_estimate_eur"
+        }
+      ]
+    },
+    {
+      "name": "optional integers valid bounds",
+      "payload": {
+        "value_eur": 525000,
+        "low_eur": 505000,
+        "high_eur": 545000,
+        "price_m2_eur": 1000000,
+        "estimated_delay_weeks": 1,
+        "works_estimate_eur": 100000000
+      },
+      "errors": []
+    },
+    {
+      "name": "dates",
+      "payload": {
+        "value_eur": 525000,
+        "low_eur": 505000,
+        "high_eur": 545000,
+        "valid_until": "2026-02-30"
+      },
+      "errors": [
+        {
+          "code": "invalid_date",
+          "path": "valid_until"
+        }
+      ]
+    },
+    {
+      "name": "date wrong format",
+      "payload": {
+        "value_eur": 525000,
+        "low_eur": 505000,
+        "high_eur": 545000,
+        "valid_until": "03/01/2027"
+      },
+      "errors": [
+        {
+          "code": "invalid_date",
+          "path": "valid_until"
+        }
+      ]
+    },
+    {
+      "name": "date not a string",
+      "payload": {
+        "value_eur": 525000,
+        "low_eur": 505000,
+        "high_eur": 545000,
+        "valid_until": 20270103
+      },
+      "errors": [
+        {
+          "code": "invalid_date",
+          "path": "valid_until"
+        }
+      ]
+    },
+    {
+      "name": "leap day",
+      "payload": {
+        "value_eur": 525000,
+        "low_eur": 505000,
+        "high_eur": 545000,
+        "valid_until": "2028-02-29"
+      },
+      "errors": []
+    },
+    {
+      "name": "texts too long",
+      "payload": {
+        "value_eur": 525000,
+        "low_eur": 505000,
+        "high_eur": 545000,
+        "expert_display_name": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+        "expert_initials": "ABCD",
+        "expert_quote": "ééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé",
+        "description": "ddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "comparables_note": "nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn",
+        "competitors_summary": "sssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss",
+        "risks_note": "rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr",
+        "works_label": "wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww",
+        "sources": "ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo"
+      },
+      "errors": [
+        {
+          "code": "too_long",
+          "path": "expert_display_name"
+        },
+        {
+          "code": "too_long",
+          "path": "expert_initials"
+        },
+        {
+          "code": "too_long",
+          "path": "expert_quote"
+        },
+        {
+          "code": "too_long",
+          "path": "description"
+        },
+        {
+          "code": "too_long",
+          "path": "comparables_note"
+        },
+        {
+          "code": "too_long",
+          "path": "competitors_summary"
+        },
+        {
+          "code": "too_long",
+          "path": "risks_note"
+        },
+        {
+          "code": "too_long",
+          "path": "works_label"
+        },
+        {
+          "code": "too_long",
+          "path": "sources"
+        }
+      ]
+    },
+    {
+      "name": "texts at the limit (code points)",
+      "payload": {
+        "value_eur": 525000,
+        "low_eur": 505000,
+        "high_eur": 545000,
+        "expert_initials": "ÉÀÇ",
+        "expert_quote": "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀"
+      },
+      "errors": []
+    },
+    {
+      "name": "blank texts are absent",
+      "payload": {
+        "value_eur": 525000,
+        "low_eur": 505000,
+        "high_eur": 545000,
+        "expert_display_name": "   ",
+        "description": ""
+      },
+      "errors": []
+    },
+    {
+      "name": "texts not strings",
+      "payload": {
+        "value_eur": 525000,
+        "low_eur": 505000,
+        "high_eur": 545000,
+        "description": 12,
+        "sources": [
+          "a"
+        ]
+      },
+      "errors": [
+        {
+          "code": "not_text",
+          "path": "description"
+        },
+        {
+          "code": "not_text",
+          "path": "sources"
+        }
+      ]
+    },
+    {
+      "name": "uuid",
+      "payload": {
+        "value_eur": 525000,
+        "low_eur": 505000,
+        "high_eur": 545000,
+        "expert_user_id": "not-a-uuid"
+      },
+      "errors": [
+        {
+          "code": "invalid_uuid",
+          "path": "expert_user_id"
+        }
+      ]
+    },
+    {
+      "name": "uuid not a string",
+      "payload": {
+        "value_eur": 525000,
+        "low_eur": 505000,
+        "high_eur": 545000,
+        "expert_user_id": 12
+      },
+      "errors": [
+        {
+          "code": "invalid_uuid",
+          "path": "expert_user_id"
+        }
+      ]
+    },
+    {
+      "name": "uuid null",
+      "payload": {
+        "value_eur": 525000,
+        "low_eur": 505000,
+        "high_eur": 545000,
+        "expert_user_id": null
+      },
+      "errors": []
+    },
+    {
+      "name": "unknown top-level keys",
+      "payload": {
+        "value_eur": 525000,
+        "low_eur": 505000,
+        "high_eur": 545000,
+        "zeta": 1,
+        "alpha": null,
+        "ai_trend_eur": 3
+      },
+      "errors": [
+        {
+          "code": "unknown_field",
+          "path": "ai_trend_eur"
+        },
+        {
+          "code": "unknown_field",
+          "path": "alpha"
+        },
+        {
+          "code": "unknown_field",
+          "path": "zeta"
+        }
+      ]
+    },
+    {
+      "name": "lists not lists",
+      "payload": {
+        "value_eur": 525000,
+        "low_eur": 505000,
+        "high_eur": 545000,
+        "method_steps": {},
+        "reasons": "x",
+        "comparables": null
+      },
+      "errors": [
+        {
+          "code": "not_list",
+          "path": "method_steps"
+        },
+        {
+          "code": "not_list",
+          "path": "reasons"
+        }
+      ]
+    },
+    {
+      "name": "too many items",
+      "payload": {
+        "value_eur": 525000,
+        "low_eur": 505000,
+        "high_eur": 545000,
+        "reasons": [
+          {
+            "text": "x"
+          },
+          {
+            "text": "x"
+          },
+          {
+            "text": "x"
+          },
+          {
+            "text": "x"
+          },
+          {
+            "text": "x"
+          },
+          {
+            "text": "x"
+          },
+          {
+            "text": "x"
+          },
+          {
+            "text": "x"
+          },
+          {
+            "text": "x"
+          },
+          {
+            "text": "x"
+          },
+          {
+            "text": "x"
+          },
+          {
+            "text": "x"
+          },
+          {
+            "text": "x"
+          },
+          {
+            "text": "x"
+          },
+          {
+            "text": "x"
+          },
+          {
+            "text": "x"
+          },
+          {
+            "text": "x"
+          },
+          {
+            "text": "x"
+          },
+          {
+            "text": "x"
+          },
+          {
+            "text": "x"
+          },
+          {
+            "text": "x"
+          },
+          {
+            "text": "x"
+          },
+          {
+            "text": "x"
+          },
+          {
+            "text": "x"
+          },
+          {
+            "text": "x"
+          },
+          {
+            "text": "x"
+          },
+          {
+            "text": "x"
+          },
+          {
+            "text": "x"
+          },
+          {
+            "text": "x"
+          },
+          {
+            "text": "x"
+          },
+          {
+            "text": "x"
+          },
+          {
+            "text": "x"
+          },
+          {
+            "text": "x"
+          },
+          {
+            "text": "x"
+          },
+          {
+            "text": "x"
+          },
+          {
+            "text": "x"
+          },
+          {
+            "text": "x"
+          },
+          {
+            "text": "x"
+          },
+          {
+            "text": "x"
+          },
+          {
+            "text": "x"
+          },
+          {
+            "text": "x"
+          },
+          {
+            "text": "x"
+          },
+          {
+            "text": "x"
+          },
+          {
+            "text": "x"
+          },
+          {
+            "text": "x"
+          },
+          {
+            "text": "x"
+          },
+          {
+            "text": "x"
+          },
+          {
+            "text": "x"
+          },
+          {
+            "text": "x"
+          },
+          {
+            "text": "x"
+          },
+          {
+            "text": "x"
+          }
+        ]
+      },
+      "errors": [
+        {
+          "code": "too_many",
+          "path": "reasons"
+        }
+      ]
+    },
+    {
+      "name": "items not objects",
+      "payload": {
+        "value_eur": 525000,
+        "low_eur": 505000,
+        "high_eur": 545000,
+        "reasons": [
+          "x",
+          null,
+          {
+            "text": "ok"
+          }
+        ]
+      },
+      "errors": [
+        {
+          "code": "not_object",
+          "path": "reasons[0]"
+        },
+        {
+          "code": "not_object",
+          "path": "reasons[1]"
+        }
+      ]
+    },
+    {
+      "name": "method steps",
+      "payload": {
+        "value_eur": 525000,
+        "low_eur": 505000,
+        "high_eur": 545000,
+        "method_steps": [
+          {},
+          {
+            "label": "L",
+            "amount_eur": 1.5,
+            "is_delta": "yes",
+            "detail": "ddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+          },
+          {
+            "label": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+            "amount_eur": -100000001,
+            "extra": 1
+          }
+        ]
+      },
+      "errors": [
+        {
+          "code": "required",
+          "path": "method_steps[0].label"
+        },
+        {
+          "code": "required",
+          "path": "method_steps[0].amount_eur"
+        },
+        {
+          "code": "too_long",
+          "path": "method_steps[1].detail"
+        },
+        {
+          "code": "not_integer",
+          "path": "method_steps[1].amount_eur"
+        },
+        {
+          "code": "not_bool",
+          "path": "method_steps[1].is_delta"
+        },
+        {
+          "code": "unknown_field",
+          "path": "method_steps[2].extra"
+        },
+        {
+          "code": "too_long",
+          "path": "method_steps[2].label"
+        },
+        {
+          "code": "out_of_range",
+          "path": "method_steps[2].amount_eur"
+        }
+      ]
+    },
+    {
+      "name": "reasons",
+      "payload": {
+        "value_eur": 525000,
+        "low_eur": 505000,
+        "high_eur": 545000,
+        "reasons": [
+          {
+            "text": " "
+          },
+          {
+            "text": "ttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttt",
+            "positive": 1
+          }
+        ]
+      },
+      "errors": [
+        {
+          "code": "required",
+          "path": "reasons[0].text"
+        },
+        {
+          "code": "too_long",
+          "path": "reasons[1].text"
+        },
+        {
+          "code": "not_bool",
+          "path": "reasons[1].positive"
+        }
+      ]
+    },
+    {
+      "name": "delay curve",
+      "payload": {
+        "value_eur": 525000,
+        "low_eur": 505000,
+        "high_eur": 545000,
+        "delay_curve": [
+          {
+            "price_eur": 500,
+            "label": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+          },
+          {}
+        ]
+      },
+      "errors": [
+        {
+          "code": "out_of_range",
+          "path": "delay_curve[0].price_eur"
+        },
+        {
+          "code": "too_long",
+          "path": "delay_curve[0].label"
+        },
+        {
+          "code": "required",
+          "path": "delay_curve[1].price_eur"
+        },
+        {
+          "code": "required",
+          "path": "delay_curve[1].label"
+        }
+      ]
+    },
+    {
+      "name": "technical sheet",
+      "payload": {
+        "value_eur": 525000,
+        "low_eur": 505000,
+        "high_eur": 545000,
+        "technical_sheet": [
+          {
+            "label": "DPE",
+            "value": "C",
+            "provenance": "guessed"
+          },
+          {
+            "label": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+            "value": "vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv",
+            "provenance": null
+          },
+          {}
+        ]
+      },
+      "errors": [
+        {
+          "code": "invalid_choice",
+          "path": "technical_sheet[0].provenance"
+        },
+        {
+          "code": "too_long",
+          "path": "technical_sheet[1].label"
+        },
+        {
+          "code": "too_long",
+          "path": "technical_sheet[1].value"
+        },
+        {
+          "code": "required",
+          "path": "technical_sheet[2].label"
+        },
+        {
+          "code": "required",
+          "path": "technical_sheet[2].value"
+        }
+      ]
+    },
+    {
+      "name": "comparables",
+      "payload": {
+        "value_eur": 525000,
+        "low_eur": 505000,
+        "high_eur": 545000,
+        "comparables": [
+          {
+            "street": "12 rue X",
+            "price_eur": 2000
+          },
+          {
+            "street": "  3 bis rue Y",
+            "price_eur": 2000
+          },
+          {
+            "street": "rue Z",
+            "price_eur": 999,
+            "sold_on": "2025-13-01",
+            "area_m2": 0,
+            "land_m2": -1,
+            "excluded": "no"
+          },
+          {
+            "street": "rue A",
+            "price_eur": 2000,
+            "area_m2": "100"
+          },
+          {}
+        ]
+      },
+      "errors": [
+        {
+          "code": "street_number",
+          "path": "comparables[0].street"
+        },
+        {
+          "code": "street_number",
+          "path": "comparables[1].street"
+        },
+        {
+          "code": "invalid_date",
+          "path": "comparables[2].sold_on"
+        },
+        {
+          "code": "out_of_range",
+          "path": "comparables[2].area_m2"
+        },
+        {
+          "code": "out_of_range",
+          "path": "comparables[2].land_m2"
+        },
+        {
+          "code": "out_of_range",
+          "path": "comparables[2].price_eur"
+        },
+        {
+          "code": "not_bool",
+          "path": "comparables[2].excluded"
+        },
+        {
+          "code": "not_number",
+          "path": "comparables[3].area_m2"
+        },
+        {
+          "code": "required",
+          "path": "comparables[4].street"
+        },
+        {
+          "code": "required",
+          "path": "comparables[4].price_eur"
+        }
+      ]
+    },
+    {
+      "name": "comparable street number check on blank-prefixed name",
+      "payload": {
+        "value_eur": 525000,
+        "low_eur": 505000,
+        "high_eur": 545000,
+        "comparables": [
+          {
+            "street": "rue du 8 Mai",
+            "price_eur": 2000,
+            "area_m2": 100000
+          }
+        ]
+      },
+      "errors": []
+    },
+    {
+      "name": "competitors",
+      "payload": {
+        "value_eur": 525000,
+        "low_eur": 505000,
+        "high_eur": 545000,
+        "competitors": [
+          {
+            "label": "T5",
+            "price_eur": 999,
+            "days_online": 3651,
+            "retained": "y",
+            "note": "nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn"
+          },
+          {}
+        ]
+      },
+      "errors": [
+        {
+          "code": "out_of_range",
+          "path": "competitors[0].price_eur"
+        },
+        {
+          "code": "too_long",
+          "path": "competitors[0].note"
+        },
+        {
+          "code": "out_of_range",
+          "path": "competitors[0].days_online"
+        },
+        {
+          "code": "not_bool",
+          "path": "competitors[0].retained"
+        },
+        {
+          "code": "required",
+          "path": "competitors[1].label"
+        }
+      ]
+    },
+    {
+      "name": "adjustments and summary",
+      "payload": {
+        "value_eur": 525000,
+        "low_eur": 505000,
+        "high_eur": 545000,
+        "adjustments": [
+          {
+            "label": "B",
+            "amount_eur": 1,
+            "kind": "delta"
+          },
+          {
+            "amount_eur": null
+          }
+        ],
+        "method_summary": [
+          {
+            "label": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+            "amount_eur": 100000000,
+            "kind": "control",
+            "foo": 1
+          }
+        ]
+      },
+      "errors": [
+        {
+          "code": "invalid_choice",
+          "path": "adjustments[0].kind"
+        },
+        {
+          "code": "required",
+          "path": "adjustments[1].label"
+        },
+        {
+          "code": "required",
+          "path": "adjustments[1].amount_eur"
+        },
+        {
+          "code": "unknown_field",
+          "path": "method_summary[0].foo"
+        },
+        {
+          "code": "too_long",
+          "path": "method_summary[0].label"
+        }
+      ]
+    }
+  ]
+}

@@ -3,7 +3,7 @@ import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:mobileapp/seller_tunnel/models/property_type_profile.dart';
 import 'package:mobileapp/seller_tunnel/voice/voice_form.dart';
-import 'package:mobileapp/ui/format/realesty_format.dart';
+import 'package:mobileapp/ui/ui.dart';
 import 'package:property_repository/property_repository.dart';
 
 part 'property_context_state.dart';

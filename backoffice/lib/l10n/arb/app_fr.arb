@@ -1,0 +1,2017 @@
+{
+  "@@locale": "fr",
+  "appTitle": "Realesty · Back-office",
+  "@appTitle": {
+    "description": "Titre de l’onglet du navigateur"
+  },
+  "navQueue": "Dossiers",
+  "@navQueue": {
+    "description": "Menu : file des dossiers"
+  },
+  "navTeam": "Équipe",
+  "@navTeam": {
+    "description": "Menu : équipe (admin)"
+  },
+  "navAudit": "Journal",
+  "@navAudit": {
+    "description": "Menu : journal d’audit (admin)"
+  },
+  "signOut": "Se déconnecter",
+  "@signOut": {
+    "description": "Bouton de déconnexion"
+  },
+  "roleAdmin": "Administrateur",
+  "@roleAdmin": {
+    "description": "Rôle admin"
+  },
+  "roleExpert": "Expert",
+  "@roleExpert": {
+    "description": "Rôle expert embauché"
+  },
+  "rolePartnerExpert": "Expert partenaire",
+  "@rolePartnerExpert": {
+    "description": "Rôle expert partenaire"
+  },
+  "narrowScreenTitle": "Écran trop étroit",
+  "@narrowScreenTitle": {
+    "description": "Titre sous 1 024 px"
+  },
+  "narrowScreenBody": "Le back-office est conçu pour un ordinateur. Agrandissez la fenêtre (1 024 pixels au moins).",
+  "@narrowScreenBody": {
+    "description": "Message sous 1 024 px"
+  },
+  "loading": "Chargement…",
+  "@loading": {
+    "description": "Chargement en cours"
+  },
+  "retry": "Réessayer",
+  "@retry": {
+    "description": "Bouton réessayer"
+  },
+  "cancel": "Annuler",
+  "@cancel": {
+    "description": "Bouton annuler"
+  },
+  "close": "Fermer",
+  "@close": {
+    "description": "Bouton fermer"
+  },
+  "confirm": "Confirmer",
+  "@confirm": {
+    "description": "Bouton confirmer"
+  },
+  "save": "Enregistrer",
+  "@save": {
+    "description": "Bouton enregistrer"
+  },
+  "unavailableTitle": "Back-office indisponible",
+  "@unavailableTitle": {
+    "description": "Titre quand le serveur ne répond pas"
+  },
+  "unavailableBody": "Impossible de joindre le serveur. Vérifiez votre connexion puis réessayez.",
+  "@unavailableBody": {
+    "description": "Texte quand le serveur ne répond pas"
+  },
+  "loginTitle": "Connexion de l’équipe",
+  "@loginTitle": {
+    "description": "Titre de la connexion"
+  },
+  "loginBody": "Saisissez votre adresse e-mail professionnelle : vous recevrez un lien de connexion à ouvrir dans ce navigateur.",
+  "@loginBody": {
+    "description": "Texte de la connexion"
+  },
+  "loginEmailLabel": "Adresse e-mail",
+  "@loginEmailLabel": {
+    "description": "Libellé du champ e-mail"
+  },
+  "loginEmailHint": "prenom@realesty.fr",
+  "@loginEmailHint": {
+    "description": "Exemple d’e-mail"
+  },
+  "loginEmailInvalid": "Adresse e-mail invalide",
+  "@loginEmailInvalid": {
+    "description": "Erreur e-mail"
+  },
+  "loginSend": "Recevoir le lien de connexion",
+  "@loginSend": {
+    "description": "Bouton d’envoi du lien"
+  },
+  "loginSentTitle": "Lien envoyé",
+  "@loginSentTitle": {
+    "description": "Titre après envoi du lien"
+  },
+  "loginSentBody": "Ouvrez l’e-mail envoyé à {email} et cliquez sur le lien, dans ce même navigateur.",
+  "@loginSentBody": {
+    "description": "Texte après envoi du lien",
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "loginOtherEmail": "Utiliser une autre adresse",
+  "@loginOtherEmail": {
+    "description": "Lien pour changer d’e-mail"
+  },
+  "loginRateLimited": "Trop de demandes. Patientez une minute avant de recommencer.",
+  "@loginRateLimited": {
+    "description": "Erreur limite d’envoi"
+  },
+  "loginError": "L’envoi a échoué. Réessayez.",
+  "@loginError": {
+    "description": "Erreur générique de connexion"
+  },
+  "loginDevTitle": "Connexion de test (développement)",
+  "@loginDevTitle": {
+    "description": "Titre de la connexion par mot de passe de dev"
+  },
+  "loginDevPassword": "Mot de passe",
+  "@loginDevPassword": {
+    "description": "Libellé du mot de passe de test"
+  },
+  "loginDevSubmit": "Se connecter",
+  "@loginDevSubmit": {
+    "description": "Bouton de connexion par mot de passe"
+  },
+  "loginDevError": "Identifiants refusés.",
+  "@loginDevError": {
+    "description": "Erreur de connexion de test"
+  },
+  "loginSecurityNote": "Accès réservé à l’équipe Realesty et aux experts partenaires. Double authentification obligatoire.",
+  "@loginSecurityNote": {
+    "description": "Mention de sécurité"
+  },
+  "mfaTitle": "Double authentification",
+  "@mfaTitle": {
+    "description": "Titre de l’écran MFA"
+  },
+  "mfaEnrollBody": "Première connexion : scannez ce QR code avec votre application d’authentification (Google Authenticator, 1Password, Authy…), puis saisissez le code à 6 chiffres affiché.",
+  "@mfaEnrollBody": {
+    "description": "Texte d’enrôlement TOTP"
+  },
+  "mfaVerifyBody": "Saisissez le code à 6 chiffres de votre application d’authentification.",
+  "@mfaVerifyBody": {
+    "description": "Texte de vérification TOTP"
+  },
+  "mfaSecretLabel": "Clé à saisir si vous ne pouvez pas scanner :",
+  "@mfaSecretLabel": {
+    "description": "Libellé de la clé secrète TOTP"
+  },
+  "mfaCodeLabel": "Code à 6 chiffres",
+  "@mfaCodeLabel": {
+    "description": "Libellé du code TOTP"
+  },
+  "mfaSubmit": "Valider",
+  "@mfaSubmit": {
+    "description": "Bouton de validation du code"
+  },
+  "mfaInvalidCode": "Code incorrect ou expiré. Réessayez avec le code affiché maintenant.",
+  "@mfaInvalidCode": {
+    "description": "Erreur de code TOTP"
+  },
+  "mfaError": "La vérification a échoué. Réessayez.",
+  "@mfaError": {
+    "description": "Erreur générique MFA"
+  },
+  "mfaStartEnroll": "Configurer l’application",
+  "@mfaStartEnroll": {
+    "description": "Bouton pour démarrer l’enrôlement"
+  },
+  "deniedTitle": "Accès refusé",
+  "@deniedTitle": {
+    "description": "Titre accès refusé"
+  },
+  "deniedBody": "Le compte {email} n’a pas accès au back-office. Si vous faites partie de l’équipe, demandez à un administrateur de vous ajouter.",
+  "@deniedBody": {
+    "description": "Texte accès refusé",
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "failureForbidden": "Action non autorisée pour votre rôle.",
+  "@failureForbidden": {
+    "description": "Erreur forbidden"
+  },
+  "failureNotFound": "Élément introuvable ou non accessible.",
+  "@failureNotFound": {
+    "description": "Erreur introuvable"
+  },
+  "failureConflict": "Le brouillon a été modifié par {name}. Rechargez pour voir sa version.",
+  "@failureConflict": {
+    "description": "Erreur conflit de brouillon",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "failureConflictAnonymous": "Le brouillon a été modifié entre-temps. Rechargez pour voir la dernière version.",
+  "@failureConflictAnonymous": {
+    "description": "Erreur conflit sans nom"
+  },
+  "failureIdentityForbidden": "Les pièces d’identité ne sont pas accessibles aux experts partenaires.",
+  "@failureIdentityForbidden": {
+    "description": "Erreur pièce d’identité partenaire"
+  },
+  "failureClosed": "Ce dossier est déjà certifié.",
+  "@failureClosed": {
+    "description": "Erreur dossier fermé"
+  },
+  "failureNotSubmitted": "Ce dossier n’est plus au statut « Envoyé ».",
+  "@failureNotSubmitted": {
+    "description": "Erreur dossier pas envoyé"
+  },
+  "failureDraftSubmitted": "Brouillon soumis pour validation : il n’est plus modifiable.",
+  "@failureDraftSubmitted": {
+    "description": "Erreur brouillon soumis"
+  },
+  "failureDraftInvalid": "L’avis de valeur contient des erreurs.",
+  "@failureDraftInvalid": {
+    "description": "Erreur brouillon invalide"
+  },
+  "failureUnknown": "Une erreur est survenue. Réessayez.",
+  "@failureUnknown": {
+    "description": "Erreur générique"
+  },
+  "statusSubmitted": "Envoyé",
+  "@statusSubmitted": {
+    "description": "Statut envoyé"
+  },
+  "statusInReview": "En examen",
+  "@statusInReview": {
+    "description": "Statut en examen"
+  },
+  "statusCertified": "Certifié",
+  "@statusCertified": {
+    "description": "Statut certifié"
+  },
+  "statusDraft": "Brouillon",
+  "@statusDraft": {
+    "description": "Statut brouillon vendeur"
+  },
+  "typeMaison": "Maison",
+  "@typeMaison": {
+    "description": "Type de bien"
+  },
+  "typeAppartement": "Appartement",
+  "@typeAppartement": {
+    "description": "Type de bien"
+  },
+  "typeTerrain": "Terrain",
+  "@typeTerrain": {
+    "description": "Type de bien"
+  },
+  "typeStationnement": "Stationnement",
+  "@typeStationnement": {
+    "description": "Type de bien"
+  },
+  "typeDependance": "Dépendance",
+  "@typeDependance": {
+    "description": "Type de bien"
+  },
+  "typeLocalCommercial": "Local commercial",
+  "@typeLocalCommercial": {
+    "description": "Type de bien"
+  },
+  "typeImmeuble": "Immeuble",
+  "@typeImmeuble": {
+    "description": "Type de bien"
+  },
+  "typeAutre": "Autre bien",
+  "@typeAutre": {
+    "description": "Type de bien"
+  },
+  "queueTitle": "Dossiers",
+  "@queueTitle": {
+    "description": "Titre de la file"
+  },
+  "queueSubtitle": "Dossiers envoyés par les vendeurs, du plus ancien au plus récent.",
+  "@queueSubtitle": {
+    "description": "Sous-titre de la file"
+  },
+  "queueFilterOpen": "À traiter",
+  "@queueFilterOpen": {
+    "description": "Filtre : envoyés + en examen"
+  },
+  "queueFilterSubmitted": "Envoyés",
+  "@queueFilterSubmitted": {
+    "description": "Filtre envoyés"
+  },
+  "queueFilterInReview": "En examen",
+  "@queueFilterInReview": {
+    "description": "Filtre en examen"
+  },
+  "queueFilterCertified": "Certifiés",
+  "@queueFilterCertified": {
+    "description": "Filtre certifiés"
+  },
+  "queueFilterAll": "Tous",
+  "@queueFilterAll": {
+    "description": "Filtre tous statuts"
+  },
+  "queueScopeAll": "Toute l’équipe",
+  "@queueScopeAll": {
+    "description": "Portée : tous"
+  },
+  "queueScopeMine": "Mes dossiers",
+  "@queueScopeMine": {
+    "description": "Portée : mes dossiers"
+  },
+  "queueScopeUnassigned": "Non attribués",
+  "@queueScopeUnassigned": {
+    "description": "Portée : non attribués"
+  },
+  "queueSearchHint": "Commune, code postal ou lot",
+  "@queueSearchHint": {
+    "description": "Indice de recherche"
+  },
+  "queueSearchLabel": "Rechercher",
+  "@queueSearchLabel": {
+    "description": "Libellé de recherche"
+  },
+  "queueColSubmitted": "Envoyé le",
+  "@queueColSubmitted": {
+    "description": "Colonne date d’envoi"
+  },
+  "queueColProperty": "Bien",
+  "@queueColProperty": {
+    "description": "Colonne bien"
+  },
+  "queueColSeller": "Vendeur",
+  "@queueColSeller": {
+    "description": "Colonne vendeur"
+  },
+  "queueColStatus": "Statut",
+  "@queueColStatus": {
+    "description": "Colonne statut"
+  },
+  "queueColAssignee": "Attribué à",
+  "@queueColAssignee": {
+    "description": "Colonne attribution"
+  },
+  "queueColFlags": "À regarder",
+  "@queueColFlags": {
+    "description": "Colonne indicateurs"
+  },
+  "queueColActions": "Actions",
+  "@queueColActions": {
+    "description": "Colonne actions"
+  },
+  "queueAgeDays": "il y a {days} j",
+  "@queueAgeDays": {
+    "description": "Ancienneté en jours",
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "queueAgeHours": "il y a {hours} h",
+  "@queueAgeHours": {
+    "description": "Ancienneté en heures",
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      }
+    }
+  },
+  "queueAgeAlert": "Plus de 48 h",
+  "@queueAgeAlert": {
+    "description": "Alerte ancienneté"
+  },
+  "queueUnassigned": "Non attribué",
+  "@queueUnassigned": {
+    "description": "Aucun expert attribué"
+  },
+  "queueDocsToVerify": "{count, plural, =1{1 document à vérifier} other{{count} documents à vérifier}}",
+  "@queueDocsToVerify": {
+    "description": "Indicateur documents",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "queueDocsAfter": "+{count} après l’envoi",
+  "@queueDocsAfter": {
+    "description": "Indicateur documents ajoutés après l’envoi",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "queuePhotos": "{count, plural, =0{Aucune photo} =1{1 photo} other{{count} photos}}",
+  "@queuePhotos": {
+    "description": "Indicateur photos",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "queueVoice": "Voix",
+  "@queueVoice": {
+    "description": "Indicateur conversation vocale"
+  },
+  "queueDraft": "Brouillon v{count}",
+  "@queueDraft": {
+    "description": "Indicateur brouillon d’avis",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "queueDraftSubmitted": "À valider",
+  "@queueDraftSubmitted": {
+    "description": "Indicateur brouillon soumis par un partenaire"
+  },
+  "queueSellerDeactivated": "Compte désactivé",
+  "@queueSellerDeactivated": {
+    "description": "Vendeur ayant demandé la suppression"
+  },
+  "queueLot": "Lot : {name}",
+  "@queueLot": {
+    "description": "Lot du dossier",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "queueOpen": "Ouvrir",
+  "@queueOpen": {
+    "description": "Action ouvrir"
+  },
+  "queueTake": "Prendre en charge",
+  "@queueTake": {
+    "description": "Action prendre en charge"
+  },
+  "queueAssign": "Attribuer",
+  "@queueAssign": {
+    "description": "Action attribuer"
+  },
+  "queueTaken": "Dossier pris en charge : le vendeur est prévenu.",
+  "@queueTaken": {
+    "description": "Confirmation prise en charge"
+  },
+  "queueAssigned": "Dossier attribué à {name}.",
+  "@queueAssigned": {
+    "description": "Confirmation attribution",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "queueUnassignedDone": "Attribution retirée.",
+  "@queueUnassignedDone": {
+    "description": "Confirmation retrait"
+  },
+  "queueEmpty": "Aucun dossier",
+  "@queueEmpty": {
+    "description": "File vide"
+  },
+  "queueEmptyBody": "Aucun dossier ne correspond à ces filtres.",
+  "@queueEmptyBody": {
+    "description": "File vide, détail"
+  },
+  "queueError": "La file n’a pas pu être chargée.",
+  "@queueError": {
+    "description": "Erreur de chargement de la file"
+  },
+  "queueMore": "Afficher plus",
+  "@queueMore": {
+    "description": "Charger plus de dossiers"
+  },
+  "assignTitle": "Attribuer le dossier",
+  "@assignTitle": {
+    "description": "Titre de la boîte d’attribution"
+  },
+  "assignBody": "Choisissez le membre de l’équipe responsable de ce dossier. Un partenaire ne voit que les dossiers qui lui sont attribués.",
+  "@assignBody": {
+    "description": "Texte d’attribution"
+  },
+  "assignNote": "Note (facultatif)",
+  "@assignNote": {
+    "description": "Note d’attribution"
+  },
+  "assignRemove": "Retirer l’attribution",
+  "@assignRemove": {
+    "description": "Bouton retirer"
+  },
+  "assignNoTeam": "Aucun membre actif.",
+  "@assignNoTeam": {
+    "description": "Équipe vide"
+  },
+  "dossierBack": "Dossiers",
+  "@dossierBack": {
+    "description": "Lien retour vers la file"
+  },
+  "dossierError": "Le dossier n’a pas pu être chargé.",
+  "@dossierError": {
+    "description": "Erreur de chargement du dossier"
+  },
+  "dossierTabSynthesis": "Synthèse",
+  "@dossierTabSynthesis": {
+    "description": "Onglet synthèse"
+  },
+  "dossierTabPhotos": "Photos",
+  "@dossierTabPhotos": {
+    "description": "Onglet photos"
+  },
+  "dossierTabDocuments": "Documents",
+  "@dossierTabDocuments": {
+    "description": "Onglet documents"
+  },
+  "dossierTabVoice": "Voix",
+  "@dossierTabVoice": {
+    "description": "Onglet voix"
+  },
+  "dossierTabValuation": "Avis de valeur",
+  "@dossierTabValuation": {
+    "description": "Onglet avis de valeur"
+  },
+  "dossierTabJournal": "Journal",
+  "@dossierTabJournal": {
+    "description": "Onglet journal"
+  },
+  "dossierSentOn": "Envoyé le {date}",
+  "@dossierSentOn": {
+    "description": "Date d’envoi",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "dossierAssignedTo": "Attribué à {name}",
+  "@dossierAssignedTo": {
+    "description": "Attribution",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "dossierNotAssigned": "Non attribué",
+  "@dossierNotAssigned": {
+    "description": "Pas d’attribution"
+  },
+  "dossierTake": "Prendre en charge",
+  "@dossierTake": {
+    "description": "Bouton prendre en charge"
+  },
+  "dossierTaken": "Dossier pris en charge : le vendeur est prévenu.",
+  "@dossierTaken": {
+    "description": "Confirmation prise en charge"
+  },
+  "dossierWriteValuation": "Rédiger l’avis de valeur",
+  "@dossierWriteValuation": {
+    "description": "Bouton vers le formulaire"
+  },
+  "dossierSellerDeactivated": "Le vendeur a demandé la suppression de son compte : ne pas traiter ce dossier sans l’accord de l’équipe.",
+  "@dossierSellerDeactivated": {
+    "description": "Alerte compte désactivé"
+  },
+  "dossierLot": "Lot : {name} · {certified}/{total} certifié(s)",
+  "@dossierLot": {
+    "description": "Résumé du lot",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "certified": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "dossierLotTogether": "vendu ensemble",
+  "@dossierLotTogether": {
+    "description": "Mode de vente du lot"
+  },
+  "dossierLotEither": "ensemble ou séparément",
+  "@dossierLotEither": {
+    "description": "Mode de vente du lot"
+  },
+  "dossierLotMember": "{type} · {status}",
+  "@dossierLotMember": {
+    "description": "Bien d’un lot",
+    "placeholders": {
+      "type": {
+        "type": "String"
+      },
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "dossierPartnerNotice": "Accès expert partenaire : propriétaires réduits aux initiales et à la commune, pièces d’identité non accessibles.",
+  "@dossierPartnerNotice": {
+    "description": "Mention partenaire"
+  },
+  "synthOwners": "Propriétaires",
+  "@synthOwners": {
+    "description": "Section propriétaires"
+  },
+  "synthOwnerVerified": "Identité vérifiée le {date}",
+  "@synthOwnerVerified": {
+    "description": "Identité vérifiée",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "synthOwnerNotVerified": "Identité non vérifiée",
+  "@synthOwnerNotVerified": {
+    "description": "Identité non vérifiée"
+  },
+  "synthVerifyIdentity": "Marquer l’identité comme vérifiée",
+  "@synthVerifyIdentity": {
+    "description": "Bouton identité vérifiée"
+  },
+  "synthIdentityDone": "Identité marquée comme vérifiée : le vendeur est prévenu.",
+  "@synthIdentityDone": {
+    "description": "Confirmation identité"
+  },
+  "synthSeller": "Compte vendeur : {name}",
+  "@synthSeller": {
+    "description": "Compte vendeur",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "synthLocation": "Localisation",
+  "@synthLocation": {
+    "description": "Section localisation"
+  },
+  "synthAddress": "Adresse",
+  "@synthAddress": {
+    "description": "Libellé adresse"
+  },
+  "synthParcels": "Parcelles cadastrales",
+  "@synthParcels": {
+    "description": "Libellé parcelles"
+  },
+  "synthParcel": "Section {section} n° {numero} · {area}",
+  "@synthParcel": {
+    "description": "Parcelle",
+    "placeholders": {
+      "section": {
+        "type": "String"
+      },
+      "numero": {
+        "type": "String"
+      },
+      "area": {
+        "type": "String"
+      }
+    }
+  },
+  "synthOpenMap": "Voir sur Géoportail",
+  "@synthOpenMap": {
+    "description": "Lien Géoportail"
+  },
+  "synthAnswers": "Réponses du vendeur",
+  "@synthAnswers": {
+    "description": "Section réponses"
+  },
+  "synthAnswersHint": "Chaque valeur porte sa provenance : saisie, dictée, extraite d’un document ou d’une source externe. « À vérifier » signale une valeur qui ne correspond pas à ce qui a été dit.",
+  "@synthAnswersHint": {
+    "description": "Aide réponses"
+  },
+  "synthNoAnswers": "Aucune réponse enregistrée.",
+  "@synthNoAnswers": {
+    "description": "Pas de réponses"
+  },
+  "synthRooms": "Pièces",
+  "@synthRooms": {
+    "description": "Section pièces"
+  },
+  "synthRoomMain": "principale",
+  "@synthRoomMain": {
+    "description": "Pièce principale"
+  },
+  "synthRoomAnnex": "annexe",
+  "@synthRoomAnnex": {
+    "description": "Pièce annexe"
+  },
+  "synthRoomPhotos": "{count, plural, =0{aucune photo} =1{1 photo} other{{count} photos}}",
+  "@synthRoomPhotos": {
+    "description": "Photos d’une pièce",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "synthLiving": "Surface habitable",
+  "@synthLiving": {
+    "description": "Libellé surface habitable"
+  },
+  "synthAnnex": "Annexes",
+  "@synthAnnex": {
+    "description": "Libellé annexes"
+  },
+  "synthMarket": "Marché (estimation non certifiée)",
+  "@synthMarket": {
+    "description": "Section marché"
+  },
+  "synthMarketRange": "Fourchette",
+  "@synthMarketRange": {
+    "description": "Libellé fourchette"
+  },
+  "synthMarketMedian": "Médiane",
+  "@synthMarketMedian": {
+    "description": "Libellé médiane"
+  },
+  "synthMarketPriceM2": "Prix au m²",
+  "@synthMarketPriceM2": {
+    "description": "Libellé prix au m²"
+  },
+  "synthMarketConfidence": "Confiance",
+  "@synthMarketConfidence": {
+    "description": "Libellé confiance"
+  },
+  "synthMarketScope": "{count} ventes · {radius} m · {months} mois",
+  "@synthMarketScope": {
+    "description": "Périmètre de l’estimation",
+    "placeholders": {
+      "count": {
+        "type": "String"
+      },
+      "radius": {
+        "type": "String"
+      },
+      "months": {
+        "type": "String"
+      }
+    }
+  },
+  "synthMarketNone": "Pas d’estimation automatique pour ce dossier.",
+  "@synthMarketNone": {
+    "description": "Pas d’instantané"
+  },
+  "synthComparable": "{street} · {year} · {area} · {price}",
+  "@synthComparable": {
+    "description": "Vente comparable",
+    "placeholders": {
+      "street": {
+        "type": "String"
+      },
+      "year": {
+        "type": "String"
+      },
+      "area": {
+        "type": "String"
+      },
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "synthPreviousEstimates": "Estimations antérieures",
+  "@synthPreviousEstimates": {
+    "description": "Estimations précédentes"
+  },
+  "synthNotes": "Notes complémentaires",
+  "@synthNotes": {
+    "description": "Notes d’étape"
+  },
+  "synthCertified": "Avis de valeur certifié",
+  "@synthCertified": {
+    "description": "Section avis certifié"
+  },
+  "synthCertifiedValue": "{value} (de {low} à {high}) · {expert} · {date}",
+  "@synthCertifiedValue": {
+    "description": "Résumé de l’avis certifié",
+    "placeholders": {
+      "value": {
+        "type": "String"
+      },
+      "low": {
+        "type": "String"
+      },
+      "high": {
+        "type": "String"
+      },
+      "expert": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "stepLocation": "Localisation (V2)",
+  "@stepLocation": {
+    "description": "Étape V2"
+  },
+  "stepContext": "Contexte (V3)",
+  "@stepContext": {
+    "description": "Étape V3"
+  },
+  "stepTechnical": "Technique (V4)",
+  "@stepTechnical": {
+    "description": "Étape V4"
+  },
+  "stepRooms": "Surfaces et pièces (V5)",
+  "@stepRooms": {
+    "description": "Étape V5"
+  },
+  "stepLifestyle": "Cadre de vie (V6)",
+  "@stepLifestyle": {
+    "description": "Étape V6"
+  },
+  "sourceDicte": "Dicté",
+  "@sourceDicte": {
+    "description": "Source dicté"
+  },
+  "sourceDicteAutreEtape": "Dit à une autre étape",
+  "@sourceDicteAutreEtape": {
+    "description": "Source dicté ailleurs"
+  },
+  "sourceSaisi": "Saisi",
+  "@sourceSaisi": {
+    "description": "Source saisi"
+  },
+  "sourceExtrait": "Extrait",
+  "@sourceExtrait": {
+    "description": "Source extrait"
+  },
+  "sourceExterne": "Externe",
+  "@sourceExterne": {
+    "description": "Source externe"
+  },
+  "sourceNonTrace": "Non tracé",
+  "@sourceNonTrace": {
+    "description": "Source non tracée"
+  },
+  "sourceInvalide": "Source invalide",
+  "@sourceInvalide": {
+    "description": "Source invalide"
+  },
+  "toVerify": "À vérifier",
+  "@toVerify": {
+    "description": "Valeur à vérifier"
+  },
+  "notConfirmed": "Non confirmé",
+  "@notConfirmed": {
+    "description": "Réponse non confirmée"
+  },
+  "photosIntro": "Photos prises par le vendeur, par pièce. L’analyse IA est une suggestion à vérifier.",
+  "@photosIntro": {
+    "description": "Intro photos"
+  },
+  "photosMissingMain": "Pièce principale sans photo",
+  "@photosMissingMain": {
+    "description": "Alerte pièce sans photo"
+  },
+  "photosNone": "Aucune photo pour ce dossier.",
+  "@photosNone": {
+    "description": "Pas de photos"
+  },
+  "photosLoad": "Afficher les photos",
+  "@photosLoad": {
+    "description": "Bouton charger les photos"
+  },
+  "photosRefresh": "Recharger les photos",
+  "@photosRefresh": {
+    "description": "Bouton recharger"
+  },
+  "photosExpired": "Les liens des photos expirent après 5 minutes.",
+  "@photosExpired": {
+    "description": "Rappel expiration"
+  },
+  "photosIssues": "Contrôles : {issues}",
+  "@photosIssues": {
+    "description": "Défauts de la photo",
+    "placeholders": {
+      "issues": {
+        "type": "String"
+      }
+    }
+  },
+  "photosAi": "IA : {summary}",
+  "@photosAi": {
+    "description": "Résumé de l’analyse IA",
+    "placeholders": {
+      "summary": {
+        "type": "String"
+      }
+    }
+  },
+  "photosPerson": "Personne visible",
+  "@photosPerson": {
+    "description": "Alerte personne visible"
+  },
+  "photosOpen": "Ouvrir en grand",
+  "@photosOpen": {
+    "description": "Ouvrir la photo"
+  },
+  "docsIntro": "Les liens d’ouverture expirent après 5 minutes et chaque ouverture est journalisée.",
+  "@docsIntro": {
+    "description": "Intro documents"
+  },
+  "docsNone": "Aucun document.",
+  "@docsNone": {
+    "description": "Pas de documents"
+  },
+  "docsOpen": "Ouvrir",
+  "@docsOpen": {
+    "description": "Ouvrir un document"
+  },
+  "docsVerify": "Vérifier",
+  "@docsVerify": {
+    "description": "Vérifier un document"
+  },
+  "docsReject": "Refuser",
+  "@docsReject": {
+    "description": "Refuser un document"
+  },
+  "docsVerified": "Vérifié le {date}",
+  "@docsVerified": {
+    "description": "Document vérifié",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "docsRejected": "Refusé : {reason}",
+  "@docsRejected": {
+    "description": "Document refusé",
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
+  "docsToVerify": "À vérifier",
+  "@docsToVerify": {
+    "description": "Document à vérifier"
+  },
+  "docsAfter": "Ajouté après l’envoi",
+  "@docsAfter": {
+    "description": "Document ajouté après l’envoi"
+  },
+  "docsReplaced": "Remplacé",
+  "@docsReplaced": {
+    "description": "Document remplacé"
+  },
+  "docsVerifiedDone": "Document vérifié.",
+  "@docsVerifiedDone": {
+    "description": "Confirmation vérification"
+  },
+  "docsRejectedDone": "Document refusé : le vendeur est prévenu.",
+  "@docsRejectedDone": {
+    "description": "Confirmation refus"
+  },
+  "docsRejectTitle": "Refuser le document",
+  "@docsRejectTitle": {
+    "description": "Titre de la boîte de refus"
+  },
+  "docsRejectBody": "Le vendeur recevra « Un document est à remplacer » avec ce motif.",
+  "@docsRejectBody": {
+    "description": "Texte de la boîte de refus"
+  },
+  "docsRejectReason": "Motif (300 caractères au plus)",
+  "@docsRejectReason": {
+    "description": "Champ motif"
+  },
+  "docsReasonUnreadable": "Document illisible",
+  "@docsReasonUnreadable": {
+    "description": "Motif type"
+  },
+  "docsReasonIncomplete": "Document incomplet (pages manquantes)",
+  "@docsReasonIncomplete": {
+    "description": "Motif type"
+  },
+  "docsReasonWrong": "Ce n’est pas le document attendu",
+  "@docsReasonWrong": {
+    "description": "Motif type"
+  },
+  "docsReasonExpired": "Document expiré",
+  "@docsReasonExpired": {
+    "description": "Motif type"
+  },
+  "docsIdentity": "Pièces d’identité",
+  "@docsIdentity": {
+    "description": "Section identité"
+  },
+  "kindTitrePropriete": "Titre de propriété",
+  "@kindTitrePropriete": {
+    "description": "Type de document"
+  },
+  "kindTaxeFonciere": "Taxe foncière",
+  "@kindTaxeFonciere": {
+    "description": "Type de document"
+  },
+  "kindFactureEnergie": "Facture d’énergie",
+  "@kindFactureEnergie": {
+    "description": "Type de document"
+  },
+  "kindFactureTravaux": "Facture de travaux",
+  "@kindFactureTravaux": {
+    "description": "Type de document"
+  },
+  "kindPieceIdentite": "Pièce d’identité",
+  "@kindPieceIdentite": {
+    "description": "Type de document"
+  },
+  "kindDiagnostics": "Diagnostics",
+  "@kindDiagnostics": {
+    "description": "Type de document"
+  },
+  "kindRapportSpanc": "Rapport SPANC",
+  "@kindRapportSpanc": {
+    "description": "Type de document"
+  },
+  "kindPlan": "Plan",
+  "@kindPlan": {
+    "description": "Type de document"
+  },
+  "kindDpe": "DPE",
+  "@kindDpe": {
+    "description": "Type de document"
+  },
+  "kindContratEntretien": "Contrat d’entretien",
+  "@kindContratEntretien": {
+    "description": "Type de document"
+  },
+  "kindAssurance": "Assurance",
+  "@kindAssurance": {
+    "description": "Type de document"
+  },
+  "kindCopropriete": "Copropriété",
+  "@kindCopropriete": {
+    "description": "Type de document"
+  },
+  "kindAutre": "Autre document",
+  "@kindAutre": {
+    "description": "Type de document"
+  },
+  "voiceIntro": "Ce que le vendeur a dit à l’assistant vocal. Les transcriptions de V1 et les adresses dictées ne sont pas conservées ; téléphones et e-mails sont masqués.",
+  "@voiceIntro": {
+    "description": "Intro voix"
+  },
+  "voiceFillSheet": "Fiche de remplissage",
+  "@voiceFillSheet": {
+    "description": "Section fiche"
+  },
+  "voiceThread": "Fil de conversation",
+  "@voiceThread": {
+    "description": "Section fil"
+  },
+  "voiceNone": "Aucune conversation vocale.",
+  "@voiceNone": {
+    "description": "Pas de voix"
+  },
+  "voiceSeller": "Vendeur",
+  "@voiceSeller": {
+    "description": "Auteur : vendeur"
+  },
+  "voiceAgent": "Assistant",
+  "@voiceAgent": {
+    "description": "Auteur : assistant"
+  },
+  "voiceRetained": "Retenu : {values}",
+  "@voiceRetained": {
+    "description": "Valeurs retenues",
+    "placeholders": {
+      "values": {
+        "type": "String"
+      }
+    }
+  },
+  "voiceRejected": "Écarté : {values}",
+  "@voiceRejected": {
+    "description": "Valeurs rejetées",
+    "placeholders": {
+      "values": {
+        "type": "String"
+      }
+    }
+  },
+  "voiceCrossStep": "Pour une autre étape : {values}",
+  "@voiceCrossStep": {
+    "description": "Valeurs pour une autre étape",
+    "placeholders": {
+      "values": {
+        "type": "String"
+      }
+    }
+  },
+  "voiceUndone": "Tour annulé par le vendeur",
+  "@voiceUndone": {
+    "description": "Tour annulé"
+  },
+  "voiceQuote": "« {quote} »",
+  "@voiceQuote": {
+    "description": "Citation",
+    "placeholders": {
+      "quote": {
+        "type": "String"
+      }
+    }
+  },
+  "journalNone": "Aucune action enregistrée.",
+  "@journalNone": {
+    "description": "Journal vide"
+  },
+  "journalLoad": "Afficher le journal",
+  "@journalLoad": {
+    "description": "Bouton charger le journal"
+  },
+  "actionDossierOpened": "Dossier ouvert",
+  "@actionDossierOpened": {
+    "description": "Action du journal"
+  },
+  "actionFileSigned": "Fichier ouvert",
+  "@actionFileSigned": {
+    "description": "Action du journal"
+  },
+  "actionReviewStarted": "Pris en charge",
+  "@actionReviewStarted": {
+    "description": "Action du journal"
+  },
+  "actionAssigned": "Attribué",
+  "@actionAssigned": {
+    "description": "Action du journal"
+  },
+  "actionUnassigned": "Attribution retirée",
+  "@actionUnassigned": {
+    "description": "Action du journal"
+  },
+  "actionDraftSaved": "Brouillon enregistré",
+  "@actionDraftSaved": {
+    "description": "Action du journal"
+  },
+  "actionSubmittedForApproval": "Soumis pour validation",
+  "@actionSubmittedForApproval": {
+    "description": "Action du journal"
+  },
+  "actionDraftReturned": "Renvoyé à son auteur",
+  "@actionDraftReturned": {
+    "description": "Action du journal"
+  },
+  "actionCertified": "Certifié",
+  "@actionCertified": {
+    "description": "Action du journal"
+  },
+  "actionReportUploadSigned": "Envoi du PDF préparé",
+  "@actionReportUploadSigned": {
+    "description": "Action du journal"
+  },
+  "actionReportAttached": "PDF joint",
+  "@actionReportAttached": {
+    "description": "Action du journal"
+  },
+  "actionDocumentVerified": "Document vérifié",
+  "@actionDocumentVerified": {
+    "description": "Action du journal"
+  },
+  "actionDocumentRejected": "Document refusé",
+  "@actionDocumentRejected": {
+    "description": "Action du journal"
+  },
+  "actionIdentityVerified": "Identité vérifiée",
+  "@actionIdentityVerified": {
+    "description": "Action du journal"
+  },
+  "actionMemberAdded": "Membre ajouté",
+  "@actionMemberAdded": {
+    "description": "Action du journal"
+  },
+  "actionMemberUpdated": "Membre modifié",
+  "@actionMemberUpdated": {
+    "description": "Action du journal"
+  },
+  "actionMemberDeactivated": "Accès retiré",
+  "@actionMemberDeactivated": {
+    "description": "Action du journal"
+  },
+  "actorSqlEditor": "Éditeur SQL",
+  "@actorSqlEditor": {
+    "description": "Acteur : éditeur SQL"
+  },
+  "formIntro": "Les sections vides sont masquées chez le vendeur. Montants en euros entiers. Enregistrement automatique.",
+  "@formIntro": {
+    "description": "Intro du formulaire"
+  },
+  "formSaved": "Enregistré · v{version}",
+  "@formSaved": {
+    "description": "Statut enregistré",
+    "placeholders": {
+      "version": {
+        "type": "int"
+      }
+    }
+  },
+  "formNotSaved": "Pas encore enregistré",
+  "@formNotSaved": {
+    "description": "Statut jamais enregistré"
+  },
+  "formDirty": "Modifications en attente…",
+  "@formDirty": {
+    "description": "Statut modifié"
+  },
+  "formSaving": "Enregistrement…",
+  "@formSaving": {
+    "description": "Statut en cours"
+  },
+  "formSaveFailed": "Échec de l’enregistrement",
+  "@formSaveFailed": {
+    "description": "Statut échec"
+  },
+  "formConflict": "Modifié entre-temps par {name} : rechargez pour reprendre sa version.",
+  "@formConflict": {
+    "description": "Bandeau conflit",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "formConflictAnonymous": "Le brouillon a été modifié entre-temps : rechargez pour reprendre la dernière version.",
+  "@formConflictAnonymous": {
+    "description": "Bandeau conflit sans nom"
+  },
+  "formReload": "Recharger",
+  "@formReload": {
+    "description": "Bouton recharger"
+  },
+  "formSaveNow": "Enregistrer",
+  "@formSaveNow": {
+    "description": "Bouton enregistrer"
+  },
+  "formErrors": "{count, plural, =0{Aucune erreur} =1{1 erreur à corriger} other{{count} erreurs à corriger}}",
+  "@formErrors": {
+    "description": "Nombre d’erreurs",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "formSectionValue": "Valeur",
+  "@formSectionValue": {
+    "description": "Section valeur"
+  },
+  "formSectionExpert": "Expert signataire",
+  "@formSectionExpert": {
+    "description": "Section expert"
+  },
+  "formSectionSummary": "Synthèse",
+  "@formSectionSummary": {
+    "description": "Section synthèse"
+  },
+  "formSectionProperty": "Le bien",
+  "@formSectionProperty": {
+    "description": "Section le bien"
+  },
+  "formSectionSector": "Secteur",
+  "@formSectionSector": {
+    "description": "Section secteur"
+  },
+  "formSectionPrice": "Prix",
+  "@formSectionPrice": {
+    "description": "Section prix"
+  },
+  "formValue": "Valeur certifiée (€)",
+  "@formValue": {
+    "description": "Champ"
+  },
+  "formLow": "Bas de fourchette (€)",
+  "@formLow": {
+    "description": "Champ"
+  },
+  "formHigh": "Haut de fourchette (€)",
+  "@formHigh": {
+    "description": "Champ"
+  },
+  "formPriceM2": "Prix au m² (€, calculé si vide)",
+  "@formPriceM2": {
+    "description": "Champ"
+  },
+  "formDelay": "Délai de vente estimé (semaines)",
+  "@formDelay": {
+    "description": "Champ"
+  },
+  "formValidUntil": "Valable jusqu’au (AAAA-MM-JJ, 3 mois si vide)",
+  "@formValidUntil": {
+    "description": "Champ"
+  },
+  "formAiTrend": "Tendance IA : {value}",
+  "@formAiTrend": {
+    "description": "Aide tendance IA",
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "formDvfRange": "Fourchette DVF : {low} – {high}",
+  "@formDvfRange": {
+    "description": "Aide fourchette DVF",
+    "placeholders": {
+      "low": {
+        "type": "String"
+      },
+      "high": {
+        "type": "String"
+      }
+    }
+  },
+  "formExpertFor": "Rapport saisi pour",
+  "@formExpertFor": {
+    "description": "Champ admin : signataire"
+  },
+  "formExpertSelf": "Moi-même",
+  "@formExpertSelf": {
+    "description": "Option signataire"
+  },
+  "formExpertHint": "Le nom et les initiales affichés au vendeur sont ceux de la fiche d’équipe du signataire. Par défaut : la personne qui certifie, ou le partenaire qui a soumis le brouillon.",
+  "@formExpertHint": {
+    "description": "Aide signataire"
+  },
+  "formMethodSteps": "Étapes de la méthode",
+  "@formMethodSteps": {
+    "description": "Liste"
+  },
+  "formReasons": "Ce qui fait le prix",
+  "@formReasons": {
+    "description": "Liste"
+  },
+  "formDelayCurve": "Prix et délais",
+  "@formDelayCurve": {
+    "description": "Liste"
+  },
+  "formQuote": "Mot de l’expert (2 000 caractères)",
+  "@formQuote": {
+    "description": "Champ"
+  },
+  "formDescription": "Description du bien (4 000 caractères)",
+  "@formDescription": {
+    "description": "Champ"
+  },
+  "formTechnicalSheet": "Fiche technique",
+  "@formTechnicalSheet": {
+    "description": "Liste"
+  },
+  "formPrefillSheet": "Pré-remplir depuis le dossier",
+  "@formPrefillSheet": {
+    "description": "Bouton pré-remplissage"
+  },
+  "formComparables": "Ventes comparables",
+  "@formComparables": {
+    "description": "Liste"
+  },
+  "formImportDvf": "Importer les ventes DVF",
+  "@formImportDvf": {
+    "description": "Bouton import DVF"
+  },
+  "formComparablesNote": "Note sur les ventes",
+  "@formComparablesNote": {
+    "description": "Champ"
+  },
+  "formCompetitorsSummary": "Concurrence (résumé)",
+  "@formCompetitorsSummary": {
+    "description": "Champ"
+  },
+  "formCompetitors": "Biens en concurrence",
+  "@formCompetitors": {
+    "description": "Liste"
+  },
+  "formRisks": "Risques (Géorisques…)",
+  "@formRisks": {
+    "description": "Champ"
+  },
+  "formAdjustments": "Ajustements",
+  "@formAdjustments": {
+    "description": "Liste"
+  },
+  "formMethodSummary": "Pondération des méthodes",
+  "@formMethodSummary": {
+    "description": "Liste"
+  },
+  "formWorksLabel": "Travaux (libellé)",
+  "@formWorksLabel": {
+    "description": "Champ"
+  },
+  "formWorksEstimate": "Travaux (€)",
+  "@formWorksEstimate": {
+    "description": "Champ"
+  },
+  "formSources": "Sources",
+  "@formSources": {
+    "description": "Champ"
+  },
+  "formAdjustmentsMismatch": "Le total des ajustements ({sum}) ne correspond pas à la ligne « total » ({total}).",
+  "@formAdjustmentsMismatch": {
+    "description": "Avertissement totaux",
+    "placeholders": {
+      "sum": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "formColLabel": "Libellé",
+  "@formColLabel": {
+    "description": "Colonne"
+  },
+  "formColDetail": "Détail",
+  "@formColDetail": {
+    "description": "Colonne"
+  },
+  "formColAmount": "Montant (€)",
+  "@formColAmount": {
+    "description": "Colonne"
+  },
+  "formColDelta": "Écart",
+  "@formColDelta": {
+    "description": "Colonne"
+  },
+  "formColPositive": "Atout",
+  "@formColPositive": {
+    "description": "Colonne"
+  },
+  "formColText": "Texte",
+  "@formColText": {
+    "description": "Colonne"
+  },
+  "formColPrice": "Prix (€)",
+  "@formColPrice": {
+    "description": "Colonne"
+  },
+  "formColValue": "Valeur",
+  "@formColValue": {
+    "description": "Colonne"
+  },
+  "formColProvenance": "Provenance",
+  "@formColProvenance": {
+    "description": "Colonne"
+  },
+  "formColStreet": "Rue (sans numéro)",
+  "@formColStreet": {
+    "description": "Colonne"
+  },
+  "formColSoldOn": "Date (AAAA-MM-JJ)",
+  "@formColSoldOn": {
+    "description": "Colonne"
+  },
+  "formColArea": "Surface (m²)",
+  "@formColArea": {
+    "description": "Colonne"
+  },
+  "formColLand": "Terrain (m²)",
+  "@formColLand": {
+    "description": "Colonne"
+  },
+  "formColExcluded": "Écartée",
+  "@formColExcluded": {
+    "description": "Colonne"
+  },
+  "formColNote": "Note",
+  "@formColNote": {
+    "description": "Colonne"
+  },
+  "formColDays": "Jours en ligne",
+  "@formColDays": {
+    "description": "Colonne"
+  },
+  "formColRetained": "Retenu",
+  "@formColRetained": {
+    "description": "Colonne"
+  },
+  "formColKind": "Type",
+  "@formColKind": {
+    "description": "Colonne"
+  },
+  "formAddRow": "Ajouter une ligne",
+  "@formAddRow": {
+    "description": "Bouton ajouter"
+  },
+  "formRemoveRow": "Supprimer la ligne",
+  "@formRemoveRow": {
+    "description": "Bouton supprimer"
+  },
+  "formMoveUp": "Monter",
+  "@formMoveUp": {
+    "description": "Bouton monter"
+  },
+  "provDeclared": "Déclaré",
+  "@provDeclared": {
+    "description": "Provenance"
+  },
+  "provDocument": "Document",
+  "@provDocument": {
+    "description": "Provenance"
+  },
+  "provExternal": "Externe",
+  "@provExternal": {
+    "description": "Provenance"
+  },
+  "provVerified": "Vérifié",
+  "@provVerified": {
+    "description": "Provenance"
+  },
+  "kindBase": "Base",
+  "@kindBase": {
+    "description": "Type de ligne"
+  },
+  "kindLine": "Ajustement",
+  "@kindLine": {
+    "description": "Type de ligne"
+  },
+  "kindTotal": "Total",
+  "@kindTotal": {
+    "description": "Type de ligne"
+  },
+  "kindControl": "Contrôle",
+  "@kindControl": {
+    "description": "Type de ligne"
+  },
+  "errRequired": "Obligatoire",
+  "@errRequired": {
+    "description": "Erreur"
+  },
+  "errNotInteger": "Nombre entier attendu",
+  "@errNotInteger": {
+    "description": "Erreur"
+  },
+  "errNotNumber": "Nombre attendu",
+  "@errNotNumber": {
+    "description": "Erreur"
+  },
+  "errOutOfRange": "Valeur hors limites",
+  "@errOutOfRange": {
+    "description": "Erreur"
+  },
+  "errNotText": "Texte attendu",
+  "@errNotText": {
+    "description": "Erreur"
+  },
+  "errTooLong": "Trop long",
+  "@errTooLong": {
+    "description": "Erreur"
+  },
+  "errNotBool": "Oui ou non attendu",
+  "@errNotBool": {
+    "description": "Erreur"
+  },
+  "errInvalidChoice": "Choix invalide",
+  "@errInvalidChoice": {
+    "description": "Erreur"
+  },
+  "errInvalidDate": "Date invalide (AAAA-MM-JJ)",
+  "@errInvalidDate": {
+    "description": "Erreur"
+  },
+  "errInvalidUuid": "Identifiant invalide",
+  "@errInvalidUuid": {
+    "description": "Erreur"
+  },
+  "errUnknownField": "Champ inconnu",
+  "@errUnknownField": {
+    "description": "Erreur"
+  },
+  "errRangeOrder": "La valeur doit être comprise entre le bas et le haut de la fourchette",
+  "@errRangeOrder": {
+    "description": "Erreur"
+  },
+  "errNotList": "Liste attendue",
+  "@errNotList": {
+    "description": "Erreur"
+  },
+  "errTooMany": "50 lignes au plus",
+  "@errTooMany": {
+    "description": "Erreur"
+  },
+  "errNotObject": "Ligne invalide",
+  "@errNotObject": {
+    "description": "Erreur"
+  },
+  "errStreetNumber": "La rue, sans le numéro (ex. : rue Lucien Cozon)",
+  "@errStreetNumber": {
+    "description": "Erreur"
+  },
+  "formCertify": "Certifier",
+  "@formCertify": {
+    "description": "Bouton certifier"
+  },
+  "formSubmit": "Soumettre pour validation",
+  "@formSubmit": {
+    "description": "Bouton soumettre"
+  },
+  "formReturn": "Renvoyer au partenaire",
+  "@formReturn": {
+    "description": "Bouton renvoyer"
+  },
+  "formSubmitted": "Soumis pour validation par {name}",
+  "@formSubmitted": {
+    "description": "Bandeau soumis",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "formSubmittedSelf": "Brouillon soumis pour validation : un expert de l’équipe va le relire et le certifier.",
+  "@formSubmittedSelf": {
+    "description": "Bandeau soumis (partenaire)"
+  },
+  "formReturned": "Renvoyé avec ce commentaire : {note}",
+  "@formReturned": {
+    "description": "Bandeau renvoyé",
+    "placeholders": {
+      "note": {
+        "type": "String"
+      }
+    }
+  },
+  "formSubmitDone": "Avis de valeur soumis pour validation.",
+  "@formSubmitDone": {
+    "description": "Confirmation soumission"
+  },
+  "formReturnDone": "Brouillon renvoyé à son auteur.",
+  "@formReturnDone": {
+    "description": "Confirmation renvoi"
+  },
+  "formReturnTitle": "Renvoyer le brouillon",
+  "@formReturnTitle": {
+    "description": "Titre renvoi"
+  },
+  "formReturnNote": "Commentaire pour l’auteur",
+  "@formReturnNote": {
+    "description": "Champ commentaire"
+  },
+  "formCertifyTitle": "Certifier l’avis de valeur",
+  "@formCertifyTitle": {
+    "description": "Titre de la confirmation"
+  },
+  "formCertifyBody": "Valeur certifiée : {value} (de {low} à {high}). Signé par {expert}. Le vendeur sera prévenu et verra le rapport. Cette action est définitive depuis le back-office.",
+  "@formCertifyBody": {
+    "description": "Récapitulatif avant certification",
+    "placeholders": {
+      "value": {
+        "type": "String"
+      },
+      "low": {
+        "type": "String"
+      },
+      "high": {
+        "type": "String"
+      },
+      "expert": {
+        "type": "String"
+      }
+    }
+  },
+  "formCertifyDone": "Avis de valeur certifié : le vendeur est prévenu.",
+  "@formCertifyDone": {
+    "description": "Confirmation certification"
+  },
+  "formFixErrors": "Corrigez les erreurs avant de continuer.",
+  "@formFixErrors": {
+    "description": "Erreurs avant certification"
+  },
+  "formCertifiedTitle": "Avis de valeur certifié",
+  "@formCertifiedTitle": {
+    "description": "Titre après certification"
+  },
+  "formCertifiedBody": "{value} (de {low} à {high}) · signé {expert} · le {date}",
+  "@formCertifiedBody": {
+    "description": "Résumé certifié",
+    "placeholders": {
+      "value": {
+        "type": "String"
+      },
+      "low": {
+        "type": "String"
+      },
+      "high": {
+        "type": "String"
+      },
+      "expert": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "formCertifiedCorrect": "Pour corriger un avis certifié, suivre le runbook « Corriger une erreur ».",
+  "@formCertifiedCorrect": {
+    "description": "Rappel correction"
+  },
+  "formReport": "Rapport PDF",
+  "@formReport": {
+    "description": "Section PDF"
+  },
+  "formReportPages": "Nombre de pages",
+  "@formReportPages": {
+    "description": "Champ pages"
+  },
+  "formReportChoose": "Choisir le PDF et l’envoyer",
+  "@formReportChoose": {
+    "description": "Bouton envoi PDF"
+  },
+  "formReportDone": "Rapport PDF joint : le vendeur peut le télécharger.",
+  "@formReportDone": {
+    "description": "Confirmation PDF"
+  },
+  "formReportAttached": "PDF joint · {pages} pages",
+  "@formReportAttached": {
+    "description": "PDF déjà joint",
+    "placeholders": {
+      "pages": {
+        "type": "int"
+      }
+    }
+  },
+  "formReportOpen": "Ouvrir le PDF",
+  "@formReportOpen": {
+    "description": "Bouton ouvrir PDF"
+  },
+  "formReportPagesInvalid": "Indiquez le nombre de pages (1 à 500).",
+  "@formReportPagesInvalid": {
+    "description": "Erreur pages"
+  },
+  "formReadOnly": "Votre rôle ne permet pas de modifier cet avis.",
+  "@formReadOnly": {
+    "description": "Lecture seule"
+  },
+  "teamTitle": "Équipe",
+  "@teamTitle": {
+    "description": "Titre équipe"
+  },
+  "teamSubtitle": "Membres du back-office. La personne doit s’être connectée une première fois (lien magique) avant d’être ajoutée.",
+  "@teamSubtitle": {
+    "description": "Sous-titre équipe"
+  },
+  "teamAdd": "Ajouter un membre",
+  "@teamAdd": {
+    "description": "Bouton ajouter"
+  },
+  "teamEdit": "Modifier",
+  "@teamEdit": {
+    "description": "Bouton modifier"
+  },
+  "teamDeactivate": "Retirer l’accès",
+  "@teamDeactivate": {
+    "description": "Bouton désactiver"
+  },
+  "teamColName": "Membre",
+  "@teamColName": {
+    "description": "Colonne"
+  },
+  "teamColRole": "Rôle",
+  "@teamColRole": {
+    "description": "Colonne"
+  },
+  "teamColOrganisation": "Organisation",
+  "@teamColOrganisation": {
+    "description": "Colonne"
+  },
+  "teamColMfa": "Double authentification",
+  "@teamColMfa": {
+    "description": "Colonne"
+  },
+  "teamColAssignments": "Dossiers en cours",
+  "@teamColAssignments": {
+    "description": "Colonne"
+  },
+  "teamColStatus": "Accès",
+  "@teamColStatus": {
+    "description": "Colonne"
+  },
+  "teamMfaOn": "Activée",
+  "@teamMfaOn": {
+    "description": "MFA activée"
+  },
+  "teamMfaOff": "À configurer",
+  "@teamMfaOff": {
+    "description": "MFA non configurée"
+  },
+  "teamActive": "Actif",
+  "@teamActive": {
+    "description": "Membre actif"
+  },
+  "teamInactive": "Retiré le {date}",
+  "@teamInactive": {
+    "description": "Membre désactivé",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "teamEmpty": "Aucun membre.",
+  "@teamEmpty": {
+    "description": "Équipe vide"
+  },
+  "teamError": "L’équipe n’a pas pu être chargée.",
+  "@teamError": {
+    "description": "Erreur chargement équipe"
+  },
+  "teamFormTitleAdd": "Ajouter un membre",
+  "@teamFormTitleAdd": {
+    "description": "Titre formulaire"
+  },
+  "teamFormTitleEdit": "Modifier le membre",
+  "@teamFormTitleEdit": {
+    "description": "Titre formulaire"
+  },
+  "teamFormEmail": "Adresse e-mail du compte",
+  "@teamFormEmail": {
+    "description": "Champ"
+  },
+  "teamFormRole": "Rôle",
+  "@teamFormRole": {
+    "description": "Champ"
+  },
+  "teamFormName": "Nom affiché au vendeur (ex. : Julien M.)",
+  "@teamFormName": {
+    "description": "Champ"
+  },
+  "teamFormInitials": "Initiales (1 à 3)",
+  "@teamFormInitials": {
+    "description": "Champ"
+  },
+  "teamFormOrganisation": "Cabinet (expert partenaire)",
+  "@teamFormOrganisation": {
+    "description": "Champ"
+  },
+  "teamFormPartnerNote": "Un expert partenaire ne voit que les dossiers qui lui sont attribués, sans nom ni coordonnées des propriétaires ni pièce d’identité. Accord de confidentialité signé avant l’accès.",
+  "@teamFormPartnerNote": {
+    "description": "Rappel partenaire"
+  },
+  "teamFormInvalid": "Renseignez l’e-mail, le nom et les initiales (3 au plus).",
+  "@teamFormInvalid": {
+    "description": "Erreur formulaire"
+  },
+  "teamSaved": "Membre enregistré.",
+  "@teamSaved": {
+    "description": "Confirmation"
+  },
+  "teamUserNotFound": "Aucun compte avec cette adresse : la personne doit se connecter une première fois.",
+  "@teamUserNotFound": {
+    "description": "Erreur compte inconnu"
+  },
+  "teamDeactivateTitle": "Retirer l’accès de {name} ?",
+  "@teamDeactivateTitle": {
+    "description": "Titre confirmation",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "teamDeactivateBody": "L’accès est coupé immédiatement et ses dossiers reviennent dans la file.",
+  "@teamDeactivateBody": {
+    "description": "Texte confirmation"
+  },
+  "teamDeactivated": "Accès retiré.",
+  "@teamDeactivated": {
+    "description": "Confirmation retrait"
+  },
+  "auditTitle": "Journal",
+  "@auditTitle": {
+    "description": "Titre journal"
+  },
+  "auditSubtitle": "Toutes les actions de l’équipe, en ajout seul (ouvertures de dossiers et de fichiers comprises).",
+  "@auditSubtitle": {
+    "description": "Sous-titre journal"
+  },
+  "auditFilterActor": "Personne",
+  "@auditFilterActor": {
+    "description": "Filtre"
+  },
+  "auditFilterAction": "Action",
+  "@auditFilterAction": {
+    "description": "Filtre"
+  },
+  "auditFilterDossier": "Dossier (identifiant)",
+  "@auditFilterDossier": {
+    "description": "Filtre"
+  },
+  "auditFilterSince": "Du (AAAA-MM-JJ)",
+  "@auditFilterSince": {
+    "description": "Filtre"
+  },
+  "auditFilterUntil": "Au (AAAA-MM-JJ, inclus)",
+  "@auditFilterUntil": {
+    "description": "Filtre"
+  },
+  "auditAll": "Toutes",
+  "@auditAll": {
+    "description": "Option tous"
+  },
+  "auditApply": "Filtrer",
+  "@auditApply": {
+    "description": "Bouton filtrer"
+  },
+  "auditExport": "Exporter en CSV",
+  "@auditExport": {
+    "description": "Bouton export"
+  },
+  "auditExported": "{count, plural, =1{1 ligne exportée} other{{count} lignes exportées}}",
+  "@auditExported": {
+    "description": "Confirmation export",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "auditColAt": "Date",
+  "@auditColAt": {
+    "description": "Colonne"
+  },
+  "auditColActor": "Personne",
+  "@auditColActor": {
+    "description": "Colonne"
+  },
+  "auditColAction": "Action",
+  "@auditColAction": {
+    "description": "Colonne"
+  },
+  "auditColDossier": "Dossier",
+  "@auditColDossier": {
+    "description": "Colonne"
+  },
+  "auditColDetails": "Détails",
+  "@auditColDetails": {
+    "description": "Colonne"
+  },
+  "auditEmpty": "Aucune action pour ces filtres.",
+  "@auditEmpty": {
+    "description": "Journal vide"
+  },
+  "auditError": "Le journal n’a pas pu être chargé.",
+  "@auditError": {
+    "description": "Erreur journal"
+  },
+  "auditInvalidDate": "Date invalide (AAAA-MM-JJ).",
+  "@auditInvalidDate": {
+    "description": "Erreur date"
+  },
+  "auditLimit": "Les 1 000 dernières lignes au plus sont affichées et exportées.",
+  "@auditLimit": {
+    "description": "Limite du journal"
+  },
+  "failureSignatory": "Vous ne pouvez signer un avis que pour vous-même.",
+  "@failureSignatory": {
+    "description": "Erreur signataire non autorisé"
+  },
+  "failureInvalidSignatory": "Le signataire doit être un membre actif de l’équipe.",
+  "@failureInvalidSignatory": {
+    "description": "Erreur signataire invalide"
+  },
+  "errUnknownSignatory": "Le signataire n’est pas un membre actif de l’équipe",
+  "@errUnknownSignatory": {
+    "description": "Erreur"
+  },
+  "formSignedBy": "Signataire : {name}",
+  "@formSignedBy": {
+    "description": "Signataire choisi",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "formSignedByDefault": "Signataire : par défaut",
+  "@formSignedByDefault": {
+    "description": "Signataire par défaut"
+  },
+  "formReportNotPdf": "Ce fichier n’est pas un PDF.",
+  "@formReportNotPdf": {
+    "description": "Erreur PDF"
+  },
+  "formReportTooLarge": "Le PDF dépasse 20 Mo.",
+  "@formReportTooLarge": {
+    "description": "Erreur taille PDF"
+  },
+  "configErrorTitle": "Configuration manquante",
+  "@configErrorTitle": {
+    "description": "Titre configuration manquante"
+  },
+  "configErrorBody": "Le back-office a été construit sans sa configuration Supabase (--dart-define-from-file=config/<env>.json). Reconstruisez le site avec le bon fichier.",
+  "@configErrorBody": {
+    "description": "Texte configuration manquante"
+  }
+}

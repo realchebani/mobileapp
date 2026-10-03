@@ -40,6 +40,8 @@ select public.staff_record_offline_signature(
 
 ## 3. Vérifier une identité (obligatoire avant le mandat L’Expert)
 
+Dans le back-office (EPIC-12) : onglet « Synthèse » du dossier, bouton « Identité vérifiée » de chaque propriétaire (admin, expert). Repli SQL :
+
 La pièce d’identité est un document `piece_identite` du dossier (bien principal pour un lot). Après contrôle :
 
 ```sql

@@ -1,0 +1,60 @@
+name: backoffice
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "backoffice/**"
+      - "packages/realesty_ui/**"
+      - "packages/backoffice_repository/**"
+      - ".github/workflows/backoffice.yaml"
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "backoffice/**"
+      - "packages/realesty_ui/**"
+      - "packages/backoffice_repository/**"
+      - ".github/workflows/backoffice.yaml"
+
+jobs:
+  web:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backoffice
+    steps:
+      - uses: actions/checkout@v7
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.47.x"
+          channel: stable
+      - name: Install Very Good CLI
+        run: dart pub global activate very_good_cli
+      - name: Dependencies
+        run: |
+          flutter pub get
+          flutter gen-l10n
+      - name: Format
+        run: dart format --set-exit-if-changed lib test
+      - name: Analyze
+        run: flutter analyze
+      - name: Bloc lint
+        run: dart run bloc_tools:bloc lint .
+      - name: Test (100 % coverage)
+        run: very_good test --coverage --min-coverage 100 --test-randomize-ordering-seed random
+      - name: Build web
+        run: flutter build web --release --no-web-resources-cdn --dart-define-from-file=config/production.json
+      - name: No secret key in the site
+        run: |
+          # A secret key (sb_secret_<key>) or a service-role JWT
+          # (base64 of '"role":"service_role"'); the bare prefix
+          # "sb_secret_" is in supabase-dart itself.
+          if grep -rlE "sb_secret_[A-Za-z0-9_-]{8,}|cm9sZSI6InNlcnZpY2Vfcm9sZS|InNlcnZpY2Vfcm9sZS" build/web; then
+            echo "A secret key was found in build/web" && exit 1
+          fi

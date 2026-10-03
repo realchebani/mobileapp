@@ -1,0 +1,43 @@
+# Manual deployment of the back-office to Cloudflare Pages. DISABLED until the
+# owner provides the hosting account and the domain (docs/runbooks/back-office.md
+# § Hébergement): it only runs from the Actions tab (workflow_dispatch) and
+# stops early when the Cloudflare secrets are not set.
+name: backoffice_deploy
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backoffice
+    steps:
+      - name: Check the hosting settings
+        working-directory: .
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          if [ -z "$CLOUDFLARE_API_TOKEN" ] || [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
+            echo "Hosting not configured yet (see docs/runbooks/back-office.md)." && exit 1
+          fi
+      - uses: actions/checkout@v7
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.47.x"
+          channel: stable
+      - name: Build
+        run: |
+          flutter pub get
+          flutter build web --release --no-web-resources-cdn --dart-define-from-file=config/production.json
+      - name: No secret key in the site
+        run: |
+          if grep -rlE "sb_secret_[A-Za-z0-9_-]{8,}|cm9sZSI6InNlcnZpY2Vfcm9sZS|InNlcnZpY2Vfcm9sZS" build/web; then exit 1; fi
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy backoffice/build/web --project-name=realesty-backoffice --branch=main

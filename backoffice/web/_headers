@@ -1,0 +1,11 @@
+# Security headers for Cloudflare Pages (or any host reading _headers).
+# CanvasKit is served by the site itself (flutter build web
+# --no-web-resources-cdn), so no third-party script or font is allowed.
+/*
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://xbteiljpjfmiianlmbwn.supabase.co; font-src 'self' data:; connect-src 'self' https://xbteiljpjfmiianlmbwn.supabase.co wss://xbteiljpjfmiianlmbwn.supabase.co; worker-src 'self' blob:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'
+  Strict-Transport-Security: max-age=31536000; includeSubDomains
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: no-referrer
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()
+  X-Robots-Tag: noindex, nofollow

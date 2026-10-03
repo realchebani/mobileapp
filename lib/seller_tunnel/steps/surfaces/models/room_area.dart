@@ -1,4 +1,4 @@
-import 'package:mobileapp/ui/format/realesty_format.dart';
+import 'package:mobileapp/ui/ui.dart';
 
 /// Surfaces of V5c: parsing what is typed and formatting the French way.
 abstract final class RoomArea {

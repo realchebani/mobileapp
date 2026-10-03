@@ -1,0 +1,40 @@
+name: realesty_backoffice
+description: Realesty expert back-office (EPIC-12) — Flutter web app for the team to review and certify seller dossiers.
+version: 0.1.0+1
+publish_to: none
+
+environment:
+  sdk: ^3.13.0
+  flutter: ^3.47.0
+
+dependencies:
+  backoffice_repository:
+    path: ../packages/backoffice_repository
+  bloc: ^9.2.1
+  equatable: ^3.0.0
+  flutter:
+    sdk: flutter
+  flutter_bloc: ^9.1.1
+  flutter_localizations:
+    sdk: flutter
+  flutter_svg: ^2.3.0
+  go_router: ^18.0.2
+  intl: ^0.20.2
+  material_ui: ^1.1.1
+  realesty_ui:
+    path: ../packages/realesty_ui
+  supabase_flutter: ^2.18.0
+  web: ^1.1.1
+
+dev_dependencies:
+  bloc_lint: ^0.4.2
+  bloc_test: ^10.0.0
+  bloc_tools: ^0.1.0-dev.24
+  flutter_test:
+    sdk: flutter
+  mocktail: ^1.0.5
+  very_good_analysis: ^11.0.0
+
+flutter:
+  generate: true
+  uses-material-design: true
