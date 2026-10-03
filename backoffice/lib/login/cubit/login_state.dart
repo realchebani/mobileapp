@@ -23,11 +23,8 @@ class LoginState extends Equatable {
 
   bool get isSending => status == LoginStatus.sending;
 
-  LoginState copyWith({LoginStatus? status}) => LoginState(
-    email: email,
-    password: password,
-    status: status ?? this.status,
-  );
+  LoginState copyWith({required LoginStatus status}) =>
+      LoginState(email: email, password: password, status: status);
 
   @override
   List<Object?> get props => [email, password, status];

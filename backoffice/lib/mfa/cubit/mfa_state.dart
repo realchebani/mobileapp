@@ -20,11 +20,11 @@ class MfaState extends Equatable {
   bool get isBusy =>
       status == MfaStatusValue.loading || status == MfaStatusValue.verifying;
 
-  MfaState copyWith({String? code, MfaStatusValue? status}) => MfaState(
+  MfaState copyWith({required MfaStatusValue status, String? code}) => MfaState(
     factorId: factorId,
     enrollment: enrollment,
     code: code ?? this.code,
-    status: status ?? this.status,
+    status: status,
   );
 
   @override

@@ -46,8 +46,8 @@ String failureText(AppLocalizations l10n, Object error) {
     BackOfficeFailureReason.dossierNotFound ||
     BackOfficeFailureReason.documentNotFound ||
     BackOfficeFailureReason.ownerNotFound ||
+    BackOfficeFailureReason.userNotFound => l10n.teamUserNotFound,
     BackOfficeFailureReason.memberNotFound ||
-    BackOfficeFailureReason.userNotFound ||
     BackOfficeFailureReason.draftNotFound ||
     BackOfficeFailureReason.fileNotFound ||
     BackOfficeFailureReason.notAssigned => l10n.failureNotFound,

@@ -34,7 +34,7 @@ jobs:
           flutter build web --release --no-web-resources-cdn --dart-define-from-file=config/production.json
       - name: No secret key in the site
         run: |
-          if grep -rlE "service_role|sb_secret_" build/web; then exit 1; fi
+          if grep -rlE "sb_secret_[A-Za-z0-9_-]{8,}|cm9sZSI6InNlcnZpY2Vfcm9sZS|InNlcnZpY2Vfcm9sZS" build/web; then exit 1; fi
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/wrangler-action@v3
         with:

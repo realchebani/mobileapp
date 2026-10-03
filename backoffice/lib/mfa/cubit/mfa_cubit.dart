@@ -33,18 +33,17 @@ class MfaCubit extends Cubit<MfaState> {
       emit(state.copyWith(code: code, status: MfaStatusValue.idle));
 
   /// Checks the code; the session moves on through the auth stream.
-  Future<bool> verify() async {
+  Future<void> verify() async {
     final factorId = state.factorId;
-    if (factorId == null) return false;
+    if (factorId == null) return;
     if (!RegExp(r'^\d{6}$').hasMatch(state.code.trim())) {
       emit(state.copyWith(status: MfaStatusValue.invalidCode));
-      return false;
+      return;
     }
     emit(state.copyWith(status: MfaStatusValue.verifying));
     try {
       await _auth.verifyTotp(factorId, state.code);
       emit(state.copyWith(status: MfaStatusValue.verified));
-      return true;
     } on BackOfficeAuthFailure catch (failure) {
       emit(
         state.copyWith(
@@ -53,7 +52,6 @@ class MfaCubit extends Cubit<MfaState> {
               : MfaStatusValue.failure,
         ),
       );
-      return false;
     }
   }
 }

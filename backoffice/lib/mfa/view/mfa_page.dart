@@ -34,7 +34,9 @@ class MfaView extends StatelessWidget {
 
   Future<void> _verify(BuildContext context) async {
     final session = context.read<SessionCubit>();
-    if (await context.read<MfaCubit>().verify()) await session.refresh();
+    final cubit = context.read<MfaCubit>();
+    await cubit.verify();
+    if (cubit.state.status == MfaStatusValue.verified) await session.refresh();
   }
 
   @override

@@ -192,7 +192,7 @@ void main() {
     build: () =>
         build(draft: const ValuationDraft(payload: validPayload, version: 2)),
     act: (cubit) async {
-      expect(await cubit.certify(), 'v1');
+      await cubit.certify();
       await cubit.submitForApproval();
       expect(cubit.state.isSubmitted, isTrue);
       await cubit.returnDraft('Revoir');

@@ -7,18 +7,18 @@ part 'dossier_state.dart';
 /// One dossier: loaded with `bo_get_dossier` (journaled), its actions, and
 /// the signed URLs of its files.
 class DossierCubit extends Cubit<DossierState> {
-  new({required this._repository, required this.propertyId})
+  new({required this._repository, required this._propertyId})
     : super(const DossierState());
 
   final BackOfficeRepository _repository;
-  final String propertyId;
+  final String _propertyId;
 
   /// Files signed per call (bo-files accepts 60).
   static const signBatch = 60;
 
   Future<void> load() async {
     try {
-      final dossier = await _repository.getDossier(propertyId);
+      final dossier = await _repository.getDossier(_propertyId);
       emit(state.copyWith(load: DossierLoad.ready, dossier: dossier));
     } on Object {
       emit(state.copyWith(load: DossierLoad.failure));
@@ -37,7 +37,8 @@ class DossierCubit extends Cubit<DossierState> {
     }
   }
 
-  Future<void> startReview() => _act(() => _repository.startReview(propertyId));
+  Future<void> startReview() =>
+      _act(() => _repository.startReview(_propertyId));
 
   Future<void> verifyDocument(String documentId) =>
       _act(() => _repository.verifyDocument(documentId));
@@ -47,12 +48,6 @@ class DossierCubit extends Cubit<DossierState> {
 
   Future<void> verifyIdentity(String ownerId) =>
       _act(() => _repository.verifyIdentity(ownerId));
-
-  /// A short-lived URL of one file (journaled).
-  Future<String> signFile(FileRequest file) async {
-    final signed = await _repository.signFiles(propertyId, [file]);
-    return signed.single.url;
-  }
 
   /// Signs every photo of the dossier not signed yet.
   Future<void> loadPhotos() async {
@@ -65,7 +60,7 @@ class DossierCubit extends Cubit<DossierState> {
     final urls = {...state.photoUrls};
     for (var i = 0; i < missing.length; i += signBatch) {
       final batch = missing.skip(i).take(signBatch);
-      final signed = await _repository.signFiles(propertyId, [
+      final signed = await _repository.signFiles(_propertyId, [
         for (final id in batch) FileRequest(FileKind.photo, id),
       ]);
       for (final file in signed) {
@@ -79,7 +74,7 @@ class DossierCubit extends Cubit<DossierState> {
   void clearPhotoUrls() => emit(state.copyWith(photoUrls: const {}));
 
   Future<void> loadAudit() async {
-    final entries = await _repository.audit(propertyId: propertyId);
+    final entries = await _repository.audit(propertyId: _propertyId);
     emit(state.copyWith(audit: entries));
   }
 }

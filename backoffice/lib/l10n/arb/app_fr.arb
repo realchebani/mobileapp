@@ -1761,5 +1761,224 @@
   "formReadOnly": "Votre rôle ne permet pas de modifier cet avis.",
   "@formReadOnly": {
     "description": "Lecture seule"
+  },
+  "teamTitle": "Équipe",
+  "@teamTitle": {
+    "description": "Titre équipe"
+  },
+  "teamSubtitle": "Membres du back-office. La personne doit s’être connectée une première fois (lien magique) avant d’être ajoutée.",
+  "@teamSubtitle": {
+    "description": "Sous-titre équipe"
+  },
+  "teamAdd": "Ajouter un membre",
+  "@teamAdd": {
+    "description": "Bouton ajouter"
+  },
+  "teamEdit": "Modifier",
+  "@teamEdit": {
+    "description": "Bouton modifier"
+  },
+  "teamDeactivate": "Retirer l’accès",
+  "@teamDeactivate": {
+    "description": "Bouton désactiver"
+  },
+  "teamColName": "Membre",
+  "@teamColName": {
+    "description": "Colonne"
+  },
+  "teamColRole": "Rôle",
+  "@teamColRole": {
+    "description": "Colonne"
+  },
+  "teamColOrganisation": "Organisation",
+  "@teamColOrganisation": {
+    "description": "Colonne"
+  },
+  "teamColMfa": "Double authentification",
+  "@teamColMfa": {
+    "description": "Colonne"
+  },
+  "teamColAssignments": "Dossiers en cours",
+  "@teamColAssignments": {
+    "description": "Colonne"
+  },
+  "teamColStatus": "Accès",
+  "@teamColStatus": {
+    "description": "Colonne"
+  },
+  "teamMfaOn": "Activée",
+  "@teamMfaOn": {
+    "description": "MFA activée"
+  },
+  "teamMfaOff": "À configurer",
+  "@teamMfaOff": {
+    "description": "MFA non configurée"
+  },
+  "teamActive": "Actif",
+  "@teamActive": {
+    "description": "Membre actif"
+  },
+  "teamInactive": "Retiré le {date}",
+  "@teamInactive": {
+    "description": "Membre désactivé",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "teamEmpty": "Aucun membre.",
+  "@teamEmpty": {
+    "description": "Équipe vide"
+  },
+  "teamError": "L’équipe n’a pas pu être chargée.",
+  "@teamError": {
+    "description": "Erreur chargement équipe"
+  },
+  "teamFormTitleAdd": "Ajouter un membre",
+  "@teamFormTitleAdd": {
+    "description": "Titre formulaire"
+  },
+  "teamFormTitleEdit": "Modifier le membre",
+  "@teamFormTitleEdit": {
+    "description": "Titre formulaire"
+  },
+  "teamFormEmail": "Adresse e-mail du compte",
+  "@teamFormEmail": {
+    "description": "Champ"
+  },
+  "teamFormRole": "Rôle",
+  "@teamFormRole": {
+    "description": "Champ"
+  },
+  "teamFormName": "Nom affiché au vendeur (ex. : Julien M.)",
+  "@teamFormName": {
+    "description": "Champ"
+  },
+  "teamFormInitials": "Initiales (1 à 3)",
+  "@teamFormInitials": {
+    "description": "Champ"
+  },
+  "teamFormOrganisation": "Cabinet (expert partenaire)",
+  "@teamFormOrganisation": {
+    "description": "Champ"
+  },
+  "teamFormPartnerNote": "Un expert partenaire ne voit que les dossiers qui lui sont attribués, sans nom ni coordonnées des propriétaires ni pièce d’identité. Accord de confidentialité signé avant l’accès.",
+  "@teamFormPartnerNote": {
+    "description": "Rappel partenaire"
+  },
+  "teamFormInvalid": "Renseignez l’e-mail, le nom et les initiales (3 au plus).",
+  "@teamFormInvalid": {
+    "description": "Erreur formulaire"
+  },
+  "teamSaved": "Membre enregistré.",
+  "@teamSaved": {
+    "description": "Confirmation"
+  },
+  "teamUserNotFound": "Aucun compte avec cette adresse : la personne doit se connecter une première fois.",
+  "@teamUserNotFound": {
+    "description": "Erreur compte inconnu"
+  },
+  "teamDeactivateTitle": "Retirer l’accès de {name} ?",
+  "@teamDeactivateTitle": {
+    "description": "Titre confirmation",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "teamDeactivateBody": "L’accès est coupé immédiatement et ses dossiers reviennent dans la file.",
+  "@teamDeactivateBody": {
+    "description": "Texte confirmation"
+  },
+  "teamDeactivated": "Accès retiré.",
+  "@teamDeactivated": {
+    "description": "Confirmation retrait"
+  },
+  "auditTitle": "Journal",
+  "@auditTitle": {
+    "description": "Titre journal"
+  },
+  "auditSubtitle": "Toutes les actions de l’équipe, en ajout seul (ouvertures de dossiers et de fichiers comprises).",
+  "@auditSubtitle": {
+    "description": "Sous-titre journal"
+  },
+  "auditFilterActor": "Personne",
+  "@auditFilterActor": {
+    "description": "Filtre"
+  },
+  "auditFilterAction": "Action",
+  "@auditFilterAction": {
+    "description": "Filtre"
+  },
+  "auditFilterDossier": "Dossier (identifiant)",
+  "@auditFilterDossier": {
+    "description": "Filtre"
+  },
+  "auditFilterSince": "Du (AAAA-MM-JJ)",
+  "@auditFilterSince": {
+    "description": "Filtre"
+  },
+  "auditFilterUntil": "Au (AAAA-MM-JJ, inclus)",
+  "@auditFilterUntil": {
+    "description": "Filtre"
+  },
+  "auditAll": "Toutes",
+  "@auditAll": {
+    "description": "Option tous"
+  },
+  "auditApply": "Filtrer",
+  "@auditApply": {
+    "description": "Bouton filtrer"
+  },
+  "auditExport": "Exporter en CSV",
+  "@auditExport": {
+    "description": "Bouton export"
+  },
+  "auditExported": "{count, plural, =1{1 ligne exportée} other{{count} lignes exportées}}",
+  "@auditExported": {
+    "description": "Confirmation export",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "auditColAt": "Date",
+  "@auditColAt": {
+    "description": "Colonne"
+  },
+  "auditColActor": "Personne",
+  "@auditColActor": {
+    "description": "Colonne"
+  },
+  "auditColAction": "Action",
+  "@auditColAction": {
+    "description": "Colonne"
+  },
+  "auditColDossier": "Dossier",
+  "@auditColDossier": {
+    "description": "Colonne"
+  },
+  "auditColDetails": "Détails",
+  "@auditColDetails": {
+    "description": "Colonne"
+  },
+  "auditEmpty": "Aucune action pour ces filtres.",
+  "@auditEmpty": {
+    "description": "Journal vide"
+  },
+  "auditError": "Le journal n’a pas pu être chargé.",
+  "@auditError": {
+    "description": "Erreur journal"
+  },
+  "auditInvalidDate": "Date invalide (AAAA-MM-JJ).",
+  "@auditInvalidDate": {
+    "description": "Erreur date"
+  },
+  "auditLimit": "Les 1 000 dernières lignes au plus sont affichées et exportées.",
+  "@auditLimit": {
+    "description": "Limite du journal"
   }
 }

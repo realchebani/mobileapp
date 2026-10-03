@@ -60,9 +60,9 @@ void main() {
       build: () => MfaCubit(auth: auth, factorId: 'f1'),
       act: (cubit) async {
         cubit.codeChanged('12');
-        expect(await cubit.verify(), isFalse);
+        await cubit.verify();
         cubit.codeChanged('123456');
-        expect(await cubit.verify(), isTrue);
+        await cubit.verify();
       },
       expect: () => [
         const MfaState(factorId: 'f1', code: '12'),
@@ -124,7 +124,9 @@ void main() {
     );
 
     test('no factor, nothing to verify', () async {
-      expect(await MfaCubit(auth: auth, factorId: null).verify(), isFalse);
+      final cubit = MfaCubit(auth: auth, factorId: null);
+      await cubit.verify();
+      expect(cubit.state.status, MfaStatusValue.idle);
     });
   });
 

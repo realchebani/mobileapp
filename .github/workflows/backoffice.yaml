@@ -52,6 +52,9 @@ jobs:
         run: flutter build web --release --no-web-resources-cdn --dart-define-from-file=config/production.json
       - name: No secret key in the site
         run: |
-          if grep -rlE "service_role|sb_secret_" build/web; then
+          # A secret key (sb_secret_<key>) or a service-role JWT
+          # (base64 of '"role":"service_role"'); the bare prefix
+          # "sb_secret_" is in supabase-dart itself.
+          if grep -rlE "sb_secret_[A-Za-z0-9_-]{8,}|cm9sZSI6InNlcnZpY2Vfcm9sZS|InNlcnZpY2Vfcm9sZS" build/web; then
             echo "A secret key was found in build/web" && exit 1
           fi

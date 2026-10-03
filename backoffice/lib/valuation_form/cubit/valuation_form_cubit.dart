@@ -48,10 +48,10 @@ String _clip(String text, int max) => text.runes.length <= max
 class ValuationFormCubit extends Cubit<ValuationFormState> {
   new({
     required this._repository,
-    required this.propertyId,
+    required this._propertyId,
     required ValuationDraft? draft,
     JsonMap initialPayload = const {},
-    this.autosaveDelay = const Duration(seconds: 5),
+    this._autosaveDelay = const Duration(seconds: 5),
   }) : super(
          draft == null
              ? ValuationFormState(payload: initialPayload)
@@ -66,8 +66,8 @@ class ValuationFormCubit extends Cubit<ValuationFormState> {
        );
 
   final BackOfficeRepository _repository;
-  final String propertyId;
-  final Duration autosaveDelay;
+  final String _propertyId;
+  final Duration _autosaveDelay;
   Timer? _timer;
   Future<void>? _saving;
 
@@ -81,7 +81,7 @@ class ValuationFormCubit extends Cubit<ValuationFormState> {
     }
     emit(state.copyWith(payload: payload, saveStatus: SaveStatus.dirty));
     _timer?.cancel();
-    _timer = Timer(autosaveDelay, () => unawaited(save().catchError((_) {})));
+    _timer = Timer(_autosaveDelay, () => unawaited(save().catchError((_) {})));
   }
 
   /// Saves now (waits for a save in progress, then saves again if needed).
@@ -106,7 +106,7 @@ class ValuationFormCubit extends Cubit<ValuationFormState> {
     emit(state.copyWith(saveStatus: SaveStatus.saving));
     try {
       final version = await _repository.saveDraft(
-        propertyId,
+        _propertyId,
         payload,
         expectedVersion: state.version,
       );
@@ -156,16 +156,16 @@ class ValuationFormCubit extends Cubit<ValuationFormState> {
     }
   }
 
-  /// Expert / admin: saves, then certifies; returns the valuation id.
-  Future<String> certify() => _run(FormAction.certifying, () async {
+  /// Expert / admin: saves, then certifies.
+  Future<void> certify() => _run(FormAction.certifying, () async {
     await save();
-    return await _repository.certify(propertyId, version: state.version);
+    await _repository.certify(_propertyId, version: state.version);
   });
 
   /// Partner: saves, then hands the draft over.
   Future<void> submitForApproval() => _run(FormAction.submitting, () async {
     await save();
-    await _repository.submitForApproval(propertyId, version: state.version);
+    await _repository.submitForApproval(_propertyId, version: state.version);
     emit(
       state.copyWith(
         draftStatus: ValuationDraftStatus.submittedForApproval,
@@ -176,7 +176,7 @@ class ValuationFormCubit extends Cubit<ValuationFormState> {
 
   /// Expert / admin: sends a submitted draft back with [note].
   Future<void> returnDraft(String note) => _run(FormAction.returning, () async {
-    await _repository.returnDraft(propertyId, note);
+    await _repository.returnDraft(_propertyId, note);
     emit(
       state.copyWith(
         draftStatus: ValuationDraftStatus.editing,
@@ -188,7 +188,7 @@ class ValuationFormCubit extends Cubit<ValuationFormState> {
   /// Expert / admin: the PDF of the certified valuation.
   Future<void> uploadReport(Uint8List pdf, int pages) => _run(
     FormAction.uploading,
-    () => _repository.uploadReport(propertyId, pdf, pages: pages),
+    () => _repository.uploadReport(_propertyId, pdf, pages: pages),
   );
 
   @override

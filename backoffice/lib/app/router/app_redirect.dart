@@ -10,10 +10,21 @@ const Set<String> _gates = {
   BoRoutes.failed,
 };
 
-/// Every navigation rule: the session decides the screen; admin pages
-/// need their capability.
-String? appRedirect(SessionState session, String location) {
-  String? gate(String path) => location == path ? null : path;
+/// Every navigation rule: the session decides the screen (the page asked
+/// first is kept in `?from=` and opened once signed in); admin pages need
+/// their capability.
+String? appRedirect(SessionState session, Uri uri) {
+  final location = uri.path;
+  String? gate(String path) {
+    if (location == path) return null;
+    final from = _gates.contains(location)
+        ? uri.queryParameters['from']
+        : (location == '/' ? null : uri.toString());
+    return from == null
+        ? path
+        : Uri(path: path, queryParameters: {'from': from}).toString();
+  }
+
   switch (session.status) {
     case SessionStatus.unknown:
       return gate(BoRoutes.loading);
@@ -27,7 +38,17 @@ String? appRedirect(SessionState session, String location) {
       return gate(BoRoutes.failed);
     case SessionStatus.ready:
       final me = session.me!;
-      if (_gates.contains(location) || location == '/') return BoRoutes.queue;
+      if (_gates.contains(location) || location == '/') {
+        final from = uri.queryParameters['from'];
+        // Only a page of this site (no « //host »), never a gate again.
+        if (from == null ||
+            !from.startsWith('/') ||
+            from.startsWith('//') ||
+            _gates.contains(Uri.parse(from).path)) {
+          return BoRoutes.queue;
+        }
+        return appRedirect(session, Uri.parse(from)) ?? from;
+      }
       if (location.startsWith(BoRoutes.team) &&
           !me.can(BackOfficeCapability.team)) {
         return BoRoutes.queue;

@@ -90,10 +90,6 @@ void main() {
       ),
     ),
     act: (cubit) async {
-      expect(
-        await cubit.signFile(const FileRequest(FileKind.document, 'd2')),
-        'https://s/d2',
-      );
       await cubit.loadPhotos();
       await cubit.loadPhotos();
       expect(cubit.state.photoUrls, hasLength(61));
@@ -101,7 +97,7 @@ void main() {
     },
     verify: (cubit) {
       expect(cubit.state.photoUrls, isEmpty);
-      verify(() => repository.signFiles('p1', any())).called(3);
+      verify(() => repository.signFiles('p1', any())).called(2);
     },
   );
 

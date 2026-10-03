@@ -107,10 +107,12 @@ class _DocumentRow extends StatelessWidget {
         if (document.isReplaced) BoChip(l10n.docsReplaced),
         TextButton(
           onPressed: () => runGuarded(context, () async {
-            final url = await cubit.signFile(
-              FileRequest(FileKind.document, document.id),
+            final browser = context.read<Browser>();
+            final signed = await context.read<BackOfficeRepository>().signFiles(
+              cubit.state.dossier!.id,
+              [FileRequest(FileKind.document, document.id)],
             );
-            if (context.mounted) await context.read<Browser>().open(url);
+            await browser.open(signed.single.url);
           }),
           child: Text(l10n.docsOpen),
         ),

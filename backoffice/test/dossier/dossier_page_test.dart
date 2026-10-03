@@ -3,7 +3,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:realesty_backoffice/app/app.dart';
 import 'package:realesty_backoffice/dossier/dossier.dart';
 
 import '../helpers/fixtures.dart';
@@ -128,7 +127,7 @@ void main() {
         ),
         'market': null,
         'lot': null,
-        'fill_sheet': <dynamic>[],
+        'fill_sheet': const <dynamic>[],
       }),
     );
     await pump(tester, DossierTab.synthesis);
@@ -159,8 +158,8 @@ void main() {
     when(() => repository.getDossier('p1')).thenAnswer(
       (_) async => Dossier.fromJson({
         ...dossierJson(),
-        'photos': <dynamic>[],
-        'rooms': <dynamic>[],
+        'photos': const <dynamic>[],
+        'rooms': const <dynamic>[],
       }),
     );
     await pump(tester, DossierTab.photos);
@@ -199,7 +198,7 @@ void main() {
   testWidgets('documents: none', (tester) async {
     when(() => repository.getDossier('p1')).thenAnswer(
       (_) async =>
-          Dossier.fromJson({...dossierJson(), 'documents': <dynamic>[]}),
+          Dossier.fromJson({...dossierJson(), 'documents': const <dynamic>[]}),
     );
     await pump(tester, DossierTab.documents);
     expect(find.text('Aucun document.'), findsOneWidget);
@@ -219,8 +218,8 @@ void main() {
     when(() => repository.getDossier('p1')).thenAnswer(
       (_) async => Dossier.fromJson({
         ...dossierJson(),
-        'voice_thread': <dynamic>[],
-        'fill_sheet': <dynamic>[],
+        'voice_thread': const <dynamic>[],
+        'fill_sheet': const <dynamic>[],
       }),
     );
     await pump(tester, DossierTab.voice);

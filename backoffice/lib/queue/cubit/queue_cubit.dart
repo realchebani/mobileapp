@@ -22,17 +22,17 @@ List<DossierSummary> groupByLot(List<DossierSummary> rows) {
 }
 
 class QueueCubit extends Cubit<QueueState> {
-  new({required this._repository, this.pageSize = 100})
+  new({required this._repository, this._pageSize = 100})
     : super(const QueueState());
 
   final BackOfficeRepository _repository;
-  final int pageSize;
+  final int _pageSize;
 
   Future<List<DossierSummary>> _fetch(int offset) => _repository.listDossiers(
     statuses: state.filter.statuses,
     scope: state.scope,
     search: state.search.trim().isEmpty ? null : state.search.trim(),
-    limit: pageSize,
+    limit: _pageSize,
     offset: offset,
   );
 
@@ -44,7 +44,7 @@ class QueueCubit extends Cubit<QueueState> {
         state.copyWith(
           status: QueueStatus.ready,
           rows: groupByLot(rows),
-          hasMore: rows.length == pageSize,
+          hasMore: rows.length == _pageSize,
         ),
       );
     } on Object {
@@ -58,7 +58,7 @@ class QueueCubit extends Cubit<QueueState> {
     emit(
       state.copyWith(
         rows: groupByLot([...state.rows, ...more]),
-        hasMore: more.length == pageSize,
+        hasMore: more.length == _pageSize,
       ),
     );
   }

@@ -15,7 +15,7 @@ import 'package:realesty_backoffice/queue/queue.dart';
 import 'package:realesty_backoffice/team/team.dart';
 
 /// Rebuilds the routes when the session changes.
-class _SessionListenable extends ChangeNotifier {
+class SessionListenable extends ChangeNotifier {
   new(SessionCubit cubit) {
     _subscription = cubit.stream.listen((_) => notifyListeners());
   }
@@ -29,53 +29,54 @@ class _SessionListenable extends ChangeNotifier {
   }
 }
 
-GoRouter createRouter(SessionCubit session, {String initialLocation = '/'}) =>
-    GoRouter(
-      initialLocation: initialLocation,
-      refreshListenable: _SessionListenable(session),
-      redirect: (context, state) => appRedirect(session.state, state.uri.path),
+GoRouter createRouter(
+  SessionCubit session,
+  Listenable refresh, {
+  String initialLocation = '/',
+}) => GoRouter(
+  initialLocation: initialLocation,
+  refreshListenable: refresh,
+  redirect: (context, state) => appRedirect(session.state, state.uri),
+  routes: [
+    GoRoute(path: '/', redirect: (_, _) => BoRoutes.queue),
+    GoRoute(path: BoRoutes.loading, builder: (_, _) => const LoadingGate()),
+    GoRoute(path: BoRoutes.login, builder: (_, _) => const LoginPage()),
+    GoRoute(path: BoRoutes.mfa, builder: (_, _) => const MfaPage()),
+    GoRoute(path: BoRoutes.denied, builder: (_, _) => const DeniedGate()),
+    GoRoute(path: BoRoutes.failed, builder: (_, _) => const FailedGate()),
+    ShellRoute(
+      builder: (context, state, child) =>
+          BoShell(location: state.uri.path, child: child),
       routes: [
-        GoRoute(path: '/', redirect: (_, _) => BoRoutes.queue),
-        GoRoute(path: BoRoutes.loading, builder: (_, _) => const LoadingGate()),
-        GoRoute(path: BoRoutes.login, builder: (_, _) => const LoginPage()),
-        GoRoute(path: BoRoutes.mfa, builder: (_, _) => const MfaPage()),
-        GoRoute(path: BoRoutes.denied, builder: (_, _) => const DeniedGate()),
-        GoRoute(path: BoRoutes.failed, builder: (_, _) => const FailedGate()),
-        ShellRoute(
-          builder: (context, state, child) =>
-              BoShell(location: state.uri.path, child: child),
+        GoRoute(
+          path: BoRoutes.queue,
+          builder: (_, _) => const QueuePage(),
           routes: [
             GoRoute(
-              path: BoRoutes.queue,
-              builder: (_, _) => const QueuePage(),
+              path: ':id',
+              redirect: (_, state) =>
+                  state.uri.path ==
+                      BoRoutes.dossier(state.pathParameters['id']!)
+                  ? BoRoutes.dossier(
+                      state.pathParameters['id']!,
+                      DossierTab.synthesis.segment,
+                    )
+                  : null,
               routes: [
                 GoRoute(
-                  path: ':id',
-                  redirect: (_, state) =>
-                      state.uri.path ==
-                          BoRoutes.dossier(state.pathParameters['id']!)
-                      ? BoRoutes.dossier(
-                          state.pathParameters['id']!,
-                          DossierTab.synthesis.segment,
-                        )
-                      : null,
-                  routes: [
-                    GoRoute(
-                      path: ':tab',
-                      builder: (_, state) => DossierPage(
-                        propertyId: state.pathParameters['id']!,
-                        tab: DossierTab.fromSegment(
-                          state.pathParameters['tab'],
-                        ),
-                      ),
-                    ),
-                  ],
+                  path: ':tab',
+                  builder: (_, state) => DossierPage(
+                    propertyId: state.pathParameters['id']!,
+                    tab: DossierTab.fromSegment(state.pathParameters['tab']),
+                  ),
                 ),
               ],
             ),
-            GoRoute(path: BoRoutes.team, builder: (_, _) => const TeamPage()),
-            GoRoute(path: BoRoutes.audit, builder: (_, _) => const AuditPage()),
           ],
         ),
+        GoRoute(path: BoRoutes.team, builder: (_, _) => const TeamPage()),
+        GoRoute(path: BoRoutes.audit, builder: (_, _) => const AuditPage()),
       ],
-    );
+    ),
+  ],
+);

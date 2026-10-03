@@ -62,14 +62,17 @@ class AppView extends StatefulWidget {
 }
 
 class _AppViewState extends State<AppView> {
+  late final _refresh = SessionListenable(context.read<SessionCubit>());
   late final GoRouter _router = createRouter(
     context.read<SessionCubit>(),
+    _refresh,
     initialLocation: widget.initialLocation,
   );
 
   @override
   void dispose() {
     _router.dispose();
+    _refresh.dispose();
     super.dispose();
   }
 
