@@ -47,6 +47,8 @@ void main() {
 
       await tester.tap(find.text('Design system'));
       verify(() => goRouter.push<Object?>(AppRoutes.designSystem)).called(1);
+      await tester.tap(find.text('Supprimer mon compte'));
+      verify(() => goRouter.push<Object?>(AppRoutes.accountDeletion)).called(1);
     });
   });
 }

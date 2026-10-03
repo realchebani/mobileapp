@@ -2922,14 +2922,6 @@
   "@accountLanguage": {
     "description": "C2 · ligne langue"
   },
-  "accountLanguageValue": "Français",
-  "@accountLanguageValue": {
-    "description": "C2 · langue de l’application"
-  },
-  "accountMoreSoon": "La modification de vos informations, vos préférences de notifications et la suppression du compte arrivent bientôt.",
-  "@accountMoreSoon": {
-    "description": "C2 · fonctions à venir"
-  },
   "accountNoName": "Mon profil",
   "@accountNoName": {
     "description": "C2 · nom affiché sans prénom"
@@ -5712,5 +5704,845 @@
         "example": "12"
       }
     }
+  },
+  "vaultKindDpe": "DPE",
+  "@vaultKindDpe": {
+    "description": "EPIC-11 · coffre-fort · type de document : DPE"
+  },
+  "vaultKindMaintenanceContract": "Contrat d’entretien",
+  "@vaultKindMaintenanceContract": {
+    "description": "EPIC-11 · coffre-fort · type de document : contrat d’entretien"
+  },
+  "vaultKindInsurance": "Assurance",
+  "@vaultKindInsurance": {
+    "description": "EPIC-11 · coffre-fort · type de document : assurance"
+  },
+  "vaultKindCoOwnership": "Copropriété (règlement, PV d’AG)",
+  "@vaultKindCoOwnership": {
+    "description": "EPIC-11 · coffre-fort · type de document : copropriété"
+  },
+  "vaultRubricProperty": "Propriété",
+  "@vaultRubricProperty": {
+    "description": "EPIC-11 · coffre-fort · rubrique Propriété"
+  },
+  "vaultRubricTax": "Fiscalité",
+  "@vaultRubricTax": {
+    "description": "EPIC-11 · coffre-fort · rubrique Fiscalité"
+  },
+  "vaultRubricEnergy": "Énergie",
+  "@vaultRubricEnergy": {
+    "description": "EPIC-11 · coffre-fort · rubrique Énergie"
+  },
+  "vaultRubricWorks": "Travaux",
+  "@vaultRubricWorks": {
+    "description": "EPIC-11 · coffre-fort · rubrique Travaux"
+  },
+  "vaultRubricIdentity": "Identité",
+  "@vaultRubricIdentity": {
+    "description": "EPIC-11 · coffre-fort · rubrique Identité"
+  },
+  "vaultRubricMandates": "Mandats & visites",
+  "@vaultRubricMandates": {
+    "description": "EPIC-11 · coffre-fort · rubrique des documents produits par Realesty"
+  },
+  "vaultRubricOther": "Autres",
+  "@vaultRubricOther": {
+    "description": "EPIC-11 · coffre-fort · rubrique Autres"
+  },
+  "vaultAdd": "Ajouter un document",
+  "@vaultAdd": {
+    "description": "EPIC-11 · coffre-fort · bouton ajouter (accessibilité)"
+  },
+  "vaultNoProperty": "Ajoutez un bien pour ranger ses documents dans votre coffre-fort.",
+  "@vaultNoProperty": {
+    "description": "EPIC-11 · coffre-fort · aucun bien"
+  },
+  "vaultLoadFailed": "Vos documents n’ont pas pu être chargés.",
+  "@vaultLoadFailed": {
+    "description": "EPIC-11 · coffre-fort · échec du chargement"
+  },
+  "vaultRetry": "Réessayer",
+  "@vaultRetry": {
+    "description": "EPIC-11 · coffre-fort · réessayer"
+  },
+  "vaultSearchLabel": "Rechercher",
+  "@vaultSearchLabel": {
+    "description": "EPIC-11 · coffre-fort · libellé du champ de recherche"
+  },
+  "vaultSearchHint": "Rechercher un document",
+  "@vaultSearchHint": {
+    "description": "EPIC-11 · coffre-fort · indication du champ de recherche"
+  },
+  "vaultSearchResults": "{count, plural, =0{Aucun résultat} =1{1 résultat} other{{count} résultats}}",
+  "@vaultSearchResults": {
+    "description": "EPIC-11 · coffre-fort · nombre de résultats de recherche",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "vaultSearchEmpty": "Aucun document ne correspond à votre recherche.",
+  "@vaultSearchEmpty": {
+    "description": "EPIC-11 · coffre-fort · aucun résultat"
+  },
+  "vaultRecents": "Récents",
+  "@vaultRecents": {
+    "description": "EPIC-11 · coffre-fort · titre de la section des documents récents"
+  },
+  "vaultPrivacy": "Documents chiffrés et stockés en Europe. Accès limité à vous et à l’équipe Realesty en charge du dossier.",
+  "@vaultPrivacy": {
+    "description": "EPIC-11 · coffre-fort · mention de confidentialité (pied de C1)"
+  },
+  "vaultSelectorTitle": "Quel bien ?",
+  "@vaultSelectorTitle": {
+    "description": "EPIC-11 · coffre-fort · titre du sélecteur de bien / lot"
+  },
+  "vaultSelectorLot": "Lot de vente · tous ses biens",
+  "@vaultSelectorLot": {
+    "description": "EPIC-11 · coffre-fort · sous-titre d’un lot dans le sélecteur"
+  },
+  "vaultSelectorSemantics": "Bien affiché : {label}. Changer de bien",
+  "@vaultSelectorSemantics": {
+    "description": "EPIC-11 · coffre-fort · sélecteur de bien (accessibilité)",
+    "placeholders": {
+      "label": {
+        "type": "String",
+        "example": "Maison · 12 rue des Lilas"
+      }
+    }
+  },
+  "vaultDocumentCount": "{count, plural, =0{Aucun document} =1{1 document} other{{count} documents}}",
+  "@vaultDocumentCount": {
+    "description": "EPIC-11 · coffre-fort · nombre de documents",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "vaultToAdd": "{count, plural, =1{1 à ajouter} other{{count} à ajouter}}",
+  "@vaultToAdd": {
+    "description": "EPIC-11 · coffre-fort · nombre de documents requis manquants",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "vaultToReplace": "{count, plural, =1{1 à remplacer} other{{count} à remplacer}}",
+  "@vaultToReplace": {
+    "description": "EPIC-11 · coffre-fort · nombre de documents refusés",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "vaultAnalyzing": "{count, plural, =1{1 en analyse} other{{count} en analyse}}",
+  "@vaultAnalyzing": {
+    "description": "EPIC-11 · coffre-fort · nombre de documents en analyse",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "vaultAllVerified": "tous vérifiés",
+  "@vaultAllVerified": {
+    "description": "EPIC-11 · coffre-fort · tous les documents de la rubrique sont vérifiés"
+  },
+  "vaultOwnerDocument": "{kind} · {owner}",
+  "@vaultOwnerDocument": {
+    "description": "EPIC-11 · coffre-fort · document d’un propriétaire",
+    "placeholders": {
+      "kind": {
+        "type": "String",
+        "example": "Pièce d’identité"
+      },
+      "owner": {
+        "type": "String",
+        "example": "Sophie Durand"
+      }
+    }
+  },
+  "vaultPropertyPrefix": "{property} · {title}",
+  "@vaultPropertyPrefix": {
+    "description": "EPIC-11 · coffre-fort · titre préfixé par le bien (vue lot)",
+    "placeholders": {
+      "property": {
+        "type": "String",
+        "example": "Garage"
+      },
+      "title": {
+        "type": "String",
+        "example": "Titre de propriété"
+      }
+    }
+  },
+  "vaultFileImage": "Image",
+  "@vaultFileImage": {
+    "description": "EPIC-11 · coffre-fort · type de fichier image"
+  },
+  "vaultAddedOn": "ajouté le {date}",
+  "@vaultAddedOn": {
+    "description": "EPIC-11 · coffre-fort · date d’ajout",
+    "placeholders": {
+      "date": {
+        "type": "String",
+        "example": "12/09/2026"
+      }
+    }
+  },
+  "vaultAddedAfterSending": "Ajouté après l’envoi",
+  "@vaultAddedAfterSending": {
+    "description": "EPIC-11 · coffre-fort · document ajouté après l’envoi du dossier"
+  },
+  "vaultVisibilityPrivate": "Privé",
+  "@vaultVisibilityPrivate": {
+    "description": "EPIC-11 · coffre-fort · visibilité : privé"
+  },
+  "vaultVisibilityBuyers": "Acquéreurs",
+  "@vaultVisibilityBuyers": {
+    "description": "EPIC-11 · coffre-fort · visibilité : acquéreurs"
+  },
+  "vaultVisibilityNotary": "Notaire",
+  "@vaultVisibilityNotary": {
+    "description": "EPIC-11 · coffre-fort · visibilité : notaire"
+  },
+  "vaultBadgeVerified": "Vérifié expert",
+  "@vaultBadgeVerified": {
+    "description": "EPIC-11 · coffre-fort · badge vérifié par l’expert"
+  },
+  "vaultBadgeToReplace": "À remplacer",
+  "@vaultBadgeToReplace": {
+    "description": "EPIC-11 · coffre-fort · badge document refusé"
+  },
+  "vaultBadgeToComplete": "À compléter",
+  "@vaultBadgeToComplete": {
+    "description": "EPIC-11 · coffre-fort · badge rubrique incomplète"
+  },
+  "vaultMissingSubtitle": "à ajouter pour finaliser",
+  "@vaultMissingSubtitle": {
+    "description": "EPIC-11 · coffre-fort · sous-titre d’un document requis manquant"
+  },
+  "vaultValuationTitle": "Avis de valeur certifié",
+  "@vaultValuationTitle": {
+    "description": "EPIC-11 · coffre-fort · document produit par Realesty : avis de valeur"
+  },
+  "vaultValuationSubtitle": "Validé le {date} par {expert}",
+  "@vaultValuationSubtitle": {
+    "description": "EPIC-11 · coffre-fort · sous-titre de l’avis de valeur",
+    "placeholders": {
+      "date": {
+        "type": "String",
+        "example": "25/09/2026"
+      },
+      "expert": {
+        "type": "String",
+        "example": "Julien M."
+      }
+    }
+  },
+  "vaultDocumentsEyebrow": "Coffre-fort · Espace vendeur",
+  "@vaultDocumentsEyebrow": {
+    "description": "EPIC-11 · coffre-fort · V18 · surtitre"
+  },
+  "vaultDocumentsTitle": "Mes documents",
+  "@vaultDocumentsTitle": {
+    "description": "EPIC-11 · coffre-fort · V18 · titre"
+  },
+  "vaultNotFound": "Ce bien n’existe plus.",
+  "@vaultNotFound": {
+    "description": "EPIC-11 · coffre-fort · V18 · bien introuvable"
+  },
+  "vaultCollapseAll": "Tout replier",
+  "@vaultCollapseAll": {
+    "description": "EPIC-11 · coffre-fort · V18 · replier toutes les rubriques"
+  },
+  "vaultExpandAll": "Tout déplier",
+  "@vaultExpandAll": {
+    "description": "EPIC-11 · coffre-fort · V18 · déplier toutes les rubriques"
+  },
+  "vaultAgentName": "Agent Realesty",
+  "@vaultAgentName": {
+    "description": "EPIC-11 · coffre-fort · V18 · nom de l’agent"
+  },
+  "vaultAgentIdentity": "Il manque votre pièce d’identité pour signer le mandat. Scannez-la en 30 secondes.",
+  "@vaultAgentIdentity": {
+    "description": "EPIC-11 · coffre-fort · V18 · message de l’agent : pièce d’identité manquante"
+  },
+  "vaultAgentReplace": "L’expert demande de remplacer : {title} ({reason}).",
+  "@vaultAgentReplace": {
+    "description": "EPIC-11 · coffre-fort · V18 · message de l’agent : document refusé",
+    "placeholders": {
+      "title": {
+        "type": "String",
+        "example": "Taxe foncière"
+      },
+      "reason": {
+        "type": "String",
+        "example": "illisible"
+      }
+    }
+  },
+  "vaultAgentReplaceNoReason": "L’expert demande de remplacer : {title}.",
+  "@vaultAgentReplaceNoReason": {
+    "description": "EPIC-11 · coffre-fort · V18 · message de l’agent : document refusé sans motif",
+    "placeholders": {
+      "title": {
+        "type": "String",
+        "example": "Taxe foncière"
+      }
+    }
+  },
+  "vaultSectionEmpty": "Aucun document pour l’instant.",
+  "@vaultSectionEmpty": {
+    "description": "EPIC-11 · coffre-fort · V18 · rubrique vide"
+  },
+  "vaultMandatesEmpty": "Votre avis de valeur certifié et vos mandats apparaîtront ici.",
+  "@vaultMandatesEmpty": {
+    "description": "EPIC-11 · coffre-fort · V18 · rubrique Mandats vide"
+  },
+  "vaultAddToRubric": "Ajouter",
+  "@vaultAddToRubric": {
+    "description": "EPIC-11 · coffre-fort · V18 · ajouter dans la rubrique"
+  },
+  "vaultSharingFooter": "Realesty accède à vos documents pour certifier votre dossier. Pour chacun, vous choisissez qui d’autre pourra le voir.",
+  "@vaultSharingFooter": {
+    "description": "EPIC-11 · coffre-fort · V18 · pied de page"
+  },
+  "vaultRename": "Renommer",
+  "@vaultRename": {
+    "description": "EPIC-11 · coffre-fort · détail · renommer"
+  },
+  "vaultRenameLabel": "Nom du document",
+  "@vaultRenameLabel": {
+    "description": "EPIC-11 · coffre-fort · détail · champ du nom"
+  },
+  "vaultRenameSave": "Enregistrer",
+  "@vaultRenameSave": {
+    "description": "EPIC-11 · coffre-fort · détail · enregistrer le nom"
+  },
+  "vaultDetailKind": "Type",
+  "@vaultDetailKind": {
+    "description": "EPIC-11 · coffre-fort · détail · type"
+  },
+  "vaultDetailSize": "Taille",
+  "@vaultDetailSize": {
+    "description": "EPIC-11 · coffre-fort · détail · taille"
+  },
+  "vaultDetailDate": "Ajouté le",
+  "@vaultDetailDate": {
+    "description": "EPIC-11 · coffre-fort · détail · date d’ajout"
+  },
+  "vaultRejected": "L’expert demande de remplacer ce document : {reason}",
+  "@vaultRejected": {
+    "description": "EPIC-11 · coffre-fort · détail · motif du refus",
+    "placeholders": {
+      "reason": {
+        "type": "String",
+        "example": "illisible"
+      }
+    }
+  },
+  "vaultRejectedNoReason": "L’expert demande de remplacer ce document.",
+  "@vaultRejectedNoReason": {
+    "description": "EPIC-11 · coffre-fort · détail · refus sans motif"
+  },
+  "vaultExtractedTitle": "Informations extraites",
+  "@vaultExtractedTitle": {
+    "description": "EPIC-11 · coffre-fort · détail · informations extraites"
+  },
+  "vaultSharingTitle": "Qui peut voir ce document ?",
+  "@vaultSharingTitle": {
+    "description": "EPIC-11 · coffre-fort · détail · titre de la visibilité"
+  },
+  "vaultSharingBuyers": "Acquéreurs certifiés",
+  "@vaultSharingBuyers": {
+    "description": "EPIC-11 · coffre-fort · détail · interrupteur acquéreurs"
+  },
+  "vaultSharingBuyersSubtitle": "Dans la fiche détaillée, après Pass Visite",
+  "@vaultSharingBuyersSubtitle": {
+    "description": "EPIC-11 · coffre-fort · détail · sous-titre acquéreurs"
+  },
+  "vaultSharingNotary": "Notaire",
+  "@vaultSharingNotary": {
+    "description": "EPIC-11 · coffre-fort · détail · interrupteur notaire"
+  },
+  "vaultSharingNotarySubtitle": "Transmis au compromis",
+  "@vaultSharingNotarySubtitle": {
+    "description": "EPIC-11 · coffre-fort · détail · sous-titre notaire"
+  },
+  "vaultSharingLater": "Ces réglages s’appliqueront quand les acquéreurs et le notaire auront accès à Realesty : rien n’est partagé aujourd’hui.",
+  "@vaultSharingLater": {
+    "description": "EPIC-11 · coffre-fort · détail · rien n’est encore partagé"
+  },
+  "vaultSharingPrivate": "Privé · non partageable",
+  "@vaultSharingPrivate": {
+    "description": "EPIC-11 · coffre-fort · détail · pièce d’identité privée"
+  },
+  "vaultOpen": "Ouvrir",
+  "@vaultOpen": {
+    "description": "EPIC-11 · coffre-fort · détail · ouvrir"
+  },
+  "vaultDownload": "Télécharger",
+  "@vaultDownload": {
+    "description": "EPIC-11 · coffre-fort · détail · télécharger (partage iOS)"
+  },
+  "vaultReplace": "Remplacer",
+  "@vaultReplace": {
+    "description": "EPIC-11 · coffre-fort · détail · remplacer"
+  },
+  "vaultDelete": "Supprimer",
+  "@vaultDelete": {
+    "description": "EPIC-11 · coffre-fort · détail · supprimer"
+  },
+  "vaultDeleteConfirm": "Supprimer définitivement ce document ?",
+  "@vaultDeleteConfirm": {
+    "description": "EPIC-11 · coffre-fort · détail · confirmation de suppression"
+  },
+  "vaultDeleteCancel": "Annuler",
+  "@vaultDeleteCancel": {
+    "description": "EPIC-11 · coffre-fort · détail · annuler la suppression"
+  },
+  "vaultDeleteConfirmButton": "Supprimer",
+  "@vaultDeleteConfirmButton": {
+    "description": "EPIC-11 · coffre-fort · détail · confirmer la suppression"
+  },
+  "vaultAddPropertyTitle": "Pour quel bien ?",
+  "@vaultAddPropertyTitle": {
+    "description": "EPIC-11 · coffre-fort · ajout · choix du bien"
+  },
+  "vaultAddKindTitle": "Quel document ?",
+  "@vaultAddKindTitle": {
+    "description": "EPIC-11 · coffre-fort · ajout · choix du type"
+  },
+  "vaultAddOwnerTitle": "La pièce d’identité de qui ?",
+  "@vaultAddOwnerTitle": {
+    "description": "EPIC-11 · coffre-fort · ajout · choix du propriétaire"
+  },
+  "vaultAddSourceTitle": "Ajouter un document",
+  "@vaultAddSourceTitle": {
+    "description": "EPIC-11 · coffre-fort · ajout · choix de la source"
+  },
+  "vaultReplaceTitle": "Remplacer le document",
+  "@vaultReplaceTitle": {
+    "description": "EPIC-11 · coffre-fort · remplacement · choix de la source"
+  },
+  "vaultSourceScanSubtitle": "Plusieurs pages réunies en un PDF",
+  "@vaultSourceScanSubtitle": {
+    "description": "EPIC-11 · coffre-fort · ajout · sous-titre du scan"
+  },
+  "vaultUploadFailed": "L’envoi de « {file} » a échoué.",
+  "@vaultUploadFailed": {
+    "description": "EPIC-11 · coffre-fort · ajout · échec de l’envoi",
+    "placeholders": {
+      "file": {
+        "type": "String",
+        "example": "dpe.pdf"
+      }
+    }
+  },
+  "vaultUploadDiscard": "Abandonner",
+  "@vaultUploadDiscard": {
+    "description": "EPIC-11 · coffre-fort · ajout · abandonner l’envoi"
+  },
+  "vaultNoticeUploaded": "Document ajouté.",
+  "@vaultNoticeUploaded": {
+    "description": "EPIC-11 · coffre-fort · document ajouté"
+  },
+  "vaultNoticeReplaced": "Document remplacé.",
+  "@vaultNoticeReplaced": {
+    "description": "EPIC-11 · coffre-fort · document remplacé"
+  },
+  "vaultNoticeDeleted": "Document supprimé.",
+  "@vaultNoticeDeleted": {
+    "description": "EPIC-11 · coffre-fort · document supprimé"
+  },
+  "vaultNoticeUploadFailed": "Le document n’a pas pu être envoyé. Réessayez.",
+  "@vaultNoticeUploadFailed": {
+    "description": "EPIC-11 · coffre-fort · échec de l’envoi"
+  },
+  "vaultNoticeDeleteFailed": "Le document n’a pas pu être supprimé.",
+  "@vaultNoticeDeleteFailed": {
+    "description": "EPIC-11 · coffre-fort · échec de la suppression"
+  },
+  "vaultNoticeSaveFailed": "La modification n’a pas pu être enregistrée.",
+  "@vaultNoticeSaveFailed": {
+    "description": "EPIC-11 · coffre-fort · échec d’une modification"
+  },
+  "vaultNoticeOpenFailed": "Le document n’a pas pu être ouvert.",
+  "@vaultNoticeOpenFailed": {
+    "description": "EPIC-11 · coffre-fort · échec de l’ouverture"
+  },
+  "vaultNoticeShareFailed": "Le document n’a pas pu être téléchargé.",
+  "@vaultNoticeShareFailed": {
+    "description": "EPIC-11 · coffre-fort · échec du téléchargement"
+  },
+  "accountEditProfile": "Modifier mes informations",
+  "@accountEditProfile": {
+    "description": "EPIC-11 · C2 Mon compte · bouton crayon (accessibilité)"
+  },
+  "accountSellerSection": "Mon dossier vendeur",
+  "@accountSellerSection": {
+    "description": "EPIC-11 · C2 Mon compte · section dossier vendeur"
+  },
+  "accountOwners": "Propriétaires",
+  "@accountOwners": {
+    "description": "EPIC-11 · C2 Mon compte · propriétaires du bien"
+  },
+  "accountPersonalInformation": "Informations personnelles",
+  "@accountPersonalInformation": {
+    "description": "EPIC-11 · C2 Mon compte · informations personnelles"
+  },
+  "accountPersonalInformationSubtitle": "Nom, e-mail, téléphone, adresse",
+  "@accountPersonalInformationSubtitle": {
+    "description": "EPIC-11 · C2 Mon compte · sous-titre informations personnelles"
+  },
+  "accountNotifications": "Notifications",
+  "@accountNotifications": {
+    "description": "EPIC-11 · C2 Mon compte · notifications"
+  },
+  "accountNotificationsSubtitle": "Dans l’app uniquement",
+  "@accountNotificationsSubtitle": {
+    "description": "EPIC-11 · C2 Mon compte · sous-titre notifications (aucune non lue)"
+  },
+  "accountNotificationsUnread": "{count, plural, =1{1 non lue} other{{count} non lues}}",
+  "@accountNotificationsUnread": {
+    "description": "EPIC-11 · C2 Mon compte · nombre de notifications non lues",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "accountPrivacySection": "Confidentialité",
+  "@accountPrivacySection": {
+    "description": "EPIC-11 · C2 Mon compte · section confidentialité"
+  },
+  "accountMyData": "Mes données",
+  "@accountMyData": {
+    "description": "EPIC-11 · C2 Mon compte · mes données"
+  },
+  "accountMyDataSubtitle": "Supprimer mon compte",
+  "@accountMyDataSubtitle": {
+    "description": "EPIC-11 · C2 Mon compte · sous-titre mes données"
+  },
+  "homeDeleteAccount": "Supprimer mon compte",
+  "@homeDeleteAccount": {
+    "description": "EPIC-11 · espace provisoire · lien de suppression du compte"
+  },
+  "profileTitle": "Informations & sécurité",
+  "@profileTitle": {
+    "description": "EPIC-11 · V19 Informations & sécurité · titre"
+  },
+  "profileInformationSection": "Mes informations",
+  "@profileInformationSection": {
+    "description": "EPIC-11 · V19 Informations & sécurité · section informations"
+  },
+  "profileFirstName": "Prénom",
+  "@profileFirstName": {
+    "description": "EPIC-11 · V19 Informations & sécurité · prénom"
+  },
+  "profileLastName": "Nom",
+  "@profileLastName": {
+    "description": "EPIC-11 · V19 Informations & sécurité · nom"
+  },
+  "profileEmail": "E-mail",
+  "@profileEmail": {
+    "description": "EPIC-11 · V19 Informations & sécurité · e-mail (lecture seule)"
+  },
+  "profileEmailHelp": "Pour changer d’adresse e-mail, contactez l’équipe Realesty.",
+  "@profileEmailHelp": {
+    "description": "EPIC-11 · V19 Informations & sécurité · aide e-mail"
+  },
+  "profilePhone": "Téléphone",
+  "@profilePhone": {
+    "description": "EPIC-11 · V19 Informations & sécurité · téléphone"
+  },
+  "profilePhoneHint": "06 12 34 56 78",
+  "@profilePhoneHint": {
+    "description": "EPIC-11 · V19 Informations & sécurité · exemple de téléphone"
+  },
+  "profileAddress": "Adresse postale",
+  "@profileAddress": {
+    "description": "EPIC-11 · V19 Informations & sécurité · adresse postale"
+  },
+  "profileAddressHint": "12 rue des Lilas, 69630 Chaponost",
+  "@profileAddressHint": {
+    "description": "EPIC-11 · V19 Informations & sécurité · exemple d’adresse"
+  },
+  "profileErrorTooLong": "Ce texte est trop long.",
+  "@profileErrorTooLong": {
+    "description": "EPIC-11 · V19 Informations & sécurité · erreur texte trop long"
+  },
+  "profileErrorPhone": "Saisissez un numéro de téléphone valide.",
+  "@profileErrorPhone": {
+    "description": "EPIC-11 · V19 Informations & sécurité · erreur téléphone"
+  },
+  "profileOwnersSection": "Propriétaires du bien",
+  "@profileOwnersSection": {
+    "description": "EPIC-11 · V19 Informations & sécurité · section propriétaires"
+  },
+  "profileOwnerYou": "{name} (vous)",
+  "@profileOwnerYou": {
+    "description": "EPIC-11 · V19 Informations & sécurité · propriétaire = l’utilisateur",
+    "placeholders": {
+      "name": {
+        "type": "String",
+        "example": "Sophie Durand"
+      }
+    }
+  },
+  "profileIdentityReceived": "Pièce reçue",
+  "@profileIdentityReceived": {
+    "description": "EPIC-11 · V19 Informations & sécurité · pièce d’identité reçue"
+  },
+  "profileIdentityToAdd": "À ajouter",
+  "@profileIdentityToAdd": {
+    "description": "EPIC-11 · V19 Informations & sécurité · pièce d’identité à ajouter"
+  },
+  "profileIdentityReceivedSubtitle": "Pièce d’identité dans le coffre-fort",
+  "@profileIdentityReceivedSubtitle": {
+    "description": "EPIC-11 · V19 Informations & sécurité · sous-titre pièce reçue"
+  },
+  "profileIdentityMissingSubtitle": "Pièce d’identité à ajouter",
+  "@profileIdentityMissingSubtitle": {
+    "description": "EPIC-11 · V19 Informations & sécurité · sous-titre pièce manquante"
+  },
+  "profileSecuritySection": "Sécurité",
+  "@profileSecuritySection": {
+    "description": "EPIC-11 · V19 Informations & sécurité · section sécurité"
+  },
+  "profileIdentity": "Pièce d’identité",
+  "@profileIdentity": {
+    "description": "EPIC-11 · V19 Informations & sécurité · pièce d’identité"
+  },
+  "profileIdentitySubtitle": "Requise pour signer le mandat",
+  "@profileIdentitySubtitle": {
+    "description": "EPIC-11 · V19 Informations & sécurité · sous-titre pièce d’identité"
+  },
+  "profileDeleteAccount": "Supprimer mon compte",
+  "@profileDeleteAccount": {
+    "description": "EPIC-11 · V19 Informations & sécurité · lien de suppression du compte"
+  },
+  "profileSave": "Enregistrer les modifications",
+  "@profileSave": {
+    "description": "EPIC-11 · V19 Informations & sécurité · bouton enregistrer"
+  },
+  "profileSaved": "Vos informations sont enregistrées.",
+  "@profileSaved": {
+    "description": "EPIC-11 · V19 Informations & sécurité · enregistré"
+  },
+  "profileSaveFailed": "Vos informations n’ont pas pu être enregistrées. Réessayez.",
+  "@profileSaveFailed": {
+    "description": "EPIC-11 · V19 Informations & sécurité · échec de l’enregistrement"
+  },
+  "profileLeaveTitle": "Quitter sans enregistrer ?",
+  "@profileLeaveTitle": {
+    "description": "EPIC-11 · V19 Informations & sécurité · confirmation de sortie · titre"
+  },
+  "profileLeaveMessage": "Vos modifications seront perdues.",
+  "@profileLeaveMessage": {
+    "description": "EPIC-11 · V19 Informations & sécurité · confirmation de sortie · message"
+  },
+  "profileLeaveStay": "Continuer la saisie",
+  "@profileLeaveStay": {
+    "description": "EPIC-11 · V19 Informations & sécurité · confirmation de sortie · rester"
+  },
+  "profileLeaveConfirm": "Quitter sans enregistrer",
+  "@profileLeaveConfirm": {
+    "description": "EPIC-11 · V19 Informations & sécurité · confirmation de sortie · quitter"
+  },
+  "languageTitle": "Langue",
+  "@languageTitle": {
+    "description": "EPIC-11 · langue · titre de la feuille"
+  },
+  "languageDevice": "Langue de l’appareil",
+  "@languageDevice": {
+    "description": "EPIC-11 · langue · langue de l’appareil"
+  },
+  "languageDeviceSubtitle": "Actuellement : {language}",
+  "@languageDeviceSubtitle": {
+    "description": "EPIC-11 · langue · langue de l’appareil actuelle",
+    "placeholders": {
+      "language": {
+        "type": "String",
+        "example": "Français"
+      }
+    }
+  },
+  "languageServerNote": "Les notifications déjà reçues restent en français.",
+  "@languageServerNote": {
+    "description": "EPIC-11 · langue · limite : notifications en français"
+  },
+  "notificationsSeeAll": "Tout voir",
+  "@notificationsSeeAll": {
+    "description": "EPIC-11 · notifications · feuille de la cloche · tout voir"
+  },
+  "notificationsPageToday": "Aujourd’hui",
+  "@notificationsPageToday": {
+    "description": "EPIC-11 · notifications · groupe aujourd’hui"
+  },
+  "notificationsPageThisWeek": "Cette semaine",
+  "@notificationsPageThisWeek": {
+    "description": "EPIC-11 · notifications · groupe cette semaine"
+  },
+  "notificationsPageOlder": "Plus ancien",
+  "@notificationsPageOlder": {
+    "description": "EPIC-11 · notifications · groupe plus ancien"
+  },
+  "notificationsPageMarkAll": "Tout marquer comme lu",
+  "@notificationsPageMarkAll": {
+    "description": "EPIC-11 · notifications · tout marquer comme lu"
+  },
+  "notificationsPageMarkFailed": "Les notifications n’ont pas pu être marquées comme lues.",
+  "@notificationsPageMarkFailed": {
+    "description": "EPIC-11 · notifications · échec de tout marquer comme lu"
+  },
+  "notificationsPageMore": "Voir plus",
+  "@notificationsPageMore": {
+    "description": "EPIC-11 · notifications · page suivante"
+  },
+  "deleteAccountTitle": "Supprimer mon compte",
+  "@deleteAccountTitle": {
+    "description": "EPIC-11 · suppression du compte · titre"
+  },
+  "deleteAccountIntro": "La suppression de votre compte efface :",
+  "@deleteAccountIntro": {
+    "description": "EPIC-11 · suppression du compte · introduction de la liste"
+  },
+  "deleteAccountItemProfile": "votre profil et vos coordonnées",
+  "@deleteAccountItemProfile": {
+    "description": "EPIC-11 · suppression du compte · élément supprimé : profil"
+  },
+  "deleteAccountItemProperties": "vos biens, leurs dossiers et les lots",
+  "@deleteAccountItemProperties": {
+    "description": "EPIC-11 · suppression du compte · élément supprimé : biens"
+  },
+  "deleteAccountItemDocuments": "vos documents et vos photos",
+  "@deleteAccountItemDocuments": {
+    "description": "EPIC-11 · suppression du compte · élément supprimé : documents"
+  },
+  "deleteAccountItemValuations": "vos estimations et avis de valeur",
+  "@deleteAccountItemValuations": {
+    "description": "EPIC-11 · suppression du compte · élément supprimé : avis de valeur"
+  },
+  "deleteAccountItemNotifications": "vos notifications",
+  "@deleteAccountItemNotifications": {
+    "description": "EPIC-11 · suppression du compte · élément supprimé : notifications"
+  },
+  "deleteAccountItemVoice": "l’historique de l’agent vocal et des analyses de photos",
+  "@deleteAccountItemVoice": {
+    "description": "EPIC-11 · suppression du compte · élément supprimé : historique IA"
+  },
+  "deleteAccountDelay": "Votre compte est désactivé immédiatement, puis supprimé définitivement 30 jours plus tard. D’ici là, reconnectez-vous pour le réactiver.",
+  "@deleteAccountDelay": {
+    "description": "EPIC-11 · suppression du compte · délai de 30 jours"
+  },
+  "deleteAccountLoadFailed": "Impossible de vérifier votre compte pour l’instant.",
+  "@deleteAccountLoadFailed": {
+    "description": "EPIC-11 · suppression du compte · échec du chargement"
+  },
+  "deleteAccountStaff": "Un compte de l’équipe Realesty ne peut pas être supprimé depuis l’app : contactez un administrateur.",
+  "@deleteAccountStaff": {
+    "description": "EPIC-11 · suppression du compte · compte de l’équipe"
+  },
+  "deleteAccountActiveSale": "Un de vos biens est en vente. Retirez d’abord votre bien de la vente, puis revenez ici.",
+  "@deleteAccountActiveSale": {
+    "description": "EPIC-11 · suppression du compte · vente en cours"
+  },
+  "deleteAccountWithdrawSale": "Retirer mon bien de la vente",
+  "@deleteAccountWithdrawSale": {
+    "description": "EPIC-11 · suppression du compte · bouton vers la vente"
+  },
+  "deleteAccountWord": "SUPPRIMER",
+  "@deleteAccountWord": {
+    "description": "EPIC-11 · suppression du compte · mot de confirmation à saisir (majuscules)"
+  },
+  "deleteAccountConfirmLabel": "Pour confirmer, saisissez « {word} ».",
+  "@deleteAccountConfirmLabel": {
+    "description": "EPIC-11 · suppression du compte · consigne de confirmation",
+    "placeholders": {
+      "word": {
+        "type": "String",
+        "example": "SUPPRIMER"
+      }
+    }
+  },
+  "deleteAccountConfirmField": "Confirmation",
+  "@deleteAccountConfirmField": {
+    "description": "EPIC-11 · suppression du compte · champ de confirmation"
+  },
+  "deleteAccountConfirmError": "Saisissez « {word} » pour confirmer.",
+  "@deleteAccountConfirmError": {
+    "description": "EPIC-11 · suppression du compte · erreur de confirmation",
+    "placeholders": {
+      "word": {
+        "type": "String",
+        "example": "SUPPRIMER"
+      }
+    }
+  },
+  "deleteAccountButton": "Supprimer mon compte",
+  "@deleteAccountButton": {
+    "description": "EPIC-11 · suppression du compte · bouton de suppression"
+  },
+  "deleteAccountFailed": "Votre compte n’a pas pu être désactivé. Réessayez.",
+  "@deleteAccountFailed": {
+    "description": "EPIC-11 · suppression du compte · échec de la désactivation"
+  },
+  "deleteAccountDoneTitle": "Compte désactivé",
+  "@deleteAccountDoneTitle": {
+    "description": "EPIC-11 · suppression du compte · confirmation · titre"
+  },
+  "deleteAccountDoneMessage": "Votre compte est désactivé. Il sera supprimé définitivement le {date}.",
+  "@deleteAccountDoneMessage": {
+    "description": "EPIC-11 · suppression du compte · confirmation · date de suppression",
+    "placeholders": {
+      "date": {
+        "type": "String",
+        "example": "02/11/2026"
+      }
+    }
+  },
+  "deleteAccountDoneReactivate": "Vous avez changé d’avis ? Reconnectez-vous avant cette date pour réactiver votre compte.",
+  "@deleteAccountDoneReactivate": {
+    "description": "EPIC-11 · suppression du compte · confirmation · réactivation possible"
+  },
+  "deleteAccountDoneButton": "Terminer",
+  "@deleteAccountDoneButton": {
+    "description": "EPIC-11 · suppression du compte · confirmation · terminer (déconnexion)"
+  },
+  "accountDeactivatedTitle": "Votre compte est désactivé",
+  "@accountDeactivatedTitle": {
+    "description": "EPIC-11 · compte désactivé · titre"
+  },
+  "accountDeactivatedMessage": "Vous avez demandé la suppression de votre compte. Il sera supprimé définitivement le {date}.",
+  "@accountDeactivatedMessage": {
+    "description": "EPIC-11 · compte désactivé · message avec la date",
+    "placeholders": {
+      "date": {
+        "type": "String",
+        "example": "02/11/2026"
+      }
+    }
+  },
+  "accountDeactivatedMessageNoDate": "Vous avez demandé la suppression de votre compte.",
+  "@accountDeactivatedMessageNoDate": {
+    "description": "EPIC-11 · compte désactivé · message sans date"
+  },
+  "accountDeactivatedHint": "Réactivez-le pour retrouver vos biens et vos documents, tels que vous les avez laissés.",
+  "@accountDeactivatedHint": {
+    "description": "EPIC-11 · compte désactivé · explication de la réactivation"
+  },
+  "accountDeactivatedReactivate": "Réactiver mon compte",
+  "@accountDeactivatedReactivate": {
+    "description": "EPIC-11 · compte désactivé · bouton réactiver"
+  },
+  "accountDeactivatedFailed": "Votre compte n’a pas pu être réactivé. Réessayez.",
+  "@accountDeactivatedFailed": {
+    "description": "EPIC-11 · compte désactivé · échec de la réactivation"
   }
 }

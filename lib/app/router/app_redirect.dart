@@ -11,7 +11,9 @@ import 'package:profile_repository/profile_repository.dart';
 /// - Signed in → splash while the profile loads (or failed to), then the
 ///   role selector until a role is chosen, then the space of that role
 ///   (any screen under it, e.g. `/vendeur/audit/...`).
-///   The design system gallery stays reachable once the profile is loaded.
+///   The design system gallery and "Supprimer mon compte" stay reachable
+///   once the profile is loaded. A deactivated account (deletion pending,
+///   EPIC-11) only reaches "Compte désactivé — réactiver".
 String? appRedirect({
   required String location,
   required AppStatus appStatus,
@@ -33,7 +35,10 @@ String? appRedirect({
     case AppStatus.authenticated:
       if (profileState.status != ProfileStatus.success) {
         target = AppRoutes.splash;
-      } else if (location == AppRoutes.designSystem) {
+      } else if (profileState.profile?.isDeactivated ?? false) {
+        target = AppRoutes.accountDeactivated;
+      } else if (location == AppRoutes.designSystem ||
+          location == AppRoutes.accountDeletion) {
         return null;
       } else {
         target = switch (profileState.profile?.role) {

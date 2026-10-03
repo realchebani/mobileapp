@@ -28,6 +28,7 @@ typedef AppBuilder = FutureOr<Widget> Function({
   required NotificationRepository notificationRepository,
   VoiceServices? voiceServices,
   PhotoServices? photoServices,
+  LocalePreferences? localePreferences,
 });
 
 Future<void> bootstrap(AppBuilder builder) async {
@@ -86,6 +87,7 @@ Future<void> bootstrap(AppBuilder builder) async {
       photoServices: PhotoServices(
         preferences: PhotoPreferences(preferences: preferences),
       ),
+      localePreferences: LocalePreferences(preferences: preferences),
     ),
   );
 }

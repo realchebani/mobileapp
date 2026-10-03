@@ -29,22 +29,26 @@ class NotificationRepository {
 
   static const _table = 'notifications';
 
-  /// The [limit] latest notifications of [userId], newest first.
+  /// The [limit] latest notifications of [userId] (created [before] a date
+  /// when given: the next page of a list), newest first.
   ///
   /// Throws [NotificationFailure] on error.
   Future<List<AppNotification>> getNotifications(
     String userId, {
     int limit = 50,
+    DateTime? before,
   }) async {
     try {
-      final rows = await _client
+      var query = _client
           .from(_table)
           .select(
             'id, kind, title, body, property_id, route, read_at, created_at',
           )
-          .eq('user_id', userId)
-          .order('created_at')
-          .limit(limit);
+          .eq('user_id', userId);
+      if (before != null) {
+        query = query.lt('created_at', before.toUtc().toIso8601String());
+      }
+      final rows = await query.order('created_at').limit(limit);
       return [for (final row in rows) AppNotification.fromJson(row)];
     } on Object catch (error, stackTrace) {
       Error.throwWithStackTrace(NotificationFailure(error), stackTrace);
@@ -62,6 +66,24 @@ class NotificationRepository {
           .from(_table)
           .update({'read_at': now.toUtc().toIso8601String()})
           .inFilter('id', ids)
+          .isFilter('read_at', null);
+      return now;
+    } on Object catch (error, stackTrace) {
+      Error.throwWithStackTrace(NotificationFailure(error), stackTrace);
+    }
+  }
+
+  /// Marks every unread notification of [userId] read (now) and returns
+  /// that time.
+  ///
+  /// Throws [NotificationFailure] on error.
+  Future<DateTime> markAllRead(String userId) async {
+    final now = _now();
+    try {
+      await _client
+          .from(_table)
+          .update({'read_at': now.toUtc().toIso8601String()})
+          .eq('user_id', userId)
           .isFilter('read_at', null);
       return now;
     } on Object catch (error, stackTrace) {

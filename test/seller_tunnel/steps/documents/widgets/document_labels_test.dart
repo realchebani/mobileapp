@@ -24,6 +24,10 @@ void main() {
           'Rapport SPANC',
           'Plan',
           'Autre document',
+          'DPE',
+          'Contrat d’entretien',
+          'Assurance',
+          'Copropriété (règlement, PV d’AG)',
         ],
       );
       expect(
@@ -41,6 +45,10 @@ void main() {
           'votre rapport SPANC',
           'plan',
           'autre document',
+          'DPE',
+          'contrat d’entretien',
+          'assurance',
+          'copropriété (règlement, pv d’ag)',
         ],
       );
     });
@@ -76,6 +84,14 @@ void main() {
       );
       expect(subtitle(DocumentKind.plan), 'Plans du bien');
       expect(subtitle(DocumentKind.other), 'Autres justificatifs');
+      for (final kind in [
+        DocumentKind.dpe,
+        DocumentKind.maintenanceContract,
+        DocumentKind.insurance,
+        DocumentKind.coOwnership,
+      ]) {
+        expect(subtitle(kind), 'Autres justificatifs');
+      }
       expect(
         subtitle(DocumentKind.sanitationReport),
         'Si vous n’êtes pas raccordé au tout-à-l’égout',

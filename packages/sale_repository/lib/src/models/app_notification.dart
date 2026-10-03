@@ -8,6 +8,12 @@ enum AppNotificationKind {
   /// The certified valuation is available (`valuation_certified`).
   valuationCertified('valuation_certified'),
 
+  /// The expert asks to replace a document (`document_rejected`, EPIC-11).
+  documentRejected('document_rejected'),
+
+  /// The expert verified a document (`document_verified`, EPIC-11).
+  documentVerified('document_verified'),
+
   /// A kind this version of the app does not know.
   other('other');
 

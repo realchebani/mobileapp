@@ -79,13 +79,18 @@ class ProfileCubit extends Cubit<ProfileState> {
     emit(
       ProfileState(
         status: ProfileStatus.success,
-        profile: Profile(
-          id: profile.id,
-          firstName: profile.firstName,
-          role: role,
-        ),
+        profile: profile.withRole(role),
       ),
     );
+  }
+
+  /// Shows [profile], saved elsewhere (V19, language, reactivation of the
+  /// account), when it is the signed-in user's.
+  void profileUpdated(Profile profile) {
+    if (profile.id != _userId || state.status != ProfileStatus.success) {
+      return;
+    }
+    emit(ProfileState(status: ProfileStatus.success, profile: profile));
   }
 
   @override

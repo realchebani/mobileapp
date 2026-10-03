@@ -478,6 +478,27 @@ class PropertyRepository {
   Future<List<PropertyDocument>> getDocuments(String propertyId) =>
       _list(_documents, propertyId);
 
+  /// Documents of every property of [propertyIds] (the vault, EPIC-11),
+  /// oldest first.
+  ///
+  /// Throws [PropertyLoadFailure] on error.
+  Future<List<PropertyDocument>> getDocumentsOf(
+    List<String> propertyIds,
+  ) async {
+    if (propertyIds.isEmpty) return const [];
+    try {
+      final rows = await _client
+          .from(_documents.name)
+          .select()
+          .inFilter('property_id', propertyIds)
+          .order(_documents.orderBy, ascending: true)
+          .order('created_at', ascending: true);
+      return [for (final row in rows) PropertyDocument.fromJson(row)];
+    } on Object catch (error, stackTrace) {
+      Error.throwWithStackTrace(PropertyLoadFailure(error), stackTrace);
+    }
+  }
+
   static const _Table<PropertyOwner> _owners = _Table(
     'property_owners',
     'position',
@@ -565,6 +586,8 @@ class PropertyRepository {
     required String fileName,
     required Uint8List bytes,
     required String mimeType,
+    String? title,
+    String? ownerRef,
   }) async {
     final path =
         '$ownerId/$propertyId/'
@@ -589,6 +612,8 @@ class PropertyRepository {
             'file_name': fileName,
             'mime_type': mimeType,
             'size_bytes': bytes.length,
+            'title': ?title,
+            'owner_ref': ?ownerRef,
           })
           .select()
           .single();
@@ -689,6 +714,82 @@ class PropertyRepository {
       ]);
     } on Object catch (error, stackTrace) {
       Error.throwWithStackTrace(PropertyDeleteFailure(error), stackTrace);
+    }
+  }
+
+  /// Renames the document [id] ([title] null: the label of its kind);
+  /// returns the saved row.
+  ///
+  /// Throws [PropertySaveFailure] on error.
+  Future<PropertyDocument> renameDocument(String id, String? title) async {
+    final trimmed = title?.trim();
+    try {
+      final row = await _client
+          .from(_documents.name)
+          .update({
+            'title': trimmed == null || trimmed.isEmpty ? null : trimmed,
+          })
+          .eq('id', id)
+          .select()
+          .single();
+      return PropertyDocument.fromJson(row);
+    } on Object catch (error, stackTrace) {
+      Error.throwWithStackTrace(PropertySaveFailure(error), stackTrace);
+    }
+  }
+
+  /// Saves who may see the document [id] once buyers and notaries use
+  /// Realesty (an identity document stays private); returns the saved
+  /// value.
+  ///
+  /// Throws [PropertySaveFailure] on error.
+  Future<Set<DocumentVisibility>> setDocumentVisibility(
+    String id,
+    Set<DocumentVisibility> visibility,
+  ) async {
+    try {
+      final saved = await _client.rpc<List<dynamic>>(
+        'set_document_visibility',
+        params: {
+          'p_document_id': id,
+          'p_visibility': [for (final value in visibility) value.value],
+        },
+      );
+      return {
+        for (final value in saved)
+          ?parseDbEnum(DocumentVisibility.values, value),
+      };
+    } on Object catch (error, stackTrace) {
+      Error.throwWithStackTrace(PropertySaveFailure(error), stackTrace);
+    }
+  }
+
+  /// Records that the document [newId] (already added) replaces [oldId] —
+  /// a rejected document, or an addition the expert has not verified.
+  ///
+  /// Throws [PropertySaveFailure] on error.
+  Future<void> replaceDocument({
+    required String oldId,
+    required String newId,
+  }) async {
+    try {
+      await _client.rpc<void>(
+        'replace_document',
+        params: {'p_old_id': oldId, 'p_new_id': newId},
+      );
+    } on Object catch (error, stackTrace) {
+      Error.throwWithStackTrace(PropertySaveFailure(error), stackTrace);
+    }
+  }
+
+  /// The content of the file at [storagePath] (to share it).
+  ///
+  /// Throws [PropertyLoadFailure] on error.
+  Future<Uint8List> downloadDocument(String storagePath) async {
+    try {
+      return await _client.storage.from(documentsBucket).download(storagePath);
+    } on Object catch (error, stackTrace) {
+      Error.throwWithStackTrace(PropertyLoadFailure(error), stackTrace);
     }
   }
 

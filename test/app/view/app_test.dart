@@ -7,6 +7,7 @@ import 'package:geo_repository/geo_repository.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker_platform_interface/image_picker_platform_interface.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:mobileapp/account_deletion/account_deletion.dart';
 import 'package:mobileapp/app/app.dart';
 import 'package:mobileapp/login/login.dart';
 import 'package:mobileapp/onboarding/onboarding.dart';
@@ -784,11 +785,80 @@ void main() {
       expect(find.text('Demandes de visite'), findsOneWidget);
       await tester.tap(find.text('Coffre-fort'));
       await tester.pumpAndSettle();
-      expect(find.text('Bientôt'), findsOneWidget);
+      expect(find.byType(VaultView), findsOneWidget);
       // Each tab keeps its stack: Mon bien is still V9.
       await tester.tap(find.text('Mon bien'));
       await tester.pumpAndSettle();
       expect(find.byType(DashboardPage), findsOneWidget);
+    });
+
+    testWidgets('walks the vault and the account of a seller (EPIC-11)', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(390, 1200);
+      when(() => profileRepository.getProfile(any())).thenAnswer(
+        (_) async => const Profile(id: 'user-id', role: UserRole.seller),
+      );
+      dossier = certifiedProperty;
+      when(() => propertyRepository.getDocumentsOf(any()))
+          .thenAnswer((_) async => []);
+      when(
+        () => notificationRepository.getNotifications(
+          any(),
+          before: any(named: 'before'),
+        ),
+      ).thenAnswer((_) async => []);
+      when(() => profileRepository.getDeletionBlockers())
+          .thenAnswer((_) async => {});
+      await pumpApp(tester);
+      await emitUser(tester, user);
+
+      // C1 → V18 of a rubric, then a lot.
+      await tester.tap(find.text('Coffre-fort'));
+      await tester.pumpAndSettle();
+      expect(find.byType(VaultView), findsOneWidget);
+      await tester.tap(find.text('Énergie'));
+      await tester.pumpAndSettle();
+      expect(find.byType(VaultDocumentsView), findsOneWidget);
+      GoRouter.of(tester.element(find.byType(VaultDocumentsView)))
+          .go(AppRoutes.sellerVaultLot('lot-id'));
+      await tester.pumpAndSettle();
+      expect(find.text('Ce bien n’existe plus.'), findsOneWidget);
+
+      // C2 → V19, the notifications, the deletion.
+      await tester.tap(find.text('Compte'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Informations personnelles'));
+      await tester.pumpAndSettle();
+      expect(find.byType(ProfileView), findsOneWidget);
+      await tester.tap(find.bySemanticsLabel('Retour'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Notifications'));
+      await tester.pumpAndSettle();
+      expect(find.byType(NotificationsView), findsOneWidget);
+      await tester.tap(find.bySemanticsLabel('Retour'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Mes données'));
+      await tester.pumpAndSettle();
+      expect(find.byType(AccountDeletionView), findsOneWidget);
+    });
+
+    testWidgets('a deactivated account can only be reactivated', (
+      tester,
+    ) async {
+      when(() => profileRepository.getProfile(any())).thenAnswer(
+        (_) async => Profile(
+          id: 'user-id',
+          role: UserRole.seller,
+          locale: 'en',
+          deactivatedAt: DateTime(2026, 10, 3),
+          deletionDueAt: DateTime(2026, 11, 2),
+        ),
+      );
+      await pumpApp(tester);
+      await emitUser(tester, user);
+      expect(find.byType(AccountDeactivatedPage), findsOneWidget);
+      expect(find.text('Your account is deactivated'), findsOneWidget);
     });
 
     testWidgets('opens the space of a returning buyer', (tester) async {

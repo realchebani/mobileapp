@@ -1,4 +1,6 @@
 export 'account/account_page.dart';
+export 'account/notifications/notifications_page.dart';
+export 'account/profile/profile_page.dart';
 export 'coming_soon/coming_soon_page.dart';
 export 'cubit/notifications_cubit.dart';
 export 'cubit/valuation_cubit.dart';
@@ -12,3 +14,4 @@ export 'notifications/notifications_sheet.dart';
 export 'report/report_page.dart';
 export 'shell/property_valuation_scope.dart';
 export 'shell/seller_tab_scaffold.dart';
+export 'vault/vault.dart';

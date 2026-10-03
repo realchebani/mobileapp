@@ -287,12 +287,18 @@ class AuthRepository {
     }
   }
 
-  /// Signs the current user out.
+  /// Signs the current user out; with [everywhere], every session of the
+  /// user (other devices too) is revoked, e.g. after deactivating the
+  /// account.
   ///
   /// Throws a [SignOutFailure] on error.
-  Future<void> signOut() async {
+  Future<void> signOut({bool everywhere = false}) async {
     try {
-      await _auth.signOut();
+      if (everywhere) {
+        await _auth.signOut(scope: SignOutScope.global);
+      } else {
+        await _auth.signOut();
+      }
     } on Object catch (error, stackTrace) {
       Error.throwWithStackTrace(SignOutFailure(error), stackTrace);
     }

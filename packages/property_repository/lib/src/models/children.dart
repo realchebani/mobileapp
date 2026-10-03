@@ -425,6 +425,13 @@ class PropertyDocument extends Equatable {
     this.status = DocumentStatus.received,
     this.extracted,
     this.uploadedAt,
+    this.title,
+    this.ownerRef,
+    this.visibility = const {},
+    this.addedAfterSubmission = false,
+    this.verifiedAt,
+    this.rejectedReason,
+    this.replacedBy,
   });
 
   /// Builds a document from a `property_documents` row.
@@ -441,6 +448,16 @@ class PropertyDocument extends Equatable {
         DocumentStatus.received,
     extracted: json['extracted'] as Map<String, dynamic>?,
     uploadedAt: readDateTime(json['uploaded_at']),
+    title: json['title'] as String?,
+    ownerRef: json['owner_ref'] as String?,
+    visibility: {
+      for (final value in json['visibility'] as List<dynamic>? ?? const [])
+        ?parseDbEnum(DocumentVisibility.values, value),
+    },
+    addedAfterSubmission: json['added_after_submission'] as bool? ?? false,
+    verifiedAt: readDateTime(json['verified_at']),
+    rejectedReason: json['rejected_reason'] as String?,
+    replacedBy: json['replaced_by'] as String?,
   );
 
   final String id;
@@ -458,6 +475,64 @@ class PropertyDocument extends Equatable {
   final Map<String, dynamic>? extracted;
   final DateTime? uploadedAt;
 
+  /// Label chosen by the seller (else the label of the kind).
+  final String? title;
+
+  /// Owner (`property_owners.id`) an identity document belongs to.
+  final String? ownerRef;
+
+  /// Who may see the document later (empty: private).
+  final Set<DocumentVisibility> visibility;
+
+  /// Added once the dossier was sent ("Ajouté après l’envoi").
+  final bool addedAfterSubmission;
+
+  /// When the expert verified it ("Vérifié expert").
+  final DateTime? verifiedAt;
+
+  /// Why the expert rejected it (status [DocumentStatus.rejected]).
+  final String? rejectedReason;
+
+  /// The document that replaces this one.
+  final String? replacedBy;
+
+  /// Whether the expert verified it.
+  bool get isVerified => verifiedAt != null;
+
+  /// This document with [title] (null: the label of its kind).
+  PropertyDocument withTitle(String? title) => _copy(title: () => title);
+
+  /// This document shared with [visibility].
+  PropertyDocument withVisibility(Set<DocumentVisibility> visibility) =>
+      _copy(visibility: visibility);
+
+  /// This document replaced by the document [id].
+  PropertyDocument replacedWith(String id) => _copy(replacedBy: id);
+
+  PropertyDocument _copy({
+    String? Function()? title,
+    Set<DocumentVisibility>? visibility,
+    String? replacedBy,
+  }) => PropertyDocument(
+    id: id,
+    propertyId: propertyId,
+    kind: kind,
+    storagePath: storagePath,
+    fileName: fileName,
+    mimeType: mimeType,
+    sizeBytes: sizeBytes,
+    status: status,
+    extracted: extracted,
+    uploadedAt: uploadedAt,
+    title: title == null ? this.title : title(),
+    ownerRef: ownerRef,
+    visibility: visibility ?? this.visibility,
+    addedAfterSubmission: addedAfterSubmission,
+    verifiedAt: verifiedAt,
+    rejectedReason: rejectedReason,
+    replacedBy: replacedBy ?? this.replacedBy,
+  );
+
   /// The row of this document.
   Map<String, Object?> toJson() => {
     'id': id,
@@ -470,6 +545,13 @@ class PropertyDocument extends Equatable {
     'status': status.value,
     'extracted': extracted,
     'uploaded_at': encodeDbValue(uploadedAt),
+    'title': title,
+    'owner_ref': ownerRef,
+    'visibility': [for (final value in visibility) value.value],
+    'added_after_submission': addedAfterSubmission,
+    'verified_at': encodeDbValue(verifiedAt),
+    'rejected_reason': rejectedReason,
+    'replaced_by': replacedBy,
   };
 
   @override
@@ -484,5 +566,12 @@ class PropertyDocument extends Equatable {
     status,
     extracted,
     uploadedAt,
+    title,
+    ownerRef,
+    visibility,
+    addedAfterSubmission,
+    verifiedAt,
+    rejectedReason,
+    replacedBy,
   ];
 }

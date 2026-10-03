@@ -65,6 +65,22 @@ void main() {
       });
     });
 
+    test('reads the page before a date', () async {
+      respond = (_) => json(<Object>[]);
+      await repository.getNotifications(
+        userId,
+        limit: 20,
+        before: DateTime.utc(2026, 9, 25, 10),
+      );
+      expect(requests.single.url.queryParameters, {
+        'select': 'id,kind,title,body,property_id,route,read_at,created_at',
+        'user_id': 'eq.$userId',
+        'created_at': 'lt.2026-09-25T10:00:00.000Z',
+        'order': 'created_at.desc.nullslast',
+        'limit': '20',
+      });
+    });
+
     test('throws NotificationFailure on error', () async {
       respond = (_) => error();
       await expectLater(
@@ -100,6 +116,28 @@ void main() {
       respond = (_) => error();
       await expectLater(
         repository.markRead(['n1']),
+        throwsA(isA<NotificationFailure>()),
+      );
+    });
+  });
+
+  group('markAllRead', () {
+    test('marks the unread notifications of the user read', () async {
+      respond = (_) => json(<Object>[]);
+      expect(await repository.markAllRead(userId), now);
+      final request = requests.single;
+      expect(request.method, 'PATCH');
+      expect(request.url.queryParameters, {
+        'user_id': 'eq.$userId',
+        'read_at': 'is.null',
+      });
+      expect(jsonDecode(request.body), {'read_at': now.toIso8601String()});
+    });
+
+    test('throws NotificationFailure on error', () async {
+      respond = (_) => error();
+      await expectLater(
+        repository.markAllRead(userId),
         throwsA(isA<NotificationFailure>()),
       );
     });

@@ -1,6 +1,6 @@
 # EPIC-11 · Coffre-fort & compte (C1, V18, C2, V19, notifications) — plan d’implémentation
 
-> Date : 2026-10-03. Statut : **proposition, questions ouvertes** (aucun code écrit).
+> Date : 2026-10-03. Statut : **livré** (tranches K1–K10, voir le journal d’exécution ; arbitrages en fin de document).
 > Sources lues : `CLAUDE.md`, `docs/decisions.md`, `docs/epics/*.md`, [spec V8b → V19](2026-10-01-parcours-vendeur-v8b-v19.md) (§3 C1, V18, C2, V19, 3.13 ; §4.5 ; §6 EPIC-11 ; §7 Q11, Q14–Q17 ; §9), [plan multi-biens](2026-10-02-multi-biens.md), `supabase/migrations/*` (`create_profiles`, `create_seller_tunnel`, `lock_submitted_dossiers`, `lock_document_files`, `valuations_and_notifications`, `multi_biens*`, `room_photos` d’EPIC-15), `lib/seller_space/**` (`account/account_page.dart`, `notifications/**`, `coming_soon/`), `lib/seller_tunnel/steps/documents/**`, `packages/sale_repository`, `packages/profile_repository`, maquettes `CoffreFort`, `CoffreDossier`, `EspaceAdmin`, `MonCompteProfil` (`scratchpad/seller-design-next/project/*.dc.html`).
 > Plans frères (même date) : [Formules & mise en vente](2026-10-03-offres-et-mise-en-vente.md) (EPIC-08), [Back-office expert](2026-10-03-back-office-expert.md) (EPIC-12).
 
@@ -259,6 +259,41 @@ Légende : **🔴 bloquante** · **🟢 défaut réversible**.
 ## Journal d’exécution
 
 - 2026-10-03 : plan rédigé (aucun code), EPIC-11 créé (📋), README mis à jour.
+- 2026-10-03 · K1 : migration `20261003080523_coffre_fort_compte.sql` (essai annulé + sonde RLS complète, `db push`) : nouveaux types (`dpe`, `contrat_entretien`, `assurance`, `copropriete`), `title`, `owner_ref`, `visibility` (RPC `set_document_visibility`), `added_after_submission` (trigger : tout ajout à un dossier envoyé, c.-à-d. statut ≠ `draft`), `verified_at` / `verified_by`, `rejected_reason`, `replaced_by` (RPC `replace_document`) ; politiques d’insertion / renommage / suppression (ajouts non vérifiés) pour les dossiers `in_review` / `certified`, restrictive « dossier du bien » ; Storage : ajout dans le dossier d’un bien envoyé (jamais `photos/`, pas d’écrasement), suppression des seuls fichiers sans ligne ; `notifications.kind` en contrôle de format (idempotent, identique à EPIC-08) ; `staff_verify_document` / `staff_reject_document` (+ `vault_rubric_of`, `document_kind_label`) ; `profiles` + `last_name`, `phone`, `postal_address`, `locale`, `deactivated_at`, `deletion_due_at` ; `account_deletion_blockers`, `deactivate_account`, `reactivate_account`, `account_has_active_sale` / `account_is_staff` (tables d’EPIC-08 / EPIC-12 détectées par `to_regclass`, sondées avec des tables factices) ; `account_deletions` + fonctions de purge (service role) ; `pg_net` + `pg_cron` (job quotidien `purge-deactivated-accounts`). Migration `20261003081101_account_purge_fallback.sql` : la fin de purge supprime aussi l’utilisateur en SQL si l’API Auth ne le trouve pas. Migration d’EPIC-08 `20261003080551_mise_en_vente.sql` recopiée (déjà sur le projet). Runbooks : `certifier-un-dossier.md` §4 bis, nouveau `suppression-de-compte.md`.
+- 2026-10-03 · K9 (serveur) : Edge Function `purge-accounts` (déployée `--no-verify-jwt`, secret partagé `PURGE_ACCOUNTS_SECRET` = Vault `purge_accounts_secret`, Vault `project_url`), tests Deno ; essai de bout en bout sur un compte de test (purge OK, utilisateur et biens supprimés, journal écrit puis nettoyé).
+- 2026-10-03 · K2 : dépôts — `profile_repository` (`Profile` étendu, `ProfileDetails`, `updateDetails`, `updateLocale`, `getDeletionBlockers`, `deactivateAccount`, `reactivateAccount`), `auth_repository.signOut(everywhere:)`, `sale_repository` (pagination `before`, `markAllRead`, types `document_rejected` / `document_verified`), `property_repository` (`PropertyDocument` étendu, `DocumentVisibility`, `getDocumentsOf`, `renameDocument`, `setDocumentVisibility`, `replaceDocument`, `downloadDocument`, `uploadDocument(title, ownerRef)`).
+- 2026-10-03 · K3 : **repli du plan** (§8) — pas de déplacement du code de V7 (risque de conflit avec les branches en parallèle) : le coffre-fort réutilise en place `DocumentPicker`, `showDocumentScan`, `ScanPdfBuilder`, `ReuseDocumentSheet`, `DocumentOptionSheet`, `DocumentsCubit.mimeTypeOf`. V7 ne change que par les libellés des nouveaux types.
+- 2026-10-03 · K4/K5 : `lib/seller_space/vault/` — C1 `VaultPage` (sélecteur bien / lot, recherche sans accents, rubriques, récents, manquants), V18 `VaultDocumentsPage` (`/vendeur/coffre/biens/<id>?rubrique=…`, `/vendeur/coffre/lots/<id>`), feuille détail (aperçu par URL signée 5 min, renommer, visibilité, télécharger = feuille de partage iOS via `share_plus`, remplacer, supprimer avec confirmation intégrée), ajout (bien → type → propriétaire → scan / fichiers / photothèque / autre bien) ; modèle pur `VaultContents` / `VaultRubric` ; `VaultCubit` (délais 15 s, ajout perdu retrouvé avant un nouvel essai, « Réessayer / Abandonner », dossier du bien tenu à jour dans `SellerTunnelCubits`).
+- 2026-10-03 · K6/K7/K8 : C2 refait (identité → V19, propriétaires, informations personnelles, notifications avec non lues, langue, confidentialité → suppression), V19 `ProfilePage` (`/vendeur/compte/profil`), `LocaleCubit` (`lib/app/locale/`, mémorisé sur l’appareil et dans `profiles.locale`, appliqué par `MaterialApp.router(locale:)`), feuille Langue, page Notifications (`/vendeur/compte/notifications`, groupes, pages de 50, tout marquer comme lu) + « Tout voir » et 10 dernières dans la feuille de la cloche.
+- 2026-10-03 · K9 (app) : `lib/account_deletion/` — `/compte/suppression` (accessible depuis tous les espaces, y compris l’espace acquéreur provisoire et sans rôle) et `/compte/desactive` (seul écran d’un compte désactivé, `appRedirect`).
+- 2026-10-03 · K10 : parcours dans `app_test.dart` (coffre-fort, V18, lot, compte, V19, notifications, suppression, compte désactivé en anglais), docs, CLAUDE.md ; 100 % de couverture, analyse, bloc lint, format, licences, tests Deno ; build iOS release (development).
+
+## Conception de la suppression du compte (arbitrage Q8)
+
+| Élément | Choix |
+|---|---|
+| Désactivation | RPC `deactivate_account()` (sans paramètre ; la saisie « SUPPRIMER », traduite, est vérifiée dans l’app) : `deactivated_at`, `deletion_due_at = +30 jours` ; idempotente ; puis `signOut(scope: global)`. |
+| Connexion d’un compte désactivé | Autorisée, mais `appRedirect` n’ouvre que `/compte/desactive` (« Réactiver mon compte » / « Se déconnecter »). |
+| Vente active (EPIC-08) | `account_has_active_sale(uid)` : si `to_regclass('public.sales')` existe, `sales.owner_id = uid and stage in ('mandate_signed', 'published', 'under_offer', 'under_compromis')` ; refus `active_sale` + bouton « Retirer mon bien de la vente » (→ `/vendeur`, carte « Ma vente » d’EPIC-08). Une vente en `plan_chosen` (sans mandat) ne bloque pas. |
+| Équipe (EPIC-12) | `account_is_staff(uid)` via `to_regclass('public.staff_members')` ; refus `staff_account`. |
+| Purge | pg_cron et pg_net sont disponibles sur le projet → job quotidien → Edge Function `purge-accounts` (fichiers de tous les buckets sous `<uid>/`, puis utilisateur Auth) ; runbook pour la lancer à la main. |
+| App Store 5.1.1(v) | Entrée dans l’app (Compte → Mes données, V19, espace acquéreur) ; la demande est faite dans l’app, la suppression est automatique. |
+
+## Choix par défaut en attendant le porteur de projet
+
+Les questions non bloquantes ont été codées avec l’option recommandée :
+- Q1 : sélecteur de bien / lot en haut de C1, vue lot agrégée (le choix est gardé pour la session, pas encore sur l’appareil).
+- Q4 : tout est « Privé » par défaut.
+- Q5 : « Documents chiffrés et stockés en Europe. Accès limité à vous et à l’équipe Realesty en charge du dossier. » (pas de « bout en bout » ni de journal des consultations).
+- Q6 : Face ID, 2FA, mot de passe, Apple / Google masqués ; « Lien de connexion par e-mail » affiché.
+- Q7 : choix de la langue dans l’app (appareil / fr / en / es), mémorisé sur l’appareil et dans le profil.
+- Q9 : liste complète dans Compte + « Tout voir » depuis la cloche, sans réglages.
+- Q10 : profil et propriétaires des dossiers indépendants.
+- Q11 : « Profil actif » masqué.
+- Q12 : « Télécharger » = feuille de partage iOS (`share_plus`, BSD-3), fichier temporaire supprimé ensuite.
+- Q13 : Facturation, Paiements, Factures masqués.
+- Q14 : adresse postale en texte libre.
+- « Ajouté après l’envoi » = ajouté quand le dossier n’est plus un brouillon (l’app verrouille un dossier dès son envoi) ; en `submitted`, la base autorise encore les modifications d’origine (inchangé), l’app non.
 
 ## Arbitrages du porteur de projet (2026-10-03) — prévalent sur le reste du plan
 - Q2/Q3 : après l'envoi, **ajout libre** (marqué « Ajouté après l'envoi »), suppression uniquement des ajouts non vérifiés, un document refusé se remplace.

@@ -53,6 +53,12 @@ class HomePlaceholderPage extends StatelessWidget {
                   onPressed: () =>
                       context.read<AppBloc>().add(const AppLogoutPressed()),
                 ),
+                const SizedBox(height: RealestySpacing.sm),
+                RealestyButton(
+                  label: l10n.homeDeleteAccount,
+                  variant: RealestyButtonVariant.text,
+                  onPressed: () => context.push(AppRoutes.accountDeletion),
+                ),
                 if (showDesignSystemLink) ...[
                   const SizedBox(height: RealestySpacing.sm),
                   RealestyButton(

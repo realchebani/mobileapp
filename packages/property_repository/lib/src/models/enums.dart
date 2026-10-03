@@ -393,7 +393,34 @@ enum DocumentKind implements DbEnum {
   diagnostics('diagnostics'),
   sanitationReport('rapport_spanc'),
   plan('plan'),
-  other('autre');
+  other('autre'),
+
+  /// Energy performance diagnosis (EPIC-11 vault).
+  dpe('dpe'),
+
+  /// Maintenance contract (boiler, heat pump…).
+  maintenanceContract('contrat_entretien'),
+
+  /// Home insurance, works insurance.
+  insurance('assurance'),
+
+  /// Co-ownership rules / minutes of the general meeting.
+  coOwnership('copropriete');
+
+  new(this.value);
+
+  @override
+  final String value;
+}
+
+/// Who may see a document once buyers and notaries use Realesty
+/// (`property_documents.visibility`, EPIC-11).
+enum DocumentVisibility implements DbEnum {
+  /// Certified buyers (detailed sheet, after the visit pass).
+  buyers('buyers'),
+
+  /// The notary (sent with the preliminary contract).
+  notary('notary');
 
   new(this.value);
 
