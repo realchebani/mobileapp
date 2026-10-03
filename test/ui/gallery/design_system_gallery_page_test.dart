@@ -43,6 +43,7 @@ void main() {
         'BANNIÈRES',
         'AGENT',
         'ESPACE VENDEUR',
+        'MISE EN VENTE',
       ]) {
         expect(find.text(section), findsOneWidget, reason: section);
       }
@@ -139,6 +140,22 @@ void main() {
       expect(
         tester.widget<Text>(find.text('Compte')).style?.fontWeight,
         FontWeight.w700,
+      );
+    });
+
+    testWidgets('sale components', (tester) async {
+      await pumpGallery(tester);
+      await tester.tap(find.byType(RealestySwitch));
+      await tester.pump();
+      expect(
+        tester.widget<RealestySwitch>(find.byType(RealestySwitch)).value,
+        isFalse,
+      );
+      await tester.drag(find.byType(Slider), const Offset(200, 0));
+      await tester.pump();
+      expect(
+        tester.widget<PriceRangeSlider>(find.byType(PriceRangeSlider)).value,
+        greaterThan(525000),
       );
     });
   });

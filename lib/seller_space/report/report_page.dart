@@ -7,6 +7,7 @@ import 'package:mobileapp/seller_space/report/tabs/price_tab.dart';
 import 'package:mobileapp/seller_space/report/tabs/property_tab.dart';
 import 'package:mobileapp/seller_space/report/tabs/sector_tab.dart';
 import 'package:mobileapp/seller_space/report/tabs/synthesis_tab.dart';
+import 'package:mobileapp/seller_space/sale/widgets/sale_card.dart';
 import 'package:mobileapp/seller_space/widgets/seller_space_format.dart';
 import 'package:mobileapp/seller_tunnel/cubit/seller_tunnel_cubit.dart';
 import 'package:mobileapp/seller_tunnel/view/seller_tunnel_navigation.dart';
@@ -83,9 +84,8 @@ class _ReportPageState extends State<ReportPage> {
           switch (_tab) {
             ReportTab.synthesis => SynthesisTab(
               valuation: valuation,
-              // TODO(EPIC-08): open V10 (formula choice).
-              onSell: () =>
-                  showRealestySnackBar(context, l10n.dashboardSellSoon),
+              // EPIC-08: the sale, or V10.
+              onSell: () => startSaleFor(context, property),
             ),
             ReportTab.property => PropertyTab(
               valuation: valuation,

@@ -50,4 +50,5 @@ Journal des arbitrages du porteur de projet, du plus récent au plus ancien. Cha
 - Projet Supabase distinct pour la production.
 - Version Android (permissions, scanner ML Kit).
 - Dashboard vendeur (V9+), tunnel acquéreur (A1+), espace agences (P1+).
+- EPIC-08 · questions non bloquantes (plan formules & mise en vente §10) codées avec l’option recommandée de chacune en attendant l’arbitrage (« Choix par défaut en attendant le porteur de projet » en fin de plan) ; **tarifs indicatifs à confirmer** (299 €, 99 €/mois, 200 / 350 / 250 € TTC) ; texte du mandat de test à faire relire.
 - EPIC-16 · 14 questions ouvertes (plan voix prioritaire §15) : codées avec l’option recommandée de chacune en attendant l’arbitrage (§15 bis, constantes `VoiceDefaults` / `VOICE_DEFAULTS`).

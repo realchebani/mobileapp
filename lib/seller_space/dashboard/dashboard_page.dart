@@ -9,6 +9,7 @@ import 'package:mobileapp/seller_space/cubit/valuation_cubit.dart';
 import 'package:mobileapp/seller_space/dashboard/widgets/dossier_card.dart';
 import 'package:mobileapp/seller_space/dashboard/widgets/property_summary_card.dart';
 import 'package:mobileapp/seller_space/notifications/notifications_bell.dart';
+import 'package:mobileapp/seller_space/sale/widgets/sale_card.dart';
 import 'package:mobileapp/seller_space/widgets/route_available.dart';
 import 'package:mobileapp/seller_space/widgets/seller_space_format.dart';
 import 'package:mobileapp/seller_tunnel/cubit/seller_tunnel_cubit.dart';
@@ -86,18 +87,9 @@ class DashboardPage extends StatelessWidget {
                     const _CertifiedHero()
                   else
                     _PendingHero(property: property, showMarket: showMarket),
-                  if (certified)
-                    ActionCard(
-                      icon: RealestyIcons.trending,
-                      title: context.l10n.dashboardSellTitle,
-                      subtitle: context.l10n.dashboardSellSubtitle,
-                      variant: ActionCardVariant.accent,
-                      // TODO(EPIC-08): open V10 (formula choice).
-                      onPressed: () => showRealestySnackBar(
-                        context,
-                        context.l10n.dashboardSellSoon,
-                      ),
-                    ),
+                  // EPIC-08: "Ma vente" or "Mettre en vente" (V10).
+                  if (certified || property.lotId != null)
+                    PropertySaleCard(property: property),
                   DossierCard(
                     state: state,
                     onOpen: () => showDossierSummarySheet(context, state),

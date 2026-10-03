@@ -1,6 +1,6 @@
 # EPIC-08 · Formules & mise en vente (V10, V11, V11a, V11b, V11c) — plan d’implémentation
 
-> Date : 2026-10-03. Statut : **proposition, questions ouvertes** (aucun code écrit).
+> Date : 2026-10-03. Statut : **livré (phase de test)** — voir le journal d’exécution et les choix par défaut en fin de document.
 > Sources lues : `CLAUDE.md`, `docs/decisions.md`, `docs/epics/*.md`, [spec V8b → V19](2026-10-01-parcours-vendeur-v8b-v19.md) (§3 V10–V11c, §4.2–4.3, §5.3–5.5, §6 EPIC-08, §7, §9), [plan multi-biens](2026-10-02-multi-biens.md), plan EPIC-15 « Photos du bien » (branche `feat/epic-15-photos`, §4.6 « point d’accroche V11a »), `supabase/migrations/*` (jusqu’à `*_room_photos.sql` d’EPIC-15), `lib/seller_space/**`, `packages/sale_repository`, maquettes `ChoixOffre`, `ActivationEssentiel`, `GestionPremium`, `GestionExpert`, `GestionEssentiel`, `Dashboard` (`scratchpad/seller-design-next/project/*.dc.html`).
 > Plans frères (même date) : [Coffre-fort & compte](2026-10-03-coffre-fort-et-compte.md) (EPIC-11), [Back-office expert](2026-10-03-back-office-expert.md) (EPIC-12).
 
@@ -309,6 +309,35 @@ Légende : **🔴 bloquante** (à trancher avant la tranche indiquée) · **🟢
 ## Journal d’exécution
 
 - 2026-10-03 : plan rédigé (aucun code), EPIC-08 créé (📋), README mis à jour.
+- 2026-10-03 · O1 : migration `20261003080551_mise_en_vente.sql` (tables `sales`, `mandates`, `mandate_signatures`, `sale_requests`, `listing_photos` ; buckets `listing-media`, `mandate-signatures`, `sale-documents` ; RPC `choose_formula`, `sign_test_mandate`, `request_sale_service`, `cancel_sale_request`, `publish_listing`, `unpublish_listing`, `withdraw_sale`, `reorder_listing_photos`, `has_active_sale` pour EPIC-11 ; `staff_*` ; `notifications.kind` en contrôle de format, même instruction qu’EPIC-11), essai en transaction annulée + sonde RLS / RPC (propriétaire, autre vendeur, `anon`, lot « ensemble » / « ensemble ou séparément », signature, publication, Storage), poussée. La migration d’EPIC-11 (`20261003080523_coffre_fort_compte.sql`, déjà poussée) a été copiée telle quelle. Runbook `docs/runbooks/suivre-une-vente.md`.
+- 2026-10-03 · O2 : Edge Function `render-mandate` (`pdf-lib` MIT, polices standard WinAnsi, filigrane « SPÉCIMEN », SHA-256, rendu déterministe, idempotente), modèle versionné `_shared/mandate/template.ts` (`test-2026-10`), tests Deno, déployée.
+- 2026-10-03 · O3 : `SaleRepository` (+ modèles `Sale`, `SaleFormula`, `Mandate`, `SaleRequest`, `ListingPhoto`, `SaleFailure`) dans `packages/sale_repository`, 100 % ; `App` le reçoit seulement si `SALES_ENABLED` (config `development`).
+- 2026-10-03 · O0 : `SignaturePad` (gagne l’arène des gestes au premier contact : pas de défilement en signant), `OfferPlanCard`, `PriceRangeSlider`, `RealestySwitch` / `SwitchRow` (+ galerie). `PlanTabs` = `RealestySegmentedControl` ; la chronologie V11c réutilise `SubmittedTimeline` (pas de promotion dans `lib/ui`).
+- 2026-10-03 · O4–O9 : `lib/seller_space/sale/` (routes `/vendeur/ventes/<id>`, `…/annonce`, `…/annonce/photos`, `…/annonce/apercu` ; `SalesScope` dans `SellerTunnelShell` : `SalesCubit` + registre `SaleCubits`), V10, carte « Ma vente » (V9, fiche du lot), statut dans « Mes biens », V11 / V11b / V11c, feuille de signature, V11a, photos d’annonce (écran de prise de vue d’EPIC-15 rendu réutilisable via `PhotoCaptureTarget`), aperçu, retrait.
+- 2026-10-03 · O10 : types de notifications EPIC-08 dans `AppNotificationKind`, parcours V9 → V10 → V11 → « Ma vente » dans `test/app/view/app_test.dart`, docs.
+
+## Choix par défaut en attendant le porteur de projet
+
+Questions non bloquantes du §10, codées avec l’option recommandée (réversibles) :
+
+- **Q1 accès** : drapeau `SALES_ENABLED` (seulement `config/development.json`) + `is_test` sur chaque vente et mandat ; sans drapeau, V9 garde « bientôt ».
+- **Q2 (arbitrée) précision** : pour un lot « ensemble ou séparément », vente du lot **ou** des biens un par un, **jamais en même temps** (un bien en vente seul bloque la vente du lot et inversement) ; un lot « ensemble » ne se vend qu’en entier.
+- **Q3 (arbitrée) précision** : « bien principal » = `property_lots.main_property_id`, à défaut le bien le plus ancien du lot ; le prix pré-rempli d’un lot = somme des valeurs certifiées de ses biens certifiés.
+- **Q4 co-propriétaires** : le titulaire du compte signe (le propriétaire lié à son profil, sinon le n° 1) ; les autres « signeront hors de l’application », l’équipe enregistre leur signature.
+- **Q5 identité** : pièce d’identité exigée pour toutes les formules ; vérification par l’équipe pour L’Expert seulement.
+- **Q6 PDF** : serveur (`render-mandate`), texte de test court rédigé par nous, explicitement non contractuel.
+- **Q7 Premium** : V11b → V11a (créneaux de visite avec EPIC-09).
+- **Q8 V10** : onglet Premium par défaut ; « Comparer les 3 formules » masqué.
+- **Q9 IA** : libellés neutres (« Présélection d’après votre audit », « Généré automatiquement ») ; retouche et home staging = préférences « Bientôt ».
+- **Q10 description** : modèle déterministe en Dart, modifiable, régénérable.
+- **Q11 publication / créneaux** : 5 photos minimum, la première est la couverture ; créneaux de shooting = 3 jours ouvrés suivants à 10 h / 14 h, jusqu’à 3 souhaités, confirmés par l’équipe.
+- **Q12 (arbitrée) précision** : copie dans `listing-media` à la première ouverture des photos (puis « Reprendre les photos de mon dossier ») ; copie Storage inter-bucket faite par l’app.
+- **Q13 adresse** : commune seulement dans l’aperçu.
+- **Q14 tarifs** : montants de la maquette affichés « indicatifs, rien n’est prélevé » (299 €, 99 €/mois, 200 / 350 / 250 € TTC) — **montants à confirmer**.
+- **Q15 retrait** : carte « Ma vente » (V9 et fiche du lot) ; « Ma formule » dans Compte avec EPIC-11 ; L’Expert peut se retirer à tout moment pendant les tests.
+- **Q16** : changer de formule après signature = retirer puis recommencer.
+- **Q17** : l’équipe joue l’agent (« Un agent vous contacte sous 24 h »).
+- **Q18** : tout bien (ou lot) certifié, quel que soit le type (garage / terrain : seul l’ERP est présélectionné).
 
 ## Arbitrages du porteur de projet (2026-10-03) — prévalent sur le reste du plan
 - Q2 : un lot se vend **en entier ou bien par bien** (les deux dès la v1).
