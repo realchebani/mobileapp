@@ -309,3 +309,10 @@ Légende : **🔴 bloquante** (à trancher avant la tranche indiquée) · **🟢
 ## Journal d’exécution
 
 - 2026-10-03 : plan rédigé (aucun code), EPIC-08 créé (📋), README mis à jour.
+
+## Arbitrages du porteur de projet (2026-10-03) — prévalent sur le reste du plan
+- Q2 : un lot se vend **en entier ou bien par bien** (les deux dès la v1).
+- Q3 : un lot peut être mis en vente dès que son **bien principal** est certifié.
+- Q12 : l'annonce reprend **toutes les photos du dossier, y compris celles où une personne est visible**.
+- La promesse « visite 360° / vidéo immersive IA » (V10, V11) est **retirée jusqu'à la v3** ; on n'affiche que les photos.
+- Rappels : signature de test uniquement, aucun paiement en v1.

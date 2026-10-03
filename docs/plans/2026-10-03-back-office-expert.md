@@ -259,3 +259,7 @@ Légende : **🔴 bloquante** · **🟢 défaut réversible**.
 ## Journal d’exécution
 
 - 2026-10-03 : plan rédigé (aucun code), EPIC-12 créé (📋), README mis à jour.
+
+## Arbitrages du porteur de projet (2026-10-03) — prévalent sur le reste du plan
+- Q1 : **Flutter web dans le dépôt**. Q4 : **table `staff_members`** (TOTP obligatoire). Q6 : partenaires limités aux **dossiers assignés** (initiales + commune, pas de pièce d'identité). Q7 : le partenaire **soumet**, un expert interne ou l'admin **certifie**.
+- Développement après EPIC-11 et EPIC-08.
