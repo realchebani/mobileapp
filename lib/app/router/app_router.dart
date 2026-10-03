@@ -124,6 +124,8 @@ GoRouter createAppRouter({
                             ),
                         ],
                       ),
+                      // Sales (EPIC-08), above the tabs.
+                      ...saleRoutes(sellerNavigatorKey),
                       GoRoute(
                         path: '${_child(AppRoutes.sellerLots)}/:lotId',
                         builder: (context, state) =>

@@ -185,6 +185,7 @@ void main() {
     bool? enableDesignSystem,
     GeoRepository? geoRepository,
     PhotoServices Function(SharedPreferences preferences)? photoServices,
+    SaleRepository? saleRepository,
   }) async {
     SharedPreferences.setMockInitialValues({
       OnboardingRepository.seenKey: onboardingSeen,
@@ -199,6 +200,7 @@ void main() {
         valuationRepository: valuationRepository,
         notificationRepository: notificationRepository,
         geoRepository: geoRepository,
+        saleRepository: saleRepository,
         photoServices: photoServices?.call(preferences),
         enableDesignSystem: enableDesignSystem,
       ),
@@ -789,6 +791,63 @@ void main() {
       await tester.tap(find.text('Mon bien'));
       await tester.pumpAndSettle();
       expect(find.byType(DashboardPage), findsOneWidget);
+    });
+
+    testWidgets('puts a certified property on sale (EPIC-08)', (tester) async {
+      when(() => profileRepository.getProfile(any())).thenAnswer(
+        (_) async => const Profile(id: 'user-id', role: UserRole.seller),
+      );
+      dossier = certifiedProperty;
+      when(() => valuationRepository.getLatestValuation(any()))
+          .thenAnswer((_) async => testValuation);
+      registerFallbackValue(SaleFormula.essentiel);
+      final sales = MockSaleRepository();
+      var created = <Sale>[];
+      when(() => sales.listSales('user-id')).thenAnswer((_) async => created);
+      when(
+        () => sales.chooseFormula(
+          saleId: any(named: 'saleId'),
+          formula: any(named: 'formula'),
+          propertyId: any(named: 'propertyId'),
+          lotId: any(named: 'lotId'),
+        ),
+      ).thenAnswer((invocation) async {
+        final id = invocation.namedArguments[#saleId] as String;
+        created = [
+          Sale(
+            id: id,
+            ownerId: 'user-id',
+            propertyId: 'property-id',
+            formula: SaleFormula.essentiel,
+            stage: SaleStage.planChosen,
+            askingPriceEur: 525000,
+          ),
+        ];
+        return id;
+      });
+      when(() => sales.getSale(any())).thenAnswer((_) async => created.single);
+      when(() => sales.getMandate(any())).thenAnswer((_) async => null);
+      when(() => sales.getRequests(any())).thenAnswer((_) async => []);
+      when(() => sales.getIdentityVerifications(any()))
+          .thenAnswer((_) async => {});
+      await pumpApp(tester, saleRepository: sales);
+      await emitUser(tester, user);
+
+      // V9 → V10 → V11.
+      await tester.tap(find.text('Mettre mon bien en vente'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('1\u00a0%').first);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Choisir L’Essentiel'));
+      await tester.pumpAndSettle();
+      expect(find.text('Formule L’Essentiel'), findsOneWidget);
+      expect(find.text('Activons votre formule L’Essentiel'), findsOneWidget);
+
+      // Back to V9: "Ma vente".
+      await tester.tap(find.bySemanticsLabel('Retour'));
+      await tester.pumpAndSettle();
+      expect(find.text('Ma vente'), findsOneWidget);
+      expect(find.text('Mandat à signer'), findsOneWidget);
     });
 
     testWidgets('opens the space of a returning buyer', (tester) async {

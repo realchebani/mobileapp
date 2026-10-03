@@ -5712,5 +5712,1366 @@
         "example": "12"
       }
     }
+  },
+  "saleFormulaEssentiel": "L’Essentiel",
+  "@saleFormulaEssentiel": {
+    "description": "EPIC-08 · nom de la formule 1 %"
+  },
+  "saleFormulaPremium": "Le Premium",
+  "@saleFormulaPremium": {
+    "description": "EPIC-08 · nom de la formule Premium"
+  },
+  "saleFormulaExpert": "L’Expert",
+  "@saleFormulaExpert": {
+    "description": "EPIC-08 · nom de la formule 3 %"
+  },
+  "saleFormulaBadgeEssentiel": "L’Essentiel · 1 %",
+  "@saleFormulaBadgeEssentiel": {
+    "description": "EPIC-08 · badge de la formule"
+  },
+  "saleFormulaBadgePremium": "Premium · 1 %",
+  "@saleFormulaBadgePremium": {
+    "description": "EPIC-08 · badge de la formule"
+  },
+  "saleFormulaBadgeExpert": "L’Expert · 3 %",
+  "@saleFormulaBadgeExpert": {
+    "description": "EPIC-08 · badge de la formule"
+  },
+  "saleStagePlanChosen": "Mandat à signer",
+  "@saleStagePlanChosen": {
+    "description": "EPIC-08 · étape de la vente : formule choisie"
+  },
+  "saleStageMandateSigned": "Mandat signé · annonce en préparation",
+  "@saleStageMandateSigned": {
+    "description": "EPIC-08 · étape : mandat signé (1 %)"
+  },
+  "saleStageExpertSigned": "Mandat signé · un agent vous contacte sous 24 h",
+  "@saleStageExpertSigned": {
+    "description": "EPIC-08 · étape : mandat Expert signé"
+  },
+  "saleStagePublished": "En ligne depuis le {date}",
+  "@saleStagePublished": {
+    "description": "EPIC-08 · étape : annonce publiée (date longue)",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "saleStageWithdrawn": "Vente retirée",
+  "@saleStageWithdrawn": {
+    "description": "EPIC-08 · étape : vente retirée"
+  },
+  "saleCardTitle": "Ma vente",
+  "@saleCardTitle": {
+    "description": "EPIC-08 · V9 · titre de la carte de la vente"
+  },
+  "saleCardLotTitle": "Ma vente · lot",
+  "@saleCardLotTitle": {
+    "description": "EPIC-08 · titre de la carte d’une vente de lot"
+  },
+  "saleCardLotMembers": "{count, plural, =1{1 bien vendu ensemble} other{{count} biens vendus ensemble}}",
+  "@saleCardLotMembers": {
+    "description": "EPIC-08 · nombre de biens d’un lot",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "saleCardTest": "Phase de test : mandat sans valeur juridique",
+  "@saleCardTest": {
+    "description": "EPIC-08 · mention test sur la carte"
+  },
+  "saleCardOpen": "Continuer",
+  "@saleCardOpen": {
+    "description": "EPIC-08 · carte de la vente · ouvrir"
+  },
+  "saleCardWithdraw": "Retirer de la vente",
+  "@saleCardWithdraw": {
+    "description": "EPIC-08 · carte de la vente · retirer"
+  },
+  "saleRowLabel": "{formula} · {stage}",
+  "@saleRowLabel": {
+    "description": "EPIC-08 · Mes biens · statut de vente (formule · étape)",
+    "placeholders": {
+      "formula": {
+        "type": "String"
+      },
+      "stage": {
+        "type": "String"
+      }
+    }
+  },
+  "saleSellLotTitle": "Mettre le lot en vente",
+  "@saleSellLotTitle": {
+    "description": "EPIC-08 · action : vendre le lot"
+  },
+  "saleLotWaitingMain": "Le lot pourra être mis en vente dès que son bien principal sera certifié.",
+  "@saleLotWaitingMain": {
+    "description": "EPIC-08 · fiche du lot · bien principal non certifié"
+  },
+  "saleLotMemberOnSale": "Un bien de ce lot est en vente seul : le lot ne peut pas être vendu en même temps.",
+  "@saleLotMemberOnSale": {
+    "description": "EPIC-08 · fiche du lot · un bien vendu seul"
+  },
+  "saleTestBanner": "Phase de test : aucun paiement, mandat de test sans valeur juridique.",
+  "@saleTestBanner": {
+    "description": "EPIC-08 · bandeau phase de test"
+  },
+  "saleBack": "Retour",
+  "@saleBack": {
+    "description": "EPIC-08 · bouton retour des écrans de vente"
+  },
+  "saleBackHome": "Retour à mes biens",
+  "@saleBackHome": {
+    "description": "EPIC-08 · retour à l’espace vendeur"
+  },
+  "saleUnavailable": "La mise en vente n’est pas encore disponible.",
+  "@saleUnavailable": {
+    "description": "EPIC-08 · ventes indisponibles (drapeau)"
+  },
+  "saleLoadError": "Impossible de charger votre vente.",
+  "@saleLoadError": {
+    "description": "EPIC-08 · erreur de chargement"
+  },
+  "saleNotFound": "Cette vente n’existe plus.",
+  "@saleNotFound": {
+    "description": "EPIC-08 · vente introuvable"
+  },
+  "saleWithdrawnMessage": "Cette vente a été retirée.",
+  "@saleWithdrawnMessage": {
+    "description": "EPIC-08 · vente retirée"
+  },
+  "saleErrorGeneric": "Une erreur est survenue. Réessayez.",
+  "@saleErrorGeneric": {
+    "description": "EPIC-08 · erreur générique"
+  },
+  "saleErrorNotCertified": "Ce bien n’est pas encore certifié.",
+  "@saleErrorNotCertified": {
+    "description": "EPIC-08 · erreur : non certifié"
+  },
+  "saleErrorMainNotCertified": "Le bien principal du lot n’est pas encore certifié.",
+  "@saleErrorMainNotCertified": {
+    "description": "EPIC-08 · erreur : bien principal non certifié"
+  },
+  "saleErrorLotSoldTogether": "Ce bien fait partie d’un lot vendu en entier : mettez le lot en vente.",
+  "@saleErrorLotSoldTogether": {
+    "description": "EPIC-08 · erreur : lot « ensemble »"
+  },
+  "saleErrorLotOnSale": "Le lot de ce bien est déjà en vente.",
+  "@saleErrorLotOnSale": {
+    "description": "EPIC-08 · erreur : lot en vente"
+  },
+  "saleErrorMemberOnSale": "Un bien de ce lot est déjà en vente seul.",
+  "@saleErrorMemberOnSale": {
+    "description": "EPIC-08 · erreur : bien du lot en vente"
+  },
+  "saleErrorMandateSigned": "Le mandat est signé : retirez la vente pour changer de formule.",
+  "@saleErrorMandateSigned": {
+    "description": "EPIC-08 · erreur : changement de formule après signature"
+  },
+  "saleErrorTerms": "Acceptez les conditions du mandat.",
+  "@saleErrorTerms": {
+    "description": "EPIC-08 · erreur : case non cochée"
+  },
+  "saleErrorSignature": "Signez dans le cadre.",
+  "@saleErrorSignature": {
+    "description": "EPIC-08 · erreur : signature absente"
+  },
+  "saleErrorIdentityDocument": "Ajoutez votre pièce d’identité à votre dossier avant de signer.",
+  "@saleErrorIdentityDocument": {
+    "description": "EPIC-08 · erreur : pièce d’identité absente"
+  },
+  "saleErrorIdentityNotVerified": "Votre identité doit être vérifiée par notre équipe avant la signature.",
+  "@saleErrorIdentityNotVerified": {
+    "description": "EPIC-08 · erreur : identité non vérifiée (Expert)"
+  },
+  "saleErrorRequestOpen": "Une demande de ce type est déjà en cours.",
+  "@saleErrorRequestOpen": {
+    "description": "EPIC-08 · erreur : demande déjà ouverte"
+  },
+  "saleErrorMandateNotSigned": "Signez d’abord votre mandat.",
+  "@saleErrorMandateNotSigned": {
+    "description": "EPIC-08 · erreur : mandat non signé"
+  },
+  "saleErrorPhotoLimit": "40 photos au plus par annonce.",
+  "@saleErrorPhotoLimit": {
+    "description": "EPIC-08 · erreur : limite de photos"
+  },
+  "saleWithdrawTitle": "Retirer de la vente",
+  "@saleWithdrawTitle": {
+    "description": "EPIC-08 · feuille de retrait · titre"
+  },
+  "saleWithdrawMessage": "Votre annonce sera retirée et le mandat de test résilié. Les demandes en cours seront annulées. Un mandat signé est résiliable à tout moment après 30 jours.",
+  "@saleWithdrawMessage": {
+    "description": "EPIC-08 · feuille de retrait · conséquences"
+  },
+  "saleWithdrawReason": "Motif (facultatif)",
+  "@saleWithdrawReason": {
+    "description": "EPIC-08 · feuille de retrait · motif"
+  },
+  "saleWithdrawConfirm": "Retirer de la vente",
+  "@saleWithdrawConfirm": {
+    "description": "EPIC-08 · feuille de retrait · confirmer"
+  },
+  "saleWithdrawCancel": "Annuler",
+  "@saleWithdrawCancel": {
+    "description": "EPIC-08 · feuille de retrait · annuler"
+  },
+  "saleWithdrawDone": "Votre vente est retirée.",
+  "@saleWithdrawDone": {
+    "description": "EPIC-08 · retrait confirmé"
+  },
+  "offerChoiceTitle": "Choisissez votre formule",
+  "@offerChoiceTitle": {
+    "description": "EPIC-08 · V10 · titre"
+  },
+  "offerChoiceClose": "Fermer",
+  "@offerChoiceClose": {
+    "description": "EPIC-08 · V10 · fermer"
+  },
+  "offerChoiceTargetProperty": "Ce bien seul",
+  "@offerChoiceTargetProperty": {
+    "description": "EPIC-08 · V10 · vendre le bien seul"
+  },
+  "offerChoiceTargetLot": "{count, plural, =1{Le lot (1 bien)} other{Le lot ({count} biens)}}",
+  "@offerChoiceTargetLot": {
+    "description": "EPIC-08 · V10 · vendre le lot entier",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "offerChoiceTabEssentiel": "1 %",
+  "@offerChoiceTabEssentiel": {
+    "description": "EPIC-08 · V10 · onglet L’Essentiel"
+  },
+  "offerChoiceTabPremium": "Premium",
+  "@offerChoiceTabPremium": {
+    "description": "EPIC-08 · V10 · onglet Premium"
+  },
+  "offerChoiceTabExpert": "3 %",
+  "@offerChoiceTabExpert": {
+    "description": "EPIC-08 · V10 · onglet L’Expert"
+  },
+  "offerChoiceEssentielTagline": "L’autonomie accompagnée",
+  "@offerChoiceEssentielTagline": {
+    "description": "EPIC-08 · V10 · accroche L’Essentiel"
+  },
+  "offerChoicePremiumTagline": "La sérénité totale",
+  "@offerChoicePremiumTagline": {
+    "description": "EPIC-08 · V10 · accroche Premium"
+  },
+  "offerChoiceExpertTagline": "Zéro contrainte",
+  "@offerChoiceExpertTagline": {
+    "description": "EPIC-08 · V10 · accroche L’Expert"
+  },
+  "offerChoiceRate": "{rate} %",
+  "@offerChoiceRate": {
+    "description": "EPIC-08 · V10 · taux de la formule",
+    "placeholders": {
+      "rate": {
+        "type": "int"
+      }
+    }
+  },
+  "offerChoiceRateCaption": "au succès",
+  "@offerChoiceRateCaption": {
+    "description": "EPIC-08 · V10 · « au succès »"
+  },
+  "offerChoiceEssentielFees": "Aucun frais de dossier · aucun abonnement",
+  "@offerChoiceEssentielFees": {
+    "description": "EPIC-08 · V10 · frais L’Essentiel"
+  },
+  "offerChoicePremiumFees": "+ {setup} € de frais de dossier · {monthly} €/mois (tarifs indicatifs : rien n’est prélevé dans l’application)",
+  "@offerChoicePremiumFees": {
+    "description": "EPIC-08 · V10 · frais Premium (indicatifs, aucun paiement)",
+    "placeholders": {
+      "setup": {
+        "type": "String"
+      },
+      "monthly": {
+        "type": "String"
+      }
+    }
+  },
+  "offerChoiceExpertFees": "Honoraires uniquement en cas de vente",
+  "@offerChoiceExpertFees": {
+    "description": "EPIC-08 · V10 · frais L’Expert"
+  },
+  "offerChoiceCommission": "Soit ~{amount} € de commission sur la base de votre avis de valeur.",
+  "@offerChoiceCommission": {
+    "description": "EPIC-08 · V10 · commission estimée (1 %)",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "offerChoiceExpertCommission": "Soit ~{amount} € d’honoraires sur la base de votre avis de valeur.",
+  "@offerChoiceExpertCommission": {
+    "description": "EPIC-08 · V10 · honoraires estimés (3 %)",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "offerChoiceEssentielFeatures": "Audit complet et dossier technique certifié\nDiffusion de votre annonce sur Realesty\nFiltrage des acquéreurs par le Pass Visite\nCalendrier en direct : les acquéreurs réservent eux-mêmes\nRetouche photo et home staging virtuel (bientôt)",
+  "@offerChoiceEssentielFeatures": {
+    "description": "EPIC-08 · V10 · avantages L’Essentiel, une ligne par avantage (sans visite 360° jusqu’à la v3)"
+  },
+  "offerChoicePremiumFeatures": "Tout L’Essentiel : audit, dossier certifié, diffusion, filtrage Pass Visite\nRetouche photo et home staging virtuel (bientôt)\nCoaching humain et visibilité boostée\nRequalification humaine de chaque acquéreur avant la visite, avec compte rendu",
+  "@offerChoicePremiumFeatures": {
+    "description": "EPIC-08 · V10 · avantages Premium, une ligne par avantage (sans vidéo immersive jusqu’à la v3)"
+  },
+  "offerChoiceExpertFeatures": "Tout le Premium, avec un agent dédié\nVisites menées par l’agent\nNégociation des offres à votre place\nSuivi complet jusqu’à la signature chez le notaire\nGéré par Realesty ou une agence partenaire",
+  "@offerChoiceExpertFeatures": {
+    "description": "EPIC-08 · V10 · avantages L’Expert, une ligne par avantage"
+  },
+  "offerChoiceChoose": "Choisir {formula}",
+  "@offerChoiceChoose": {
+    "description": "EPIC-08 · V10 · bouton choisir",
+    "placeholders": {
+      "formula": {
+        "type": "String"
+      }
+    }
+  },
+  "offerChoiceKeep": "Garder cette formule",
+  "@offerChoiceKeep": {
+    "description": "EPIC-08 · V10 · formule actuelle"
+  },
+  "activationTitle": "Formule {formula}",
+  "@activationTitle": {
+    "description": "EPIC-08 · V11/V11b/V11c · titre (nom de la formule)",
+    "placeholders": {
+      "formula": {
+        "type": "String"
+      }
+    }
+  },
+  "activationInProgress": "Activation en cours",
+  "@activationInProgress": {
+    "description": "EPIC-08 · badge : mandat non signé"
+  },
+  "activationSigned": "Mandat signé",
+  "@activationSigned": {
+    "description": "EPIC-08 · badge : mandat signé"
+  },
+  "activationContinue": "Activer et préparer mon annonce",
+  "@activationContinue": {
+    "description": "EPIC-08 · V11 · bouton collant"
+  },
+  "activationEssentielHeadline": "Activons votre formule L’Essentiel",
+  "@activationEssentielHeadline": {
+    "description": "EPIC-08 · V11 · titre"
+  },
+  "activationEssentielText": "Vous gardez la main, Realesty vous accompagne. Aucun frais : vous ne payez que si vous vendez.",
+  "@activationEssentielText": {
+    "description": "EPIC-08 · V11 · texte"
+  },
+  "activationEssentielAgent": "Avec L’Essentiel, vous préparez votre annonce vous-même : je vous guide pour les photos, et les acquéreurs passent par le Pass Visite.",
+  "@activationEssentielAgent": {
+    "description": "EPIC-08 · V11 · bulle de l’agent"
+  },
+  "activationPremiumHeadline": "Activons votre formule Premium",
+  "@activationPremiumHeadline": {
+    "description": "EPIC-08 · V11b · titre"
+  },
+  "activationFormulaTitle": "Votre formule",
+  "@activationFormulaTitle": {
+    "description": "EPIC-08 · carte de la formule · titre"
+  },
+  "activationSetupFee": "Frais de dossier",
+  "@activationSetupFee": {
+    "description": "EPIC-08 · carte de la formule · frais"
+  },
+  "activationSubscription": "Abonnement",
+  "@activationSubscription": {
+    "description": "EPIC-08 · carte de la formule · abonnement"
+  },
+  "activationNone": "Aucun",
+  "@activationNone": {
+    "description": "EPIC-08 · carte de la formule · aucun abonnement"
+  },
+  "activationMonthly": "{amount} €/mois",
+  "@activationMonthly": {
+    "description": "EPIC-08 · montant mensuel",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "activationIndicative": "{amount} (indicatif)",
+  "@activationIndicative": {
+    "description": "EPIC-08 · tarif indicatif, rien n’est prélevé",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "activationCommission": "Commission",
+  "@activationCommission": {
+    "description": "EPIC-08 · carte de la formule · commission"
+  },
+  "activationCommissionRate": "{rate} % au succès",
+  "@activationCommissionRate": {
+    "description": "EPIC-08 · commission sans valeur",
+    "placeholders": {
+      "rate": {
+        "type": "int"
+      }
+    }
+  },
+  "activationCommissionAmount": "{rate} % au succès, soit ~{amount} € TTC ({ht} € HT)",
+  "@activationCommissionAmount": {
+    "description": "EPIC-08 · commission estimée",
+    "placeholders": {
+      "rate": {
+        "type": "int"
+      },
+      "amount": {
+        "type": "String"
+      },
+      "ht": {
+        "type": "String"
+      }
+    }
+  },
+  "activationMandate": "Mandat",
+  "@activationMandate": {
+    "description": "EPIC-08 · carte de la formule · mandat"
+  },
+  "activationMandateValue": "Exclusif · mandat de test",
+  "@activationMandateValue": {
+    "description": "EPIC-08 · carte de la formule · type de mandat"
+  },
+  "activationPhotosTitle": "Vos photos",
+  "@activationPhotosTitle": {
+    "description": "EPIC-08 · carte photos · titre"
+  },
+  "activationPhotosText": "Votre annonce reprend les photos de votre dossier. Complétez-les avec l’assistant photo, pièce par pièce.",
+  "@activationPhotosText": {
+    "description": "EPIC-08 · carte photos · texte"
+  },
+  "activationRetouch": "Retouche automatique",
+  "@activationRetouch": {
+    "description": "EPIC-08 · préférence retouche (bientôt)"
+  },
+  "activationRetouchSubtitle": "Luminosité, perspectives",
+  "@activationRetouchSubtitle": {
+    "description": "EPIC-08 · préférence retouche · détail"
+  },
+  "activationStaging": "Home staging virtuel",
+  "@activationStaging": {
+    "description": "EPIC-08 · préférence home staging (bientôt)"
+  },
+  "activationStagingSubtitle": "Proposé pour les pièces vides ou datées",
+  "@activationStagingSubtitle": {
+    "description": "EPIC-08 · préférence home staging · détail"
+  },
+  "activationSoon": "Bientôt",
+  "@activationSoon": {
+    "description": "EPIC-08 · badge « bientôt » (préférence enregistrée)"
+  },
+  "activationPhotosAssistant": "Prendre mes photos avec l’assistant",
+  "@activationPhotosAssistant": {
+    "description": "EPIC-08 · ouvrir les photos de l’annonce"
+  },
+  "activationOptionsTitle": "Options à la carte",
+  "@activationOptionsTitle": {
+    "description": "EPIC-08 · options · titre"
+  },
+  "activationOptional": "Facultatif",
+  "@activationOptional": {
+    "description": "EPIC-08 · options · badge"
+  },
+  "activationOptionsText": "Tarifs indicatifs : rien n’est prélevé dans l’application, un conseiller vous recontacte.",
+  "@activationOptionsText": {
+    "description": "EPIC-08 · options · aucun paiement"
+  },
+  "activationShootingPhoto": "Shooting photo",
+  "@activationShootingPhoto": {
+    "description": "EPIC-08 · option shooting photo"
+  },
+  "activationShootingPhotoSubtitle": "Photographe partenaire, environ 1 h 30",
+  "@activationShootingPhotoSubtitle": {
+    "description": "EPIC-08 · option shooting photo · détail"
+  },
+  "activationShootingVideo": "Shooting photo + vidéo",
+  "@activationShootingVideo": {
+    "description": "EPIC-08 · option shooting vidéo"
+  },
+  "activationShootingVideoSubtitle": "Photos et film de présentation du bien",
+  "@activationShootingVideoSubtitle": {
+    "description": "EPIC-08 · option shooting vidéo · détail"
+  },
+  "activationDiagnostics": "Diagnostics obligatoires",
+  "@activationDiagnostics": {
+    "description": "EPIC-08 · option diagnostics"
+  },
+  "activationDiagnosticsSubtitle": "Diagnostiqueurs partenaires",
+  "@activationDiagnosticsSubtitle": {
+    "description": "EPIC-08 · option diagnostics · détail"
+  },
+  "activationPriceTtc": "{amount} € TTC",
+  "@activationPriceTtc": {
+    "description": "EPIC-08 · prix indicatif TTC",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "activationAdd": "Ajouter",
+  "@activationAdd": {
+    "description": "EPIC-08 · demander une option"
+  },
+  "activationRequestSent": "Demande envoyée : un conseiller vous recontacte.",
+  "@activationRequestSent": {
+    "description": "EPIC-08 · demande envoyée"
+  },
+  "activationRequested": "Demandé · un conseiller vous recontacte",
+  "@activationRequested": {
+    "description": "EPIC-08 · demande en cours"
+  },
+  "activationScheduled": "Rendez-vous le {date} à {time}",
+  "@activationScheduled": {
+    "description": "EPIC-08 · demande planifiée par l’équipe",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "activationCancelRequest": "Annuler",
+  "@activationCancelRequest": {
+    "description": "EPIC-08 · annuler une demande"
+  },
+  "activationImportDiagnostics": "J’ai déjà mes diagnostics",
+  "@activationImportDiagnostics": {
+    "description": "EPIC-08 · diagnostics existants → coffre-fort"
+  },
+  "activationUpsellTitle": "Besoin d’être plus accompagné ?",
+  "@activationUpsellTitle": {
+    "description": "EPIC-08 · V11 · lien vers Premium"
+  },
+  "activationUpsellText": "Le Premium ajoute coaching humain et requalification de chaque acquéreur.",
+  "@activationUpsellText": {
+    "description": "EPIC-08 · V11 · lien vers Premium · texte"
+  },
+  "activationChangeFormula": "Changer de formule",
+  "@activationChangeFormula": {
+    "description": "EPIC-08 · changer de formule avant signature"
+  },
+  "premiumContinue": "Continuer vers mon annonce",
+  "@premiumContinue": {
+    "description": "EPIC-08 · V11b · bouton collant (créneaux avec EPIC-09)"
+  },
+  "premiumSetupTitle": "Mise en place du Premium",
+  "@premiumSetupTitle": {
+    "description": "EPIC-08 · V11b · carte rappel · titre"
+  },
+  "premiumSetupText": "Un conseiller Realesty vous appelle pour mettre en place votre formule Premium. Aucun prélèvement dans l’application.",
+  "@premiumSetupText": {
+    "description": "EPIC-08 · V11b · rappel au lieu du prélèvement SEPA"
+  },
+  "premiumCallback": "Être rappelé",
+  "@premiumCallback": {
+    "description": "EPIC-08 · V11b · demande de rappel"
+  },
+  "premiumCallbackSubtitle": "Frais de dossier et abonnement indicatifs",
+  "@premiumCallbackSubtitle": {
+    "description": "EPIC-08 · V11b · demande de rappel · détail"
+  },
+  "premiumShootingTitle": "Shooting photo professionnel",
+  "@premiumShootingTitle": {
+    "description": "EPIC-08 · V11b · shooting · titre"
+  },
+  "premiumShootingPhoto": "Photo · {amount} € TTC",
+  "@premiumShootingPhoto": {
+    "description": "EPIC-08 · V11b · choix photo",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "premiumShootingVideo": "Photo + vidéo · {amount} € TTC",
+  "@premiumShootingVideo": {
+    "description": "EPIC-08 · V11b · choix vidéo",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "premiumSlotsText": "Un photographe partenaire vient chez vous (environ 1 h 30). Choisissez jusqu’à 3 créneaux souhaités : l’équipe en confirme un.",
+  "@premiumSlotsText": {
+    "description": "EPIC-08 · V11b · créneaux"
+  },
+  "premiumSlot": "{day} · {hour} h",
+  "@premiumSlot": {
+    "description": "EPIC-08 · V11b · créneau (jour, heure)",
+    "placeholders": {
+      "day": {
+        "type": "String"
+      },
+      "hour": {
+        "type": "int"
+      }
+    }
+  },
+  "premiumShootingRequest": "Demander le shooting",
+  "@premiumShootingRequest": {
+    "description": "EPIC-08 · V11b · demander le shooting"
+  },
+  "premiumShootingSubtitle": "Confirmé par notre équipe",
+  "@premiumShootingSubtitle": {
+    "description": "EPIC-08 · V11b · shooting · détail"
+  },
+  "premiumDiagnosticsTitle": "Diagnostics obligatoires",
+  "@premiumDiagnosticsTitle": {
+    "description": "EPIC-08 · V11b · diagnostics · titre"
+  },
+  "premiumDiagnosticsText": "Obligatoires pour vendre. Faites-les réaliser par nos diagnostiqueurs partenaires, ou ajoutez les vôtres.",
+  "@premiumDiagnosticsText": {
+    "description": "EPIC-08 · V11b · diagnostics · texte"
+  },
+  "premiumNoDiagnostics": "Aucun diagnostic trouvé dans votre dossier.",
+  "@premiumNoDiagnostics": {
+    "description": "EPIC-08 · V11b · aucun diagnostic"
+  },
+  "premiumPreselection": "Présélection d’après votre audit ({reasons})",
+  "@premiumPreselection": {
+    "description": "EPIC-08 · V11b · règles explicites (pas d’IA)",
+    "placeholders": {
+      "reasons": {
+        "type": "String"
+      }
+    }
+  },
+  "premiumReasonYear": "construction {year}",
+  "@premiumReasonYear": {
+    "description": "EPIC-08 · V11b · raison : année",
+    "placeholders": {
+      "year": {
+        "type": "int"
+      }
+    }
+  },
+  "premiumReasonUnknownYear": "année de construction inconnue",
+  "@premiumReasonUnknownYear": {
+    "description": "EPIC-08 · V11b · raison : année inconnue"
+  },
+  "premiumReasonGas": "chauffage au gaz",
+  "@premiumReasonGas": {
+    "description": "EPIC-08 · V11b · raison : gaz"
+  },
+  "diagnosticDpe": "DPE",
+  "@diagnosticDpe": {
+    "description": "EPIC-08 · diagnostic DPE"
+  },
+  "diagnosticElectricity": "Électricité",
+  "@diagnosticElectricity": {
+    "description": "EPIC-08 · diagnostic électricité"
+  },
+  "diagnosticGas": "Gaz",
+  "@diagnosticGas": {
+    "description": "EPIC-08 · diagnostic gaz"
+  },
+  "diagnosticAsbestos": "Amiante",
+  "@diagnosticAsbestos": {
+    "description": "EPIC-08 · diagnostic amiante"
+  },
+  "diagnosticLead": "Plomb",
+  "@diagnosticLead": {
+    "description": "EPIC-08 · diagnostic plomb"
+  },
+  "diagnosticTermites": "Termites",
+  "@diagnosticTermites": {
+    "description": "EPIC-08 · diagnostic termites"
+  },
+  "diagnosticRisks": "État des risques",
+  "@diagnosticRisks": {
+    "description": "EPIC-08 · diagnostic ERP"
+  },
+  "expertHeadline": "Confiez la vente à nos agents",
+  "@expertHeadline": {
+    "description": "EPIC-08 · V11c · titre"
+  },
+  "expertText": "Visites, négociation et suivi notaire pris en charge.",
+  "@expertText": {
+    "description": "EPIC-08 · V11c · texte"
+  },
+  "expertStepIdentity": "Identité vérifiée",
+  "@expertStepIdentity": {
+    "description": "EPIC-08 · V11c · étape identité"
+  },
+  "expertStepIdentityPending": "En cours de vérification par notre équipe",
+  "@expertStepIdentityPending": {
+    "description": "EPIC-08 · V11c · identité en attente"
+  },
+  "expertStepIdentityMissing": "Pièce d’identité à ajouter",
+  "@expertStepIdentityMissing": {
+    "description": "EPIC-08 · V11c · pièce absente"
+  },
+  "expertStepMandate": "Mandat de vente",
+  "@expertStepMandate": {
+    "description": "EPIC-08 · V11c · étape mandat"
+  },
+  "expertStepMandateToSign": "À signer",
+  "@expertStepMandateToSign": {
+    "description": "EPIC-08 · V11c · mandat à signer"
+  },
+  "expertStepAgent": "Agent assigné",
+  "@expertStepAgent": {
+    "description": "EPIC-08 · V11c · étape agent"
+  },
+  "expertStepAgentSubtitle": "Sous 24 h après signature",
+  "@expertStepAgentSubtitle": {
+    "description": "EPIC-08 · V11c · agent sous 24 h"
+  },
+  "mandateTitle": "Mandat exclusif sans engagement",
+  "@mandateTitle": {
+    "description": "EPIC-08 · carte mandat · titre (1 %)"
+  },
+  "mandateTitleExpert": "Mandat de vente",
+  "@mandateTitleExpert": {
+    "description": "EPIC-08 · carte mandat · titre (Expert)"
+  },
+  "mandateToSign": "À signer",
+  "@mandateToSign": {
+    "description": "EPIC-08 · carte mandat · badge"
+  },
+  "mandateSignedBadge": "Signé",
+  "@mandateSignedBadge": {
+    "description": "EPIC-08 · carte mandat · badge signé"
+  },
+  "mandateType": "Type de mandat",
+  "@mandateType": {
+    "description": "EPIC-08 · carte mandat · type"
+  },
+  "mandateExclusive": "Exclusif",
+  "@mandateExclusive": {
+    "description": "EPIC-08 · carte mandat · exclusif"
+  },
+  "mandateDuration": "Durée",
+  "@mandateDuration": {
+    "description": "EPIC-08 · carte mandat · durée"
+  },
+  "mandateNoCommitment": "Sans engagement",
+  "@mandateNoCommitment": {
+    "description": "EPIC-08 · carte mandat · sans engagement"
+  },
+  "mandateDurationMonths": "{count, plural, =1{1 mois} other{{count} mois}}",
+  "@mandateDurationMonths": {
+    "description": "EPIC-08 · carte mandat · durée en mois",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mandateTermination": "Résiliation",
+  "@mandateTermination": {
+    "description": "EPIC-08 · carte mandat · résiliation"
+  },
+  "mandateTerminationAnytime": "À tout moment après {days} jours, en un clic",
+  "@mandateTerminationAnytime": {
+    "description": "EPIC-08 · carte mandat · résiliation après la période minimale",
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "mandateTerminationExpert": "À l’échéance (test : à tout moment)",
+  "@mandateTerminationExpert": {
+    "description": "EPIC-08 · carte mandat · résiliation Expert"
+  },
+  "mandatePrice": "Prix de présentation",
+  "@mandatePrice": {
+    "description": "EPIC-08 · carte mandat · prix"
+  },
+  "mandateFee": "Honoraires",
+  "@mandateFee": {
+    "description": "EPIC-08 · carte mandat · honoraires"
+  },
+  "mandateFeeValue": "{rate} % du prix de vente, au succès",
+  "@mandateFeeValue": {
+    "description": "EPIC-08 · carte mandat · taux",
+    "placeholders": {
+      "rate": {
+        "type": "int"
+      }
+    }
+  },
+  "mandateWhyExclusive": "Pourquoi l’exclusivité ? Un seul prix et une seule annonce : votre bien n’est pas dévalorisé, et chaque acquéreur passe par le Pass Visite. Vous restez libre de résilier à tout moment, sans frais.",
+  "@mandateWhyExclusive": {
+    "description": "EPIC-08 · carte mandat · pourquoi l’exclusivité"
+  },
+  "mandateSignOnline": "Signer le mandat en ligne",
+  "@mandateSignOnline": {
+    "description": "EPIC-08 · carte mandat · ouvrir la signature"
+  },
+  "mandateSignedOn": "Mandat signé le {date}",
+  "@mandateSignedOn": {
+    "description": "EPIC-08 · carte mandat · date de signature",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "mandateOpenPdf": "Voir le mandat (PDF)",
+  "@mandateOpenPdf": {
+    "description": "EPIC-08 · carte mandat · PDF"
+  },
+  "mandatePdfError": "Le mandat n’a pas pu être ouvert. Réessayez.",
+  "@mandatePdfError": {
+    "description": "EPIC-08 · erreur d’ouverture du PDF"
+  },
+  "mandateOpenVault": "Ouvrir mon coffre-fort",
+  "@mandateOpenVault": {
+    "description": "EPIC-08 · carte mandat · ajouter la pièce d’identité"
+  },
+  "mandateSheetTitle": "Signature du mandat",
+  "@mandateSheetTitle": {
+    "description": "EPIC-08 · feuille de signature · titre"
+  },
+  "mandateTestNotice": "Signature de test — sans valeur juridique",
+  "@mandateTestNotice": {
+    "description": "EPIC-08 · bandeau signature de test"
+  },
+  "mandateSigner": "{name} (vous)",
+  "@mandateSigner": {
+    "description": "EPIC-08 · signataire",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "mandateOthersOffline": "Les autres propriétaires ({names}) signeront hors de l’application.",
+  "@mandateOthersOffline": {
+    "description": "EPIC-08 · co-propriétaires hors application",
+    "placeholders": {
+      "names": {
+        "type": "String"
+      }
+    }
+  },
+  "mandateSignatureHint": "Signez du bout du doigt",
+  "@mandateSignatureHint": {
+    "description": "EPIC-08 · zone de signature · indication"
+  },
+  "mandateSignatureClear": "Effacer",
+  "@mandateSignatureClear": {
+    "description": "EPIC-08 · zone de signature · effacer"
+  },
+  "mandateSignatureArea": "Zone de signature",
+  "@mandateSignatureArea": {
+    "description": "EPIC-08 · zone de signature · accessibilité"
+  },
+  "mandateAccept": "J’ai lu et j’accepte les conditions du mandat {formula}.",
+  "@mandateAccept": {
+    "description": "EPIC-08 · case d’acceptation",
+    "placeholders": {
+      "formula": {
+        "type": "String"
+      }
+    }
+  },
+  "mandateSign": "Signer",
+  "@mandateSign": {
+    "description": "EPIC-08 · feuille de signature · signer"
+  },
+  "mandateSignExpert": "Signer le mandat",
+  "@mandateSignExpert": {
+    "description": "EPIC-08 · V11c · signer"
+  },
+  "mandateSigned": "Mandat de test signé.",
+  "@mandateSigned": {
+    "description": "EPIC-08 · confirmation de signature"
+  },
+  "listingTitle": "Mise en vente",
+  "@listingTitle": {
+    "description": "EPIC-08 · V11a · titre"
+  },
+  "listingDraft": "Brouillon",
+  "@listingDraft": {
+    "description": "EPIC-08 · V11a · badge brouillon"
+  },
+  "listingPreview": "Aperçu",
+  "@listingPreview": {
+    "description": "EPIC-08 · V11a · bouton aperçu"
+  },
+  "listingHeadline": "Votre annonce est prête",
+  "@listingHeadline": {
+    "description": "EPIC-08 · V11a · titre (brouillon)"
+  },
+  "listingOnlineHeadline": "Votre annonce est en ligne",
+  "@listingOnlineHeadline": {
+    "description": "EPIC-08 · V11a · titre (publiée)"
+  },
+  "listingIntro": "Générée à partir de votre dossier. Relisez, ajustez, publiez : elle sera visible dans Realesty.",
+  "@listingIntro": {
+    "description": "EPIC-08 · V11a · intro"
+  },
+  "listingPhotos": "Photos",
+  "@listingPhotos": {
+    "description": "EPIC-08 · V11a · carte photos"
+  },
+  "listingPhotoCount": "{count, plural, =0{Aucune photo} =1{1 photo} other{{count} photos}}",
+  "@listingPhotoCount": {
+    "description": "EPIC-08 · V11a · nombre de photos",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "listingMorePhotos": "+ {count}",
+  "@listingMorePhotos": {
+    "description": "EPIC-08 · V11a · photos supplémentaires",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "listingManagePhotos": "Gérer les photos",
+  "@listingManagePhotos": {
+    "description": "EPIC-08 · V11a · ouvrir les photos"
+  },
+  "listingDescription": "Description",
+  "@listingDescription": {
+    "description": "EPIC-08 · V11a · carte description"
+  },
+  "listingDescriptionGenerated": "Généré automatiquement",
+  "@listingDescriptionGenerated": {
+    "description": "EPIC-08 · V11a · badge modèle (pas d’IA)"
+  },
+  "listingDescriptionBySeller": "Modifié par vous",
+  "@listingDescriptionBySeller": {
+    "description": "EPIC-08 · V11a · badge texte du vendeur"
+  },
+  "listingDescriptionEmpty": "Description à rédiger",
+  "@listingDescriptionEmpty": {
+    "description": "EPIC-08 · V11a · description vide"
+  },
+  "listingEditText": "Modifier le texte",
+  "@listingEditText": {
+    "description": "EPIC-08 · V11a · modifier"
+  },
+  "listingTitleLabel": "Titre de l’annonce",
+  "@listingTitleLabel": {
+    "description": "EPIC-08 · feuille texte · titre"
+  },
+  "listingTextLabel": "Texte",
+  "@listingTextLabel": {
+    "description": "EPIC-08 · feuille texte · texte"
+  },
+  "listingSaveText": "Enregistrer",
+  "@listingSaveText": {
+    "description": "EPIC-08 · feuille texte · enregistrer"
+  },
+  "listingRegenerate": "Régénérer depuis mon dossier",
+  "@listingRegenerate": {
+    "description": "EPIC-08 · feuille texte · régénérer"
+  },
+  "listingPriceTitle": "Prix de présentation",
+  "@listingPriceTitle": {
+    "description": "EPIC-08 · V11a · carte prix"
+  },
+  "listingPriceLabel": "Votre prix",
+  "@listingPriceLabel": {
+    "description": "EPIC-08 · V11a · champ prix"
+  },
+  "listingPriceHint": "Modifiable à tout moment, même après publication.",
+  "@listingPriceHint": {
+    "description": "EPIC-08 · V11a · prix modifiable"
+  },
+  "listingPriceInvalid": "Indiquez un prix entre 1 000 € et 100 000 000 €.",
+  "@listingPriceInvalid": {
+    "description": "EPIC-08 · V11a · prix invalide"
+  },
+  "listingInRange": "Dans la fourchette",
+  "@listingInRange": {
+    "description": "EPIC-08 · V11a · prix dans la fourchette"
+  },
+  "listingOutOfRange": "Hors fourchette",
+  "@listingOutOfRange": {
+    "description": "EPIC-08 · V11a · prix hors fourchette"
+  },
+  "listingOutOfRangeHint": "Un prix hors de la fourchette certifiée peut allonger le délai de vente : l’expert vous le signalera.",
+  "@listingOutOfRangeHint": {
+    "description": "EPIC-08 · V11a · conseil hors fourchette"
+  },
+  "listingCertifiedRange": "Avis de valeur certifié",
+  "@listingCertifiedRange": {
+    "description": "EPIC-08 · V11a · légende de la fourchette"
+  },
+  "listingCommission": "Commission au succès",
+  "@listingCommission": {
+    "description": "EPIC-08 · V11a · commission"
+  },
+  "listingCommissionValue": "{rate} % · {amount} € TTC ({ht} € HT)",
+  "@listingCommissionValue": {
+    "description": "EPIC-08 · V11a · commission (taux · montant)",
+    "placeholders": {
+      "rate": {
+        "type": "int"
+      },
+      "amount": {
+        "type": "String"
+      },
+      "ht": {
+        "type": "String"
+      }
+    }
+  },
+  "listingDiffusion": "Diffusion",
+  "@listingDiffusion": {
+    "description": "EPIC-08 · V11a · diffusion"
+  },
+  "listingDiffusionValue": "Realesty",
+  "@listingDiffusionValue": {
+    "description": "EPIC-08 · V11a · diffusion Realesty seulement"
+  },
+  "listingPublish": "Publier mon annonce",
+  "@listingPublish": {
+    "description": "EPIC-08 · V11a · publier"
+  },
+  "listingUnpublish": "Mettre hors ligne",
+  "@listingUnpublish": {
+    "description": "EPIC-08 · V11a · hors ligne"
+  },
+  "listingPublished": "Votre annonce est en ligne dans Realesty.",
+  "@listingPublished": {
+    "description": "EPIC-08 · V11a · publiée"
+  },
+  "listingOffline": "Votre annonce est hors ligne.",
+  "@listingOffline": {
+    "description": "EPIC-08 · V11a · hors ligne"
+  },
+  "listingPublishIncomplete": "Votre annonce est incomplète.",
+  "@listingPublishIncomplete": {
+    "description": "EPIC-08 · V11a · publication refusée"
+  },
+  "listingMissing": "Pour publier, il manque : {items}.",
+  "@listingMissing": {
+    "description": "EPIC-08 · V11a · ce qui manque",
+    "placeholders": {
+      "items": {
+        "type": "String"
+      }
+    }
+  },
+  "listingMissingPrice": "le prix",
+  "@listingMissingPrice": {
+    "description": "EPIC-08 · manque : prix"
+  },
+  "listingMissingTitle": "le titre",
+  "@listingMissingTitle": {
+    "description": "EPIC-08 · manque : titre"
+  },
+  "listingMissingDescription": "la description",
+  "@listingMissingDescription": {
+    "description": "EPIC-08 · manque : description"
+  },
+  "listingMissingPhotos": "au moins 5 photos",
+  "@listingMissingPhotos": {
+    "description": "EPIC-08 · manque : photos"
+  },
+  "listingByAgent": "Avec L’Expert, votre agent prépare et publie votre annonce.",
+  "@listingByAgent": {
+    "description": "EPIC-08 · V11a · formule Expert"
+  },
+  "listingBackToFormula": "Voir ma formule",
+  "@listingBackToFormula": {
+    "description": "EPIC-08 · V11a · retour à la formule"
+  },
+  "listingPreviewTitle": "Aperçu de l’annonce",
+  "@listingPreviewTitle": {
+    "description": "EPIC-08 · aperçu · titre"
+  },
+  "listingPreviewIntro": "Ce que verront les acquéreurs : la commune seulement, l’adresse exacte n’est jamais affichée publiquement.",
+  "@listingPreviewIntro": {
+    "description": "EPIC-08 · aperçu · intro"
+  },
+  "listingPhotosTitle": "Photos de l’annonce",
+  "@listingPhotosTitle": {
+    "description": "EPIC-08 · photos · titre"
+  },
+  "listingPhotosCount": "{count} photos · minimum {minimum}",
+  "@listingPhotosCount": {
+    "description": "EPIC-08 · photos · compteur",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "minimum": {
+        "type": "int"
+      }
+    }
+  },
+  "listingPhotosIntro": "Toutes les photos de votre dossier sont reprises. Touchez une photo pour en faire la couverture ou la retirer de l’annonce.",
+  "@listingPhotosIntro": {
+    "description": "EPIC-08 · photos · intro"
+  },
+  "listingPhotosImporting": "Copie des photos de votre dossier…",
+  "@listingPhotosImporting": {
+    "description": "EPIC-08 · photos · import en cours"
+  },
+  "listingPhotosEmpty": "Aucune photo pour l’instant : prenez-en avec l’assistant.",
+  "@listingPhotosEmpty": {
+    "description": "EPIC-08 · photos · aucune"
+  },
+  "listingPhotosLoadError": "Impossible de charger les photos.",
+  "@listingPhotosLoadError": {
+    "description": "EPIC-08 · photos · erreur"
+  },
+  "listingPhotosTake": "Prendre des photos",
+  "@listingPhotosTake": {
+    "description": "EPIC-08 · photos · appareil"
+  },
+  "listingPhotosLibrary": "Choisir dans ma photothèque",
+  "@listingPhotosLibrary": {
+    "description": "EPIC-08 · photos · photothèque"
+  },
+  "listingPhotosReimport": "Reprendre mes photos",
+  "@listingPhotosReimport": {
+    "description": "EPIC-08 · photos · réimporter"
+  },
+  "listingPhotosMakeCover": "Mettre en couverture",
+  "@listingPhotosMakeCover": {
+    "description": "EPIC-08 · photos · couverture"
+  },
+  "listingPhotosRemove": "Retirer de l’annonce",
+  "@listingPhotosRemove": {
+    "description": "EPIC-08 · photos · retirer"
+  },
+  "listingPhotosCover": "Couverture",
+  "@listingPhotosCover": {
+    "description": "EPIC-08 · photos · badge couverture"
+  },
+  "listingPhotosPhoto": "Photo",
+  "@listingPhotosPhoto": {
+    "description": "EPIC-08 · photos · accessibilité"
+  },
+  "listingPhotosAddFailed": "Une photo n’a pas pu être ajoutée.",
+  "@listingPhotosAddFailed": {
+    "description": "EPIC-08 · photos · erreur d’ajout"
+  },
+  "listingPhotosChangeFailed": "La modification n’a pas pu être enregistrée.",
+  "@listingPhotosChangeFailed": {
+    "description": "EPIC-08 · photos · erreur de modification"
+  },
+  "listingPhotosPickFailed": "La photothèque n’a pas pu être ouverte.",
+  "@listingPhotosPickFailed": {
+    "description": "EPIC-08 · photos · photothèque indisponible"
+  },
+  "listingTextProperty": "Bien",
+  "@listingTextProperty": {
+    "description": "EPIC-08 · texte d’annonce · type inconnu"
+  },
+  "listingTextTypeArea": "{type} de {area} m²",
+  "@listingTextTypeArea": {
+    "description": "EPIC-08 · texte d’annonce · type et surface",
+    "placeholders": {
+      "type": {
+        "type": "String"
+      },
+      "area": {
+        "type": "String"
+      }
+    }
+  },
+  "listingTextInCity": "à {city}",
+  "@listingTextInCity": {
+    "description": "EPIC-08 · texte d’annonce · commune",
+    "placeholders": {
+      "city": {
+        "type": "String"
+      }
+    }
+  },
+  "listingTextRooms": "{count, plural, =1{1 pièce} other{{count} pièces}}",
+  "@listingTextRooms": {
+    "description": "EPIC-08 · texte d’annonce · pièces",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "listingTextBedrooms": "{count, plural, =1{1 chambre} other{{count} chambres}}",
+  "@listingTextBedrooms": {
+    "description": "EPIC-08 · texte d’annonce · chambres",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "listingTextBuilt": "Construction : {year}.",
+  "@listingTextBuilt": {
+    "description": "EPIC-08 · texte d’annonce · année",
+    "placeholders": {
+      "year": {
+        "type": "int"
+      }
+    }
+  },
+  "listingTextOutdoor": "Équipements : {items}.",
+  "@listingTextOutdoor": {
+    "description": "EPIC-08 · texte d’annonce · équipements",
+    "placeholders": {
+      "items": {
+        "type": "String"
+      }
+    }
+  },
+  "listingTextHeating": "Chauffage : {items}.",
+  "@listingTextHeating": {
+    "description": "EPIC-08 · texte d’annonce · chauffage",
+    "placeholders": {
+      "items": {
+        "type": "String"
+      }
+    }
+  },
+  "listingTextLotTitle": "Lot de {count} biens",
+  "@listingTextLotTitle": {
+    "description": "EPIC-08 · texte d’annonce · titre du lot",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "listingTextLotTitleCity": "Lot de {count} biens à {city}",
+  "@listingTextLotTitleCity": {
+    "description": "EPIC-08 · texte d’annonce · titre du lot avec commune",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "city": {
+        "type": "String"
+      }
+    }
+  },
+  "listingTextLotIntro": "Ce lot regroupe {count} biens vendus ensemble :",
+  "@listingTextLotIntro": {
+    "description": "EPIC-08 · texte d’annonce · intro du lot",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "saleErrorPriceBounds": "Ce prix s’écarte trop de l’avis de valeur : choisissez entre {low} € et {high} €.",
+  "@saleErrorPriceBounds": {
+    "description": "EPIC-08 · prix hors des bornes (montants formatés)",
+    "placeholders": {
+      "low": {
+        "type": "String"
+      },
+      "high": {
+        "type": "String"
+      }
+    }
+  },
+  "saleErrorPriceOut": "Ce prix s’écarte trop de l’avis de valeur.",
+  "@saleErrorPriceOut": {
+    "description": "EPIC-08 · prix hors des bornes"
+  },
+  "saleErrorMissingPrice": "Indiquez votre prix de présentation.",
+  "@saleErrorMissingPrice": {
+    "description": "EPIC-08 · prix manquant"
+  },
+  "saleErrorPremiumOnly": "Ce service est réservé au Premium.",
+  "@saleErrorPremiumOnly": {
+    "description": "EPIC-08 · service réservé au Premium"
+  },
+  "saleErrorSlotInPast": "Un créneau choisi est déjà passé.",
+  "@saleErrorSlotInPast": {
+    "description": "EPIC-08 · créneau passé"
+  },
+  "saleErrorMinimumPeriod": "Votre mandat est résiliable à partir du {date} (30 jours après la signature).",
+  "@saleErrorMinimumPeriod": {
+    "description": "EPIC-08 · résiliation avant la période minimale (date)",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "saleErrorMinimumPeriodGeneric": "Votre mandat est résiliable 30 jours après la signature.",
+  "@saleErrorMinimumPeriodGeneric": {
+    "description": "EPIC-08 · résiliation avant la période minimale"
+  },
+  "activationOnQuote": "Sur devis",
+  "@activationOnQuote": {
+    "description": "EPIC-08 · prix des diagnostics (sur devis)"
+  },
+  "activationStepMandate": "1 · Mandat",
+  "@activationStepMandate": {
+    "description": "EPIC-08 · V11 · étape 1"
+  },
+  "activationStepPhotos": "2 · Photos",
+  "@activationStepPhotos": {
+    "description": "EPIC-08 · V11 · étape 2"
+  },
+  "activationStepDiagnostics": "3 · Diagnostics",
+  "@activationStepDiagnostics": {
+    "description": "EPIC-08 · V11 · étape 3"
+  },
+  "activationStepDone": "fait",
+  "@activationStepDone": {
+    "description": "EPIC-08 · V11 · étape faite (accessibilité)"
+  },
+  "activationStepTodo": "à faire",
+  "@activationStepTodo": {
+    "description": "EPIC-08 · V11 · étape à faire (accessibilité)"
+  },
+  "mandateTypeInstead": "Signer en tapant mon nom",
+  "@mandateTypeInstead": {
+    "description": "EPIC-08 · signature tapée (accessibilité)"
+  },
+  "mandateDrawInstead": "Signer à la main",
+  "@mandateDrawInstead": {
+    "description": "EPIC-08 · revenir à la signature dessinée"
+  },
+  "mandateTypedLabel": "Votre nom complet",
+  "@mandateTypedLabel": {
+    "description": "EPIC-08 · champ du nom tapé"
+  },
+  "mandateTypedError": "Tapez votre nom (2 caractères au moins).",
+  "@mandateTypedError": {
+    "description": "EPIC-08 · nom tapé trop court"
+  },
+  "photoExamplesTitle": "Exemples de bonnes photos",
+  "@photoExamplesTitle": {
+    "description": "EPIC-08 · exemples de photos · titre"
+  },
+  "photoExamplesCaption": "Exemple de bonne photo",
+  "@photoExamplesCaption": {
+    "description": "EPIC-08 · exemples de photos · légende"
+  },
+  "photoExamplesTips": "Lumière du jour, rideaux ouverts et lampes allumées · téléphone droit, à hauteur de poitrine, depuis un angle de la pièce · pièce rangée, sans personne ni objet personnel.",
+  "@photoExamplesTips": {
+    "description": "EPIC-08 · conseils de cadrage des photos"
   }
 }

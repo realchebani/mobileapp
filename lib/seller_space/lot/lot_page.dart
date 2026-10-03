@@ -9,6 +9,7 @@ import 'package:mobileapp/l10n/l10n.dart';
 import 'package:mobileapp/seller_space/dashboard/widgets/lot_card.dart';
 import 'package:mobileapp/seller_space/lot/lot_member_sheet.dart';
 import 'package:mobileapp/seller_space/lot/models/lot_estimate.dart';
+import 'package:mobileapp/seller_space/sale/widgets/sale_card.dart';
 import 'package:mobileapp/seller_space/widgets/seller_space_format.dart';
 import 'package:mobileapp/seller_space/widgets/seller_space_header.dart';
 import 'package:mobileapp/seller_tunnel/cubit/seller_properties_cubit.dart';
@@ -226,6 +227,8 @@ class _LotPageState extends State<LotPage> {
         ),
         SectionLabel(l10n.lotEstimateLabel),
         _EstimateCard(members: members, estimate: estimate),
+        // EPIC-08: the sale of the lot.
+        LotSaleCard(lot: lot),
         if (!frozen) ...[
           if (_confirmingDissolve) ...[
             InlineBanner(

@@ -10,5 +10,6 @@ export 'my_property/property_home_page.dart';
 export 'new_property/new_property_page.dart';
 export 'notifications/notifications_sheet.dart';
 export 'report/report_page.dart';
+export 'sale/sale.dart';
 export 'shell/property_valuation_scope.dart';
 export 'shell/seller_tab_scaffold.dart';

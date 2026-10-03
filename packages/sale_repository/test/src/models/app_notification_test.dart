@@ -30,6 +30,28 @@ void main() {
       expect(notification.isRead, isTrue);
     });
 
+    test('sale kinds (EPIC-08)', () {
+      expect(
+        [
+          for (final value in [
+            'mandate_signed',
+            'listing_published',
+            'identity_verified',
+            'sale_request_updated',
+            'sale_withdrawn',
+          ])
+            AppNotificationKind.parse(value),
+        ],
+        [
+          AppNotificationKind.mandateSigned,
+          AppNotificationKind.listingPublished,
+          AppNotificationKind.identityVerified,
+          AppNotificationKind.saleRequestUpdated,
+          AppNotificationKind.saleWithdrawn,
+        ],
+      );
+    });
+
     test('unknown kinds parse as other', () {
       final notification = AppNotification.fromJson(const {
         'id': 'n1',
