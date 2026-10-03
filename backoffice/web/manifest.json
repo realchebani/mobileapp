@@ -1,0 +1,36 @@
+{
+    "name": "Realesty · Back-office",
+    "short_name": "Back-office",
+    "start_url": ".",
+    "display": "standalone",
+    "background_color": "#F7F4EE",
+    "theme_color": "#0E1512",
+    "description": "Back-office des experts Realesty",
+    "orientation": "portrait-primary",
+    "prefer_related_applications": false,
+    "icons": [
+        {
+            "src": "icons/Icon-192.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "icons/Icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        },
+        {
+            "src": "icons/Icon-maskable-192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "maskable"
+        },
+        {
+            "src": "icons/Icon-maskable-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "maskable"
+        }
+    ],
+    "lang": "fr"
+}

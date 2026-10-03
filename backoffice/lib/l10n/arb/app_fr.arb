@@ -1,0 +1,510 @@
+{
+  "@@locale": "fr",
+  "appTitle": "Realesty · Back-office",
+  "@appTitle": {
+    "description": "Titre de l’onglet du navigateur"
+  },
+  "navQueue": "Dossiers",
+  "@navQueue": {
+    "description": "Menu : file des dossiers"
+  },
+  "navTeam": "Équipe",
+  "@navTeam": {
+    "description": "Menu : équipe (admin)"
+  },
+  "navAudit": "Journal",
+  "@navAudit": {
+    "description": "Menu : journal d’audit (admin)"
+  },
+  "signOut": "Se déconnecter",
+  "@signOut": {
+    "description": "Bouton de déconnexion"
+  },
+  "roleAdmin": "Administrateur",
+  "@roleAdmin": {
+    "description": "Rôle admin"
+  },
+  "roleExpert": "Expert",
+  "@roleExpert": {
+    "description": "Rôle expert embauché"
+  },
+  "rolePartnerExpert": "Expert partenaire",
+  "@rolePartnerExpert": {
+    "description": "Rôle expert partenaire"
+  },
+  "narrowScreenTitle": "Écran trop étroit",
+  "@narrowScreenTitle": {
+    "description": "Titre sous 1 024 px"
+  },
+  "narrowScreenBody": "Le back-office est conçu pour un ordinateur. Agrandissez la fenêtre (1 024 pixels au moins).",
+  "@narrowScreenBody": {
+    "description": "Message sous 1 024 px"
+  },
+  "loading": "Chargement…",
+  "@loading": {
+    "description": "Chargement en cours"
+  },
+  "retry": "Réessayer",
+  "@retry": {
+    "description": "Bouton réessayer"
+  },
+  "cancel": "Annuler",
+  "@cancel": {
+    "description": "Bouton annuler"
+  },
+  "close": "Fermer",
+  "@close": {
+    "description": "Bouton fermer"
+  },
+  "confirm": "Confirmer",
+  "@confirm": {
+    "description": "Bouton confirmer"
+  },
+  "save": "Enregistrer",
+  "@save": {
+    "description": "Bouton enregistrer"
+  },
+  "unavailableTitle": "Back-office indisponible",
+  "@unavailableTitle": {
+    "description": "Titre quand le serveur ne répond pas"
+  },
+  "unavailableBody": "Impossible de joindre le serveur. Vérifiez votre connexion puis réessayez.",
+  "@unavailableBody": {
+    "description": "Texte quand le serveur ne répond pas"
+  },
+  "loginTitle": "Connexion de l’équipe",
+  "@loginTitle": {
+    "description": "Titre de la connexion"
+  },
+  "loginBody": "Saisissez votre adresse e-mail professionnelle : vous recevrez un lien de connexion à ouvrir dans ce navigateur.",
+  "@loginBody": {
+    "description": "Texte de la connexion"
+  },
+  "loginEmailLabel": "Adresse e-mail",
+  "@loginEmailLabel": {
+    "description": "Libellé du champ e-mail"
+  },
+  "loginEmailHint": "prenom@realesty.fr",
+  "@loginEmailHint": {
+    "description": "Exemple d’e-mail"
+  },
+  "loginEmailInvalid": "Adresse e-mail invalide",
+  "@loginEmailInvalid": {
+    "description": "Erreur e-mail"
+  },
+  "loginSend": "Recevoir le lien de connexion",
+  "@loginSend": {
+    "description": "Bouton d’envoi du lien"
+  },
+  "loginSentTitle": "Lien envoyé",
+  "@loginSentTitle": {
+    "description": "Titre après envoi du lien"
+  },
+  "loginSentBody": "Ouvrez l’e-mail envoyé à {email} et cliquez sur le lien, dans ce même navigateur.",
+  "@loginSentBody": {
+    "description": "Texte après envoi du lien",
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "loginOtherEmail": "Utiliser une autre adresse",
+  "@loginOtherEmail": {
+    "description": "Lien pour changer d’e-mail"
+  },
+  "loginRateLimited": "Trop de demandes. Patientez une minute avant de recommencer.",
+  "@loginRateLimited": {
+    "description": "Erreur limite d’envoi"
+  },
+  "loginError": "L’envoi a échoué. Réessayez.",
+  "@loginError": {
+    "description": "Erreur générique de connexion"
+  },
+  "loginDevTitle": "Connexion de test (développement)",
+  "@loginDevTitle": {
+    "description": "Titre de la connexion par mot de passe de dev"
+  },
+  "loginDevPassword": "Mot de passe",
+  "@loginDevPassword": {
+    "description": "Libellé du mot de passe de test"
+  },
+  "loginDevSubmit": "Se connecter",
+  "@loginDevSubmit": {
+    "description": "Bouton de connexion par mot de passe"
+  },
+  "loginDevError": "Identifiants refusés.",
+  "@loginDevError": {
+    "description": "Erreur de connexion de test"
+  },
+  "loginSecurityNote": "Accès réservé à l’équipe Realesty et aux experts partenaires. Double authentification obligatoire.",
+  "@loginSecurityNote": {
+    "description": "Mention de sécurité"
+  },
+  "mfaTitle": "Double authentification",
+  "@mfaTitle": {
+    "description": "Titre de l’écran MFA"
+  },
+  "mfaEnrollBody": "Première connexion : scannez ce QR code avec votre application d’authentification (Google Authenticator, 1Password, Authy…), puis saisissez le code à 6 chiffres affiché.",
+  "@mfaEnrollBody": {
+    "description": "Texte d’enrôlement TOTP"
+  },
+  "mfaVerifyBody": "Saisissez le code à 6 chiffres de votre application d’authentification.",
+  "@mfaVerifyBody": {
+    "description": "Texte de vérification TOTP"
+  },
+  "mfaSecretLabel": "Clé à saisir si vous ne pouvez pas scanner :",
+  "@mfaSecretLabel": {
+    "description": "Libellé de la clé secrète TOTP"
+  },
+  "mfaCodeLabel": "Code à 6 chiffres",
+  "@mfaCodeLabel": {
+    "description": "Libellé du code TOTP"
+  },
+  "mfaSubmit": "Valider",
+  "@mfaSubmit": {
+    "description": "Bouton de validation du code"
+  },
+  "mfaInvalidCode": "Code incorrect ou expiré. Réessayez avec le code affiché maintenant.",
+  "@mfaInvalidCode": {
+    "description": "Erreur de code TOTP"
+  },
+  "mfaError": "La vérification a échoué. Réessayez.",
+  "@mfaError": {
+    "description": "Erreur générique MFA"
+  },
+  "mfaStartEnroll": "Configurer l’application",
+  "@mfaStartEnroll": {
+    "description": "Bouton pour démarrer l’enrôlement"
+  },
+  "deniedTitle": "Accès refusé",
+  "@deniedTitle": {
+    "description": "Titre accès refusé"
+  },
+  "deniedBody": "Le compte {email} n’a pas accès au back-office. Si vous faites partie de l’équipe, demandez à un administrateur de vous ajouter.",
+  "@deniedBody": {
+    "description": "Texte accès refusé",
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "failureForbidden": "Action non autorisée pour votre rôle.",
+  "@failureForbidden": {
+    "description": "Erreur forbidden"
+  },
+  "failureNotFound": "Élément introuvable ou non accessible.",
+  "@failureNotFound": {
+    "description": "Erreur introuvable"
+  },
+  "failureConflict": "Le brouillon a été modifié par {name}. Rechargez pour voir sa version.",
+  "@failureConflict": {
+    "description": "Erreur conflit de brouillon",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "failureConflictAnonymous": "Le brouillon a été modifié entre-temps. Rechargez pour voir la dernière version.",
+  "@failureConflictAnonymous": {
+    "description": "Erreur conflit sans nom"
+  },
+  "failureIdentityForbidden": "Les pièces d’identité ne sont pas accessibles aux experts partenaires.",
+  "@failureIdentityForbidden": {
+    "description": "Erreur pièce d’identité partenaire"
+  },
+  "failureClosed": "Ce dossier est déjà certifié.",
+  "@failureClosed": {
+    "description": "Erreur dossier fermé"
+  },
+  "failureNotSubmitted": "Ce dossier n’est plus au statut « Envoyé ».",
+  "@failureNotSubmitted": {
+    "description": "Erreur dossier pas envoyé"
+  },
+  "failureDraftSubmitted": "Brouillon soumis pour validation : il n’est plus modifiable.",
+  "@failureDraftSubmitted": {
+    "description": "Erreur brouillon soumis"
+  },
+  "failureDraftInvalid": "L’avis de valeur contient des erreurs.",
+  "@failureDraftInvalid": {
+    "description": "Erreur brouillon invalide"
+  },
+  "failureUnknown": "Une erreur est survenue. Réessayez.",
+  "@failureUnknown": {
+    "description": "Erreur générique"
+  },
+  "statusSubmitted": "Envoyé",
+  "@statusSubmitted": {
+    "description": "Statut envoyé"
+  },
+  "statusInReview": "En examen",
+  "@statusInReview": {
+    "description": "Statut en examen"
+  },
+  "statusCertified": "Certifié",
+  "@statusCertified": {
+    "description": "Statut certifié"
+  },
+  "statusDraft": "Brouillon",
+  "@statusDraft": {
+    "description": "Statut brouillon vendeur"
+  },
+  "typeMaison": "Maison",
+  "@typeMaison": {
+    "description": "Type de bien"
+  },
+  "typeAppartement": "Appartement",
+  "@typeAppartement": {
+    "description": "Type de bien"
+  },
+  "typeTerrain": "Terrain",
+  "@typeTerrain": {
+    "description": "Type de bien"
+  },
+  "typeStationnement": "Stationnement",
+  "@typeStationnement": {
+    "description": "Type de bien"
+  },
+  "typeDependance": "Dépendance",
+  "@typeDependance": {
+    "description": "Type de bien"
+  },
+  "typeLocalCommercial": "Local commercial",
+  "@typeLocalCommercial": {
+    "description": "Type de bien"
+  },
+  "typeImmeuble": "Immeuble",
+  "@typeImmeuble": {
+    "description": "Type de bien"
+  },
+  "typeAutre": "Autre bien",
+  "@typeAutre": {
+    "description": "Type de bien"
+  },
+  "queueTitle": "Dossiers",
+  "@queueTitle": {
+    "description": "Titre de la file"
+  },
+  "queueSubtitle": "Dossiers envoyés par les vendeurs, du plus ancien au plus récent.",
+  "@queueSubtitle": {
+    "description": "Sous-titre de la file"
+  },
+  "queueFilterOpen": "À traiter",
+  "@queueFilterOpen": {
+    "description": "Filtre : envoyés + en examen"
+  },
+  "queueFilterSubmitted": "Envoyés",
+  "@queueFilterSubmitted": {
+    "description": "Filtre envoyés"
+  },
+  "queueFilterInReview": "En examen",
+  "@queueFilterInReview": {
+    "description": "Filtre en examen"
+  },
+  "queueFilterCertified": "Certifiés",
+  "@queueFilterCertified": {
+    "description": "Filtre certifiés"
+  },
+  "queueFilterAll": "Tous",
+  "@queueFilterAll": {
+    "description": "Filtre tous statuts"
+  },
+  "queueScopeAll": "Toute l’équipe",
+  "@queueScopeAll": {
+    "description": "Portée : tous"
+  },
+  "queueScopeMine": "Mes dossiers",
+  "@queueScopeMine": {
+    "description": "Portée : mes dossiers"
+  },
+  "queueScopeUnassigned": "Non attribués",
+  "@queueScopeUnassigned": {
+    "description": "Portée : non attribués"
+  },
+  "queueSearchHint": "Commune, code postal, lot ou identifiant",
+  "@queueSearchHint": {
+    "description": "Indice de recherche"
+  },
+  "queueSearchLabel": "Rechercher",
+  "@queueSearchLabel": {
+    "description": "Libellé de recherche"
+  },
+  "queueColSubmitted": "Envoyé le",
+  "@queueColSubmitted": {
+    "description": "Colonne date d’envoi"
+  },
+  "queueColProperty": "Bien",
+  "@queueColProperty": {
+    "description": "Colonne bien"
+  },
+  "queueColSeller": "Vendeur",
+  "@queueColSeller": {
+    "description": "Colonne vendeur"
+  },
+  "queueColStatus": "Statut",
+  "@queueColStatus": {
+    "description": "Colonne statut"
+  },
+  "queueColAssignee": "Attribué à",
+  "@queueColAssignee": {
+    "description": "Colonne attribution"
+  },
+  "queueColFlags": "À regarder",
+  "@queueColFlags": {
+    "description": "Colonne indicateurs"
+  },
+  "queueColActions": "Actions",
+  "@queueColActions": {
+    "description": "Colonne actions"
+  },
+  "queueAgeDays": "il y a {days} j",
+  "@queueAgeDays": {
+    "description": "Ancienneté en jours",
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "queueAgeHours": "il y a {hours} h",
+  "@queueAgeHours": {
+    "description": "Ancienneté en heures",
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      }
+    }
+  },
+  "queueAgeAlert": "Plus de 48 h",
+  "@queueAgeAlert": {
+    "description": "Alerte ancienneté"
+  },
+  "queueUnassigned": "Non attribué",
+  "@queueUnassigned": {
+    "description": "Aucun expert attribué"
+  },
+  "queueDocsToVerify": "{count, plural, =1{1 document à vérifier} other{{count} documents à vérifier}}",
+  "@queueDocsToVerify": {
+    "description": "Indicateur documents",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "queueDocsAfter": "+{count} après l’envoi",
+  "@queueDocsAfter": {
+    "description": "Indicateur documents ajoutés après l’envoi",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "queuePhotos": "{count, plural, =0{Aucune photo} =1{1 photo} other{{count} photos}}",
+  "@queuePhotos": {
+    "description": "Indicateur photos",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "queueVoice": "Voix",
+  "@queueVoice": {
+    "description": "Indicateur conversation vocale"
+  },
+  "queueDraft": "Brouillon v{count}",
+  "@queueDraft": {
+    "description": "Indicateur brouillon d’avis",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "queueDraftSubmitted": "À valider",
+  "@queueDraftSubmitted": {
+    "description": "Indicateur brouillon soumis par un partenaire"
+  },
+  "queueSellerDeactivated": "Compte désactivé",
+  "@queueSellerDeactivated": {
+    "description": "Vendeur ayant demandé la suppression"
+  },
+  "queueLot": "Lot : {name}",
+  "@queueLot": {
+    "description": "Lot du dossier",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "queueOpen": "Ouvrir",
+  "@queueOpen": {
+    "description": "Action ouvrir"
+  },
+  "queueTake": "Prendre en charge",
+  "@queueTake": {
+    "description": "Action prendre en charge"
+  },
+  "queueAssign": "Attribuer",
+  "@queueAssign": {
+    "description": "Action attribuer"
+  },
+  "queueTaken": "Dossier pris en charge : le vendeur est prévenu.",
+  "@queueTaken": {
+    "description": "Confirmation prise en charge"
+  },
+  "queueAssigned": "Dossier attribué à {name}.",
+  "@queueAssigned": {
+    "description": "Confirmation attribution",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "queueUnassignedDone": "Attribution retirée.",
+  "@queueUnassignedDone": {
+    "description": "Confirmation retrait"
+  },
+  "queueEmpty": "Aucun dossier",
+  "@queueEmpty": {
+    "description": "File vide"
+  },
+  "queueEmptyBody": "Aucun dossier ne correspond à ces filtres.",
+  "@queueEmptyBody": {
+    "description": "File vide, détail"
+  },
+  "queueError": "La file n’a pas pu être chargée.",
+  "@queueError": {
+    "description": "Erreur de chargement de la file"
+  },
+  "queueMore": "Afficher plus",
+  "@queueMore": {
+    "description": "Charger plus de dossiers"
+  },
+  "assignTitle": "Attribuer le dossier",
+  "@assignTitle": {
+    "description": "Titre de la boîte d’attribution"
+  },
+  "assignBody": "Choisissez le membre de l’équipe responsable de ce dossier. Un partenaire ne voit que les dossiers qui lui sont attribués.",
+  "@assignBody": {
+    "description": "Texte d’attribution"
+  },
+  "assignNote": "Note (facultatif)",
+  "@assignNote": {
+    "description": "Note d’attribution"
+  },
+  "assignRemove": "Retirer l’attribution",
+  "@assignRemove": {
+    "description": "Bouton retirer"
+  },
+  "assignNoTeam": "Aucun membre actif.",
+  "@assignNoTeam": {
+    "description": "Équipe vide"
+  }
+}
