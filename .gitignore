@@ -122,3 +122,6 @@ config/*.local.json
 
 # Local AI test photos (never committed)
 local_test_sets/
+
+# Local files shared with Claude (never committed)
+inbox/
