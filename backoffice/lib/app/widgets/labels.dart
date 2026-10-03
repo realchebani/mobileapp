@@ -62,3 +62,41 @@ String failureText(AppLocalizations l10n, Object error) {
     _ => l10n.failureUnknown,
   };
 }
+
+/// French label of a `staff_audit_log.action`.
+String auditActionLabel(AppLocalizations l10n, String action) =>
+    switch (action) {
+      'dossier_opened' => l10n.actionDossierOpened,
+      'file_signed' => l10n.actionFileSigned,
+      'review_started' => l10n.actionReviewStarted,
+      'assigned' => l10n.actionAssigned,
+      'unassigned' => l10n.actionUnassigned,
+      'draft_saved' => l10n.actionDraftSaved,
+      'submitted_for_approval' => l10n.actionSubmittedForApproval,
+      'draft_returned' => l10n.actionDraftReturned,
+      'certified' => l10n.actionCertified,
+      'report_upload_signed' => l10n.actionReportUploadSigned,
+      'report_attached' => l10n.actionReportAttached,
+      'document_verified' => l10n.actionDocumentVerified,
+      'document_rejected' => l10n.actionDocumentRejected,
+      'identity_verified' => l10n.actionIdentityVerified,
+      'member_added' => l10n.actionMemberAdded,
+      'member_updated' => l10n.actionMemberUpdated,
+      'member_deactivated' => l10n.actionMemberDeactivated,
+      _ => action,
+    };
+
+/// Who did it: the member's name, or « Éditeur SQL ».
+String auditActorLabel(AppLocalizations l10n, AuditEntry entry) =>
+    entry.actorRole == 'sql_editor'
+    ? l10n.actorSqlEditor
+    : entry.actorName ?? entry.actorRole;
+
+/// Short text of a JSON value (journal details, voice values).
+String compactJson(Object? value) => switch (value) {
+  null => '—',
+  final Map<dynamic, dynamic> map =>
+    map.entries.map((e) => '${e.key}: ${compactJson(e.value)}').join(', '),
+  final List<dynamic> list => list.map(compactJson).join(' ; '),
+  _ => '$value',
+};

@@ -1,7 +1,7 @@
 import 'package:backoffice_repository/backoffice_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:material_ui/material_ui.dart';
 import 'package:go_router/go_router.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:realesty_backoffice/queue/queue.dart';
 import 'package:realesty_backoffice/queue/widgets/assign_dialog.dart';
@@ -120,9 +120,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Annuler'));
     await tester.pumpAndSettle();
-    verifyNever(
-      () => repository.assign('p2', any(), note: any(named: 'note')),
-    );
+    verifyNever(() => repository.assign('p2', any(), note: any(named: 'note')));
   });
 
   testWidgets('opens a dossier', (tester) async {

@@ -83,7 +83,6 @@ void main() {
       verify(
         () => repository.listDossiers(
           statuses: QueueFilter.open.statuses,
-          scope: DossierScope.all,
           limit: 1,
           offset: 1,
         ),

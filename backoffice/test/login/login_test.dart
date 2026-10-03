@@ -24,9 +24,10 @@ void main() {
     blocTest<LoginCubit, LoginState>(
       'refuses an invalid e-mail',
       build: build,
-      act: (cubit) => cubit
-        ..emailChanged('nope')
-        ..sendLink(),
+      act: (cubit) async {
+        cubit.emailChanged('nope');
+        await cubit.sendLink();
+      },
       expect: () => [
         const LoginState(email: 'nope'),
         const LoginState(email: 'nope', status: LoginStatus.invalidEmail),

@@ -1,5 +1,3 @@
-import 'dart:typed_data';
-
 import 'package:backoffice_repository/backoffice_repository.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/services.dart';
@@ -12,19 +10,18 @@ import 'package:realesty_backoffice/app/app.dart';
 import 'package:realesty_backoffice/l10n/l10n.dart';
 import 'package:realesty_ui/realesty_ui.dart';
 
-class MockBackOfficeRepository extends Mock implements BackOfficeRepository {}
+class MockBackOfficeRepository extends Mock implements BackOfficeRepository;
 
 class MockBackOfficeAuthRepository extends Mock
-    implements BackOfficeAuthRepository {}
+    implements BackOfficeAuthRepository;
 
-class MockGoRouter extends Mock implements GoRouter {}
+class MockGoRouter extends Mock implements GoRouter;
 
-class MockSessionCubit extends MockCubit<SessionState>
-    implements SessionCubit {}
+class MockSessionCubit extends MockCubit<SessionState> implements SessionCubit;
 
 class FakeBrowser implements Browser {
-  final opened = <String>[];
-  final saved = <(String, String)>[];
+  final List<String> opened = <String>[];
+  final List<(String, String)> saved = [];
   PickedFile? nextPdf;
 
   @override
@@ -41,7 +38,7 @@ class FakeBrowser implements Browser {
   }) async => saved.add((fileName, text));
 }
 
-const adminCapabilities = {
+const Set<BackOfficeCapability> adminCapabilities = {
   BackOfficeCapability.queueAll,
   BackOfficeCapability.assign,
   BackOfficeCapability.take,

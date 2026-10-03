@@ -9,7 +9,7 @@ import 'package:realesty_backoffice/mfa/mfa.dart';
 import '../helpers/helpers.dart';
 
 const _qr =
-    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10">'
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"> '
     '<rect width="10" height="10"/></svg>';
 const _enrollment = TotpEnrollment(
   factorId: 'f-new',
