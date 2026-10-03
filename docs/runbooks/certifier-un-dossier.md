@@ -1,5 +1,7 @@
 # Runbook · Mettre un dossier en examen et le certifier
 
+> **Depuis EPIC-12, la certification se fait dans le back-office web** ([back-office.md](back-office.md)) : file des dossiers, prise en charge, formulaire de l’avis de valeur, certification, dépôt du PDF, vérification des documents et de l’identité. Ce runbook reste le **repli** si le back-office est indisponible ; chaque fonction `staff_*` ci-dessous écrit une ligne dans le journal d’audit (`staff_audit_log`, `actor_role = 'sql_editor'`).
+
 En attendant le back-office web des experts (EPIC-12), l’équipe Realesty certifie un dossier depuis le **SQL Editor** du tableau de bord Supabase (projet « Mobileapp »), avec les fonctions de la migration `20261001162633_valuations_and_notifications.sql`. Ces fonctions ne sont pas appelables depuis l’application (exécution retirée aux rôles `anon` et `authenticated`) : le SQL Editor tourne avec le rôle `postgres`.
 
 ## 1. Trouver le dossier
