@@ -36,6 +36,14 @@ export class SupabasePurgeDb implements PurgeDb {
     return data === true;
   }
 
+  async check(userId: string): Promise<boolean> {
+    const { data, error } = await this.client.rpc("account_purge_check", {
+      p_user_id: userId,
+    });
+    fail(error);
+    return data === true;
+  }
+
   async files(userId: string): Promise<StoredFile[]> {
     const { data, error } = await this.client.rpc("account_purge_files", {
       p_user_id: userId,
@@ -57,11 +65,12 @@ export class SupabasePurgeDb implements PurgeDb {
     if (error && error.status !== 404) fail(error);
   }
 
-  async finish(userId: string, filesCount: number): Promise<void> {
-    const { error } = await this.client.rpc("account_purge_finish", {
+  async finish(userId: string, filesCount: number): Promise<boolean> {
+    const { data, error } = await this.client.rpc("account_purge_finish", {
       p_user_id: userId,
       p_files_count: filesCount,
     });
     fail(error);
+    return data === true;
   }
 }

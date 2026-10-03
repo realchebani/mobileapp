@@ -22,6 +22,7 @@ class FakePurgeDb implements PurgeDb {
   calls: string[] = [];
   finished = new Map<string, number>();
   failOn: string | null = null;
+  checks: boolean[] = [];
 
   dueAccounts(limit: number): Promise<string[]> {
     this.calls.push(`due ${limit}`);
@@ -32,6 +33,11 @@ class FakePurgeDb implements PurgeDb {
     this.calls.push(`begin ${userId}`);
     if (this.failOn === "begin") return Promise.reject(new Error("boom"));
     return Promise.resolve(!this.notDue.has(userId));
+  }
+
+  check(userId: string): Promise<boolean> {
+    this.calls.push(`check ${userId}`);
+    return Promise.resolve(this.checks.shift() ?? true);
   }
 
   files(userId: string): Promise<StoredFile[]> {
@@ -52,10 +58,10 @@ class FakePurgeDb implements PurgeDb {
     return Promise.resolve();
   }
 
-  finish(userId: string, filesCount: number): Promise<void> {
+  finish(userId: string, filesCount: number): Promise<boolean> {
     this.calls.push(`finish ${userId} ${filesCount}`);
     this.finished.set(userId, filesCount);
-    return Promise.resolve();
+    return Promise.resolve(true);
   }
 }
 
@@ -73,9 +79,11 @@ Deno.test("purgeAccount removes the files in chunks, then the user", async () =>
   assertEquals(db.calls, [
     `begin ${U1}`,
     `files ${U1}`,
+    `check ${U1}`,
     `remove property-documents ${FILES_PER_CALL}`,
     "remove property-documents 1",
     "remove valuation-reports 1",
+    `check ${U1}`,
     `delete ${U1}`,
     `finish ${U1} ${FILES_PER_CALL + 2}`,
   ]);
@@ -97,6 +105,18 @@ Deno.test("purgeAccount skips an account reactivated meanwhile", async () => {
   assertEquals(await purgeAccount(db, U1), false);
   assertEquals(db.calls, [`begin ${U1}`]);
   assert(db.users.has(U1));
+});
+
+Deno.test("purgeAccount stops when the account is reactivated meanwhile", async () => {
+  const db = new FakePurgeDb();
+  db.stored = [{ bucket: "b", name: `${U1}/f` }];
+  db.checks = [false];
+  assertEquals(await purgeAccount(db, U1), false);
+  assertEquals(db.stored.length, 1);
+  db.checks = [true, false];
+  assertEquals(await purgeAccount(db, U1), false);
+  assert(db.users.has(U1));
+  assertEquals(db.finished.size, 0);
 });
 
 Deno.test("purgeAccount keeps the user when a file cannot be removed", async () => {
@@ -126,6 +146,7 @@ Deno.test("purgeDueAccounts reports counts and goes on after a failure", async (
   assertEquals(db.calls[0], `due ${MAX_ACCOUNTS_PER_RUN}`);
   assertEquals(logs.length, 1);
   assert(logs[0].includes("boom"));
+  assert(!logs[0].includes("3333"));
 });
 
 Deno.test("purgeDueAccounts logs a non-Error failure", async () => {

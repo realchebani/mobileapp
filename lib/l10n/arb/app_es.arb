@@ -1319,5 +1319,13 @@
   "accountDeactivatedMessageNoDate": "Ha pedido eliminar su cuenta.",
   "accountDeactivatedHint": "Reactívela para recuperar sus inmuebles y documentos tal como los dejó.",
   "accountDeactivatedReactivate": "Reactivar mi cuenta",
-  "accountDeactivatedFailed": "No se ha podido reactivar su cuenta. Inténtelo de nuevo."
+  "accountDeactivatedFailed": "No se ha podido reactivar su cuenta. Inténtelo de nuevo.",
+  "vaultExtractedClasse": "Clase energética",
+  "vaultExtractedAnnee": "Año",
+  "vaultExtractedMontant": "Importe",
+  "vaultExtractedEntreprise": "Empresa",
+  "vaultExtractedEquipement": "Equipo",
+  "vaultExtractedDate": "Fecha",
+  "vaultExtractedSurface": "Superficie",
+  "vaultExtractedGarantie": "Garantía"
 }

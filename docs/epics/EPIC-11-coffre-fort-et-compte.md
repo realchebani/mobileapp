@@ -42,7 +42,8 @@ Légende : ✅ fait · 🚧 partiel · 📋 à faire
 - ✅ Écran listant ce qui sera supprimé, délai de 30 jours, saisie « SUPPRIMER » (traduite), désactivation immédiate et déconnexion de tous les appareils, date de suppression affichée ; accessible depuis Compte, V19 et l’espace acquéreur provisoire.
 - ✅ Reconnexion pendant 30 jours : écran « Votre compte est désactivé » → « Réactiver mon compte ».
 - ✅ Purge automatique quotidienne (pg_cron → Edge Function `purge-accounts`) : fichiers de tous les buckets, puis compte ; journal anonyme `account_deletions`.
-- ✅ Refus expliqué si une vente est active (EPIC-08, détectée à l’exécution) ; impossible pour un membre de l’équipe (EPIC-12).
+- ✅ Refus expliqué si une vente est active (EPIC-08, détectée à l’exécution) ; impossible pour un membre de l’équipe (EPIC-12) ; ces blocages sont revérifiés au moment de la purge (compte sauté et signalé à l’équipe).
+- ✅ Un compte désactivé ne peut plus modifier ses données jusqu’à sa réactivation.
 
 ## US-11.10 · Vérification des documents par l’équipe (avant EPIC-12) ✅
 - ✅ `staff_verify_document` / `staff_reject_document` + runbook ; notification « Un document est à remplacer » qui ouvre la bonne rubrique.

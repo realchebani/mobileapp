@@ -165,6 +165,12 @@ class _DesignSystemGalleryPageState extends State<DesignSystemGalleryPage> {
               variant: RealestyButtonVariant.text,
               onPressed: () => _toast('Texte'),
             ),
+            RealestyButton(
+              label: 'Supprimer mon compte',
+              variant: RealestyButtonVariant.destructive,
+              leadingIcon: RealestyIcons.trash,
+              onPressed: () => _toast('Destructif'),
+            ),
             const RealestyButton(label: 'Désactivé', onPressed: null),
             RealestyButton(
               label: 'Envoyer (chargement au tap)',

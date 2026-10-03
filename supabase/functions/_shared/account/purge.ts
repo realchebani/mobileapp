@@ -21,8 +21,13 @@ export interface PurgeDb {
   /** Users whose deletion date has passed, oldest first. */
   dueAccounts(limit: number): Promise<string[]>;
 
-  /** Starts (or resumes) a purge; false when no longer due. */
+  /** Starts (or resumes) a purge; false when no longer due, or blocked
+   * (active sale, team account). */
   begin(userId: string): Promise<boolean>;
+
+  /** Whether the account may still be purged (re-checked before each
+   * destructive step: a reactivation keeps the files and the account). */
+  check(userId: string): Promise<boolean>;
 
   /** Every file of [userId], in every bucket. */
   files(userId: string): Promise<StoredFile[]>;
@@ -33,8 +38,8 @@ export interface PurgeDb {
   /** Deletes the auth user (done when it no longer exists). */
   deleteUser(userId: string): Promise<void>;
 
-  /** Ends the journal row of the purge. */
-  finish(userId: string, filesCount: number): Promise<void>;
+  /** Ends the purge (deletes the user if still due); false otherwise. */
+  finish(userId: string, filesCount: number): Promise<boolean>;
 }
 
 /** Outcome of a run (counts only: no identifier is returned). */
@@ -61,16 +66,19 @@ export async function purgeDueAccounts(
       }
     } catch (error) {
       report.failed++;
-      log(`purge-accounts: ${userId}: ${error instanceof Error ? error.message : error}`);
+      // No identifier in the logs.
+      log(`purge-accounts: one account failed: ${error instanceof Error ? error.message : error}`);
     }
   }
   return report;
 }
 
-/** Purges [userId]: false when it is no longer due (reactivated). */
+/** Purges [userId]: false when it is no longer due (reactivated) or
+ * blocked. */
 export async function purgeAccount(db: PurgeDb, userId: string): Promise<boolean> {
   if (!await db.begin(userId)) return false;
   const files = await db.files(userId);
+  if (!await db.check(userId)) return false;
   const byBucket = new Map<string, string[]>();
   for (const file of files) {
     // Defensive: never outside the user's folder.
@@ -85,9 +93,9 @@ export async function purgeAccount(db: PurgeDb, userId: string): Promise<boolean
       removed += chunk.length;
     }
   }
+  if (!await db.check(userId)) return false;
   await db.deleteUser(userId);
-  await db.finish(userId, removed);
-  return true;
+  return await db.finish(userId, removed);
 }
 
 /** Constant-time comparison of two strings. */

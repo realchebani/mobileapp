@@ -186,7 +186,7 @@ class _VaultDocumentSheetState extends State<VaultDocumentSheet> {
                 children: [
                   for (final (index, (key, value)) in extracted.indexed)
                     KeyValueRow(
-                      label: key,
+                      label: l10n.vaultExtractedLabel(key),
                       value: value,
                       divider: index < extracted.length - 1,
                       trailing: const ProvenanceTag(ProvenanceKind.document),
@@ -297,7 +297,7 @@ class _VaultDocumentSheetState extends State<VaultDocumentSheet> {
                   Expanded(
                     child: RealestyButton(
                       label: l10n.vaultDeleteConfirmButton,
-                      variant: RealestyButtonVariant.accent,
+                      variant: RealestyButtonVariant.destructive,
                       isLoading: busy,
                       onPressed: busy ? null : () => _delete(document),
                     ),

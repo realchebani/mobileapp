@@ -85,7 +85,7 @@ class AccountDeletionView extends StatelessWidget {
       fallbackLocation: _home(context),
       bottom: RealestyButton(
         label: l10n.deleteAccountButton,
-        variant: RealestyButtonVariant.accent,
+        variant: RealestyButtonVariant.destructive,
         isLoading: busy,
         onPressed:
             busy ||

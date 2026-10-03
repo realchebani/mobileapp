@@ -1319,5 +1319,13 @@
   "accountDeactivatedMessageNoDate": "You asked to delete your account.",
   "accountDeactivatedHint": "Reactivate it to find your properties and documents as you left them.",
   "accountDeactivatedReactivate": "Reactivate my account",
-  "accountDeactivatedFailed": "Your account could not be reactivated. Try again."
+  "accountDeactivatedFailed": "Your account could not be reactivated. Try again.",
+  "vaultExtractedClasse": "Energy class",
+  "vaultExtractedAnnee": "Year",
+  "vaultExtractedMontant": "Amount",
+  "vaultExtractedEntreprise": "Company",
+  "vaultExtractedEquipement": "Equipment",
+  "vaultExtractedDate": "Date",
+  "vaultExtractedSurface": "Area",
+  "vaultExtractedGarantie": "Warranty"
 }

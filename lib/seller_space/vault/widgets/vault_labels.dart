@@ -25,9 +25,29 @@ extension VaultLabels on AppLocalizations {
     VaultRubric.energy => RealestyIcons.spark,
     VaultRubric.works => RealestyIcons.briefcase,
     VaultRubric.identity => RealestyIcons.user,
-    VaultRubric.mandates => RealestyIcons.shield,
+    VaultRubric.mandates => RealestyIcons.pen,
     VaultRubric.other => RealestyIcons.file,
   };
+
+  /// Label of an extracted information [key] (`classe` → « Classe
+  /// énergie »); an unknown key is shown readable (`date_pose` → « Date
+  /// pose »).
+  String vaultExtractedLabel(String key) => switch (key) {
+    'classe' => vaultExtractedClasse,
+    'annee' => vaultExtractedAnnee,
+    'montant' => vaultExtractedMontant,
+    'entreprise' => vaultExtractedEntreprise,
+    'equipement' => vaultExtractedEquipement,
+    'date' => vaultExtractedDate,
+    'surface' => vaultExtractedSurface,
+    'garantie' => vaultExtractedGarantie,
+    _ => _readable(key),
+  };
+
+  static String _readable(String key) {
+    final text = key.replaceAll('_', ' ').trim();
+    return text.isEmpty ? key : '${text[0].toUpperCase()}${text.substring(1)}';
+  }
 
   /// Name of a kind of document.
   String vaultKind(DocumentKind kind) => documentKind(kind);

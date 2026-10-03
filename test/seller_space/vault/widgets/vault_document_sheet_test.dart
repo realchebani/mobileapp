@@ -66,7 +66,7 @@ void main() {
       await open(tester, 'Mon DPE');
       expect(find.text('Qui peut voir ce document ?'), findsOneWidget);
       expect(find.text('Informations extraites'), findsOneWidget);
-      expect(find.text('classe'), findsOneWidget);
+      expect(find.text('Classe énergie'), findsOneWidget);
       expect(find.text('2024'), findsOneWidget);
       expect(find.text('nested'), findsNothing);
       expect(find.text('Supprimer'), findsNothing);

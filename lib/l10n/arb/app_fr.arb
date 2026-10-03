@@ -6544,5 +6544,37 @@
   "accountDeactivatedFailed": "Votre compte n’a pas pu être réactivé. Réessayez.",
   "@accountDeactivatedFailed": {
     "description": "EPIC-11 · compte désactivé · échec de la réactivation"
+  },
+  "vaultExtractedClasse": "Classe énergie",
+  "@vaultExtractedClasse": {
+    "description": "EPIC-11 · coffre-fort · libellé d’une information extraite (classe)"
+  },
+  "vaultExtractedAnnee": "Année",
+  "@vaultExtractedAnnee": {
+    "description": "EPIC-11 · coffre-fort · libellé d’une information extraite (annee)"
+  },
+  "vaultExtractedMontant": "Montant",
+  "@vaultExtractedMontant": {
+    "description": "EPIC-11 · coffre-fort · libellé d’une information extraite (montant)"
+  },
+  "vaultExtractedEntreprise": "Entreprise",
+  "@vaultExtractedEntreprise": {
+    "description": "EPIC-11 · coffre-fort · libellé d’une information extraite (entreprise)"
+  },
+  "vaultExtractedEquipement": "Équipement",
+  "@vaultExtractedEquipement": {
+    "description": "EPIC-11 · coffre-fort · libellé d’une information extraite (equipement)"
+  },
+  "vaultExtractedDate": "Date",
+  "@vaultExtractedDate": {
+    "description": "EPIC-11 · coffre-fort · libellé d’une information extraite (date)"
+  },
+  "vaultExtractedSurface": "Surface",
+  "@vaultExtractedSurface": {
+    "description": "EPIC-11 · coffre-fort · libellé d’une information extraite (surface)"
+  },
+  "vaultExtractedGarantie": "Garantie",
+  "@vaultExtractedGarantie": {
+    "description": "EPIC-11 · coffre-fort · libellé d’une information extraite (garantie)"
   }
 }

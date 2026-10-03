@@ -64,6 +64,20 @@ void main() {
       l10n.vaultDocumentTitle(document('a'), owner: sophie.copyWithName()),
       'Autre document',
     );
+    for (final key in [
+      'classe',
+      'annee',
+      'montant',
+      'entreprise',
+      'equipement',
+      'date',
+      'surface',
+      'garantie',
+    ]) {
+      expect(l10n.vaultExtractedLabel(key), isNot(key));
+    }
+    expect(l10n.vaultExtractedLabel('date_pose'), 'Date pose');
+    expect(l10n.vaultExtractedLabel('_'), '_');
     for (final rubric in VaultRubric.values) {
       expect(l10n.vaultRubric(rubric), isNotEmpty);
       expect(VaultLabels.rubricIcon(rubric), isNotNull);

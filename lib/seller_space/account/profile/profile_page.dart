@@ -293,7 +293,7 @@ class _ProfileViewState extends State<ProfileView> {
                   subtitle: l10n.profileIdentitySubtitle,
                   leadingIcon: RealestyIcons.user,
                   showDivider: false,
-                  trailing: _identityMissing(tunnel!)
+                  trailing: _ownIdentityMissing(tunnel!, state.profile.id)
                       ? RealestyBadge(
                           label: l10n.profileIdentityToAdd,
                           variant: RealestyBadgeVariant.toComplete,
@@ -341,11 +341,23 @@ class _ProfileViewState extends State<ProfileView> {
     owners: {property.id: owners},
   ).missing.any((entry) => entry.owner?.id == owner.id);
 
-  static bool _identityMissing(SellerTunnelState tunnel) => VaultContents.of(
-    properties: [tunnel.property!],
-    documents: tunnel.documents,
-    owners: {tunnel.property!.id: tunnel.owners},
-  ).missing.any((entry) => entry.kind == DocumentKind.identityDocument);
+  /// Whether the user's own identity document is missing: the owner
+  /// linked to the profile (else the main owner); without owners, any
+  /// identity document of the dossier.
+  static bool _ownIdentityMissing(SellerTunnelState tunnel, String userId) {
+    final missing = VaultContents.of(
+      properties: [tunnel.property!],
+      documents: tunnel.documents,
+      owners: {tunnel.property!.id: tunnel.owners},
+    ).missing.where((entry) => entry.kind == DocumentKind.identityDocument);
+    final owners = [...tunnel.owners]
+      ..sort((a, b) => a.position.compareTo(b.position));
+    final own =
+        owners.where((owner) => owner.profileId == userId).firstOrNull ??
+        owners.firstOrNull;
+    if (own == null) return missing.isNotEmpty;
+    return missing.any((entry) => entry.owner?.id == own.id);
+  }
 }
 
 enum _Field { firstName, lastName, phone, address }

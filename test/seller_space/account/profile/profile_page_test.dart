@@ -79,8 +79,8 @@ void main() {
       expect(find.text('Informations & sécurité'), findsOneWidget);
       expect(find.text('sophie@example.com'), findsOneWidget);
       expect(find.text('Sophie Durand (vous)'), findsOneWidget);
-      expect(find.text('Pièce reçue'), findsOneWidget);
-      expect(find.text('À ajouter'), findsNWidgets(2));
+      expect(find.text('Pièce reçue'), findsNWidgets(2));
+      expect(find.text('À ajouter'), findsOneWidget);
       await tester.tap(find.text('Marc Durand'));
       verify(
         () => router.go(
@@ -199,6 +199,30 @@ void main() {
         ),
       );
       expect(find.text('Pièce reçue'), findsNWidgets(2));
+    });
+
+    testWidgets('the main owner when the profile is no owner', (tester) async {
+      await pump(
+        tester,
+        tunnel: SellerTunnelState(
+          status: SellerTunnelStatus.success,
+          property: sentProperty,
+          owners: const [marc],
+          documents: [document('id', kind: DocumentKind.identityDocument)],
+        ),
+      );
+      expect(find.text('Pièce reçue'), findsNWidgets(2));
+    });
+
+    testWidgets('without owners: any identity document', (tester) async {
+      await pump(
+        tester,
+        tunnel: const SellerTunnelState(
+          status: SellerTunnelStatus.success,
+          property: sentProperty,
+        ),
+      );
+      expect(find.text('À ajouter'), findsOneWidget);
     });
 
     testWidgets('nothing without a profile', (tester) async {
