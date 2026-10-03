@@ -33,6 +33,7 @@ extension PumpApp on WidgetTester {
     OnboardingRepository? onboardingRepository,
     ValuationRepository? valuationRepository,
     NotificationRepository? notificationRepository,
+    SaleRepository? saleRepository,
     AppBloc? appBloc,
     LoginCubit? loginCubit,
     ProfileCubit? profileCubit,
@@ -50,6 +51,7 @@ extension PumpApp on WidgetTester {
         onboardingRepository: onboardingRepository,
         valuationRepository: valuationRepository,
         notificationRepository: notificationRepository,
+        saleRepository: saleRepository,
         appBloc: appBloc,
         loginCubit: loginCubit,
         profileCubit: profileCubit,
@@ -76,6 +78,7 @@ extension PumpApp on WidgetTester {
     OnboardingRepository? onboardingRepository,
     ValuationRepository? valuationRepository,
     NotificationRepository? notificationRepository,
+    SaleRepository? saleRepository,
     AppBloc? appBloc,
     LoginCubit? loginCubit,
     ProfileCubit? profileCubit,
@@ -90,6 +93,7 @@ extension PumpApp on WidgetTester {
         onboardingRepository: onboardingRepository,
         valuationRepository: valuationRepository,
         notificationRepository: notificationRepository,
+        saleRepository: saleRepository,
         appBloc: appBloc,
         loginCubit: loginCubit,
         profileCubit: profileCubit,
@@ -115,6 +119,7 @@ class _AppProviders extends StatelessWidget {
     this.onboardingRepository,
     this.valuationRepository,
     this.notificationRepository,
+    this.saleRepository,
     this.appBloc,
     this.loginCubit,
     this.profileCubit,
@@ -130,6 +135,9 @@ class _AppProviders extends StatelessWidget {
   final OnboardingRepository? onboardingRepository;
   final ValuationRepository? valuationRepository;
   final NotificationRepository? notificationRepository;
+
+  /// Sales (EPIC-08): not provided when null (sales unavailable).
+  final SaleRepository? saleRepository;
   final AppBloc? appBloc;
   final LoginCubit? loginCubit;
   final ProfileCubit? profileCubit;
@@ -159,6 +167,8 @@ class _AppProviders extends StatelessWidget {
         RepositoryProvider<NotificationRepository>.value(
           value: notificationRepository ?? MockNotificationRepository(),
         ),
+        if (saleRepository case final saleRepository?)
+          RepositoryProvider<SaleRepository>.value(value: saleRepository),
         RepositoryProvider<PhotoServices>.value(
           value: photoServices ?? const PhotoServices(),
         ),

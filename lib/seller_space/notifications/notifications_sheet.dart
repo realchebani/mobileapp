@@ -196,7 +196,13 @@ class NotificationTile extends StatelessWidget {
                 AppNotificationKind.valuationCertified => RealestyIcons.shield,
                 AppNotificationKind.documentRejected ||
                 AppNotificationKind.documentVerified => RealestyIcons.file,
+                AppNotificationKind.mandateSigned => RealestyIcons.pen,
+                AppNotificationKind.identityVerified => RealestyIcons.user,
+                AppNotificationKind.listingPublished => RealestyIcons.home,
+                AppNotificationKind.saleRequestUpdated =>
+                  RealestyIcons.calendar,
                 AppNotificationKind.reviewStarted ||
+                AppNotificationKind.saleWithdrawn ||
                 AppNotificationKind.other => RealestyIcons.bell,
               }, color: c.vertTexte),
             ),

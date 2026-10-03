@@ -36,6 +36,40 @@ Future<void> showPhotoCapture(
   );
 }
 
+/// Where the photos kept on the photo screen go, other than the photos of a
+/// room ([RoomPhotosCubit]): e.g. the photos of a listing (EPIC-08).
+abstract interface class PhotoCaptureTarget {
+  /// Whether another photo can be added.
+  bool get canAddPhoto;
+
+  /// Emits whenever [canAddPhoto] may have changed.
+  Stream<Object?> get stream;
+
+  /// Takes a photo checked and reduced by the photo screen.
+  void addFromCamera(ProcessedPhoto processed);
+}
+
+/// Opens the photo screen for [target] (full screen).
+Future<void> showPhotoCaptureFor(
+  BuildContext context, {
+  required PhotoCaptureTarget target,
+  required PhotoCamera camera,
+  required PhotoProcessor processor,
+  required TiltStream tilt,
+}) {
+  return Navigator.of(context).push<void>(
+    MaterialPageRoute(
+      fullscreenDialog: true,
+      builder: (_) => PhotoCapturePage(
+        camera: camera,
+        processor: processor,
+        tilt: tilt,
+        target: target,
+      ),
+    ),
+  );
+}
+
 enum _CameraStatus { starting, ready, denied, unavailable }
 
 /// EPIC-15 · Prise de vue: the camera preview with a rule-of-thirds grid, a
@@ -48,9 +82,12 @@ class PhotoCapturePage extends StatefulWidget {
     required this.processor,
     required this.tilt,
     this.openUrl = launchUrl,
+    this.target,
     super.key,
   });
 
+  /// Where the photos go; the [RoomPhotosCubit] above when null.
+  final PhotoCaptureTarget? target;
   final PhotoCamera camera;
   final PhotoProcessor processor;
   final TiltStream tilt;
@@ -103,8 +140,13 @@ class _PhotoCapturePageState extends State<PhotoCapturePage> {
     super.dispose();
   }
 
+  /// Hands a kept photo to the target.
+  void Function(ProcessedPhoto) _adder() =>
+      widget.target?.addFromCamera ??
+      context.read<RoomPhotosCubit>().addFromCamera;
+
   Future<void> _shoot() async {
-    final cubit = context.read<RoomPhotosCubit>();
+    final add = _adder();
     if (_busy) return;
     setState(() => _busy = true);
     final tilt = _tilt;
@@ -116,7 +158,7 @@ class _PhotoCapturePageState extends State<PhotoCapturePage> {
       );
       if (!mounted) return;
       if (processed.quality.issues.isEmpty) {
-        _keep(cubit, processed);
+        _keep(add, processed);
       } else {
         setState(() => _review = processed);
       }
@@ -133,8 +175,8 @@ class _PhotoCapturePageState extends State<PhotoCapturePage> {
     }
   }
 
-  void _keep(RoomPhotosCubit cubit, ProcessedPhoto processed) {
-    cubit.addFromCamera(processed);
+  void _keep(void Function(ProcessedPhoto) add, ProcessedPhoto processed) {
+    add(processed);
     setState(() {
       _review = null;
       _kept++;
@@ -143,11 +185,22 @@ class _PhotoCapturePageState extends State<PhotoCapturePage> {
 
   @override
   Widget build(BuildContext context) {
+    final target = widget.target;
+    if (target == null) {
+      final canAdd = context.select<RoomPhotosCubit, bool>(
+        (cubit) => cubit.state.canAdd,
+      );
+      return _build(context, canAdd: canAdd);
+    }
+    return StreamBuilder<Object?>(
+      stream: target.stream,
+      builder: (context, _) => _build(context, canAdd: target.canAddPhoto),
+    );
+  }
+
+  Widget _build(BuildContext context, {required bool canAdd}) {
     final l10n = context.l10n;
     final c = context.realestyColors;
-    final canAdd = context.select<RoomPhotosCubit, bool>(
-      (cubit) => cubit.state.canAdd,
-    );
     final review = _review;
     return Scaffold(
       backgroundColor: c.nuit,
@@ -190,7 +243,7 @@ class _PhotoCapturePageState extends State<PhotoCapturePage> {
                 _CameraStatus.ready when review != null => _Review(
                   photo: review,
                   onRetake: () => setState(() => _review = null),
-                  onKeep: () => _keep(context.read<RoomPhotosCubit>(), review),
+                  onKeep: () => _keep(_adder(), review),
                 ),
                 _CameraStatus.ready => _Viewfinder(
                   camera: widget.camera,

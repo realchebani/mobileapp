@@ -4,11 +4,14 @@ import 'package:material_ui/material_ui.dart';
 import 'package:mobileapp/app/router/app_routes.dart';
 import 'package:mobileapp/l10n/l10n.dart';
 import 'package:mobileapp/seller_space/notifications/notifications_bell.dart';
+import 'package:mobileapp/seller_space/sale/sale_access.dart';
+import 'package:mobileapp/seller_space/sale/widgets/sale_labels.dart';
 import 'package:mobileapp/seller_tunnel/cubit/seller_properties_cubit.dart';
 import 'package:mobileapp/seller_tunnel/cubit/seller_tunnel_cubits.dart';
 import 'package:mobileapp/seller_tunnel/models/property_type_labels.dart';
 import 'package:mobileapp/ui/ui.dart';
 import 'package:property_repository/property_repository.dart';
+import 'package:sale_repository/sale_repository.dart';
 
 /// A property of "Mes biens": type icon, "Maison · 12 rue des Lilas", its
 /// status, a dot for an unread notification; opens its home. A draft has
@@ -56,6 +59,22 @@ class _PropertyRowState extends State<PropertyRow> {
     }
   }
 
+  String? _saleLabel(BuildContext context, List<Sale>? sales) {
+    final property = widget.property;
+    final sale = sales
+        ?.where(
+          (s) =>
+              s.propertyId == property.id ||
+              (property.lotId != null && s.lotId == property.lotId),
+        )
+        .firstOrNull;
+    if (sale == null) return null;
+    return context.l10n.saleRowLabel(
+      formulaName(context.l10n, sale.formula),
+      saleStageLabel(context, sale),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
@@ -65,36 +84,41 @@ class _PropertyRowState extends State<PropertyRow> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        RealestyListItem(
-          title: propertyShortLabel(l10n, property),
-          subtitle: propertyStatusLabel(l10n, property),
-          leadingIcon: propertyTypeIcon(property.propertyType),
-          tone: property.status == PropertyStatus.certified
-              ? RealestyListTileTone.success
-              : RealestyListTileTone.neutral,
-          showDivider: widget.showDivider && !_confirming,
-          onTap: () => context.go(AppRoutes.sellerProperty(property.id)),
-          trailing: Row(
-            mainAxisSize: MainAxisSize.min,
-            spacing: RealestySpacing.xs,
-            children: [
-              if (widget.hasUnread)
-                UnreadDot(semanticLabel: l10n.myPropertiesUnread),
-              if (isDraft)
-                RealestyIconButton(
-                  icon: RealestyIcons.trash,
-                  semanticLabel: l10n.myPropertiesDelete,
-                  onPressed: _deleting
-                      ? null
-                      : () => setState(() => _confirming = !_confirming),
-                )
-              else
-                RealestyIcon(
-                  RealestyIcons.chevronRight,
-                  size: 18,
-                  color: c.texteDiscret,
-                ),
-            ],
+        SalesBuilder(
+          builder: (context, sales) => RealestyListItem(
+            title: propertyShortLabel(l10n, property),
+            // EPIC-08: where its sale stands, once on sale.
+            subtitle:
+                _saleLabel(context, sales) ??
+                propertyStatusLabel(l10n, property),
+            leadingIcon: propertyTypeIcon(property.propertyType),
+            tone: property.status == PropertyStatus.certified
+                ? RealestyListTileTone.success
+                : RealestyListTileTone.neutral,
+            showDivider: widget.showDivider && !_confirming,
+            onTap: () => context.go(AppRoutes.sellerProperty(property.id)),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              spacing: RealestySpacing.xs,
+              children: [
+                if (widget.hasUnread)
+                  UnreadDot(semanticLabel: l10n.myPropertiesUnread),
+                if (isDraft)
+                  RealestyIconButton(
+                    icon: RealestyIcons.trash,
+                    semanticLabel: l10n.myPropertiesDelete,
+                    onPressed: _deleting
+                        ? null
+                        : () => setState(() => _confirming = !_confirming),
+                  )
+                else
+                  RealestyIcon(
+                    RealestyIcons.chevronRight,
+                    size: 18,
+                    color: c.texteDiscret,
+                  ),
+              ],
+            ),
           ),
         ),
         if (_confirming)

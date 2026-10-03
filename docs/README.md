@@ -13,7 +13,7 @@ Statuts : ✅ Terminé · 🚧 En cours · 📋 À faire
 | [EPIC-05](epics/EPIC-05-estimation-non-certifiee.md) | Estimation non certifiée (tendance de prix) | 📋 |
 | [EPIC-06](epics/EPIC-06-voix-et-agent-ia.md) | Voix et agent IA | 📋 |
 | [EPIC-07](epics/EPIC-07-tableau-de-bord-vendeur.md) | Espace vendeur : tableau de bord & avis de valeur | 🚧 |
-| [EPIC-08](epics/EPIC-08-formules-et-mise-en-vente.md) | Formules & mise en vente (mandat de test, annonce dans Realesty) | 📋 |
+| [EPIC-08](epics/EPIC-08-formules-et-mise-en-vente.md) | Formules & mise en vente (mandat de test, annonce dans Realesty) | ✅ (phase de test) |
 | [EPIC-11](epics/EPIC-11-coffre-fort-et-compte.md) | Coffre-fort & compte (documents, profil, suppression du compte) | 📋 |
 | [EPIC-12](epics/EPIC-12-back-office-expert.md) | Back-office expert (certification web) | 📋 |
 | [EPIC-14](epics/EPIC-14-voix-etendue.md) | Voix étendue à tout le tunnel vendeur (dictée de pièces) | 📋 |
@@ -37,7 +37,7 @@ Chaque chantier commence par un plan, versionné dans [`plans/`](plans/) (`AAAA-
 | 2026-10-02 | [Étude : capture visuelle du bien](plans/2026-10-02-capture-visuelle-etude.md) (questions ouvertes) | — |
 | 2026-10-03 | [Voix prioritaire](plans/2026-10-03-voix-prioritaire.md) (questions ouvertes, après EPIC-15) | EPIC-16 |
 | 2026-10-02 | [Photos du bien](plans/2026-10-02-photos-du-bien.md) (livré, à essayer sur l’iPhone) | EPIC-15 |
-| 2026-10-03 | [Formules & mise en vente](plans/2026-10-03-offres-et-mise-en-vente.md) (questions ouvertes) | EPIC-08 |
+| 2026-10-03 | [Formules & mise en vente](plans/2026-10-03-offres-et-mise-en-vente.md) (livré, choix par défaut à valider) | EPIC-08 |
 | 2026-10-03 | [Coffre-fort & compte](plans/2026-10-03-coffre-fort-et-compte.md) (questions ouvertes) | EPIC-11 |
 | 2026-10-03 | [Back-office expert](plans/2026-10-03-back-office-expert.md) (questions ouvertes) | EPIC-12 |
 
@@ -45,7 +45,7 @@ Chaque chantier commence par un plan, versionné dans [`plans/`](plans/) (`AAAA-
 
 Les arbitrages du porteur de projet et le backlog non planifié sont dans [`decisions.md`](decisions.md).
 
-Procédures d’exploitation : [`runbooks/`](runbooks/) (ex. [certifier un dossier](runbooks/certifier-un-dossier.md)).
+Procédures d’exploitation : [`runbooks/`](runbooks/) (ex. [certifier un dossier](runbooks/certifier-un-dossier.md), [suivre une vente](runbooks/suivre-une-vente.md)).
 
 ## Méthode de travail
 

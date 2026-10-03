@@ -116,11 +116,8 @@ void main() {
             for (var i = 0; i < 12; i++)
               AppNotification(
                 id: 'n$i',
-                kind: switch (i % 3) {
-                  0 => AppNotificationKind.documentRejected,
-                  1 => AppNotificationKind.documentVerified,
-                  _ => AppNotificationKind.other,
-                },
+                kind: AppNotificationKind
+                    .values[i % AppNotificationKind.values.length],
                 title: 'Notification $i',
                 createdAt: DateTime(2026, 9, 24),
               ),

@@ -85,14 +85,17 @@ class RealestyBadge extends StatelessWidget {
         spacing: 5,
         children: [
           if (glyph != null) RealestyIcon(glyph, size: 14, color: foreground),
-          Text(
-            label,
-            maxLines: 1,
-            style: RealestyTextStyles.badge.copyWith(
-              color: foreground,
-              fontFamily: variant == RealestyBadgeVariant.compatibility
-                  ? RealestyFonts.sora
-                  : null,
+          Flexible(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: RealestyTextStyles.badge.copyWith(
+                color: foreground,
+                fontFamily: variant == RealestyBadgeVariant.compatibility
+                    ? RealestyFonts.sora
+                    : null,
+              ),
             ),
           ),
         ],

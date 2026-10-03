@@ -34,6 +34,7 @@ class App extends StatelessWidget {
     required this.valuationRepository,
     required this.notificationRepository,
     this.geoRepository,
+    this.saleRepository,
     this.voiceServices,
     this.photoServices,
     this.localePreferences,
@@ -50,6 +51,10 @@ class App extends StatelessWidget {
 
   /// Addresses and cadastre (seller tunnel V2); a default one when null.
   final GeoRepository? geoRepository;
+
+  /// Sales (EPIC-08: formula, test mandate, listing); the sale screens are
+  /// unavailable when null (flavor without `SALES_ENABLED`).
+  final SaleRepository? saleRepository;
 
   /// Voice input and the AI agent (EPIC-06); disabled when null.
   final VoiceServices? voiceServices;
@@ -76,6 +81,8 @@ class App extends StatelessWidget {
         RepositoryProvider.value(value: onboardingRepository),
         RepositoryProvider.value(value: valuationRepository),
         RepositoryProvider.value(value: notificationRepository),
+        if (saleRepository case final saleRepository?)
+          RepositoryProvider.value(value: saleRepository),
         RepositoryProvider.value(value: voiceServices ?? const VoiceServices()),
         RepositoryProvider.value(value: photoServices ?? const PhotoServices()),
         RepositoryProvider<GeoRepository>(

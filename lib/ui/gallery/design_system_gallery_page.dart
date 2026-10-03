@@ -8,6 +8,8 @@ import 'package:mobileapp/ui/components/hero_value_card.dart';
 import 'package:mobileapp/ui/components/initials_avatar.dart';
 import 'package:mobileapp/ui/components/inline_banner.dart';
 import 'package:mobileapp/ui/components/key_value_row.dart';
+import 'package:mobileapp/ui/components/offer_plan_card.dart';
+import 'package:mobileapp/ui/components/price_range_slider.dart';
 import 'package:mobileapp/ui/components/provenance_tag.dart';
 import 'package:mobileapp/ui/components/realesty_badge.dart';
 import 'package:mobileapp/ui/components/realesty_button.dart';
@@ -19,9 +21,11 @@ import 'package:mobileapp/ui/components/realesty_segmented_control.dart';
 import 'package:mobileapp/ui/components/realesty_select.dart';
 import 'package:mobileapp/ui/components/realesty_snack_bar.dart';
 import 'package:mobileapp/ui/components/realesty_stepper.dart';
+import 'package:mobileapp/ui/components/realesty_switch.dart';
 import 'package:mobileapp/ui/components/realesty_tab_bar.dart';
 import 'package:mobileapp/ui/components/realesty_text_field.dart';
 import 'package:mobileapp/ui/components/segmented_progress.dart';
+import 'package:mobileapp/ui/components/signature_pad.dart';
 import 'package:mobileapp/ui/format/realesty_format.dart';
 import 'package:mobileapp/ui/icons/realesty_icon.dart';
 import 'package:mobileapp/ui/logo/realesty_logo.dart';
@@ -52,10 +56,14 @@ class _DesignSystemGalleryPageState extends State<DesignSystemGalleryPage> {
   int _rooms = 3;
   String? _propertyType;
   int _tab = 0;
+  bool _retouch = true;
+  int _price = 525000;
+  final _signature = SignaturePadController();
 
   @override
   void dispose() {
     _termsRecognizer.dispose();
+    _signature.dispose();
     _loadingTimer?.cancel();
     super.dispose();
   }
@@ -440,6 +448,43 @@ class _DesignSystemGalleryPageState extends State<DesignSystemGalleryPage> {
                 RealestyTab(icon: RealestyIcons.vault, label: 'Coffre-fort'),
                 RealestyTab(icon: RealestyIcons.user, label: 'Compte'),
               ],
+            ),
+          ]),
+          const _Section('Mise en vente'),
+          ..._spaced([
+            const OfferPlanCard(
+              badgeLabel: 'L’Essentiel · 1 %',
+              badgeVariant: RealestyBadgeVariant.essentiel,
+              tagline: 'L’autonomie accompagnée',
+              name: 'L’Essentiel',
+              rate: '1 %',
+              rateCaption: 'au succès',
+              fees: 'Aucun frais de dossier · aucun abonnement',
+              commission: 'Soit ~5 250 € de commission',
+              features: ['Audit complet et dossier technique certifié'],
+            ),
+            SwitchRow(
+              title: 'Retouche automatique',
+              subtitle: 'Luminosité, perspectives',
+              badge: const RealestyBadge(label: 'Bientôt'),
+              value: _retouch,
+              onChanged: (value) => setState(() => _retouch = value),
+            ),
+            PriceRangeSlider(
+              low: 505000,
+              high: 545000,
+              value: _price,
+              onChanged: (value) => setState(() => _price = value),
+              lowLabel: '505 000 €',
+              highLabel: '545 000 €',
+              caption: 'Avis de valeur certifié',
+              semanticLabel: 'Prix',
+            ),
+            SignaturePad(
+              controller: _signature,
+              hint: 'Signez du bout du doigt',
+              clearLabel: 'Effacer',
+              semanticLabel: 'Zone de signature',
             ),
           ]),
         ],

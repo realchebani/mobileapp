@@ -49,6 +49,8 @@ class MockValuationRepository extends Mock implements ValuationRepository;
 
 class MockNotificationRepository extends Mock implements NotificationRepository;
 
+class MockSaleRepository extends Mock implements SaleRepository;
+
 class MockValuationCubit extends MockCubit<ValuationState>
     implements ValuationCubit;
 

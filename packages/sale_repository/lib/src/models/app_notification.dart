@@ -14,6 +14,21 @@ enum AppNotificationKind {
   /// The expert verified a document (`document_verified`, EPIC-11).
   documentVerified('document_verified'),
 
+  /// The test mandate of a sale is signed (EPIC-08).
+  mandateSigned('mandate_signed'),
+
+  /// A listing is online (EPIC-08).
+  listingPublished('listing_published'),
+
+  /// The team verified an owner's identity (EPIC-08).
+  identityVerified('identity_verified'),
+
+  /// The team planned, closed or cancelled a service request (EPIC-08).
+  saleRequestUpdated('sale_request_updated'),
+
+  /// A sale was withdrawn (EPIC-08).
+  saleWithdrawn('sale_withdrawn'),
+
   /// A kind this version of the app does not know.
   other('other');
 

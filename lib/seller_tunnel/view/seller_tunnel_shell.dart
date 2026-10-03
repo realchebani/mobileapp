@@ -5,6 +5,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:mobileapp/app/app.dart';
 import 'package:mobileapp/l10n/l10n.dart';
 import 'package:mobileapp/profile/profile.dart';
+import 'package:mobileapp/seller_space/sale/sale_access.dart';
 import 'package:mobileapp/seller_tunnel/cubit/seller_properties_cubit.dart';
 import 'package:mobileapp/seller_tunnel/cubit/seller_tunnel_cubits.dart';
 import 'package:mobileapp/ui/ui.dart';
@@ -38,7 +39,8 @@ class SellerTunnelShell extends StatelessWidget {
               .propertyChanged,
         ),
         dispose: (cubits) => unawaited(cubits.close()),
-        child: SellerPropertiesGate(child: child),
+        // Sales (EPIC-08), when available.
+        child: SellerPropertiesGate(child: SalesScope(child: child)),
       ),
     );
   }

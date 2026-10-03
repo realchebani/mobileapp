@@ -66,6 +66,7 @@ flutter:
 
   assets:
     - assets/icons/
+    - assets/sale_examples/
     - assets/fonts/sora/OFL.txt
     - assets/fonts/hanken_grotesk/OFL.txt
     - assets/fonts/michroma/OFL.txt

@@ -83,6 +83,24 @@ abstract final class AppRoutes {
   /// Sale lot [id] (EPIC-13).
   static String sellerLot(String id) => '$sellerLots/$id';
 
+  /// Sales live under this path (EPIC-08).
+  static const sellerSales = '/vendeur/ventes';
+
+  /// A sale [id] (property or lot): the activation screen of its formula
+  /// (V11 L’Essentiel, V11b Le Premium, V11c L’Expert).
+  static String sellerSale(String id) => '$sellerSales/$id';
+
+  /// V11a · Mise en ligne of the sale [id].
+  static String sellerSaleListing(String id) => '$sellerSales/$id/annonce';
+
+  /// Photos of the listing of the sale [id].
+  static String sellerSaleListingPhotos(String id) =>
+      '$sellerSales/$id/annonce/photos';
+
+  /// Preview of the listing of the sale [id].
+  static String sellerSaleListingPreview(String id) =>
+      '$sellerSales/$id/annonce/apercu';
+
   /// Routes before EPIC-13 (one property per seller), still opened by old
   /// links: they redirect to the open (or only) property.
   static const legacySellerReport = '/vendeur/rapport';

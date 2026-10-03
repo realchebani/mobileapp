@@ -26,6 +26,7 @@ typedef AppBuilder = FutureOr<Widget> Function({
   required OnboardingRepository onboardingRepository,
   required ValuationRepository valuationRepository,
   required NotificationRepository notificationRepository,
+  SaleRepository? saleRepository,
   VoiceServices? voiceServices,
   PhotoServices? photoServices,
   LocalePreferences? localePreferences,
@@ -72,6 +73,11 @@ Future<void> bootstrap(AppBuilder builder) async {
       onboardingRepository: OnboardingRepository(preferences: preferences),
       valuationRepository: ValuationRepository(client: client),
       notificationRepository: NotificationRepository(client: client),
+      // Sales (EPIC-08) only where the flavor enables them (SALES_ENABLED):
+      // test mandates, internal tests only.
+      saleRepository: const bool.fromEnvironment('SALES_ENABLED')
+          ? SaleRepository(client: client)
+          : null,
       // Voice + AI agent only where the flavor enables it (VOICE_ENABLED).
       voiceServices: VoiceServices(
         // False only when analyzed without the flavor's dart-defines.
